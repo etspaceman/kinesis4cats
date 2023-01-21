@@ -1,0 +1,32 @@
+queue_rules:
+  - name: default
+    conditions:
+      - author=scala-steward
+      - status-success=build (false, 4567)
+      - status-success=build (false, 4568)
+      - status-success=build (true, 4567)
+      - status-success=build (true, 4568)
+      - status-success=codecov/project
+    
+
+pull_request_rules:
+  - name: assign and label scala-steward's PRs
+    conditions:
+      - author=scala-steward
+    actions:
+      assign:
+        users: [etspaceman]
+      label:
+        add: [dependency-update]
+  - name: merge scala-steward's PRs
+    conditions:
+      - author=scala-steward
+      - status-success=build (false, 4567)
+      - status-success=build (false, 4568)
+      - status-success=build (true, 4567)
+      - status-success=build (true, 4568)
+      - status-success=codecov/project
+    actions:
+      queue:
+        name: default
+        method: squash
