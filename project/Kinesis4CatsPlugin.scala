@@ -10,6 +10,7 @@ object Kinesis4CatsPlugin extends AutoPlugin {
 
   import TypelevelVersioningPlugin.autoImport._
   import TypelevelGitHubPlugin.autoImport._
+  import TypelevelKernelPlugin.autoImport._
   import scalafix.sbt.ScalafixPlugin.autoImport._
   import de.heikoseeberger.sbtheader.HeaderPlugin.autoImport._
 
@@ -37,7 +38,7 @@ object Kinesis4CatsPlugin extends AutoPlugin {
       List(Tests.Argument(MUnitFramework, "+l"))
     },
     ThisBuild / scalafixDependencies += OrganizeImports,
-    semanticdbEnabled := true,
+    ThisBuild / semanticdbEnabled := !tlIsScala3.value,
     semanticdbVersion := scalafixSemanticdb.revision,
     libraryDependencies ++= Seq(
       Cats.core,
@@ -59,7 +60,7 @@ object Kinesis4CatsPlugin extends AutoPlugin {
     ),
     addCommandAlias(
       "fmt",
-      ";Compile / scalafmt;Test / scalafmt"
+      ";Compile / scalafmt;Test / scalafmt;scalafmtSbt"
     ),
     addCommandAlias(
       "pretty",
