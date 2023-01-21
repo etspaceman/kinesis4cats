@@ -11,7 +11,8 @@ object Kinesis4CatsPlugin extends AutoPlugin {
   import TypelevelVersioningPlugin.autoImport._
   import TypelevelGitHubPlugin.autoImport._
   import scalafix.sbt.ScalafixPlugin.autoImport._
-  
+  import de.heikoseeberger.sbtheader.HeaderPlugin.autoImport._
+
   val Scala212 = "2.12.17"
   val Scala213 = "2.13.10"
   val Scala3 = "3.2.0"
@@ -46,7 +47,10 @@ object Kinesis4CatsPlugin extends AutoPlugin {
       Munit.scalacheck % Test,
       Munit.scalacheckEffect % Test
     ),
-    moduleName := "kinesis4cats-" + name.value
+    moduleName := "kinesis4cats-" + name.value,
+    headerLicense := Some(
+      HeaderLicense.ALv2(s"${startYear.value.get}-2023", organizationName.value)
+    )
   ) ++ Seq(
     addCommandAlias("cpl", ";Test / compile"),
     addCommandAlias(
