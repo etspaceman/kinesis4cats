@@ -21,7 +21,13 @@ import scala.jdk.CollectionConverters._
 import cats.effect.std.Dispatcher
 import cats.effect.{Deferred, Ref, Sync}
 import cats.syntax.all._
-import software.amazon.kinesis.lifecycle.events.{InitializationInput, LeaseLostInput, ProcessRecordsInput, ShardEndedInput, ShutdownRequestedInput}
+import software.amazon.kinesis.lifecycle.events.{
+  InitializationInput,
+  LeaseLostInput,
+  ProcessRecordsInput,
+  ShardEndedInput,
+  ShutdownRequestedInput
+}
 import software.amazon.kinesis.processor.ShardRecordProcessor
 import software.amazon.kinesis.retrieval.kpl.ExtendedSequenceNumber
 
@@ -32,7 +38,7 @@ private[kinesis4cats] class RecordProcessor[F[_]](
     val deferredException: Deferred[F, Throwable]
 )(cb: List[CommittableRecord[F]] => F[Unit])(implicit F: Sync[F])
     extends ShardRecordProcessor {
-  
+
   private var shardId: String = _ // scalafix:ok
   private var extendedSequenceNumber: ExtendedSequenceNumber = _ // scalafix:ok
 
@@ -76,7 +82,7 @@ private[kinesis4cats] class RecordProcessor[F[_]](
               case _            => Nil
             }
           else batch
-          _ <- cb(records)
+        _ <- cb(records)
       } yield ()
     )
 

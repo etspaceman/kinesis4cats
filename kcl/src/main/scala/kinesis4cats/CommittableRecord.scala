@@ -54,8 +54,13 @@ final case class CommittableRecord[F[_]](
   val subSequenceNumber: Long = record.subSequenceNumber()
   def checkpoint: F[Unit] =
     for {
-        _ <-  F.interruptible(checkpointer.checkpoint(record.sequenceNumber(), record.subSequenceNumber()))
-        _ <- if (isLastInShard) lastRecordDeferred.complete(()) else F.unit
+      _ <- F.interruptible(
+        checkpointer.checkpoint(
+          record.sequenceNumber(),
+          record.subSequenceNumber()
+        )
+      )
+      _ <- if (isLastInShard) lastRecordDeferred.complete(()) else F.unit
     } yield ()
 
 }
