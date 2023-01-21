@@ -11,7 +11,8 @@ object Kinesis4CatsPlugin extends AutoPlugin {
   import TypelevelVersioningPlugin.autoImport._
   import TypelevelGitHubPlugin.autoImport._
   import scalafix.sbt.ScalafixPlugin.autoImport._
-
+  
+  val Scala212 = "2.12.17"
   val Scala213 = "2.13.10"
   val Scala3 = "3.2.0"
 
@@ -30,7 +31,7 @@ object Kinesis4CatsPlugin extends AutoPlugin {
 
   override def projectSettings = Seq(
     scalaVersion := Scala213,
-    crossScalaVersions := Seq(Scala213, Scala3),
+    crossScalaVersions := Seq(Scala213, Scala212, Scala3),
     Test / testOptions ++= {
       List(Tests.Argument(MUnitFramework, "+l"))
     },
