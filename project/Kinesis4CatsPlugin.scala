@@ -2,6 +2,7 @@ import sbt._
 import sbt.Keys._
 
 import org.typelevel.sbt._
+import org.typelevel.sbt.gha._
 import LibraryDependencies._
 
 object Kinesis4CatsPlugin extends AutoPlugin {
@@ -11,6 +12,7 @@ object Kinesis4CatsPlugin extends AutoPlugin {
   import TypelevelVersioningPlugin.autoImport._
   import TypelevelGitHubPlugin.autoImport._
   import TypelevelKernelPlugin.autoImport._
+  import GenerativePlugin.autoImport._
   import scalafix.sbt.ScalafixPlugin.autoImport._
   import de.heikoseeberger.sbtheader.HeaderPlugin.autoImport._
 
@@ -24,6 +26,10 @@ object Kinesis4CatsPlugin extends AutoPlugin {
     tlBaseVersion := "0.0",
     organization := "etspaceman",
     organizationName := "etspaceman",
+    scalaVersion := Scala213,
+    crossScalaVersions := Seq(Scala213, Scala212, Scala3),
+    githubWorkflowScalaVersions := crossScalaVersions.value,
+    startYear := Some(2023),
     licenses := Seq(License.Apache2),
     developers := List(
       // your GitHub handle and name
@@ -32,8 +38,6 @@ object Kinesis4CatsPlugin extends AutoPlugin {
   )
 
   override def projectSettings = Seq(
-    scalaVersion := Scala213,
-    crossScalaVersions := Seq(Scala213, Scala212, Scala3),
     Test / testOptions ++= {
       List(Tests.Argument(MUnitFramework, "+l"))
     },
