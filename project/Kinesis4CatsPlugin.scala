@@ -38,7 +38,7 @@ object Kinesis4CatsPlugin extends AutoPlugin {
       List(Tests.Argument(MUnitFramework, "+l"))
     },
     ThisBuild / scalafixDependencies += OrganizeImports,
-    ThisBuild / semanticdbEnabled := !tlIsScala3.value,
+    ThisBuild / semanticdbEnabled := true,
     semanticdbVersion := scalafixSemanticdb.revision,
     libraryDependencies ++= Seq(
       Cats.core,
@@ -53,7 +53,7 @@ object Kinesis4CatsPlugin extends AutoPlugin {
       HeaderLicense.ALv2(s"${startYear.value.get}-2023", organizationName.value)
     )
   ) ++ Seq(
-    addCommandAlias("cpl", ";Test / compile"),
+    addCommandAlias("cpl", ";+Test / compile"),
     addCommandAlias(
       "fix",
       ";Compile / scalafix;Test / scalafix"

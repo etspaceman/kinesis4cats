@@ -60,7 +60,7 @@ final case class CommittableRecord[F[_]](
           record.subSequenceNumber()
         )
       )
-      _ <- if (isLastInShard) lastRecordDeferred.complete(()) else F.unit
+      _ <- if (isLastInShard) lastRecordDeferred.complete(()).void else F.unit
     } yield ()
 
 }
