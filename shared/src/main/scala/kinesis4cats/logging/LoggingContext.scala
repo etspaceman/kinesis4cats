@@ -14,27 +14,20 @@
  * limitations under the License.
  */
 
-package kinesis4cats
+package kinesis4cats.logging
 
 import java.util.UUID
-
-import io.circe.{Encoder, Json}
 
 // $COVERAGE-OFF$
 final case class LoggingContext private (context: Map[String, String]) {
   def +(kv: (String, String)): LoggingContext = copy(context + kv)
 
-  def addJson(key: String, js: Json): LoggingContext = copy(
-    context + (key -> js.noSpacesSortKeys)
-  )
   def addEncoded[A](
       key: String,
       a: A
-  )(implicit E: Encoder[A]): LoggingContext =
-    addJson(
-      key,
-      E(a)
-    )
+  )(implicit E: LogEncoder[A]): LoggingContext = copy(
+    context + (key -> E.encode(a))
+  )
 }
 
 object LoggingContext {

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package kinesis4cats
+package kinesis4cats.kcl.processor
 
 sealed trait RecordProcessorState
 

@@ -14,22 +14,16 @@
  * limitations under the License.
  */
 
-package kinesis4cats.syntax
+package kinesis4cats.kcl.processor
 
-import io.circe.{Encoder, Json}
+import kinesis4cats.logging.LogEncoder
+import software.amazon.kinesis.lifecycle.events._
+import retry.RetryDetails
+import software.amazon.kinesis.retrieval.KinesisClientRecord
 
-object circe extends CirceSyntax
-
-trait CirceSyntax {
-  implicit def toCirceMapOps(map: Map[String, Json]): CirceSyntax.CirceMapOps =
-    new CirceSyntax.CirceMapOps(map)
-}
-
-object CirceSyntax {
-  final class CirceMapOps(private val map: Map[String, Json]) extends AnyVal {
-    def maybeAdd[A](key: String, value: A)(implicit E: Encoder[A]) =
-      Option(value).fold(map) { a =>
-        map + (key -> E(a))
-      }
-  }
-}
+final private[kinesis4cats] class RecordProcessorLogEncoders(implicit
+    val inititalizationInputLogEncoder: LogEncoder[InitializationInput],
+    val processRecordsInputLogEncoder: LogEncoder[ProcessRecordsInput],
+    val retryDetailsLogEncoder: LogEncoder[RetryDetails],
+    val kinesisClientRecordListLogEncoder: LogEncoder[List[KinesisClientRecord]]
+)

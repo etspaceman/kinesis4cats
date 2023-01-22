@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package kinesis4cats
+package kinesis4cats.kcl
 
 import cats.effect.std.Dispatcher
 import cats.effect.{Async, Ref, Resource}

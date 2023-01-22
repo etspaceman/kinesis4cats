@@ -47,6 +47,7 @@ object Kinesis4CatsPlugin extends AutoPlugin {
     libraryDependencies ++= Seq(
       Cats.core,
       Cats.effect,
+      CatsRetry,
       Munit.core % Test,
       Munit.catsEffect % Test,
       Munit.scalacheck % Test,

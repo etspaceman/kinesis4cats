@@ -14,17 +14,14 @@
  * limitations under the License.
  */
 
-package kinesis4cats.instances
+package kinesis4cats.logging.instances
 
-import scala.concurrent.duration.FiniteDuration
 import scala.jdk.CollectionConverters._
 
 import java.nio.ByteBuffer
 
 import com.amazonaws.services.schemaregistry.common.Schema
-import io.circe.syntax._
 import io.circe.{Encoder, Json}
-import retry.RetryDetails
 import software.amazon.awssdk.services.kinesis.model._
 import software.amazon.kinesis.lifecycle.events._
 import software.amazon.kinesis.lifecycle.{ShutdownInput, ShutdownReason}
@@ -33,11 +30,10 @@ import software.amazon.kinesis.retrieval.kpl.ExtendedSequenceNumber
 
 import kinesis4cats.syntax.bytebuffer._
 import kinesis4cats.syntax.circe._
+import kinesis4cats.instances.circe._
+import kinesis4cats.kcl.processor.RecordProcessorLogEncoders
 
 object circe {
-
-  implicit val finiteDurationEncoder: Encoder[FiniteDuration] =
-    Encoder.forProduct2("length", "unit")(x => (x.length, x.unit.name))
 
   implicit val encryptionTypeEncoder: Encoder[EncryptionType] =
     Encoder[String].contramap(_.name)
@@ -149,46 +145,7 @@ object circe {
     Json.obj(fields.toSeq: _*)
   }
 
-  implicit val retryDetailsGivingUpEncoder: Encoder[RetryDetails.GivingUp] =
-    Encoder.forProduct6(
-      "retriesSoFar",
-      "cumulativeDelay",
-      "givingUp",
-      "upcomingDelay",
-      "totalRetries",
-      "totalDelay"
-    )(x =>
-      (
-        x.retriesSoFar,
-        x.cumulativeDelay,
-        x.givingUp,
-        x.upcomingDelay,
-        x.totalRetries,
-        x.totalDelay
-      )
-    )
-
-  implicit val retryDetailsWillDelayAndRetryEncoder
-      : Encoder[RetryDetails.WillDelayAndRetry] =
-    Encoder.forProduct5(
-      "nextDelay",
-      "retriesSoFar",
-      "cumulativeDelay",
-      "givingUp",
-      "upcomingDelay"
-    )(x =>
-      (
-        x.nextDelay,
-        x.retriesSoFar,
-        x.cumulativeDelay,
-        x.givingUp,
-        x.upcomingDelay
-      )
-    )
-
-  implicit val retryDetailsEncoder: Encoder[RetryDetails] = {
-    case x: RetryDetails.GivingUp          => x.asJson
-    case x: RetryDetails.WillDelayAndRetry => x.asJson
-  }
+  implicit val recordProcessorLogEncoders: RecordProcessorLogEncoders =
+    new RecordProcessorLogEncoders
 
 }

@@ -14,14 +14,12 @@
  * limitations under the License.
  */
 
-package kinesis4cats
+package kinesis4cats.kcl
 
 import java.util.UUID
 
 import cats.effect.Async
-import cats.effect.kernel.{Ref, Resource}
-import cats.effect.syntax.all._
-import cats.syntax.all._
+import cats.effect.Resource
 import software.amazon.awssdk.services.cloudwatch.CloudWatchAsyncClient
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient
 import software.amazon.awssdk.services.kinesis.KinesisAsyncClient
@@ -34,44 +32,7 @@ import software.amazon.kinesis.metrics.MetricsConfig
 import software.amazon.kinesis.processor.ProcessorConfig
 import software.amazon.kinesis.retrieval.RetrievalConfig
 
-object KCLConsumer {
-  def run[F[_]](
-      config: KCLConsumerConfig
-  )(implicit F: Async[F]): Resource[F, Unit] = for {
-    scheduler <- Resource.eval(
-      F.delay(
-        new Scheduler(
-          config.checkpointConfig,
-          config.coordinatorConfig,
-          config.leaseManagementConfig,
-          config.lifecycleConfig,
-          config.metricsConfig,
-          config.processorConfig,
-          config.retrievalConfig
-        )
-      )
-    )
-    _ <- F.delay(scheduler.run()).background
-    _ <- Resource.onFinalize(
-      F.fromCompletableFuture(F.delay(scheduler.startGracefulShutdown())).void
-    )
-  } yield ()
-
-  def runWithWorkerStateChangeListener[F[_]](
-      config: KCLConsumerConfig
-  )(implicit
-      F: Async[F]
-  ): Resource[F, Ref[F, WorkerStateChangeListener.WorkerState]] = for {
-    listener <- RefWorkerStateChangeListener[F]
-    state <- Resource.pure(listener.state)
-    _ <- run(
-      config.copy(
-        coordinatorConfig =
-          config.coordinatorConfig.workerStateChangeListener(listener)
-      )
-    )
-  } yield state
-}
+import kinesis4cats.kcl.processor._
 
 final case class KCLConsumerConfig private (
     checkpointConfig: CheckpointConfig,
@@ -84,7 +45,7 @@ final case class KCLConsumerConfig private (
 )
 
 object KCLConsumerConfig {
-  def create[F[_]: Async](
+  def create[F[_]](
       checkpointConfig: CheckpointConfig,
       coordinatorConfig: CoordinatorConfig,
       leaseManagementConfig: LeaseManagementConfig,
@@ -94,7 +55,10 @@ object KCLConsumerConfig {
       recordProcessorConfig: RecordProcessorConfig =
         RecordProcessorConfig.default, // scalafix:ok
       callProcessRecordsEvenForEmptyRecordList: Boolean = false // scalafix:ok
-  )(cb: List[CommittableRecord[F]] => F[Unit]): Resource[F, KCLConsumerConfig] =
+  )(cb: List[CommittableRecord[F]] => F[Unit])(implicit
+      F: Async[F],
+      encoders: RecordProcessorLogEncoders
+  ): Resource[F, KCLConsumerConfig] =
     RecordProcessorFactory[F](recordProcessorConfig)(cb).map {
       processorFactory =>
         KCLConsumerConfig(
@@ -111,7 +75,7 @@ object KCLConsumerConfig {
         )
     }
 
-  def configsBuilder[F[_]: Async](
+  def configsBuilder[F[_]](
       kinesisClient: KinesisAsyncClient,
       dynamoClient: DynamoDbAsyncClient,
       cloudWatchClient: CloudWatchAsyncClient,
@@ -120,7 +84,10 @@ object KCLConsumerConfig {
       workerId: String = UUID.randomUUID.toString, // scalafix:ok
       recordProcessorConfig: RecordProcessorConfig =
         RecordProcessorConfig.default // scalafix:ok
-  )(cb: List[CommittableRecord[F]] => F[Unit]): Resource[F, KCLConsumerConfig] =
+  )(cb: List[CommittableRecord[F]] => F[Unit])(implicit
+      F: Async[F],
+      encoders: RecordProcessorLogEncoders
+  ): Resource[F, KCLConsumerConfig] =
     RecordProcessorFactory[F](recordProcessorConfig)(cb).map {
       processorFactory =>
         val confBuilder = new ConfigsBuilder(

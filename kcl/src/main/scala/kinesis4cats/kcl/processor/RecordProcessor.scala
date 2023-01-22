@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package kinesis4cats
+package kinesis4cats.kcl
+package processor
 
-import scala.concurrent.duration._
 import scala.jdk.CollectionConverters._
 
 import cats.effect._
@@ -24,15 +24,13 @@ import cats.effect.std.Dispatcher
 import cats.effect.syntax.all._
 import cats.syntax.all._
 import org.typelevel.log4cats.StructuredLogger
-import org.typelevel.log4cats.slf4j.Slf4jLogger
 import retry.RetryPolicies._
 import retry._
-import software.amazon.kinesis.common.StreamIdentifier
 import software.amazon.kinesis.lifecycle.events._
 import software.amazon.kinesis.processor._
 import software.amazon.kinesis.retrieval.kpl.ExtendedSequenceNumber
 
-import kinesis4cats.instances.circe._
+import kinesis4cats.logging.LoggingContext
 
 class RecordProcessor[F[_]] private[kinesis4cats] (
     config: RecordProcessorConfig,
@@ -41,8 +39,12 @@ class RecordProcessor[F[_]] private[kinesis4cats] (
     val state: Ref[F, RecordProcessorState],
     val deferredException: Deferred[F, Throwable],
     logger: StructuredLogger[F]
-)(cb: List[CommittableRecord[F]] => F[Unit])(implicit F: Async[F], S: Sleep[F])
-    extends ShardRecordProcessor {
+)(cb: List[CommittableRecord[F]] => F[Unit])(implicit
+    F: Async[F],
+    encoders: RecordProcessorLogEncoders
+) extends ShardRecordProcessor {
+
+  import encoders._
 
   private var shardId: String = _ // scalafix:ok
   private var extendedSequenceNumber: ExtendedSequenceNumber = _ // scalafix:ok
@@ -211,50 +213,4 @@ class RecordProcessor[F[_]] private[kinesis4cats] (
       } yield ()
     )
   }
-}
-
-class RecordProcessorFactory[F[_]: Async: Sleep] private[kinesis4cats] (
-    config: RecordProcessorConfig,
-    dispatcher: Dispatcher[F]
-)(cb: List[CommittableRecord[F]] => F[Unit])
-    extends ShardRecordProcessorFactory {
-  override def shardRecordProcessor(): ShardRecordProcessor =
-    dispatcher.unsafeRunSync(
-      for {
-        lastRecordDeferred <- Deferred[F, Unit]
-        state <- Ref.of[F, RecordProcessorState](RecordProcessorState.NoState)
-        deferredException <- Deferred[F, Throwable]
-        logger <- Slf4jLogger.create[F]
-      } yield new RecordProcessor[F](
-        config,
-        dispatcher,
-        lastRecordDeferred,
-        state,
-        deferredException,
-        logger
-      )(cb)
-    )
-  override def shardRecordProcessor(
-      streamIdentifier: StreamIdentifier
-  ): ShardRecordProcessor = shardRecordProcessor()
-}
-
-object RecordProcessorFactory {
-  def apply[F[_]: Async](config: RecordProcessorConfig)(
-      cb: List[CommittableRecord[F]] => F[Unit]
-  ): Resource[F, RecordProcessorFactory[F]] = Dispatcher.parallel.map {
-    dispatcher =>
-      new RecordProcessorFactory[F](config, dispatcher)(cb)
-  }
-}
-
-final case class RecordProcessorConfig(
-    raiseOnError: Boolean,
-    shardEndTimeout: Option[FiniteDuration],
-    checkpointRetries: Int,
-    checkpointRetryInterval: FiniteDuration
-)
-
-object RecordProcessorConfig {
-  val default = RecordProcessorConfig(true, None, 5, 0.seconds)
 }
