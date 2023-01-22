@@ -26,10 +26,10 @@ import software.amazon.kinesis.lifecycle.{ShutdownInput, ShutdownReason}
 import software.amazon.kinesis.retrieval.KinesisClientRecord
 import software.amazon.kinesis.retrieval.kpl.ExtendedSequenceNumber
 
-import kinesis4cats.syntax.bytebuffer._
-import kinesis4cats.syntax.circe._
 import kinesis4cats.instances.circe._
 import kinesis4cats.kcl.processor.RecordProcessorLogEncoders
+import kinesis4cats.syntax.bytebuffer._
+import kinesis4cats.syntax.circe._
 
 object circe {
 

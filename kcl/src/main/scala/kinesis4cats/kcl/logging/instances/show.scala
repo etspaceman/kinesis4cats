@@ -17,16 +17,19 @@
 package kinesis4cats
 package kcl.logging.instances
 
-import software.amazon.kinesis.lifecycle.events._
 import cats.Show
+import com.amazonaws.services.schemaregistry.common.Schema
+import software.amazon.awssdk.services.kinesis.model.{
+  ChildShard,
+  EncryptionType,
+  HashKeyRange
+}
+import software.amazon.kinesis.lifecycle.events._
 import software.amazon.kinesis.retrieval.KinesisClientRecord
+import software.amazon.kinesis.retrieval.kpl.ExtendedSequenceNumber
+
 import kinesis4cats.kcl.processor.RecordProcessorLogEncoders
 import kinesis4cats.logging.instances.show._
-import software.amazon.kinesis.retrieval.kpl.ExtendedSequenceNumber
-import software.amazon.awssdk.services.kinesis.model.ChildShard
-import software.amazon.awssdk.services.kinesis.model.HashKeyRange
-import software.amazon.awssdk.services.kinesis.model.EncryptionType
-import com.amazonaws.services.schemaregistry.common.Schema
 
 object show {
   implicit val hashKeyRangeShow: Show[HashKeyRange] = x =>
@@ -43,7 +46,8 @@ object show {
       .add("shardId", x.shardId())
       .build
 
-  implicit val encryptionTypeShow: Show[EncryptionType] = x => Show[String].show(x.name)
+  implicit val encryptionTypeShow: Show[EncryptionType] = x =>
+    Show[String].show(x.name)
 
   implicit val schemaShow: Show[Schema] = x =>
     ToStringBuilder("Schema")

@@ -16,9 +16,10 @@
 
 package kinesis4cats
 
-import cats.syntax.all._
-import kinesis4cats.syntax.id._
 import cats.Show
+import cats.syntax.all._
+
+import kinesis4cats.syntax.id._
 
 final case class ToStringBuilder private (current: String, isEmpty: Boolean) {
 

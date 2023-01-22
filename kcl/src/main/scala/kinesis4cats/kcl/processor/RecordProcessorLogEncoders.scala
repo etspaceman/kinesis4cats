@@ -16,10 +16,11 @@
 
 package kinesis4cats.kcl.processor
 
-import kinesis4cats.logging.LogEncoder
-import software.amazon.kinesis.lifecycle.events._
 import retry.RetryDetails
+import software.amazon.kinesis.lifecycle.events._
 import software.amazon.kinesis.retrieval.KinesisClientRecord
+
+import kinesis4cats.logging.LogEncoder
 
 final private[kinesis4cats] class RecordProcessorLogEncoders(implicit
     val inititalizationInputLogEncoder: LogEncoder[InitializationInput],

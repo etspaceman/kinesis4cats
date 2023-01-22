@@ -16,12 +16,14 @@
 
 package kinesis4cats.instances
 
+import scala.concurrent.duration.FiniteDuration
+import scala.jdk.CollectionConverters._
+
 import io.circe.Encoder
 import io.circe.syntax._
 import retry.RetryDetails
-import scala.concurrent.duration.FiniteDuration
+
 import kinesis4cats.logging.LogEncoder
-import scala.jdk.CollectionConverters._
 
 object circe {
 

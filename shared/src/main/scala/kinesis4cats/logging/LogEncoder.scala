@@ -21,8 +21,8 @@ import cats.Contravariant
 trait LogEncoder[A] extends Serializable { self =>
   def encode(a: A): String
 
-  final def contramap[B](f: B => A): LogEncoder[B] = new LogEncoder[B] {
-    final def encode(b: B): String = self.encode(f(b))
+  def contramap[B](f: B => A): LogEncoder[B] = new LogEncoder[B] {
+    override def encode(b: B): String = self.encode(f(b))
   }
 }
 
@@ -33,7 +33,7 @@ object LogEncoder {
     override def encode(a: A): String = f(a)
   }
 
-  implicit final val encoderContravariant: Contravariant[LogEncoder] =
+  implicit val encoderContravariant: Contravariant[LogEncoder] =
     new Contravariant[LogEncoder] {
       final def contramap[A, B](e: LogEncoder[A])(f: B => A): LogEncoder[B] =
         e.contramap(f)

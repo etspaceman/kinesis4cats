@@ -18,8 +18,7 @@ package kinesis4cats.kcl
 
 import java.util.UUID
 
-import cats.effect.Async
-import cats.effect.Resource
+import cats.effect.{Async, Resource}
 import software.amazon.awssdk.services.cloudwatch.CloudWatchAsyncClient
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient
 import software.amazon.awssdk.services.kinesis.KinesisAsyncClient

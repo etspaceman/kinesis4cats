@@ -20,8 +20,8 @@ import cats.effect.Async
 import cats.effect.kernel.{Ref, Resource}
 import cats.effect.syntax.all._
 import cats.syntax.all._
-import software.amazon.kinesis.coordinator._
 import software.amazon.kinesis.coordinator.WorkerStateChangeListener.WorkerState
+import software.amazon.kinesis.coordinator._
 
 object KCLConsumer {
   def run[F[_]](

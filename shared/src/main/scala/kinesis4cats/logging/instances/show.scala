@@ -17,14 +17,17 @@
 package kinesis4cats.logging
 package instances
 
-import cats.Show
-import retry.RetryDetails
-import java.time.Instant
-import scala.jdk.CollectionConverters._
 import scala.concurrent.duration._
-import kinesis4cats.ToStringBuilder
-import cats.syntax.all._
+import scala.jdk.CollectionConverters._
+
 import java.nio.ByteBuffer
+import java.time.Instant
+
+import cats.Show
+import cats.syntax.all._
+import retry.RetryDetails
+
+import kinesis4cats.ToStringBuilder
 import kinesis4cats.syntax.bytebuffer._
 
 object show {

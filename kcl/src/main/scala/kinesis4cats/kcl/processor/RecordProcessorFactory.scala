@@ -17,12 +17,12 @@
 package kinesis4cats.kcl
 package processor
 
+import cats.effect.std.Dispatcher
 import cats.effect.{Async, Deferred, Ref, Resource}
 import cats.syntax.all._
-import cats.effect.std.Dispatcher
-import software.amazon.kinesis.processor._
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 import software.amazon.kinesis.common.StreamIdentifier
+import software.amazon.kinesis.processor._
 
 class RecordProcessorFactory[F[_]] private[kinesis4cats] (
     config: RecordProcessorConfig,
