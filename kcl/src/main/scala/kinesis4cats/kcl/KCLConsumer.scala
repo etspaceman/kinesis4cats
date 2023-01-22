@@ -23,7 +23,6 @@ import cats.syntax.all._
 import software.amazon.kinesis.coordinator._
 import software.amazon.kinesis.coordinator.WorkerStateChangeListener.WorkerState
 
-
 object KCLConsumer {
   def run[F[_]](
       config: KCLConsumerConfig

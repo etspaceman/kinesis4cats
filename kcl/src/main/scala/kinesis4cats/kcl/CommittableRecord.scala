@@ -24,6 +24,7 @@ import software.amazon.kinesis.retrieval.KinesisClientRecord
 import software.amazon.kinesis.retrieval.kpl.ExtendedSequenceNumber
 
 import kinesis4cats.kcl.processor.RecordProcessor
+
 /** A message type from Kinesis which has not yet been commited or checkpointed.
   *
   * @constructor

@@ -30,12 +30,12 @@ trait ByteBufferSyntax {
 
 object ByteBufferSyntax {
   final class ByteBufferOps(private val buffer: ByteBuffer) extends AnyVal {
-    
-    /**
-      * Safely copies the contents of a [[java.nio.ByteBuffer]] to a byte array.
+
+    /** Safely copies the contents of a [[java.nio.ByteBuffer]] to a byte array.
       * Will ensure that the ByteBuffer's current state remains intact.
       *
-      * @return Byte array with the contents of the ByteBuffer
+      * @return
+      *   Byte array with the contents of the ByteBuffer
       */
     def asArray: Array[Byte] = {
       val position = buffer.position()
@@ -46,20 +46,20 @@ object ByteBufferSyntax {
       arr
     }
 
-    /**
-      * Safely copies the content of a [[java.nio.ByteBuffer]] into a string.
+    /** Safely copies the content of a [[java.nio.ByteBuffer]] into a string.
       * Will ensure that the ByteBuffer's current state remains intact.
       *
-      * @return String with the contents of the ByteBuffer
+      * @return
+      *   String with the contents of the ByteBuffer
       */
     def asString: String = new String(asArray)
 
-    /**
-      * Safely copies the content of a [[java.nio.ByteBuffer]] into a Base64.
+    /** Safely copies the content of a [[java.nio.ByteBuffer]] into a Base64.
       * encoded string. Will ensure that the ByteBuffer's current state remains
       * intact.
       *
-      * @return Base64 string with the contents of the ByteBuffer
+      * @return
+      *   Base64 string with the contents of the ByteBuffer
       */
     def asBase64String: String = Base64.getEncoder().encodeToString(asArray)
   }
