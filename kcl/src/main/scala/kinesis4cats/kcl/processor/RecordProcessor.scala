@@ -38,7 +38,8 @@ class RecordProcessor[F[_]] private[kinesis4cats] (
     val lastRecordDeferred: Deferred[F, Unit],
     val state: Ref[F, RecordProcessorState],
     val deferredException: Deferred[F, Throwable],
-    logger: StructuredLogger[F]
+    logger: StructuredLogger[F],
+    raiseOnError: Boolean
 )(cb: List[CommittableRecord[F]] => F[Unit])(implicit
     F: Async[F],
     encoders: RecordProcessorLogEncoders
@@ -133,7 +134,7 @@ class RecordProcessor[F[_]] private[kinesis4cats] (
           )(records.max.checkpoint)
         } yield ()
       ).flatMap {
-        case Left(error) if (config.raiseOnError) =>
+        case Left(error) if (raiseOnError) =>
           logger.error(ctx.context, error)(
             "Exception raised in processRecords. Error will be raised and the consumer will be shutdown."
           ) >>
@@ -179,7 +180,7 @@ class RecordProcessor[F[_]] private[kinesis4cats] (
         _ <- state.set(RecordProcessorState.ShardEnded)
         _ <- config.shardEndTimeout.fold(lastRecordDeferred.get)(x =>
           lastRecordDeferred.get.timeout(x).attempt.flatMap {
-            case Left(error) if config.raiseOnError =>
+            case Left(error) if raiseOnError =>
               logger.error(ctx.context, error)(
                 "Error waiting for all data in the shard to be processed and committed. " +
                   "Error will be raised and the consumer will be shutdown."

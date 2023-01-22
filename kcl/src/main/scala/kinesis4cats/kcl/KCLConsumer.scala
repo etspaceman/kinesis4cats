@@ -25,7 +25,7 @@ import software.amazon.kinesis.coordinator._
 
 object KCLConsumer {
   def run[F[_]](
-      config: KCLConsumerConfig
+      config: KCLConsumerConfig[F]
   )(implicit F: Async[F]): Resource[F, Unit] = for {
     scheduler <- Resource.eval(
       F.delay(
@@ -40,14 +40,21 @@ object KCLConsumer {
         )
       )
     )
-    _ <- F.delay(scheduler.run()).background
+    _ <- F
+      .race(
+        F.delay(scheduler.run()),
+        if (config.raiseOnError)
+          config.deferredException.get.flatMap(F.raiseError(_).void)
+        else F.never
+      )
+      .toResource
     _ <- Resource.onFinalize(
       F.fromCompletableFuture(F.delay(scheduler.startGracefulShutdown())).void
     )
   } yield ()
 
   def runWithWorkerStateChangeListener[F[_]](
-      config: KCLConsumerConfig
+      config: KCLConsumerConfig[F]
   )(implicit
       F: Async[F]
   ): Resource[F, Ref[F, WorkerState]] = for {

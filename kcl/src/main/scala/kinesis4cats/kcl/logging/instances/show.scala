@@ -19,11 +19,7 @@ package kcl.logging.instances
 
 import cats.Show
 import com.amazonaws.services.schemaregistry.common.Schema
-import software.amazon.awssdk.services.kinesis.model.{
-  ChildShard,
-  EncryptionType,
-  HashKeyRange
-}
+import software.amazon.awssdk.services.kinesis.model._
 import software.amazon.kinesis.lifecycle.events._
 import software.amazon.kinesis.retrieval.KinesisClientRecord
 import software.amazon.kinesis.retrieval.kpl.ExtendedSequenceNumber

@@ -19,12 +19,11 @@ package kinesis4cats.kcl.processor
 import scala.concurrent.duration._
 
 final case class RecordProcessorConfig(
-    raiseOnError: Boolean,
     shardEndTimeout: Option[FiniteDuration],
     checkpointRetries: Int,
     checkpointRetryInterval: FiniteDuration
 )
 
 object RecordProcessorConfig {
-  val default = RecordProcessorConfig(true, None, 5, 0.seconds)
+  val default = RecordProcessorConfig(None, 5, 0.seconds)
 }

@@ -18,7 +18,7 @@ package kinesis4cats.kcl
 
 import java.util.UUID
 
-import cats.effect.{Async, Resource}
+import cats.effect.{Async, Deferred, Resource}
 import software.amazon.awssdk.services.cloudwatch.CloudWatchAsyncClient
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient
 import software.amazon.awssdk.services.kinesis.KinesisAsyncClient
@@ -33,14 +33,16 @@ import software.amazon.kinesis.retrieval.RetrievalConfig
 
 import kinesis4cats.kcl.processor._
 
-final case class KCLConsumerConfig private (
+final case class KCLConsumerConfig[F[_]] private (
     checkpointConfig: CheckpointConfig,
     coordinatorConfig: CoordinatorConfig,
     leaseManagementConfig: LeaseManagementConfig,
     lifecycleConfig: LifecycleConfig,
     metricsConfig: MetricsConfig,
     processorConfig: ProcessorConfig,
-    retrievalConfig: RetrievalConfig
+    retrievalConfig: RetrievalConfig,
+    deferredException: Deferred[F, Throwable],
+    raiseOnError: Boolean
 )
 
 object KCLConsumerConfig {
@@ -51,28 +53,35 @@ object KCLConsumerConfig {
       lifecycleConfig: LifecycleConfig,
       metricsConfig: MetricsConfig,
       retrievalConfig: RetrievalConfig,
+      raiseOnError: Boolean = true, // scalafix:ok
       recordProcessorConfig: RecordProcessorConfig =
         RecordProcessorConfig.default, // scalafix:ok
       callProcessRecordsEvenForEmptyRecordList: Boolean = false // scalafix:ok
   )(cb: List[CommittableRecord[F]] => F[Unit])(implicit
       F: Async[F],
       encoders: RecordProcessorLogEncoders
-  ): Resource[F, KCLConsumerConfig] =
-    RecordProcessorFactory[F](recordProcessorConfig)(cb).map {
-      processorFactory =>
-        KCLConsumerConfig(
-          checkpointConfig,
-          coordinatorConfig,
-          leaseManagementConfig,
-          lifecycleConfig,
-          metricsConfig,
-          new ProcessorConfig(processorFactory)
-            .callProcessRecordsEvenForEmptyRecordList(
-              callProcessRecordsEvenForEmptyRecordList
-            ),
-          retrievalConfig
-        )
-    }
+  ): Resource[F, KCLConsumerConfig[F]] =
+    for {
+      deferredException <- Resource.eval(Deferred[F, Throwable])
+      processorFactory <- RecordProcessorFactory[F](
+        recordProcessorConfig,
+        deferredException,
+        raiseOnError
+      )(cb)
+    } yield KCLConsumerConfig(
+      checkpointConfig,
+      coordinatorConfig,
+      leaseManagementConfig,
+      lifecycleConfig,
+      metricsConfig,
+      new ProcessorConfig(processorFactory)
+        .callProcessRecordsEvenForEmptyRecordList(
+          callProcessRecordsEvenForEmptyRecordList
+        ),
+      retrievalConfig,
+      deferredException,
+      raiseOnError
+    )
 
   def configsBuilder[F[_]](
       kinesisClient: KinesisAsyncClient,
@@ -80,33 +89,38 @@ object KCLConsumerConfig {
       cloudWatchClient: CloudWatchAsyncClient,
       streamName: String,
       appName: String,
+      raiseOnError: Boolean = true, // scalafix:ok
       workerId: String = UUID.randomUUID.toString, // scalafix:ok
       recordProcessorConfig: RecordProcessorConfig =
         RecordProcessorConfig.default // scalafix:ok
   )(cb: List[CommittableRecord[F]] => F[Unit])(implicit
       F: Async[F],
       encoders: RecordProcessorLogEncoders
-  ): Resource[F, KCLConsumerConfig] =
-    RecordProcessorFactory[F](recordProcessorConfig)(cb).map {
-      processorFactory =>
-        val confBuilder = new ConfigsBuilder(
-          streamName,
-          appName,
-          kinesisClient,
-          dynamoClient,
-          cloudWatchClient,
-          workerId,
-          processorFactory
-        )
-
-        KCLConsumerConfig(
-          confBuilder.checkpointConfig(),
-          confBuilder.coordinatorConfig(),
-          confBuilder.leaseManagementConfig(),
-          confBuilder.lifecycleConfig(),
-          confBuilder.metricsConfig(),
-          confBuilder.processorConfig(),
-          confBuilder.retrievalConfig()
-        )
-    }
+  ): Resource[F, KCLConsumerConfig[F]] = for {
+    deferredException <- Resource.eval(Deferred[F, Throwable])
+    processorFactory <- RecordProcessorFactory[F](
+      recordProcessorConfig,
+      deferredException,
+      raiseOnError
+    )(cb)
+    confBuilder = new ConfigsBuilder(
+      streamName,
+      appName,
+      kinesisClient,
+      dynamoClient,
+      cloudWatchClient,
+      workerId,
+      processorFactory
+    )
+  } yield KCLConsumerConfig(
+    confBuilder.checkpointConfig(),
+    confBuilder.coordinatorConfig(),
+    confBuilder.leaseManagementConfig(),
+    confBuilder.lifecycleConfig(),
+    confBuilder.metricsConfig(),
+    confBuilder.processorConfig(),
+    confBuilder.retrievalConfig(),
+    deferredException,
+    raiseOnError
+  )
 }

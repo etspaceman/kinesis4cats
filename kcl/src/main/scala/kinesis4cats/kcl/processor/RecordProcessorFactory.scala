@@ -26,7 +26,9 @@ import software.amazon.kinesis.processor._
 
 class RecordProcessorFactory[F[_]] private[kinesis4cats] (
     config: RecordProcessorConfig,
-    dispatcher: Dispatcher[F]
+    dispatcher: Dispatcher[F],
+    deferredException: Deferred[F, Throwable],
+    raiseOnError: Boolean
 )(cb: List[CommittableRecord[F]] => F[Unit])(implicit
     F: Async[F],
     encoders: RecordProcessorLogEncoders
@@ -36,7 +38,6 @@ class RecordProcessorFactory[F[_]] private[kinesis4cats] (
       for {
         lastRecordDeferred <- Deferred[F, Unit]
         state <- Ref.of[F, RecordProcessorState](RecordProcessorState.NoState)
-        deferredException <- Deferred[F, Throwable]
         logger <- Slf4jLogger.create[F]
       } yield new RecordProcessor[F](
         config,
@@ -44,7 +45,8 @@ class RecordProcessorFactory[F[_]] private[kinesis4cats] (
         lastRecordDeferred,
         state,
         deferredException,
-        logger
+        logger,
+        raiseOnError
       )(cb)
     )
   override def shardRecordProcessor(
@@ -53,13 +55,22 @@ class RecordProcessorFactory[F[_]] private[kinesis4cats] (
 }
 
 object RecordProcessorFactory {
-  def apply[F[_]](config: RecordProcessorConfig)(
+  def apply[F[_]](
+      config: RecordProcessorConfig,
+      deferredException: Deferred[F, Throwable],
+      raiseOnError: Boolean
+  )(
       cb: List[CommittableRecord[F]] => F[Unit]
   )(implicit
       F: Async[F],
       encoders: RecordProcessorLogEncoders
-  ): Resource[F, RecordProcessorFactory[F]] = Dispatcher.parallel.map {
-    dispatcher =>
-      new RecordProcessorFactory[F](config, dispatcher)(cb)
-  }
+  ): Resource[F, RecordProcessorFactory[F]] =
+    Dispatcher.parallel.map { dispatcher =>
+      new RecordProcessorFactory[F](
+        config,
+        dispatcher,
+        deferredException,
+        raiseOnError
+      )(cb)
+    }
 }
