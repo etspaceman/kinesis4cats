@@ -23,9 +23,9 @@ import software.amazon.kinesis.processor.RecordProcessorCheckpointer
 import software.amazon.kinesis.retrieval.KinesisClientRecord
 import software.amazon.kinesis.retrieval.kpl.ExtendedSequenceNumber
 
-import kinesis4cats.kcl.processor.RecordProcessor
+import kinesis4cats.kcl.processor.{RecordProcessor, RecordProcessorState}
 
-/** A message type from Kinesis which has not yet been commited or checkpointed.
+/** A message from Kinesis that is able to be committed.
   *
   * @constructor
   *   create a new commitable record with a name and age.
@@ -54,6 +54,12 @@ final case class CommittableRecord[F[_]](
 )(implicit F: Sync[F]) {
   val sequenceNumber: String = record.sequenceNumber()
   val subSequenceNumber: Long = record.subSequenceNumber()
+
+  def canCheckpoint: F[Boolean] = recordProcessor.state.get.map {
+    case RecordProcessorState.Processing | RecordProcessorState.ShardEnded =>
+      true
+    case _ => false
+  }
   def checkpoint: F[Unit] =
     for {
       _ <- F.interruptibleMany(
