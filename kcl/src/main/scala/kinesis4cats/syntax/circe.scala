@@ -14,20 +14,23 @@
  * limitations under the License.
  */
 
-package kinesis4cats
+package kinesis4cats.syntax
 
+import io.circe.Json
 import io.circe.Encoder
 
-sealed trait RecordProcessorState
+object circe extends CirceSyntax
 
-object RecordProcessorState {
-  case object NoState extends RecordProcessorState
-  case object Initialized extends RecordProcessorState
-  case object ShardEnded extends RecordProcessorState
-  case object Processing extends RecordProcessorState
-  case object Shutdown extends RecordProcessorState
-  case object LeaseLost extends RecordProcessorState
+trait CirceSyntax {
+  implicit def toCirceMapOps(map: Map[String, Json]): CirceSyntax.CirceMapOps =
+    new CirceSyntax.CirceMapOps(map)
+}
 
-  implicit val recordProcessorStateEncoder: Encoder[RecordProcessorState] =
-    Encoder[String].contramap(_.toString)
+object CirceSyntax {
+  final class CirceMapOps(private val map: Map[String, Json]) extends AnyVal {
+    def maybeAdd[A](key: String, value: A)(implicit E: Encoder[A]) =
+      Option(value).fold(map) { a =>
+        map + (key -> E(a))
+      }
+  }
 }

@@ -16,18 +16,30 @@
 
 package kinesis4cats
 
+import io.circe.Json
 import io.circe.Encoder
+import java.util.UUID
 
-sealed trait RecordProcessorState
+// $COVERAGE-OFF$
+final case class LoggingContext private (context: Map[String, String]) {
+  def +(kv: (String, String)): LoggingContext = copy(context + kv)
 
-object RecordProcessorState {
-  case object NoState extends RecordProcessorState
-  case object Initialized extends RecordProcessorState
-  case object ShardEnded extends RecordProcessorState
-  case object Processing extends RecordProcessorState
-  case object Shutdown extends RecordProcessorState
-  case object LeaseLost extends RecordProcessorState
-
-  implicit val recordProcessorStateEncoder: Encoder[RecordProcessorState] =
-    Encoder[String].contramap(_.toString)
+  def addJson(key: String, js: Json): LoggingContext = copy(
+    context + (key -> js.noSpacesSortKeys)
+  )
+  def addEncoded[A](
+      key: String,
+      a: A
+  )(implicit E: Encoder[A]): LoggingContext =
+    addJson(
+      key,
+      E(a)
+    )
 }
+
+object LoggingContext {
+  def create: LoggingContext = LoggingContext(
+    Map("contextId" -> UUID.randomUUID.toString)
+  )
+}
+// $COVERAGE-ON$

@@ -8,6 +8,8 @@ lazy val kcl = project
     libraryDependencies ++= Seq(
       Aws.kcl,
       Log4Cats.slf4j,
+      Circe.core,
+      Circe.parser,
       CatsRetry
     )
   )
