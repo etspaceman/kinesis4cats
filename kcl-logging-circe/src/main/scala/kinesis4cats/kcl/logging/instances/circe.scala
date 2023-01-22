@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-package kinesis4cats.logging.instances
-
-import scala.jdk.CollectionConverters._
+package kinesis4cats.kcl.logging.instances
 
 import java.nio.ByteBuffer
 
@@ -65,7 +63,7 @@ object circe {
         .empty[String, Json]
         .maybeAdd("hasParentShards", x.hasParentShards())
         .maybeAdd("hashKeyRange", x.hashKeyRange())
-        .maybeAdd("parentShards", x.parentShards().asScala.toList)
+        .maybeAdd("parentShards", x.parentShards())
         .maybeAdd("shardId", x.shardId())
 
     Json.obj(fields.toSeq: _*)
@@ -105,7 +103,7 @@ object circe {
         .empty[String, Json]
         .maybeAdd("cacheEntryTime", x.cacheEntryTime())
         .maybeAdd("cacheExitTime", x.cacheExitTime())
-        .maybeAdd("childShards", x.childShards().asScala.toList)
+        .maybeAdd("childShards", x.childShards())
         .maybeAdd("isAtShardEnd", x.isAtShardEnd())
         .maybeAdd("millisBehindLatest", x.millisBehindLatest())
         .maybeAdd("timeSpentInCache", x.timeSpentInCache())

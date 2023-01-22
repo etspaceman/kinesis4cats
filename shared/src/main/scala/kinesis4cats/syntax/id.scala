@@ -16,19 +16,15 @@
 
 package kinesis4cats.syntax
 
-import io.circe.{Encoder, Json}
-import kinesis4cats.syntax.id._
+object id extends IdSyntax
 
-object circe extends CirceSyntax
-
-trait CirceSyntax {
-  implicit def toCirceMapOps(map: Map[String, Json]): CirceSyntax.CirceMapOps =
-    new CirceSyntax.CirceMapOps(map)
+trait IdSyntax {
+  implicit def toIdOps[A](a: A): IdSyntax.IdOps[A] = new IdSyntax.IdOps(a)
 }
 
-object CirceSyntax {
-  final class CirceMapOps(private val map: Map[String, Json]) extends AnyVal {
-    def maybeAdd[A](key: String, value: A)(implicit E: Encoder[A]) =
-      map.safeTransform(value) { case (m, v) => m + (key -> E(v)) }
+object IdSyntax {
+  final class IdOps[A](private val a: A) extends AnyVal {
+    def safeTransform[B](b: B)(fn: (A, B) => A): A =
+      Option(b).fold(a)(fn(a, _))
   }
 }

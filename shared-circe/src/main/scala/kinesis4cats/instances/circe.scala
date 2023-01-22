@@ -21,12 +21,16 @@ import io.circe.syntax._
 import retry.RetryDetails
 import scala.concurrent.duration.FiniteDuration
 import kinesis4cats.logging.LogEncoder
+import scala.jdk.CollectionConverters._
 
 object circe {
 
   implicit def circeEncoderLogEncoder[A](implicit
       E: Encoder[A]
   ): LogEncoder[A] = LogEncoder.instance(a => E(a).noSpacesSortKeys)
+
+  implicit def javaListEncoder[A: Encoder]: Encoder[java.util.List[A]] =
+    Encoder[List[A]].contramap(_.asScala.toList)
 
   implicit val finiteDurationEncoder: Encoder[FiniteDuration] =
     Encoder.forProduct2("length", "unit")(x => (x.length, x.unit.name))
