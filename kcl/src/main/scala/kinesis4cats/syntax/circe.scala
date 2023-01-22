@@ -16,8 +16,7 @@
 
 package kinesis4cats.syntax
 
-import io.circe.Json
-import io.circe.Encoder
+import io.circe.{Encoder, Json}
 
 object circe extends CirceSyntax
 

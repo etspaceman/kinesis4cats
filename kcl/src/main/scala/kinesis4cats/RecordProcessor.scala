@@ -23,14 +23,14 @@ import cats.effect._
 import cats.effect.std.Dispatcher
 import cats.effect.syntax.all._
 import cats.syntax.all._
+import org.typelevel.log4cats.StructuredLogger
+import org.typelevel.log4cats.slf4j.Slf4jLogger
 import retry.RetryPolicies._
 import retry._
 import software.amazon.kinesis.common.StreamIdentifier
 import software.amazon.kinesis.lifecycle.events._
 import software.amazon.kinesis.processor._
 import software.amazon.kinesis.retrieval.kpl.ExtendedSequenceNumber
-import org.typelevel.log4cats.StructuredLogger
-import org.typelevel.log4cats.slf4j.Slf4jLogger
 
 import kinesis4cats.instances.circe._
 

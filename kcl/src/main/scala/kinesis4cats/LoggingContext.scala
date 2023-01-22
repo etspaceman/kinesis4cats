@@ -16,9 +16,9 @@
 
 package kinesis4cats
 
-import io.circe.Json
-import io.circe.Encoder
 import java.util.UUID
+
+import io.circe.{Encoder, Json}
 
 // $COVERAGE-OFF$
 final case class LoggingContext private (context: Map[String, String]) {

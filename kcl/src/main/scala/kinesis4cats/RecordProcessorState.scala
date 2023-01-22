@@ -16,8 +16,6 @@
 
 package kinesis4cats
 
-import io.circe.Encoder
-
 sealed trait RecordProcessorState
 
 object RecordProcessorState {
@@ -27,7 +25,4 @@ object RecordProcessorState {
   case object Processing extends RecordProcessorState
   case object Shutdown extends RecordProcessorState
   case object LeaseLost extends RecordProcessorState
-
-  implicit val recordProcessorStateEncoder: Encoder[RecordProcessorState] =
-    Encoder[String].contramap(_.toString)
 }

@@ -68,7 +68,7 @@ object Kinesis4CatsPlugin extends AutoPlugin {
     ),
     addCommandAlias(
       "pretty",
-      ";fix;fmt"
+      "+headerCreate;fix;fmt"
     ),
     addCommandAlias(
       "cov",

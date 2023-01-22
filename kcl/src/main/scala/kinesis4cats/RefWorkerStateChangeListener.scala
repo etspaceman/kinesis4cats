@@ -16,9 +16,8 @@
 
 package kinesis4cats
 
-import cats.effect.Ref
-import cats.effect.{Async, Resource}
 import cats.effect.std.Dispatcher
+import cats.effect.{Async, Ref, Resource}
 import software.amazon.kinesis.coordinator.WorkerStateChangeListener
 import software.amazon.kinesis.coordinator.WorkerStateChangeListener.WorkerState
 
@@ -35,8 +34,8 @@ class RefWorkerStateChangeListener[F[_]] private[kinesis4cats] (
 }
 
 object RefWorkerStateChangeListener {
-    def apply[F[_]: Async]: Resource[F, RefWorkerStateChangeListener[F]] = for {
-        dispatcher <- Dispatcher.parallel[F]
-        state <- Resource.eval(Ref.of(WorkerState.CREATED))
-    } yield new RefWorkerStateChangeListener(dispatcher, state)
+  def apply[F[_]: Async]: Resource[F, RefWorkerStateChangeListener[F]] = for {
+    dispatcher <- Dispatcher.parallel[F]
+    state <- Resource.eval(Ref.of(WorkerState.CREATED))
+  } yield new RefWorkerStateChangeListener(dispatcher, state)
 }

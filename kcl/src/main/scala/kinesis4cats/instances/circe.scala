@@ -16,26 +16,23 @@
 
 package kinesis4cats.instances
 
-import io.circe.Encoder
+import scala.concurrent.duration.FiniteDuration
+import scala.jdk.CollectionConverters._
+
+import java.nio.ByteBuffer
+
+import com.amazonaws.services.schemaregistry.common.Schema
 import io.circe.syntax._
-import software.amazon.kinesis.lifecycle.events.InitializationInput
+import io.circe.{Encoder, Json}
+import retry.RetryDetails
+import software.amazon.awssdk.services.kinesis.model._
+import software.amazon.kinesis.lifecycle.events._
+import software.amazon.kinesis.lifecycle.{ShutdownInput, ShutdownReason}
+import software.amazon.kinesis.retrieval.KinesisClientRecord
 import software.amazon.kinesis.retrieval.kpl.ExtendedSequenceNumber
 
-import kinesis4cats.syntax.circe._
 import kinesis4cats.syntax.bytebuffer._
-import io.circe.Json
-import software.amazon.kinesis.lifecycle.events.ProcessRecordsInput
-import software.amazon.awssdk.services.kinesis.model.ChildShard
-import scala.jdk.CollectionConverters._
-import software.amazon.awssdk.services.kinesis.model.HashKeyRange
-import software.amazon.kinesis.lifecycle.ShutdownInput
-import software.amazon.kinesis.lifecycle.ShutdownReason
-import software.amazon.kinesis.retrieval.KinesisClientRecord
-import software.amazon.awssdk.services.kinesis.model.EncryptionType
-import com.amazonaws.services.schemaregistry.common.Schema
-import java.nio.ByteBuffer
-import retry.RetryDetails
-import scala.concurrent.duration.FiniteDuration
+import kinesis4cats.syntax.circe._
 
 object circe {
 
