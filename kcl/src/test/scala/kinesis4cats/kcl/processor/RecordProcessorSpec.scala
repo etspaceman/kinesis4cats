@@ -24,7 +24,10 @@ import java.time.Instant
 
 import cats.effect.std.Queue
 import cats.effect.{Deferred, IO}
-import software.amazon.kinesis.lifecycle.events.{InitializationInput, ProcessRecordsInput}
+import software.amazon.kinesis.lifecycle.events.{
+  InitializationInput,
+  ProcessRecordsInput
+}
 import software.amazon.kinesis.retrieval.KinesisClientRecord
 import software.amazon.kinesis.retrieval.kpl.ExtendedSequenceNumber
 

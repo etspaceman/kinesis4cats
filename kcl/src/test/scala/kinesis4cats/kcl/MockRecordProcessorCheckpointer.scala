@@ -20,7 +20,11 @@ import cats.effect.IO
 import cats.effect.std.Queue
 import cats.effect.unsafe.implicits.global
 import software.amazon.awssdk.services.kinesis.model.Record
-import software.amazon.kinesis.processor.{Checkpointer, PreparedCheckpointer, RecordProcessorCheckpointer}
+import software.amazon.kinesis.processor.{
+  Checkpointer,
+  PreparedCheckpointer,
+  RecordProcessorCheckpointer
+}
 
 case class MockRecordProcessorCheckpointer(queue: Queue[IO, MockCheckpoint])
     extends RecordProcessorCheckpointer {

@@ -32,6 +32,20 @@ import software.amazon.kinesis.retrieval.kpl.ExtendedSequenceNumber
 
 import kinesis4cats.logging.LoggingContext
 
+/** An extension of the
+  * [[software.amazon.kinesis.processor.ShardRecordProcessor]] interface
+  *
+  * @param config
+  * @param dispatcher
+  * @param lastRecordDeferred
+  * @param state
+  * @param deferredException
+  * @param logger
+  * @param raiseOnError
+  * @param cb
+  * @param F
+  * @param encoders
+  */
 class RecordProcessor[F[_]] private[kinesis4cats] (
     config: RecordProcessorConfig,
     dispatcher: Dispatcher[F],
