@@ -158,6 +158,7 @@ object Kinesis4CatsPlugin extends AutoPlugin {
         "cpl",
         "+headerCreateAll",
         "pretty",
+        "pretty", // Run pretty twice, as sometimes the formats don't take
         "set ThisBuild / tlFatalWarnings := tlFatalWarningsInCi.value",
         "doc",
         "session clear"

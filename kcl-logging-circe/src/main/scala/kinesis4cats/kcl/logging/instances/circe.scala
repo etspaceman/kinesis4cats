@@ -16,8 +16,6 @@
 
 package kinesis4cats.kcl.logging.instances
 
-import java.nio.ByteBuffer
-
 import com.amazonaws.services.schemaregistry.common.Schema
 import io.circe.{Encoder, Json}
 import software.amazon.awssdk.services.kinesis.model._
@@ -26,10 +24,9 @@ import software.amazon.kinesis.lifecycle.{ShutdownInput, ShutdownReason}
 import software.amazon.kinesis.retrieval.KinesisClientRecord
 import software.amazon.kinesis.retrieval.kpl.ExtendedSequenceNumber
 
-import kinesis4cats.instances.circe._
 import kinesis4cats.kcl.processor.RecordProcessorLogEncoders
-import kinesis4cats.syntax.bytebuffer._
-import kinesis4cats.syntax.circe._
+import kinesis4cats.logging.instances.circe._
+import kinesis4cats.logging.syntax.circe._
 
 /** KCL [[kinesis4cats.logging.LogEncoder LogEncoder]] instances for JSON
   * encoding of log structures using [[https://circe.github.io/circe/ Circe]]
@@ -124,9 +121,6 @@ object circe {
   }
 
   implicit val kinesisClientRecordEncoder: Encoder[KinesisClientRecord] = x => {
-    implicit val byteBufferEncoder: Encoder[ByteBuffer] =
-      Encoder[String].contramap(x => x.asBase64String)
-
     val fields: Map[String, Json] =
       Map
         .empty[String, Json]

@@ -27,6 +27,10 @@ import software.amazon.kinesis.retrieval.kpl.ExtendedSequenceNumber
 import kinesis4cats.ShowBuilder
 import kinesis4cats.kcl.processor.RecordProcessorLogEncoders
 import kinesis4cats.logging.instances.show._
+
+/** KCL [[kinesis4cats.logging.LogEncoder LogEncoder]] instances for string
+  * encoding of log structures using [[cats.Show Show]]
+  */
 object show {
   implicit val hashKeyRangeShow: Show[HashKeyRange] = x =>
     ShowBuilder("HashKeyRange")

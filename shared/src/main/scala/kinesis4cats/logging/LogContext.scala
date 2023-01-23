@@ -50,7 +50,7 @@ final class LogContext private (val context: Map[String, String]) {
       key: String,
       a: A
   )(implicit E: LogEncoder[A]): LogContext = new LogContext(
-    context + (key -> E.encode(a))
+    context + (key -> Option(a).fold("null")(x => E.encode(x)))
   )
 }
 

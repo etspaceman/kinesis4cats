@@ -32,9 +32,25 @@ lazy val kcl = project
 
 lazy val `kcl-logging-circe` = project
   .settings(
-    description := "JSON structured ogging instances, via Circe"
+    description := "JSON structured logging instances for the KCL, via Circe"
   )
   .dependsOn(kcl, `shared-circe`)
+
+lazy val kpl = project
+  .settings(
+    description := "Cats tooling for the Kinesis Producer Library (KPL)",
+    libraryDependencies ++= Seq(
+      Aws.kpl,
+      Log4Cats.slf4j
+    )
+  )
+  .dependsOn(shared)
+
+lazy val `kpl-logging-circe` = project
+  .settings(
+    description := "JSON structured logging instances for the KPL, via Circe"
+  )
+  .dependsOn(kpl, `shared-circe`)
 
 lazy val root =
   tlCrossRootProject.aggregate(
@@ -42,5 +58,7 @@ lazy val root =
     shared,
     `shared-circe`,
     kcl,
-    `kcl-logging-circe`
+    `kcl-logging-circe`,
+    kpl,
+    `kpl-logging-circe`
   )
