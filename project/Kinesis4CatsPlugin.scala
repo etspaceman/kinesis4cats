@@ -42,7 +42,7 @@ object Kinesis4CatsPlugin extends AutoPlugin {
 
   override def buildSettings = Seq(
     tlBaseVersion := "0.0",
-    organization := "etspaceman",
+    organization := "io.github.etspaceman",
     organizationName := "etspaceman",
     scalaVersion := Scala213,
     crossScalaVersions := Seq(Scala213, Scala212, Scala3),
