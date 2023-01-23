@@ -20,6 +20,8 @@ import cats.Eq
 
 sealed trait KPLProducerState
 
+/** Tracks the [[kinesis4cats.kpl.KPLProducer KPLProducer]] current state.
+  */
 object KPLProducerState {
   case object Up extends KPLProducerState
   case object ShuttingDown extends KPLProducerState

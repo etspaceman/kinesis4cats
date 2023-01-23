@@ -21,6 +21,10 @@ import com.amazonaws.services.schemaregistry.common.Schema
 
 import kinesis4cats.logging.LogEncoder
 
+/** Helper class containing required
+  * [[kinesis4cats.logging.LogEncoder LogEncoders]] for the
+  * [[kinesis4cats.kpl.KPLProducer KPLProducer]]
+  */
 final class KPLProducerLogEncoders(implicit
     val userRecordLogEncoder: LogEncoder[UserRecord],
     val userRecordResultLogEncoder: LogEncoder[UserRecordResult],

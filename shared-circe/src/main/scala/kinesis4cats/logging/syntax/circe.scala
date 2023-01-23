@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package kinesis4cats.syntax
+package kinesis4cats.logging.syntax
 
 import io.circe.{Encoder, Json}
 

@@ -14,16 +14,19 @@
  * limitations under the License.
  */
 
-package kinesis4cats.instances
+package kinesis4cats.logging.instances
 
 import scala.concurrent.duration.FiniteDuration
 import scala.jdk.CollectionConverters._
+
+import java.nio.ByteBuffer
 
 import io.circe.Encoder
 import io.circe.syntax._
 import retry.RetryDetails
 
 import kinesis4cats.logging.LogEncoder
+import kinesis4cats.syntax.bytebuffer._
 
 /** [[kinesis4cats.logging.LogEncoder LogEncoder]] instances for JSON encoding
   * of log structures using [[https://circe.github.io/circe/ Circe]]
@@ -37,6 +40,9 @@ object circe {
   implicit def javaListEncoder[A: Encoder]: Encoder[java.util.List[A]] =
     Encoder[List[A]].contramap(_.asScala.toList)
 
+  implicit val byteBufferEncoder: Encoder[ByteBuffer] =
+    Encoder[String].contramap(x => x.asBase64String)
+    
   implicit val finiteDurationEncoder: Encoder[FiniteDuration] =
     Encoder.forProduct2("length", "unit")(x => (x.length, x.unit.name))
 

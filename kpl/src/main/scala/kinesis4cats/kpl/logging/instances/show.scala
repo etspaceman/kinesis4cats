@@ -21,8 +21,12 @@ import com.amazonaws.services.kinesis.producer._
 import com.amazonaws.services.schemaregistry.common.Schema
 
 import kinesis4cats.ShowBuilder
+import kinesis4cats.kpl.KPLProducerLogEncoders
 import kinesis4cats.logging.instances.show._
 
+/** KPL [[kinesis4cats.logging.LogEncoder LogEncoder]] instances for string
+  * encoding of log structures using [[cats.Show Show]]
+  */
 object show {
   implicit val attemptShow: Show[Attempt] = x =>
     ShowBuilder("Attempt")
@@ -55,4 +59,7 @@ object show {
       .add("sequenceNumber", x.getSequenceNumber())
       .add("shardId", x.getShardId())
       .build
+
+  implicit val kplProducerLogEncoders: KPLProducerLogEncoders =
+    new KPLProducerLogEncoders()
 }

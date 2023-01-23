@@ -16,6 +16,9 @@
 
 package kinesis4cats.kpl
 
+/** Exception to be raised when the KPLProducer receives a put request while it
+  * is shutting down.
+  */
 case object ShuttingDownException
     extends Exception(
       "The KPLProducer is shutting down and cannot accept more requests"
