@@ -15,6 +15,7 @@ object Kinesis4CatsPlugin extends AutoPlugin {
   import TypelevelVersioningPlugin.autoImport._
   import TypelevelGitHubPlugin.autoImport._
   import TypelevelKernelPlugin.autoImport._
+  import TypelevelCiPlugin.autoImport._
   import GenerativePlugin.autoImport._
   import scalafix.sbt.ScalafixPlugin.autoImport._
   import de.heikoseeberger.sbtheader.HeaderPlugin.autoImport._
@@ -24,6 +25,11 @@ object Kinesis4CatsPlugin extends AutoPlugin {
   val Scala3 = "3.2.1"
 
   val MUnitFramework = new TestFramework("munit.Framework")
+  private val primaryJavaOSCond = Def.setting {
+    val java = githubWorkflowJavaVersions.value.head
+    val os = githubWorkflowOSes.value.head
+    s"matrix.java == '${java.render}' && matrix.os == '${os}'"
+  }
 
   override def buildSettings = Seq(
     tlBaseVersion := "0.0",
@@ -37,7 +43,52 @@ object Kinesis4CatsPlugin extends AutoPlugin {
     developers := List(
       // your GitHub handle and name
       tlGitHubDev("etspaceman", "Eric Meisel")
-    )
+    ),
+    githubWorkflowBuild := {
+      val pretty = List(
+        WorkflowStep.Sbt(
+          List(
+            "headerCheckAll",
+            "prettyCheck"
+          ),
+          name = Some("Check headers and formatting"),
+          cond = Some(primaryJavaOSCond.value)
+        )
+      )
+
+      val test = List(
+        WorkflowStep.Sbt(List("cov"), name = Some("Test"))
+      )
+
+      val mima =
+        List(
+          WorkflowStep.Sbt(
+            List("mimaReportBinaryIssues"),
+            name = Some("Check binary compatibility"),
+            cond = Some(primaryJavaOSCond.value)
+          )
+        )
+
+      val doc =
+        List(
+          WorkflowStep.Sbt(
+            List("doc"),
+            name = Some("Generate API documentation"),
+            cond = Some(primaryJavaOSCond.value)
+          )
+        )
+
+      val cov =
+        List(
+          WorkflowStep.Use(
+            UseRef.Public("codecov", "codecov-action", "v1"),
+            name = Some("Upload coverage")
+          )
+        )
+
+      pretty ++ test ++ mima ++ doc ++ cov
+    },
+    githubWorkflowJavaVersions := Seq(JavaSpec.temurin("17"))
   ) ++ tlReplaceCommandAlias(
     "prePR",
     mkCommand(
@@ -79,8 +130,16 @@ object Kinesis4CatsPlugin extends AutoPlugin {
   ) ++ Seq(
     addCommandAlias("cpl", ";+Test / compile"),
     addCommandAlias(
+      "fixCheck",
+      ";Compile / scalafix --check;Test / scalafix --check"
+    ),
+    addCommandAlias(
       "fix",
       ";Compile / scalafix;Test / scalafix"
+    ),
+    addCommandAlias(
+      "fmtCheck",
+      ";Compile / scalafmtCheck;Test / scalafmtCheck;scalafmtSbtCheck"
     ),
     addCommandAlias(
       "fmt",
@@ -89,6 +148,10 @@ object Kinesis4CatsPlugin extends AutoPlugin {
     addCommandAlias(
       "pretty",
       "fix;fmt"
+    ),
+    addCommandAlias(
+      "prettyCheck",
+      ";fixCheck;fmtCheck"
     ),
     addCommandAlias(
       "cov",
