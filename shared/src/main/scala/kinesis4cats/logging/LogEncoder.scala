@@ -16,7 +16,11 @@
 
 package kinesis4cats.logging
 
+import java.nio.ByteBuffer
+
 import cats.Contravariant
+
+import kinesis4cats.syntax.bytebuffer._
 
 /** A typeclass that encodes values as strings for log messages.
   */
@@ -57,6 +61,19 @@ object LogEncoder {
   def instance[A](f: A => String): LogEncoder[A] = new LogEncoder[A] {
     override def encode(a: A): String = f(a)
   }
+
+  def fromToString[A]: LogEncoder[A] =
+    instance(x => Option(x).fold("null")(_.toString()))
+
+  implicit val stringLogEncoder: LogEncoder[String] = fromToString
+  implicit val intLogEncoder: LogEncoder[Int] = fromToString
+  implicit val longLogEncoder: LogEncoder[Long] = fromToString
+  implicit val floatLogEncoder: LogEncoder[Float] = fromToString
+  implicit val doubleLogEncoder: LogEncoder[Double] = fromToString
+  implicit val booleanLogEncoder: LogEncoder[Boolean] = fromToString
+  implicit val byteBufferLogEncoder: LogEncoder[ByteBuffer] = instance(
+    _.asBase64String
+  )
 
   implicit val encoderContravariant: Contravariant[LogEncoder] =
     new Contravariant[LogEncoder] {
