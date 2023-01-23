@@ -94,6 +94,8 @@ jobs:
         run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' doc
 
       - name: Upload coverage
+        env:
+          CODECOV_TOKEN: ${{ secret.CODECOV_TOKEN }}
         uses: codecov/codecov-action@v1
 
       - name: Make target directories
