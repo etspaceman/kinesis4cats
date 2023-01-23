@@ -9,6 +9,9 @@ object Kinesis4CatsPlugin extends AutoPlugin {
   override def trigger = allRequirements
   override def requires: Plugins = TypelevelPlugin
 
+  def mkCommand(commands: List[String]): String =
+    commands.mkString("; ", "; ", "")
+
   import TypelevelVersioningPlugin.autoImport._
   import TypelevelGitHubPlugin.autoImport._
   import TypelevelKernelPlugin.autoImport._
@@ -34,6 +37,22 @@ object Kinesis4CatsPlugin extends AutoPlugin {
     developers := List(
       // your GitHub handle and name
       tlGitHubDev("etspaceman", "Eric Meisel")
+    )
+  ) ++ tlReplaceCommandAlias(
+    "prePR",
+    mkCommand(
+      List(
+        "reload",
+        "project /",
+        "clean",
+        "githubWorkflowGenerate",
+        "cpl",
+        "+headerCreateAll",
+        "pretty",
+        "set ThisBuild / tlFatalWarnings := tlFatalWarningsInCi.value",
+        "doc",
+        "session clear"
+      )
     )
   )
 
@@ -69,7 +88,7 @@ object Kinesis4CatsPlugin extends AutoPlugin {
     ),
     addCommandAlias(
       "pretty",
-      "+headerCreate;fix;fmt"
+      "fix;fmt"
     ),
     addCommandAlias(
       "cov",

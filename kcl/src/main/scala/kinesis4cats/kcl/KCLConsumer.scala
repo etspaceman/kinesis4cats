@@ -23,7 +23,22 @@ import cats.syntax.all._
 import software.amazon.kinesis.coordinator.WorkerStateChangeListener.WorkerState
 import software.amazon.kinesis.coordinator._
 
+/** Primary entrypoint for running a consumer
+  */
 object KCLConsumer {
+
+  /** Runs a [[https://github.com/awslabs/amazon-kinesis-client KCL Consumer]]
+    * in the background as a [[cats.effect.Resource Resource]]
+    *
+    * @param config
+    *   [[kinesis4cats.kcl.KCLConsumerConfig KCLConsumerConfig]] containing the
+    *   required configuration
+    * @param F
+    *   [[cats.effect.Async Async]] instance
+    * @return
+    *   [[cats.effect.Resource Resource]] that manages the lifecycle of the
+    *   [[https://github.com/awslabs/amazon-kinesis-client KCL Consumer]]
+    */
   def run[F[_]](
       config: KCLConsumerConfig[F]
   )(implicit F: Async[F]): Resource[F, Unit] = for {
@@ -53,6 +68,24 @@ object KCLConsumer {
     )
   } yield ()
 
+  /** Runs a [[https://github.com/awslabs/amazon-kinesis-client KCL Consumer]]
+    * in the background as a [[cats.effect.Resource Resource]]. This exposes the
+    * [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/coordinator/WorkerStateChangeListener.java WorkerState]]
+    * which can be used as a means to determine if the KCL Consumer is running.
+    * A common use case for this is to service healthcheck endpoints when
+    * running these in an orchestration service (e.g. Kubernetes or AWS ECS) or
+    * running tests that require the consumer to be up before an assertion is
+    * checked.
+    *
+    * @param config
+    *   [[kinesis4cats.kcl.KCLConsumerConfig KCLConsumerConfig]] containing the
+    *   required configuration
+    * @param F
+    *   [[cats.effect.Async Async]] instance
+    * @return
+    *   [[cats.effect.Resource Resource]] that manages the lifecycle of the
+    *   [[https://github.com/awslabs/amazon-kinesis-client KCL Consumer]]
+    */
   def runWithWorkerStateChangeListener[F[_]](
       config: KCLConsumerConfig[F]
   )(implicit

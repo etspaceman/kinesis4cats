@@ -18,17 +18,42 @@ package kinesis4cats.logging
 
 import cats.Contravariant
 
+/** A typeclass that encodes values as strings for log messages.
+  */
 trait LogEncoder[A] extends Serializable { self =>
+
+  /** Encode a value of type A as a String
+    *
+    * @param a
+    *   Value to encode
+    * @return
+    *   String for log message
+    */
   def encode(a: A): String
 
+  /** Constructs a [[kinesis4cats.logging.LogEncoder LogEncoder]] for a new type
+    * (B) given a function from A => B.
+    *
+    * @param f
+    * @return
+    */
   def contramap[B](f: B => A): LogEncoder[B] = new LogEncoder[B] {
     override def encode(b: B): String = self.encode(f(b))
   }
 }
 
 object LogEncoder {
+
+  /** Summoning method */
   def apply[A](implicit LE: LogEncoder[A]): LogEncoder[A] = LE
 
+  /** Instance creator for [[kinesis4cats.logging.LogEncoder]]
+    *
+    * @param f
+    *   A => String
+    * @return
+    *   [[kinesis4cats.logging.LogEncoder]]
+    */
   def instance[A](f: A => String): LogEncoder[A] = new LogEncoder[A] {
     override def encode(a: A): String = f(a)
   }

@@ -16,6 +16,8 @@
 
 package kinesis4cats.kcl
 
+import java.nio.ByteBuffer
+
 import cats.effect.Sync
 import cats.effect.kernel.Deferred
 import cats.syntax.all._
@@ -27,20 +29,26 @@ import kinesis4cats.kcl.processor.{RecordProcessor, RecordProcessorState}
 
 /** A message from Kinesis that is able to be committed.
   *
-  * @constructor
-  *   create a new commitable record with a name and age.
   * @param shardId
-  *   the unique identifier for the shard from which this record originated
+  *   The unique identifier for the shard from which this record originated
+  * @param recordProcessorStartingSequenceNumber
+  *   The starting sequence number for the
+  *   [[kinesis4cats.kcl.processor.RecordProcessor RecordProcessor]] which
+  *   received this record
   * @param millisBehindLatest
-  *   ms behind the latest record, used to detect if the consumer is lagging the
-  *   producer
+  *   Milleseconds behind the latest record, used to detect if the consumer is
+  *   lagging the producer
   * @param record
-  *   the original record document from Kinesis
+  *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/retrieval/KinesisClientRecord.java KinesisClientRecord]]
+  *   representing the original record received by Kinesis.
   * @param recordProcessor
-  *   reference to the record processor that is responsible for processing this
-  *   message
+  *   Reference to the
+  *   [[kinesis4cats.kcl.processor.RecordProcessor RecordProcessor]] that is
+  *   responsible for processing this message
   * @param checkpointer
-  *   reference to the checkpointer used to commit this record
+  *   Reference to the
+  *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/processor/RecordProcessorCheckpointer.java RecordProcessorCheckpointer]]
+  *   responsible for committing the record
   */
 final case class CommittableRecord[F[_]](
     shardId: String,
@@ -55,11 +63,27 @@ final case class CommittableRecord[F[_]](
   val sequenceNumber: String = record.sequenceNumber()
   val subSequenceNumber: Long = record.subSequenceNumber()
 
+  val data: ByteBuffer = record.data()
+
+  /** Determines if the
+    * [[kinesis4cats.kcl.processor.RecordProcessor RecordProcesor]] is in a
+    * state that is allowed to commit this record.
+    *
+    * @return
+    *   F containing a Boolean indicator of commit availability
+    */
   def canCheckpoint: F[Boolean] = recordProcessor.state.get.map {
     case RecordProcessorState.Processing | RecordProcessorState.ShardEnded =>
       true
     case _ => false
   }
+
+  /** Commits this record. If it is the last record in the shard, completes the
+    * [[cats.effect.Deferred lastRecordDeferred]]
+    *
+    * @return
+    *   F of Unit
+    */
   def checkpoint: F[Unit] =
     for {
       _ <- F.interruptibleMany(

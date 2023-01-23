@@ -18,6 +18,17 @@ package kinesis4cats.kcl.processor
 
 import scala.concurrent.duration._
 
+/** Configuration for the
+  * [[kinesis4cats.kcl.processor.RecordProcessor RecordProcessor]]
+  *
+  * @param shardEndTimeout
+  *   Optional timeout for the shard-end routine. It is recommended to not set a
+  *   timeout, as using a timeout could lead to potential data loss.
+  * @param checkpointRetries
+  *   Number of retries for running a checkpoint operation.
+  * @param checkpointRetryInterval
+  *   Amount of time to wait between retries
+  */
 final case class RecordProcessorConfig(
     shardEndTimeout: Option[FiniteDuration],
     checkpointRetries: Int,

@@ -31,6 +31,9 @@ import kinesis4cats.kcl.processor.RecordProcessorLogEncoders
 import kinesis4cats.syntax.bytebuffer._
 import kinesis4cats.syntax.circe._
 
+/** KCL [[kinesis4cats.logging.LogEncoder LogEncoder]] instances for JSON
+  * encoding of log structures using [[https://circe.github.io/circe/ Circe]]
+  */
 object circe {
 
   implicit val encryptionTypeEncoder: Encoder[EncryptionType] =
@@ -40,9 +43,9 @@ object circe {
     val fields: Map[String, Json] =
       Map
         .empty[String, Json]
-        .maybeAdd("dataFormat", x.getDataFormat())
-        .maybeAdd("schemaDefinition", x.getSchemaDefinition())
-        .maybeAdd("schemaName", x.getSchemaName())
+        .safeAdd("dataFormat", x.getDataFormat())
+        .safeAdd("schemaDefinition", x.getSchemaDefinition())
+        .safeAdd("schemaName", x.getSchemaName())
 
     Json.obj(fields.toSeq: _*)
   }
@@ -51,8 +54,8 @@ object circe {
     val fields: Map[String, Json] =
       Map
         .empty[String, Json]
-        .maybeAdd("endingHashKey", x.endingHashKey())
-        .maybeAdd("startingHashKey", x.startingHashKey())
+        .safeAdd("endingHashKey", x.endingHashKey())
+        .safeAdd("startingHashKey", x.startingHashKey())
 
     Json.obj(fields.toSeq: _*)
   }
@@ -61,10 +64,10 @@ object circe {
     val fields: Map[String, Json] =
       Map
         .empty[String, Json]
-        .maybeAdd("hasParentShards", x.hasParentShards())
-        .maybeAdd("hashKeyRange", x.hashKeyRange())
-        .maybeAdd("parentShards", x.parentShards())
-        .maybeAdd("shardId", x.shardId())
+        .safeAdd("hasParentShards", x.hasParentShards())
+        .safeAdd("hashKeyRange", x.hashKeyRange())
+        .safeAdd("parentShards", x.parentShards())
+        .safeAdd("shardId", x.shardId())
 
     Json.obj(fields.toSeq: _*)
   }
@@ -74,8 +77,8 @@ object circe {
       val fields: Map[String, Json] =
         Map
           .empty[String, Json]
-          .maybeAdd("sequenceNumber", x.sequenceNumber())
-          .maybeAdd("subSequenceNumber", x.subSequenceNumber())
+          .safeAdd("sequenceNumber", x.sequenceNumber())
+          .safeAdd("subSequenceNumber", x.subSequenceNumber())
 
       Json.obj(fields.toSeq: _*)
     }
@@ -87,9 +90,9 @@ object circe {
     val fields: Map[String, Json] =
       Map
         .empty[String, Json]
-        .maybeAdd("shardId", x.shardId())
-        .maybeAdd("extendedSequenceNumber", x.extendedSequenceNumber())
-        .maybeAdd(
+        .safeAdd("shardId", x.shardId())
+        .safeAdd("extendedSequenceNumber", x.extendedSequenceNumber())
+        .safeAdd(
           "pendingCheckpointSequenceNumber",
           x.pendingCheckpointSequenceNumber()
         )
@@ -101,12 +104,12 @@ object circe {
     val fields: Map[String, Json] =
       Map
         .empty[String, Json]
-        .maybeAdd("cacheEntryTime", x.cacheEntryTime())
-        .maybeAdd("cacheExitTime", x.cacheExitTime())
-        .maybeAdd("childShards", x.childShards())
-        .maybeAdd("isAtShardEnd", x.isAtShardEnd())
-        .maybeAdd("millisBehindLatest", x.millisBehindLatest())
-        .maybeAdd("timeSpentInCache", x.timeSpentInCache())
+        .safeAdd("cacheEntryTime", x.cacheEntryTime())
+        .safeAdd("cacheExitTime", x.cacheExitTime())
+        .safeAdd("childShards", x.childShards())
+        .safeAdd("isAtShardEnd", x.isAtShardEnd())
+        .safeAdd("millisBehindLatest", x.millisBehindLatest())
+        .safeAdd("timeSpentInCache", x.timeSpentInCache())
 
     Json.obj(fields.toSeq: _*)
   }
@@ -115,7 +118,7 @@ object circe {
     val fields: Map[String, Json] =
       Map
         .empty[String, Json]
-        .maybeAdd("shutdownReason", x.shutdownReason())
+        .safeAdd("shutdownReason", x.shutdownReason())
 
     Json.obj(fields.toSeq: _*)
   }
@@ -127,18 +130,18 @@ object circe {
     val fields: Map[String, Json] =
       Map
         .empty[String, Json]
-        .maybeAdd("aggregated", x.aggregated())
-        .maybeAdd(
+        .safeAdd("aggregated", x.aggregated())
+        .safeAdd(
           "approximateArrivalTimestamp",
           x.approximateArrivalTimestamp()
         )
-        .maybeAdd("encryptionType", x.encryptionType())
-        .maybeAdd("explicitHashKey", x.explicitHashKey())
-        .maybeAdd("partitionKey", x.partitionKey())
-        .maybeAdd("schema", x.schema())
-        .maybeAdd("sequenceNumber", x.sequenceNumber())
-        .maybeAdd("subSequenceNumber", x.subSequenceNumber())
-        .maybeAdd("data", x.data())
+        .safeAdd("encryptionType", x.encryptionType())
+        .safeAdd("explicitHashKey", x.explicitHashKey())
+        .safeAdd("partitionKey", x.partitionKey())
+        .safeAdd("schema", x.schema())
+        .safeAdd("sequenceNumber", x.sequenceNumber())
+        .safeAdd("subSequenceNumber", x.subSequenceNumber())
+        .safeAdd("data", x.data())
 
     Json.obj(fields.toSeq: _*)
   }

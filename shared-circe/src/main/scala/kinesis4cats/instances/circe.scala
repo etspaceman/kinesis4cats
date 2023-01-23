@@ -25,6 +25,9 @@ import retry.RetryDetails
 
 import kinesis4cats.logging.LogEncoder
 
+/** [[kinesis4cats.logging.LogEncoder LogEncoder]] instances for JSON encoding
+  * of log structures using [[https://circe.github.io/circe/ Circe]]
+  */
 object circe {
 
   implicit def circeEncoderLogEncoder[A](implicit

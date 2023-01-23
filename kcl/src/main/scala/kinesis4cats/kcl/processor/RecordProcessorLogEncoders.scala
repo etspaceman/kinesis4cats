@@ -22,7 +22,11 @@ import software.amazon.kinesis.retrieval.KinesisClientRecord
 
 import kinesis4cats.logging.LogEncoder
 
-final private[kinesis4cats] class RecordProcessorLogEncoders(implicit
+/** Helper class containing required
+  * [[kinesis4cats.logging.LogEncoder LogEncoders]] for the
+  * [[kinesis4cats.kcl.processor.RecordProcessor RecordProcessor]]
+  */
+final class RecordProcessorLogEncoders(implicit
     val inititalizationInputLogEncoder: LogEncoder[InitializationInput],
     val processRecordsInputLogEncoder: LogEncoder[ProcessRecordsInput],
     val retryDetailsLogEncoder: LogEncoder[RetryDetails],

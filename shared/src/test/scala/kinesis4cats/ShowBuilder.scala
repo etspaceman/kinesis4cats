@@ -16,10 +16,10 @@
 
 package kinesis4cats
 
-class ToStringBuilderSpec extends munit.FunSuite {
+class ShowBuilderSpec extends munit.FunSuite {
 
   case class TestData(s: String, d: Double, l: Long, b: Boolean) {
-    override def toString(): String = ToStringBuilder("TestData")
+    override def toString(): String = ShowBuilder("TestData")
       .add("s", s)
       .add("d", d)
       .add("l", l)

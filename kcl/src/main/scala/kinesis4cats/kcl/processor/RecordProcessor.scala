@@ -30,21 +30,41 @@ import software.amazon.kinesis.lifecycle.events._
 import software.amazon.kinesis.processor._
 import software.amazon.kinesis.retrieval.kpl.ExtendedSequenceNumber
 
-import kinesis4cats.logging.LoggingContext
+import kinesis4cats.logging.LogContext
 
-/** An extension of the
-  * [[software.amazon.kinesis.processor.ShardRecordProcessor]] interface
+/** An implementation of the
+  * [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/processor/ShardRecordProcessor.java ShardRecordProcessor]]
+  * interface, with some additional logic for raising exceptions, processing +
+  * committing records and logging results.
   *
   * @param config
+  *   [[kinesis4cats.kcl.processor.RecordProcessorConfig RecordProcessorConfig]]
+  *   instance
   * @param dispatcher
+  *   [[cats.effect.std.Dispatcher Dispatcher]] instance, for running effects
   * @param lastRecordDeferred
+  *   [[cats.effect.Deferred Deferred]] instance, for handling the shard-end
+  *   routine
   * @param state
+  *   [[cats.effect.Ref Ref]] that tracks the current state, via
+  *   [[kinesis4cats.kcl.processor.RecordProcessorState RecordProcessorState]]
   * @param deferredException
+  *   [[cats.effect.Deferred Deferred]] instance, for handling exceptions
   * @param logger
+  *   [[org.typelevel.log4cats.StructuredLogger StructuredLogger]] instance, for
+  *   logging
   * @param raiseOnError
+  *   Whether the [[kinesis4cats.kcl.processor.RecordProcessor RecordProcessor]]
+  *   should raise exceptions or simply log them.
   * @param cb
+  *   Function to process
+  *   [[kinesis4cats.kcl.CommittableRecord CommittableRecords]] received from
+  *   Kinesis
   * @param F
+  *   [[cats.effect.Async Async]] instance
   * @param encoders
+  *   [[kinesis4cats.kcl.processor.RecordProcessorLogEncoders RecordProcessorLogEncoders]]
+  *   for encoding structured logs
   */
 class RecordProcessor[F[_]] private[kinesis4cats] (
     config: RecordProcessorConfig,
@@ -68,7 +88,7 @@ class RecordProcessor[F[_]] private[kinesis4cats] (
   def getExtendedSequenceNumber: ExtendedSequenceNumber = extendedSequenceNumber
 
   override def initialize(initializationInput: InitializationInput): Unit = {
-    val ctx = LoggingContext.create.addEncoded(
+    val ctx = LogContext().addEncoded(
       "initializationInput",
       initializationInput
     )
@@ -92,13 +112,13 @@ class RecordProcessor[F[_]] private[kinesis4cats] (
     def logCommitError(
         error: Throwable,
         details: RetryDetails,
-        ctx: LoggingContext
+        ctx: LogContext
     ): F[Unit] =
       logger.error(ctx.addEncoded("retryDetails", details).context, error)(
         "Error checkpointing, retrying."
       )
 
-    val ctx = LoggingContext.create.addEncoded(
+    val ctx = LogContext().addEncoded(
       "processRecordsInput",
       processRecordsInput
     ) + ("shardId" -> shardId)
@@ -166,7 +186,7 @@ class RecordProcessor[F[_]] private[kinesis4cats] (
   }
 
   override def leaseLost(leaseLostInput: LeaseLostInput): Unit = {
-    val ctx = LoggingContext.create + ("shardId" -> shardId)
+    val ctx = LogContext() + ("shardId" -> shardId)
     dispatcher.unsafeRunSync(
       for {
         _ <- logger.warn(ctx.context)("Received lease-lost event")
@@ -176,11 +196,11 @@ class RecordProcessor[F[_]] private[kinesis4cats] (
   }
 
   override def shardEnded(shardEndedInput: ShardEndedInput): Unit = {
-    val ctx = LoggingContext.create + ("shardId" -> shardId)
+    val ctx = LogContext() + ("shardId" -> shardId)
     def logCommitError(
         error: Throwable,
         details: RetryDetails,
-        ctx: LoggingContext
+        ctx: LogContext
     ): F[Unit] =
       logger.error(ctx.addEncoded("retryDetails", details).context, error)(
         "Error checkpointing, retrying."
@@ -220,7 +240,7 @@ class RecordProcessor[F[_]] private[kinesis4cats] (
   override def shutdownRequested(
       shutdownRequestedInput: ShutdownRequestedInput
   ): Unit = {
-    val ctx = LoggingContext.create + ("shardId" -> shardId)
+    val ctx = LogContext() + ("shardId" -> shardId)
     dispatcher.unsafeRunSync(
       for {
         _ <- logger.warn(ctx.context)("Received shutdown request")

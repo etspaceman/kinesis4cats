@@ -24,18 +24,18 @@ import software.amazon.kinesis.lifecycle.events._
 import software.amazon.kinesis.retrieval.KinesisClientRecord
 import software.amazon.kinesis.retrieval.kpl.ExtendedSequenceNumber
 
+import kinesis4cats.ShowBuilder
 import kinesis4cats.kcl.processor.RecordProcessorLogEncoders
 import kinesis4cats.logging.instances.show._
-
 object show {
   implicit val hashKeyRangeShow: Show[HashKeyRange] = x =>
-    ToStringBuilder("HashKeyRange")
+    ShowBuilder("HashKeyRange")
       .add("endingHashKey", x.endingHashKey())
       .add("startingHashKey", x.startingHashKey())
       .build
 
   implicit val childShardShow: Show[ChildShard] = x =>
-    ToStringBuilder("ChildShard")
+    ShowBuilder("ChildShard")
       .add("hasParentShards", x.hasParentShards())
       .add("hashKeyRange", x.hashKeyRange())
       .add("parentShards", x.parentShards())
@@ -46,20 +46,20 @@ object show {
     Show[String].show(x.name)
 
   implicit val schemaShow: Show[Schema] = x =>
-    ToStringBuilder("Schema")
+    ShowBuilder("Schema")
       .add("dataFormat", x.getDataFormat())
       .add("schemaDefinition", x.getSchemaDefinition())
       .add("schemaName", x.getSchemaName())
       .build
 
   implicit val extendedSequenceNumberShow: Show[ExtendedSequenceNumber] = x =>
-    ToStringBuilder("ExtendedSequenceNumber")
+    ShowBuilder("ExtendedSequenceNumber")
       .add("sequenceNumber", x.sequenceNumber())
       .add("subSequenceNumber", x.subSequenceNumber())
       .build
 
   implicit val initializationInputShow: Show[InitializationInput] = x =>
-    ToStringBuilder("InitializationInput")
+    ShowBuilder("InitializationInput")
       .add("shardId", x.shardId())
       .add("extendedSequenceNumber", x.extendedSequenceNumber())
       .add(
@@ -69,7 +69,7 @@ object show {
       .build
 
   implicit val processRecordsInputShow: Show[ProcessRecordsInput] = x =>
-    ToStringBuilder("ProcessRecordsInput")
+    ShowBuilder("ProcessRecordsInput")
       .add("cacheEntryTime", x.cacheEntryTime())
       .add("cacheExitTime", x.cacheExitTime())
       .add("childShards", x.childShards())
@@ -79,7 +79,7 @@ object show {
       .build
 
   implicit val kinesisClientRecordShow: Show[KinesisClientRecord] = x =>
-    ToStringBuilder("KinesisClientRecord")
+    ShowBuilder("KinesisClientRecord")
       .add("aggregated", x.aggregated())
       .add("approximateArrivalTimestamp", x.approximateArrivalTimestamp())
       .add("encryptionType", x.encryptionType())

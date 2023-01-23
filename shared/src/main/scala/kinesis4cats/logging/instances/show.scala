@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-package kinesis4cats.logging
+package kinesis4cats
+package logging
 package instances
 
 import scala.concurrent.duration._
@@ -27,7 +28,6 @@ import cats.Show
 import cats.syntax.all._
 import retry.RetryDetails
 
-import kinesis4cats.ToStringBuilder
 import kinesis4cats.syntax.bytebuffer._
 
 object show {
@@ -49,7 +49,7 @@ object show {
 
   implicit val retryDetailsGivingUpShow: Show[RetryDetails.GivingUp] =
     x =>
-      ToStringBuilder("GivingUp")
+      ShowBuilder("GivingUp")
         .add("retriesSoFar", x.retriesSoFar)
         .add("cumulativeDelay", x.cumulativeDelay)
         .add("givingUp", x.givingUp)
@@ -61,7 +61,7 @@ object show {
   implicit val retryDetailsWillDelayAndRetryShow
       : Show[RetryDetails.WillDelayAndRetry] =
     x =>
-      ToStringBuilder("WillDelayAndRetry")
+      ShowBuilder("WillDelayAndRetry")
         .add("nextDelay", x.nextDelay)
         .add("retriesSoFar", x.retriesSoFar)
         .add("cumulativeDelay", x.cumulativeDelay)

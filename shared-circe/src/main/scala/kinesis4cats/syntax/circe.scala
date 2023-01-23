@@ -20,6 +20,7 @@ import io.circe.{Encoder, Json}
 
 import kinesis4cats.syntax.id._
 
+/** General syntax for [[https://circe.github.io/circe/ Circe]] */
 object circe extends CirceSyntax
 
 trait CirceSyntax {
@@ -29,7 +30,22 @@ trait CirceSyntax {
 
 object CirceSyntax {
   final class CirceMapOps(private val map: Map[String, Json]) extends AnyVal {
-    def maybeAdd[A](key: String, value: A)(implicit E: Encoder[A]) =
+
+    /** Helper method for adding and encoding values to a
+      * Map[String,[[io.circe.Json Json]]] while considering null safety.
+      *
+      * @param key
+      *   Key for the entry in the JSON object
+      * @param value
+      *   Value for the entry in the JSON object
+      * @param E
+      *   [[io.circe.Encoder Encoder]] for A
+      * @return
+      *   Map[String, [[io.circe.Json Json]]]
+      */
+    def safeAdd[A](key: String, value: A)(implicit
+        E: Encoder[A]
+    ): Map[String, Json] =
       map.safeTransform(value) { case (m, v) => m + (key -> E(v)) }
   }
 }

@@ -21,6 +21,14 @@ import cats.effect.{Async, Ref, Resource}
 import software.amazon.kinesis.coordinator.WorkerStateChangeListener
 import software.amazon.kinesis.coordinator.WorkerStateChangeListener.WorkerState
 
+/** [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/coordinator/WorkerStateChangeListener.java WorkerStateChangeListener]]
+  * implementation that provides the WorkerState in a [[cats.effect.Ref Ref]].
+  *
+  * @param dispatcher
+  *   [[cats.effect.std.Dispatcher Dispatcher]] used to run effects
+  * @param state
+  *   [[cats.effect.Ref Ref]] of the WorkerState to update
+  */
 class RefWorkerStateChangeListener[F[_]] private[kinesis4cats] (
     dispatcher: Dispatcher[F],
     val state: Ref[F, WorkerState]
@@ -34,6 +42,14 @@ class RefWorkerStateChangeListener[F[_]] private[kinesis4cats] (
 }
 
 object RefWorkerStateChangeListener {
+
+  /** Constuctor for
+    * [[kinesis4cats.kcl.RefWorkerStateChangeListener RefWorkerStateChangeListener]]
+    *
+    * @return
+    *   [[cats.effect.Resource Resource]] of
+    *   [[kinesis4cats.kcl.RefWorkerStateChangeListener RefWorkerStateChangeListener]]
+    */
   def apply[F[_]: Async]: Resource[F, RefWorkerStateChangeListener[F]] = for {
     dispatcher <- Dispatcher.parallel[F]
     state <- Resource.eval(Ref.of(WorkerState.CREATED))

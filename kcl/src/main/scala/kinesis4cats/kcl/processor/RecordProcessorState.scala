@@ -16,10 +16,13 @@
 
 package kinesis4cats.kcl.processor
 
+/** Tracks the [[kinesis4cats.kcl.processor.RecordProcessor RecordProcessor]]
+  * current state.
+  */
 sealed trait RecordProcessorState
 
 object RecordProcessorState {
-  case object NoState extends RecordProcessorState
+  case object Created extends RecordProcessorState
   case object Initialized extends RecordProcessorState
   case object ShardEnded extends RecordProcessorState
   case object Processing extends RecordProcessorState
