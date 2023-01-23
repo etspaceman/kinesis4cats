@@ -112,7 +112,6 @@ object KCLConsumerConfig {
     *   [[cats.effect.Resource Resource]] containing the
     *   [[kinesis4cats.kcl.KCLConsumerConfig KCLConsumerConfig]]
     */
-  @SuppressWarnings(Array("scalafix:DisableSyntax.defaultArgs"))
   def create[F[_]](
       checkpointConfig: CheckpointConfig,
       coordinatorConfig: CoordinatorConfig,
@@ -202,7 +201,6 @@ object KCLConsumerConfig {
     *   [[kinesis4cats.kcl.KCLConsumerConfig KCLConsumerConfig]]
     * @return
     */
-  @SuppressWarnings(Array("scalafix:DisableSyntax.defaultArgs"))
   def configsBuilder[F[_]](
       kinesisClient: KinesisAsyncClient,
       dynamoClient: DynamoDbAsyncClient,

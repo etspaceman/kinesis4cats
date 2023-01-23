@@ -21,9 +21,21 @@ object LibraryDependencies {
   }
 
   object Aws {
-    val sdkVersion = "2.19.17"
-    val utils = "software.amazon.awssdk" % "utils" % sdkVersion
-    val kinesis = "software.amazon.awssdk" % "kinesis" % sdkVersion
+
+    object V1 {
+      val awsVersion = "1.12.389"
+      val kinesis = "com.amazonaws" % "aws-java-sdk-kinesis" % awsVersion
+      val dynamo = "com.amazonaws" % "aws-java-sdk-dynamodb" % awsVersion
+      val cloudwatch = "com.amazonaws" % "aws-java-sdk-cloudwatch" % awsVersion
+    }
+
+    object V2 {
+      val awssdkVersion = "2.19.17"
+      val kinesis = "software.amazon.awssdk" % "kinesis" % awssdkVersion
+      val dynamo = "software.amazon.awssdk" % "dynamodb" % awssdkVersion
+      val cloudwatch = "software.amazon.awssdk" % "cloudwatch" % awssdkVersion
+    }
+
     val kpl = "com.amazonaws" % "amazon-kinesis-producer" % "0.14.13"
     val kcl = "software.amazon.kinesis" % "amazon-kinesis-client" % "2.4.4"
   }
@@ -39,5 +51,10 @@ object LibraryDependencies {
     val circeVersion = "0.14.3"
     val core = "io.circe" %% "circe-core" % circeVersion
     val parser = "io.circe" %% "circe-parser" % circeVersion
+  }
+
+  object Ciris {
+    val cirisVersion = "3.0.0"
+    val core = "is.cir" %% "ciris" % cirisVersion
   }
 }

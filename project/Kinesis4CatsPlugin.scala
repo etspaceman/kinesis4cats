@@ -4,6 +4,7 @@ import sbt.Keys._
 import org.typelevel.sbt._
 import org.typelevel.sbt.gha._
 import LibraryDependencies._
+import org.scalafmt.sbt.ScalafmtPlugin
 
 object Kinesis4CatsPlugin extends AutoPlugin {
   override def trigger = allRequirements
@@ -11,6 +12,9 @@ object Kinesis4CatsPlugin extends AutoPlugin {
 
   def mkCommand(commands: List[String]): String =
     commands.mkString("; ", "; ", "")
+
+  val autoImport: Kinesis4CatsPluginKeys.type = Kinesis4CatsPluginKeys
+  import autoImport._
 
   import TypelevelVersioningPlugin.autoImport._
   import TypelevelGitHubPlugin.autoImport._
@@ -20,12 +24,10 @@ object Kinesis4CatsPlugin extends AutoPlugin {
   import scalafix.sbt.ScalafixPlugin.autoImport._
   import de.heikoseeberger.sbtheader.HeaderPlugin.autoImport._
   import scoverage.ScoverageSbtPlugin.autoImport._
+  import org.scalafmt.sbt.ScalafmtPlugin.autoImport._
+  import DockerComposePlugin.autoImport._
+  import DockerImagePlugin.autoImport._
 
-  val Scala212 = "2.12.17"
-  val Scala213 = "2.13.10"
-  val Scala3 = "3.2.1"
-
-  val MUnitFramework = new TestFramework("munit.Framework")
   private val primaryJavaOSCond = Def.setting {
     val java = githubWorkflowJavaVersions.value.head
     val os = githubWorkflowOSes.value.head
@@ -180,7 +182,9 @@ object Kinesis4CatsPlugin extends AutoPlugin {
       Munit.core % Test,
       Munit.catsEffect % Test,
       Munit.scalacheck % Test,
-      Munit.scalacheckEffect % Test
+      Munit.scalacheckEffect % Test,
+      Circe.core % Test,
+      Circe.parser % Test
     ),
     moduleName := "kinesis4cats-" + name.value,
     headerLicense := Some(
@@ -217,4 +221,31 @@ object Kinesis4CatsPlugin extends AutoPlugin {
       ";clean;coverage;test;coverageReport;coverageOff"
     )
   ).flatten
+}
+
+object Kinesis4CatsPluginKeys {
+  val Scala212 = "2.12.17"
+  val Scala213 = "2.13.10"
+  val Scala3 = "3.2.1"
+
+  val MUnitFramework = new TestFramework("munit.Framework")
+
+  import scalafix.sbt.ScalafixPlugin.autoImport._
+
+  val IT = config("it").extend(Test)
+
+  final implicit class Kinesi4catsProjectOps(private val p: Project)
+      extends AnyVal {
+    def enableIntegrationTests = p
+      .configs(IT)
+      .settings(inConfig(IT) {
+        ScalafmtPlugin.scalafmtConfigSettings ++
+          scalafixConfigSettings(IT) ++
+          BloopSettings.default ++
+          DockerComposePlugin.settings(IT) ++
+          Defaults.testSettings ++
+          Seq(parallelExecution := false)
+      })
+      .settings(DockerComposePlugin.settings(IT))
+  }
 }
