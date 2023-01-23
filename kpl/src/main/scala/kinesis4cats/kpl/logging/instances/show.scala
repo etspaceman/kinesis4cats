@@ -17,19 +17,20 @@
 package kinesis4cats.kpl.logging.instances
 
 import cats.Show
-import com.amazonaws.services.kinesis.producer.{Attempt, UserRecord, UserRecordResult}
+import com.amazonaws.services.kinesis.producer._
 import com.amazonaws.services.schemaregistry.common.Schema
 
 import kinesis4cats.ShowBuilder
 import kinesis4cats.logging.instances.show._
 
 object show {
-  implicit val attemptShow: Show[Attempt] = x => ShowBuilder("Attempt")
-    .add("delay", x.getDelay())
-    .add("duration", x.getDuration())
-    .add("errorCode", x.getErrorCode())
-    .add("errorMessage", x.getErrorMessage())
-    .build
+  implicit val attemptShow: Show[Attempt] = x =>
+    ShowBuilder("Attempt")
+      .add("delay", x.getDelay())
+      .add("duration", x.getDuration())
+      .add("errorCode", x.getErrorCode())
+      .add("errorMessage", x.getErrorMessage())
+      .build
 
   implicit val schemaShow: Show[Schema] = x =>
     ShowBuilder("Schema")
