@@ -136,9 +136,8 @@ object Kinesis4CatsPlugin extends AutoPlugin {
       val cov =
         List(
           WorkflowStep.Use(
-            UseRef.Public("codecov", "codecov-action", "v1"),
-            name = Some("Upload coverage"),
-            env = Map("CODECOV_TOKEN" -> "{{ secret.CODECOV_TOKEN }}")
+            UseRef.Public("codecov", "codecov-action", "v2"),
+            name = Some("Upload coverage")
           )
         )
 
