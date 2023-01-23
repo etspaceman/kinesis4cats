@@ -19,6 +19,7 @@ object Kinesis4CatsPlugin extends AutoPlugin {
   import GenerativePlugin.autoImport._
   import scalafix.sbt.ScalafixPlugin.autoImport._
   import de.heikoseeberger.sbtheader.HeaderPlugin.autoImport._
+  import scoverage.ScoverageSbtPlugin.autoImport._
 
   val Scala212 = "2.12.17"
   val Scala213 = "2.13.10"
@@ -52,6 +53,7 @@ object Kinesis4CatsPlugin extends AutoPlugin {
       // your GitHub handle and name
       tlGitHubDev("etspaceman", "Eric Meisel")
     ),
+    coverageScalacPluginVersion := "2.0.7",
     githubWorkflowBuild := {
       val style = (tlCiHeaderCheck.value, tlCiScalafmtCheck.value) match {
         case (true, true) => // headers + formatting
