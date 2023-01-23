@@ -1,0 +1,9 @@
+.bloop/
+**/.metals/
+.vscode/
+**/target/
+.bsp/
+.idea/
+.DS_STORE
+docker/image/lib/
+**/metals.sbt
