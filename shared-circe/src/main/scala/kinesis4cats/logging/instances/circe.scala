@@ -42,7 +42,7 @@ object circe {
 
   implicit val byteBufferEncoder: Encoder[ByteBuffer] =
     Encoder[String].contramap(x => x.asBase64String)
-    
+
   implicit val finiteDurationEncoder: Encoder[FiniteDuration] =
     Encoder.forProduct2("length", "unit")(x => (x.length, x.unit.name))
 
