@@ -45,38 +45,73 @@ object Kinesis4CatsPlugin extends AutoPlugin {
       tlGitHubDev("etspaceman", "Eric Meisel")
     ),
     githubWorkflowBuild := {
-      val pretty = List(
-        WorkflowStep.Sbt(
+      val style = (tlCiHeaderCheck.value, tlCiScalafmtCheck.value) match {
+        case (true, true) => // headers + formatting
           List(
-            "headerCheckAll",
-            "prettyCheck"
-          ),
-          name = Some("Check headers and formatting"),
-          cond = Some(primaryJavaOSCond.value)
-        )
-      )
+            WorkflowStep.Sbt(
+              List(
+                "headerCheckAll",
+                "fmtCheck"
+              ),
+              name = Some("Check headers and formatting"),
+              cond = Some(primaryJavaOSCond.value)
+            )
+          )
+        case (true, false) => // headers
+          List(
+            WorkflowStep.Sbt(
+              List("headerCheckAll"),
+              name = Some("Check headers"),
+              cond = Some(primaryJavaOSCond.value)
+            )
+          )
+        case (false, true) => // formatting
+          List(
+            WorkflowStep.Sbt(
+              List("fmtCheck"),
+              name = Some("Check formatting"),
+              cond = Some(primaryJavaOSCond.value)
+            )
+          )
+        case (false, false) => Nil // nada
+      }
 
       val test = List(
         WorkflowStep.Sbt(List("cov"), name = Some("Test"))
       )
 
-      val mima =
-        List(
-          WorkflowStep.Sbt(
-            List("mimaReportBinaryIssues"),
-            name = Some("Check binary compatibility"),
-            cond = Some(primaryJavaOSCond.value)
+      val scalafix =
+        if (tlCiScalafixCheck.value)
+          List(
+            WorkflowStep.Sbt(
+              List("fixCheck"),
+              name = Some("Check scalafix lints"),
+              cond = Some(primaryJavaOSCond.value)
+            )
           )
-        )
+        else Nil
+
+      val mima =
+        if (tlCiMimaBinaryIssueCheck.value)
+          List(
+            WorkflowStep.Sbt(
+              List("mimaReportBinaryIssues"),
+              name = Some("Check binary compatibility"),
+              cond = Some(primaryJavaOSCond.value)
+            )
+          )
+        else Nil
 
       val doc =
-        List(
-          WorkflowStep.Sbt(
-            List("doc"),
-            name = Some("Generate API documentation"),
-            cond = Some(primaryJavaOSCond.value)
+        if (tlCiDocCheck.value)
+          List(
+            WorkflowStep.Sbt(
+              List("doc"),
+              name = Some("Generate API documentation"),
+              cond = Some(primaryJavaOSCond.value)
+            )
           )
-        )
+        else Nil
 
       val cov =
         List(
@@ -86,7 +121,7 @@ object Kinesis4CatsPlugin extends AutoPlugin {
           )
         )
 
-      pretty ++ test ++ mima ++ doc ++ cov
+      style ++ test ++ scalafix ++ mima ++ doc ++ cov
     },
     githubWorkflowJavaVersions := Seq(JavaSpec.temurin("17"))
   ) ++ tlReplaceCommandAlias(
