@@ -31,6 +31,14 @@ object Kinesis4CatsPlugin extends AutoPlugin {
     s"matrix.java == '${java.render}' && matrix.os == '${os}'"
   }
 
+  private val noScala3Cond = Def.setting {
+    primaryJavaOSCond.value + s" && matrix.scala != '$Scala3'"
+  }
+
+  private val onlyScala3Cond = Def.setting {
+    primaryJavaOSCond.value + s" && matrix.scala == '$Scala3'"
+  }
+
   override def buildSettings = Seq(
     tlBaseVersion := "0.0",
     organization := "etspaceman",
@@ -76,8 +84,20 @@ object Kinesis4CatsPlugin extends AutoPlugin {
         case (false, false) => Nil // nada
       }
 
+      val testWithCoverage = List(
+        WorkflowStep.Sbt(
+          List("cov"),
+          name = Some("Test with coverage"),
+          cond = Some(noScala3Cond.value)
+        )
+      )
+
       val test = List(
-        WorkflowStep.Sbt(List("cov"), name = Some("Test"))
+        WorkflowStep.Sbt(
+          List("test"),
+          name = Some("Test"),
+          cond = Some(onlyScala3Cond.value)
+        )
       )
 
       val scalafix =
@@ -86,7 +106,7 @@ object Kinesis4CatsPlugin extends AutoPlugin {
             WorkflowStep.Sbt(
               List("fixCheck"),
               name = Some("Check scalafix lints"),
-              cond = Some(primaryJavaOSCond.value)
+              cond = Some(noScala3Cond.value)
             )
           )
         else Nil
@@ -121,9 +141,10 @@ object Kinesis4CatsPlugin extends AutoPlugin {
           )
         )
 
-      style ++ test ++ scalafix ++ mima ++ doc ++ cov
+      style ++ testWithCoverage ++ test ++ scalafix ++ mima ++ doc ++ cov
     },
-    githubWorkflowJavaVersions := Seq(JavaSpec.temurin("17"))
+    githubWorkflowJavaVersions := Seq(JavaSpec.temurin("17")),
+    tlCiScalafixCheck := true
   ) ++ tlReplaceCommandAlias(
     "prePR",
     mkCommand(

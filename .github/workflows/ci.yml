@@ -73,8 +73,17 @@ jobs:
         if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-latest'
         run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' headerCheckAll fmtCheck
 
-      - name: Test
+      - name: Test with coverage
+        if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-latest' && matrix.scala != '3.2.1'
         run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' cov
+
+      - name: Test
+        if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-latest' && matrix.scala == '3.2.1'
+        run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' test
+
+      - name: Check scalafix lints
+        if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-latest' && matrix.scala != '3.2.1'
+        run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' fixCheck
 
       - name: Check binary compatibility
         if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-latest'
