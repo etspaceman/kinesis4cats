@@ -31,14 +31,7 @@ import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.cloudwatch.CloudWatchAsyncClient
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient
 import software.amazon.awssdk.services.kinesis.KinesisAsyncClient
-import software.amazon.awssdk.services.kinesis.model.{
-  CreateStreamRequest,
-  DeleteStreamRequest,
-  DescribeStreamSummaryRequest,
-  DescribeStreamSummaryResponse,
-  ResourceNotFoundException,
-  StreamStatus
-}
+import software.amazon.awssdk.services.kinesis.model._
 import software.amazon.awssdk.utils.AttributeMap
 
 object AwsClients {

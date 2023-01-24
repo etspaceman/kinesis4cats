@@ -16,10 +16,7 @@
 
 package kinesis4cats.localstack.aws.v2
 
-import software.amazon.awssdk.auth.credentials.{
-  AwsCredentials,
-  AwsCredentialsProvider
-}
+import software.amazon.awssdk.auth.credentials._
 
 final case class AwsCreds(accessKey: String, secretKey: String)
     extends AwsCredentials

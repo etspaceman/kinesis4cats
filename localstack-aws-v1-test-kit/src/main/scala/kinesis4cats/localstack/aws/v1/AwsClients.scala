@@ -23,23 +23,10 @@ import cats.effect.syntax.all._
 import cats.effect.{Async, Resource}
 import cats.syntax.all._
 import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration
-import com.amazonaws.services.cloudwatch.{
-  AmazonCloudWatchAsync,
-  AmazonCloudWatchAsyncClientBuilder
-}
-import com.amazonaws.services.dynamodbv2.{
-  AmazonDynamoDBAsync,
-  AmazonDynamoDBAsyncClientBuilder
-}
-import com.amazonaws.services.kinesis.model.{
-  DescribeStreamSummaryRequest,
-  DescribeStreamSummaryResult,
-  ResourceNotFoundException
-}
-import com.amazonaws.services.kinesis.{
-  AmazonKinesisAsync,
-  AmazonKinesisAsyncClientBuilder
-}
+import com.amazonaws.services.cloudwatch._
+import com.amazonaws.services.dynamodbv2._
+import com.amazonaws.services.kinesis.model._
+import com.amazonaws.services.kinesis._
 import retry.RetryPolicies._
 import retry._
 
@@ -53,6 +40,7 @@ object AwsClients {
         .withEndpointConfiguration(
           new EndpointConfiguration(config.endpoint, config.region.name)
         )
+        .withCredentials(AwsCreds.LocalCreds)
         .build()
     )
 
@@ -165,6 +153,7 @@ object AwsClients {
         .withEndpointConfiguration(
           new EndpointConfiguration(config.endpoint, config.region.name)
         )
+        .withCredentials(AwsCreds.LocalCreds)
         .build()
     )
 
@@ -196,6 +185,7 @@ object AwsClients {
         .withEndpointConfiguration(
           new EndpointConfiguration(config.endpoint, config.region.name)
         )
+        .withCredentials(AwsCreds.LocalCreds)
         .build()
     )
 
