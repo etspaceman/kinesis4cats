@@ -5,17 +5,13 @@ import scala.concurrent.duration._
 import java.nio.ByteBuffer
 
 import cats.effect.{IO, Resource, SyncIO}
-import com.amazonaws.services.kinesis.producer.{
-  KinesisProducerConfiguration,
-  UserRecord
-}
+import com.amazonaws.services.kinesis.producer._
 import io.circe.syntax._
 
-import kinesis4cats.kpl.logging.instances.show._
 import kinesis4cats.localstack.LocalstackConfig
 import kinesis4cats.localstack.aws.v1.{AwsClients, AwsCreds}
 
-class KPLProducerSpec
+abstract class KPLProducerSpec(implicit LE: KPLProducerLogEncoders)
     extends munit.CatsEffectSuite
     with munit.CatsEffectFunFixtures {
   def fixture(
@@ -41,7 +37,7 @@ object KPLProducerSpec {
   def resource(
       streamName: String,
       shardCount: Int
-  ): Resource[IO, KPLProducer[IO]] = for {
+  )(implicit LE: KPLProducerLogEncoders): Resource[IO, KPLProducer[IO]] = for {
     config <- LocalstackConfig.resource[IO]()
     _ <- AwsClients
       .kinesisStreamResource[IO](config, streamName, shardCount, 5, 500.millis)
