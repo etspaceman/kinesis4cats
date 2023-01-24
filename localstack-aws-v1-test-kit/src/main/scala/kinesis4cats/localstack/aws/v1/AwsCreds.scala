@@ -18,12 +18,24 @@ package kinesis4cats.localstack.aws.v1
 
 import com.amazonaws.auth.{AWSCredentials, AWSCredentialsProvider}
 
+/** [[https://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/com/amazonaws/auth/AWSCredentialsProvider.html AWSCredentialsProvider]]
+  * implementation for mock purposes.
+  *
+  * @param creds
+  *   [[kinesis4cats.localstack.aws.v1.AwsCreds AwsCreds]] in use
+  */
 final case class AwsCredsProvider(creds: AwsCreds)
     extends AWSCredentialsProvider {
   override def getCredentials(): AWSCredentials = creds
   override def refresh(): Unit = ()
 }
 
+/** [[https://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/com/amazonaws/auth/AWSCredentials.html AWSCredentials]]
+  * implementation for mock purposes.
+  *
+  * @param accessKey
+  * @param secretKey
+  */
 final case class AwsCreds(accessKey: String, secretKey: String)
     extends AWSCredentials {
   override def getAWSAccessKeyId(): String = accessKey

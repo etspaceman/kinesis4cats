@@ -34,6 +34,9 @@ import software.amazon.awssdk.services.kinesis.KinesisAsyncClient
 import software.amazon.awssdk.services.kinesis.model._
 import software.amazon.awssdk.utils.AttributeMap
 
+/** Helpers for constructing and leveraging AWS Java Client interfaces with
+  * Localstack.
+  */
 object AwsClients {
   private val trustAllCertificates =
     AttributeMap
@@ -44,11 +47,34 @@ object AwsClients {
       )
       .build()
 
+  /** [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/http/nio/netty/NettyNioAsyncHttpClient.html NettyNioAsyncHttpClient]]
+    * implementation that is configured to trust all certificates. Useful for
+    * Localstack interactions.
+    *
+    * @see
+    *   [[https://stackoverflow.com/questions/54749971/is-it-possible-to-disable-ssl-certificate-checking-in-the-amazon-kinesis-consume StackOverflow Discussion]]
+    *
+    * @return
+    *   [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/http/async/SdkAsyncHttpClient.html SdkAsyncHttpClient]]
+    *   configured to trust all certificates.
+    */
   def nettyClient: SdkAsyncHttpClient =
     NettyNioAsyncHttpClient
       .builder()
       .buildWithDefaults(trustAllCertificates)
 
+  /** Builds a
+    * [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/kinesis/KinesisAsyncClient.html KinesisAsyncClient]]
+    * that is compliant for Localstack usage.
+    *
+    * @param config
+    *   [[kinesis4cats.localstack.LocalstackConfig LocalstackConfig]]
+    * @param F
+    *   F with an [[cats.effect.Async Async]] instance
+    * @return
+    *   F of
+    *   [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/kinesis/KinesisAsyncClient.html KinesisAsyncClient]]
+    */
   def kinesisClient[F[_]](
       config: LocalstackConfig
   )(implicit F: Async[F]): F[KinesisAsyncClient] =
@@ -62,6 +88,18 @@ object AwsClients {
         .build()
     )
 
+  /** Builds a
+    * [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/kinesis/KinesisAsyncClient.html KinesisAsyncClient]]
+    * that is compliant for Localstack usage.
+    *
+    * @param prefix
+    *   Optional prefix for parsing configuration. Default to None
+    * @param F
+    *   F with an [[cats.effect.Async Async]] instance
+    * @return
+    *   F of
+    *   [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/kinesis/KinesisAsyncClient.html KinesisAsyncClient]]
+    */
   def kinesisClient[F[_]](
       prefix: Option[String] = None
   )(implicit F: Async[F]): F[KinesisAsyncClient] = for {
@@ -69,11 +107,37 @@ object AwsClients {
     client <- kinesisClient(config)
   } yield client
 
+  /** Builds a
+    * [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/kinesis/KinesisAsyncClient.html KinesisAsyncClient]]
+    * that is compliant for Localstack usage. Lifecycle is managed as a
+    * [[cats.effect.Resource Resource]].
+    *
+    * @param config
+    *   [[kinesis4cats.localstack.LocalstackConfig LocalstackConfig]]
+    * @param F
+    *   F with an [[cats.effect.Async Async]] instance
+    * @return
+    *   [[cats.effect.Resource Resource]] of
+    *   [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/kinesis/KinesisAsyncClient.html KinesisAsyncClient]]
+    */
   def kinesisClientResource[F[_]](config: LocalstackConfig)(implicit
       F: Async[F]
   ): Resource[F, KinesisAsyncClient] =
     kinesisClient[F](config).toResource
 
+  /** Builds a
+    * [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/kinesis/KinesisAsyncClient.html KinesisAsyncClient]]
+    * that is compliant for Localstack usage. Lifecycle is managed as a
+    * [[cats.effect.Resource Resource]].
+    *
+    * @param prefix
+    *   Optional prefix for parsing configuration. Default to None
+    * @param F
+    *   F with an [[cats.effect.Async Async]] instance
+    * @return
+    *   [[cats.effect.Resource Resource]] of
+    *   [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/kinesis/KinesisAsyncClient.html KinesisAsyncClient]]
+    */
   def kinesisClientResource[F[_]](
       prefix: Option[String] = None
   )(implicit
@@ -81,6 +145,33 @@ object AwsClients {
   ): Resource[F, KinesisAsyncClient] =
     kinesisClient[F](prefix).toResource
 
+  /** A resources that does the following:
+    *
+    *   - Builds a
+    *     [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/kinesis/KinesisAsyncClient.html KinesisAsyncClient]]
+    *     that is compliant for Localstack usage.
+    *   - Creates a stream with the desired name and shard count, and waits
+    *     until the stream is active.
+    *   - Destroys the stream when the [[cats.effect.Resource Resource]] is
+    *     closed
+    *
+    * @param config
+    *   [[kinesis4cats.localstack.LocalstackConfig LocalstackConfig]]
+    * @param streamName
+    *   Stream name
+    * @param shardCount
+    *   Shard count for stream
+    * @param describeRetries
+    *   How many times to retry DescribeStreamSummary when checking the stream
+    *   status
+    * @param describeRetryDuration
+    *   How long to delay between retries of the DescribeStreamSummary call
+    * @param F
+    *   F with an [[cats.effect.Async Async]] instance
+    * @return
+    *   [[cats.effect.Resource Resource]] of
+    *   [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/kinesis/KinesisAsyncClient.html KinesisAsyncClient]]
+    */
   def kinesisStreamResource[F[_]](
       config: LocalstackConfig,
       streamName: String,
@@ -170,6 +261,34 @@ object AwsClients {
     )
   } yield result
 
+  /** A resources that does the following:
+    *
+    *   - Builds a
+    *     [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/kinesis/KinesisAsyncClient.html KinesisAsyncClient]]
+    *     that is compliant for Localstack usage.
+    *   - Creates a stream with the desired name and shard count, and waits
+    *     until the stream is active.
+    *   - Destroys the stream when the [[cats.effect.Resource Resource]] is
+    *     closed
+    *
+    * @param streamName
+    *   Stream name
+    * @param shardCount
+    *   Shard count for stream
+    * @param prefix
+    *   Optional prefix for parsing configuration. Default to None
+    * @param describeRetries
+    *   How many times to retry DescribeStreamSummary when checking the stream
+    *   status. Default to 5
+    * @param describeRetryDuration
+    *   How long to delay between retries of the DescribeStreamSummary call.
+    *   Default to 500 ms
+    * @param F
+    *   F with an [[cats.effect.Async Async]] instance
+    * @return
+    *   [[cats.effect.Resource Resource]] of
+    *   [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/kinesis/KinesisAsyncClient.html KinesisAsyncClient]]
+    */
   def kinesisStreamResource[F[_]](
       streamName: String,
       shardCount: Int,
@@ -189,6 +308,18 @@ object AwsClients {
     )
   } yield result
 
+  /** Builds a
+    * [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/dynamodb/DynamoDbAsyncClient.html DynamoDbAsyncClient]]
+    * that is compliant for Localstack usage.
+    *
+    * @param config
+    *   [[kinesis4cats.localstack.LocalstackConfig LocalstackConfig]]
+    * @param F
+    *   F with an [[cats.effect.Async Async]] instance
+    * @return
+    *   F of
+    *   [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/dynamodb/DynamoDbAsyncClient.html DynamoDbAsyncClient]]
+    */
   def dynamoClient[F[_]](
       config: LocalstackConfig
   )(implicit F: Async[F]): F[DynamoDbAsyncClient] =
@@ -202,6 +333,18 @@ object AwsClients {
         .build()
     )
 
+  /** Builds a
+    * [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/dynamodb/DynamoDbAsyncClient.html DynamoDbAsyncClient]]
+    * that is compliant for Localstack usage.
+    *
+    * @param prefix
+    *   Optional prefix for parsing configuration. Default to None
+    * @param F
+    *   F with an [[cats.effect.Async Async]] instance
+    * @return
+    *   F of
+    *   [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/dynamodb/DynamoDbAsyncClient.html DynamoDbAsyncClient]]
+    */
   def dynamoClient[F[_]](
       prefix: Option[String] = None
   )(implicit F: Async[F]): F[DynamoDbAsyncClient] = for {
@@ -209,11 +352,37 @@ object AwsClients {
     client <- dynamoClient(config)
   } yield client
 
+  /** Builds a
+    * [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/dynamodb/DynamoDbAsyncClient.html DynamoDbAsyncClient]]
+    * that is compliant for Localstack usage. Lifecycle is managed as a
+    * [[cats.effect.Resource Resource]].
+    *
+    * @param config
+    *   [[kinesis4cats.localstack.LocalstackConfig LocalstackConfig]]
+    * @param F
+    *   F with an [[cats.effect.Async Async]] instance
+    * @return
+    *   [[cats.effect.Resource Resource]] of
+    *   [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/dynamodb/DynamoDbAsyncClient.html DynamoDbAsyncClient]]
+    */
   def dynamoClientResource[F[_]](config: LocalstackConfig)(implicit
       F: Async[F]
   ): Resource[F, DynamoDbAsyncClient] =
     dynamoClient[F](config).toResource
 
+  /** Builds a
+    * [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/dynamodb/DynamoDbAsyncClient.html DynamoDbAsyncClient]]
+    * that is compliant for Localstack usage. Lifecycle is managed as a
+    * [[cats.effect.Resource Resource]].
+    *
+    * @param prefix
+    *   Optional prefix for parsing configuration. Default to None
+    * @param F
+    *   F with an [[cats.effect.Async Async]] instance
+    * @return
+    *   [[cats.effect.Resource Resource]] of
+    *   [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/dynamodb/DynamoDbAsyncClient.html DynamoDbAsyncClient]]
+    */
   def dynamoClientResource[F[_]](
       prefix: Option[String] = None
   )(implicit
@@ -221,6 +390,18 @@ object AwsClients {
   ): Resource[F, DynamoDbAsyncClient] =
     dynamoClient[F](prefix).toResource
 
+  /** Builds a
+    * [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/cloudwatch/CloudWatchAsyncClient.html CloudWatchAsyncClient]]
+    * that is compliant for Localstack usage.
+    *
+    * @param config
+    *   [[kinesis4cats.localstack.LocalstackConfig LocalstackConfig]]
+    * @param F
+    *   F with an [[cats.effect.Async Async]] instance
+    * @return
+    *   F of
+    *   [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/cloudwatch/CloudWatchAsyncClient.html CloudWatchAsyncClient]]
+    */
   def cloudwatchClient[F[_]](
       config: LocalstackConfig
   )(implicit F: Async[F]): F[CloudWatchAsyncClient] =
@@ -234,6 +415,18 @@ object AwsClients {
         .build()
     )
 
+  /** Builds a
+    * [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/cloudwatch/CloudWatchAsyncClient.html CloudWatchAsyncClient]]
+    * that is compliant for Localstack usage.
+    *
+    * @param prefix
+    *   Optional prefix for parsing configuration. Default to None
+    * @param F
+    *   F with an [[cats.effect.Async Async]] instance
+    * @return
+    *   F of
+    *   [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/cloudwatch/CloudWatchAsyncClient.html CloudWatchAsyncClient]]
+    */
   def cloudwatchClient[F[_]](
       prefix: Option[String] = None
   )(implicit F: Async[F]): F[CloudWatchAsyncClient] = for {
@@ -241,11 +434,37 @@ object AwsClients {
     client <- cloudwatchClient(config)
   } yield client
 
+  /** Builds a
+    * [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/cloudwatch/CloudWatchAsyncClient.html CloudWatchAsyncClient]]
+    * that is compliant for Localstack usage. Lifecycle is managed as a
+    * [[cats.effect.Resource Resource]].
+    *
+    * @param config
+    *   [[kinesis4cats.localstack.LocalstackConfig LocalstackConfig]]
+    * @param F
+    *   F with an [[cats.effect.Async Async]] instance
+    * @return
+    *   [[cats.effect.Resource Resource]] of
+    *   [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/cloudwatch/CloudWatchAsyncClient.html CloudWatchAsyncClient]]
+    */
   def cloudwatchClientResource[F[_]](config: LocalstackConfig)(implicit
       F: Async[F]
   ): Resource[F, CloudWatchAsyncClient] =
     cloudwatchClient[F](config).toResource
 
+  /** Builds a
+    * [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/cloudwatch/CloudWatchAsyncClient.html CloudWatchAsyncClient]]
+    * that is compliant for Localstack usage. Lifecycle is managed as a
+    * [[cats.effect.Resource Resource]].
+    *
+    * @param prefix
+    *   Optional prefix for parsing configuration. Default to None
+    * @param F
+    *   F with an [[cats.effect.Async Async]] instance
+    * @return
+    *   [[cats.effect.Resource Resource]] of
+    *   [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/cloudwatch/CloudWatchAsyncClient.html CloudWatchAsyncClient]]
+    */
   def cloudwatchClientResource[F[_]](
       prefix: Option[String] = None
   )(implicit

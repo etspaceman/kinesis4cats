@@ -19,6 +19,13 @@ package kinesis4cats.localstack
 import cats.syntax.all._
 import ciris.{ConfigDecoder, ConfigError}
 
+/** AWS Region enum. Can be used for both the v1 and v2 test kits
+  *
+  * @param name
+  *   Name of region
+  * @param awsArnPiece
+  *   Prefix for ARN construction
+  */
 sealed abstract class AwsRegion(
     val name: String,
     val awsArnPiece: String

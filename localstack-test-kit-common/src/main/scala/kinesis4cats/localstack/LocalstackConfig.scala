@@ -23,13 +23,25 @@ import ciris._
 
 import kinesis4cats.ciris.CirisReader
 
+/** Configuration loading for
+  * [[https://docs.localstack.cloud/references/configuration/ Localstack]]
+  *
+  * @param servicePort
+  *   Port for Localstack. Default is 4566
+  * @param protocol
+  *   Protocol for Localstack. Default is https
+  * @param host
+  *   Host for Localstack. Default is localhost
+  * @param region
+  *   Default region for Localstack. Default is us-east-1
+  */
 final case class LocalstackConfig(
     servicePort: Int,
-    protocol: String,
+    protocol: Protocol,
     host: String,
     region: AwsRegion
 ) {
-  val endpoint: String = s"$protocol://$host:$servicePort"
+  val endpoint: String = s"${protocol.name}://$host:$servicePort"
   val endpointUri: URI = URI.create(endpoint)
 }
 
@@ -42,9 +54,9 @@ object LocalstackConfig {
       4566,
       prefix
     )
-    protocol <- CirisReader.readDefaulted(
+    protocol <- CirisReader.readDefaulted[Protocol](
       List("localstack", "protocol"),
-      "https"
+      Protocol.Https
     )
     region <- CirisReader.readDefaulted[AwsRegion](
       List("aws", "region"),
