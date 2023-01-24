@@ -79,7 +79,12 @@ lazy val `kcl-logging-circe` = project
     description := "JSON structured logging instances for the KCL, via Circe"
   )
   .enableIntegrationTests
-  .dependsOn(kcl, `shared-circe`, `localstack-aws-v2-test-kit` % IT)
+  .dependsOn(
+    kcl,
+    `shared-circe`,
+    `localstack-aws-v2-test-kit` % IT,
+    kcl % "it->it"
+  )
 
 lazy val kpl = project
   .settings(
@@ -98,7 +103,12 @@ lazy val `kpl-logging-circe` = project
     description := "JSON structured logging instances for the KPL, via Circe"
   )
   .enableIntegrationTests
-  .dependsOn(kpl, `shared-circe`, `localstack-aws-v1-test-kit` % IT)
+  .dependsOn(
+    kpl,
+    `shared-circe`,
+    `localstack-aws-v1-test-kit` % IT,
+    kpl % "it->it"
+  )
 
 lazy val root =
   tlCrossRootProject

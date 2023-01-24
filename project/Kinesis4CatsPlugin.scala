@@ -242,6 +242,7 @@ object Kinesis4CatsPluginKeys {
   val MUnitFramework = new TestFramework("munit.Framework")
 
   import scalafix.sbt.ScalafixPlugin.autoImport._
+  import de.heikoseeberger.sbtheader.HeaderPlugin.autoImport._
 
   val IT = config("it").extend(Test)
 
@@ -254,6 +255,7 @@ object Kinesis4CatsPluginKeys {
           scalafixConfigSettings(IT) ++
           BloopSettings.default ++
           Defaults.testSettings ++
+          headerSettings(IT) ++
           Seq(
             parallelExecution := false,
             javaOptions += "-Dcom.amazonaws.sdk.disableCertChecking=true"
