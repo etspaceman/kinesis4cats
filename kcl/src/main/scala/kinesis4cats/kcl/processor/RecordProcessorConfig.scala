@@ -28,13 +28,17 @@ import scala.concurrent.duration._
   *   Number of retries for running a checkpoint operation.
   * @param checkpointRetryInterval
   *   Amount of time to wait between retries
+  * @param autoCommit
+  *   Whether the processor should automatically commit records after it is done
+  *   processing
   */
 final case class RecordProcessorConfig(
     shardEndTimeout: Option[FiniteDuration],
     checkpointRetries: Int,
-    checkpointRetryInterval: FiniteDuration
+    checkpointRetryInterval: FiniteDuration,
+    autoCommit: Boolean
 )
 
 object RecordProcessorConfig {
-  val default = RecordProcessorConfig(None, 5, 0.seconds)
+  val default = RecordProcessorConfig(None, 5, 0.seconds, true)
 }

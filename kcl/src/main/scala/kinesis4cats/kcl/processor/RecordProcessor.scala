@@ -228,11 +228,14 @@ class RecordProcessor[F[_]] private[kinesis4cats] (
             case _ => F.unit
           }
         )
-        _ <- retryingOnAllErrors(
-          limitRetries(config.checkpointRetries)
-            .join(constantDelay(config.checkpointRetryInterval)),
-          (error, details) => logCommitError(error, details, ctx)
-        )(F.interruptibleMany(shardEndedInput.checkpointer().checkpoint()))
+        _ <-
+          if (config.autoCommit)
+            retryingOnAllErrors(
+              limitRetries(config.checkpointRetries)
+                .join(constantDelay(config.checkpointRetryInterval)),
+              (error, details) => logCommitError(error, details, ctx)
+            )(F.interruptibleMany(shardEndedInput.checkpointer().checkpoint()))
+          else F.unit
       } yield ()
     )
   }
