@@ -75,11 +75,11 @@ jobs:
 
       - name: Test with coverage
         if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-latest' && matrix.scala != '3.2.1'
-        run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' cov
+        run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' 'IT / dockerComposeUp' cov 'IT / dockerComposeDown'
 
       - name: Test
         if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-latest' && matrix.scala == '3.2.1'
-        run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' test
+        run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' 'IT / dockerComposeUp' test 'IT / test' 'IT / dockerComposeDown'
 
       - name: Check scalafix lints
         if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-latest' && matrix.scala != '3.2.1'
@@ -98,11 +98,11 @@ jobs:
 
       - name: Make target directories
         if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main')
-        run: mkdir -p target shared/target .js/target kpl/target kcl-logging-circe/target shared-circe/target kpl-logging-circe/target .jvm/target kcl/target .native/target compat/target project/target
+        run: mkdir -p target shared/target .js/target kpl/target kcl-logging-circe/target shared-circe/target localstack-aws-v2-test-kit/target kpl-logging-circe/target localstack-test-kit-common/target .jvm/target kcl/target .native/target localstack-aws-v1-test-kit/target shared-ciris/target compat/target project/target
 
       - name: Compress target directories
         if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main')
-        run: tar cf targets.tar target shared/target .js/target kpl/target kcl-logging-circe/target shared-circe/target kpl-logging-circe/target .jvm/target kcl/target .native/target compat/target project/target
+        run: tar cf targets.tar target shared/target .js/target kpl/target kcl-logging-circe/target shared-circe/target localstack-aws-v2-test-kit/target kpl-logging-circe/target localstack-test-kit-common/target .jvm/target kcl/target .native/target localstack-aws-v1-test-kit/target shared-ciris/target compat/target project/target
 
       - name: Upload target directories
         if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main')

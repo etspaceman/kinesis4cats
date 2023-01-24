@@ -435,8 +435,7 @@ object KPLProducer {
     *   [[kinesis4cats.kpl.KPLProducer KPLProducer]]
     */
   def apply[F[_]](
-      config: KinesisProducerConfiguration =
-        new KinesisProducerConfiguration() // scalafix:ok
+      config: KinesisProducerConfiguration = new KinesisProducerConfiguration()
   )(implicit
       F: Async[F],
       LE: KPLProducerLogEncoders
