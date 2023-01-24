@@ -18,16 +18,24 @@ package kinesis4cats.localstack.aws.v1
 
 import com.amazonaws.auth.{AWSCredentials, AWSCredentialsProvider}
 
-final case class AwsCreds(accessKey: String, secretKey: String)
-    extends AWSCredentials
-    with AWSCredentialsProvider {
-  override def getAWSAccessKeyId: String = accessKey
-  override def getAWSSecretKey: String = secretKey
-  override def getCredentials: AWSCredentials = this
+final case class AwsCredsProvider(creds: AwsCreds)
+    extends AWSCredentialsProvider {
+  override def getCredentials(): AWSCredentials = creds
   override def refresh(): Unit = ()
 }
 
+final case class AwsCreds(accessKey: String, secretKey: String)
+    extends AWSCredentials {
+  override def getAWSAccessKeyId(): String = accessKey
+
+  override def getAWSSecretKey(): String = secretKey
+
+}
+
 object AwsCreds {
+  val mockAccessKey = "mock-access-key"
+  val mockSecretKey = "mock-secret-key"
   val LocalCreds: AwsCreds =
-    AwsCreds("mock-kinesis-access-key", "mock-kinesis-secret-key")
+    AwsCreds(mockAccessKey, mockSecretKey)
+  val LocalCredsProvider = AwsCredsProvider(LocalCreds)
 }

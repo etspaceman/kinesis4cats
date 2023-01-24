@@ -40,7 +40,7 @@ object AwsClients {
         .withEndpointConfiguration(
           new EndpointConfiguration(config.endpoint, config.region.name)
         )
-        .withCredentials(AwsCreds.LocalCreds)
+        .withCredentials(AwsCreds.LocalCredsProvider)
         .build()
     )
 
@@ -153,7 +153,7 @@ object AwsClients {
         .withEndpointConfiguration(
           new EndpointConfiguration(config.endpoint, config.region.name)
         )
-        .withCredentials(AwsCreds.LocalCreds)
+        .withCredentials(AwsCreds.LocalCredsProvider)
         .build()
     )
 
@@ -185,7 +185,7 @@ object AwsClients {
         .withEndpointConfiguration(
           new EndpointConfiguration(config.endpoint, config.region.name)
         )
-        .withCredentials(AwsCreds.LocalCreds)
+        .withCredentials(AwsCreds.LocalCredsProvider)
         .build()
     )
 

@@ -50,7 +50,7 @@ object KPLProducerSpec {
         .setVerifyCertificate(false)
         .setKinesisEndpoint(config.host)
         .setCloudwatchEndpoint(config.host)
-        .setCredentialsProvider(AwsCreds.LocalCreds)
+        .setCredentialsProvider(AwsCreds.LocalCredsProvider)
         .setKinesisPort(config.servicePort.toLong)
         .setCloudwatchPort(config.servicePort.toLong)
         .setMetricsLevel("none")
