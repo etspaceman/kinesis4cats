@@ -5,6 +5,7 @@ object LibraryDependencies {
     "com.github.liancheng" %% "organize-imports" % "0.6.0"
   val Logback = "ch.qos.logback" % "logback-classic" % "1.4.5"
   val CatsRetry = "com.github.cb372" %% "cats-retry" % "3.1.0"
+  val JavaXMLBind = "javax.xml.bind" % "jaxb-api" % "2.3.1"
 
   object Log4Cats {
     val log4CatsVersion = "2.5.0"

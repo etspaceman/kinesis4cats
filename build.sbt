@@ -1,13 +1,16 @@
 import LibraryDependencies._
 
-lazy val compat = project.settings(
-  description := "Code to maintain compatability across major scala versions"
-)
+lazy val compat = project
+  .settings(
+    description := "Code to maintain compatability across major scala versions"
+  )
+  .enableIntegrationTests
 
 lazy val shared = project
   .settings(
     description := "Common shared utilities"
   )
+  .enableIntegrationTests
   .dependsOn(compat)
 
 lazy val `shared-circe` = project
@@ -18,6 +21,7 @@ lazy val `shared-circe` = project
       Circe.parser
     )
   )
+  .enableIntegrationTests
   .dependsOn(shared)
 
 lazy val `shared-ciris` = project
@@ -25,12 +29,14 @@ lazy val `shared-ciris` = project
     description := "Common shared utilities for Ciris",
     libraryDependencies ++= Seq(Ciris.core)
   )
+  .enableIntegrationTests
   .dependsOn(shared)
 
 lazy val `localstack-test-kit-common` = project
   .settings(
     description := "Common utilities for the localstack test-kits"
   )
+  .enableIntegrationTests
   .dependsOn(shared, `shared-ciris`)
 
 lazy val `localstack-aws-v2-test-kit` = project
@@ -42,6 +48,7 @@ lazy val `localstack-aws-v2-test-kit` = project
       Aws.V2.cloudwatch
     )
   )
+  .enableIntegrationTests
   .dependsOn(`localstack-test-kit-common`)
 
 lazy val `localstack-aws-v1-test-kit` = project
@@ -53,6 +60,7 @@ lazy val `localstack-aws-v1-test-kit` = project
       Aws.V1.cloudwatch
     )
   )
+  .enableIntegrationTests
   .dependsOn(`localstack-test-kit-common`)
 
 lazy val kcl = project
@@ -78,7 +86,8 @@ lazy val kpl = project
     description := "Cats tooling for the Kinesis Producer Library (KPL)",
     libraryDependencies ++= Seq(
       Aws.kpl,
-      Log4Cats.slf4j
+      Log4Cats.slf4j,
+      JavaXMLBind
     )
   )
   .enableIntegrationTests
@@ -92,16 +101,21 @@ lazy val `kpl-logging-circe` = project
   .dependsOn(kpl, `shared-circe`, `localstack-aws-v1-test-kit` % IT)
 
 lazy val root =
-  tlCrossRootProject.aggregate(
-    compat,
-    shared,
-    `shared-circe`,
-    `shared-ciris`,
-    `localstack-test-kit-common`,
-    `localstack-aws-v1-test-kit`,
-    `localstack-aws-v2-test-kit`,
-    kcl,
-    `kcl-logging-circe`,
-    kpl,
-    `kpl-logging-circe`
-  )
+  tlCrossRootProject
+    .configure(
+      _.enableIntegrationTests,
+      _.settings(DockerComposePlugin.settings(IT, false))
+    )
+    .aggregate(
+      compat,
+      shared,
+      `shared-circe`,
+      `shared-ciris`,
+      `localstack-test-kit-common`,
+      `localstack-aws-v1-test-kit`,
+      `localstack-aws-v2-test-kit`,
+      kcl,
+      `kcl-logging-circe`,
+      kpl,
+      `kpl-logging-circe`
+    )

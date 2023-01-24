@@ -29,7 +29,7 @@ object DockerComposePlugin extends AutoPlugin {
   }
 
   val composeFile: Def.Initialize[Task[String]] =
-    Def.task(s"${composeFileLocation.value}docker-compose.yml")
+    Def.task(s"${composeFileLocation.value}${composeFileName.value}")
 
   val dockerComposeUpBaseTask: Def.Initialize[Task[Unit]] = Def
     .task {
@@ -135,7 +135,7 @@ object DockerComposePlugin extends AutoPlugin {
       dockerComposeDown
     )
 
-  def settings(configuration: Configuration): Seq[Setting[_]] =
+  def settings(configuration: Configuration, build: Boolean): Seq[Setting[_]] =
     Seq(
       createNetwork := createNetworkTask.value,
       removeNetwork := removeNetworkTask.value,
@@ -145,11 +145,12 @@ object DockerComposePlugin extends AutoPlugin {
       dockerComposePs := dockerComposePsTask.value,
       dockerComposeTestQuick := dockerComposeTestQuickTask(configuration).value,
       composeFileLocation := "docker/",
+      composeFileName := s"docker-compose-${configuration.name.toLowerCase}.yml",
       networkName := sys.env
-        .getOrElse("DOCKER_NET_NAME", "kinesis_mock_network"),
+        .getOrElse("DOCKER_NET_NAME", "kinesis4cats_network"),
       composeProjectName := sys.env
-        .getOrElse("COMPOSE_PROJECT_NAME", "kinesis-mock"),
-      buildImage := true
+        .getOrElse("COMPOSE_PROJECT_NAME", "kinesis4cats"),
+      buildImage := build
     )
 
 }
@@ -157,13 +158,14 @@ object DockerComposePlugin extends AutoPlugin {
 object DockerComposePluginKeys {
   val composeFileLocation =
     settingKey[String]("Path to docker-compose files, e.g. docker/")
+  val composeFileName =
+    settingKey[String]("File name of the compose file, e.g. docker-compose.yml")
   val networkName = settingKey[String]("Name of network to create")
   val composeProjectName =
     settingKey[String]("Name of project for docker-compose.")
   val buildImage = settingKey[Boolean](
     "Determines if dockerComposeUp should also build a docker image via the DockerImagePlugin"
   )
-
   val createNetwork = taskKey[Unit]("Creates a docker network")
   val removeNetwork = taskKey[Unit]("Removes a docker network")
   val dockerComposeTestQuick =

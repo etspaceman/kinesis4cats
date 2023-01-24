@@ -1,7 +1,6 @@
 package kinesis4cats.kpl
 
-import io.circe.Encoder
-import io.circe.Decoder
+import io.circe.{Decoder, Encoder}
 import org.scalacheck.Arbitrary
 
 final case class TestData(

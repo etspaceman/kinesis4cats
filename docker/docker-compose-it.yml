@@ -4,7 +4,6 @@ services:
     image: "localstack/localstack:latest"
     environment:
       - "SERVICES=cloudwatch,kinesis,dynamodb"
-      - "USE_SSL=true"
     healthcheck:
       test: "awslocal cloudwatch list-metrics"
       interval: 5s

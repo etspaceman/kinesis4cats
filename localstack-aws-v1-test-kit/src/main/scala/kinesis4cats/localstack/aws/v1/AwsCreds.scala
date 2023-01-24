@@ -14,19 +14,17 @@
  * limitations under the License.
  */
 
-package kinesis4cats.localstack.aws.v2
+package kinesis4cats.localstack.aws.v1
 
-import software.amazon.awssdk.auth.credentials.{
-  AwsCredentials,
-  AwsCredentialsProvider
-}
+import com.amazonaws.auth.{AWSCredentials, AWSCredentialsProvider}
 
 final case class AwsCreds(accessKey: String, secretKey: String)
-    extends AwsCredentials
-    with AwsCredentialsProvider {
-  override def accessKeyId(): String = accessKey
-  override def secretAccessKey(): String = secretKey
-  override def resolveCredentials(): AwsCredentials = this
+    extends AWSCredentials
+    with AWSCredentialsProvider {
+  override def getAWSAccessKeyId: String = accessKey
+  override def getAWSSecretKey: String = secretKey
+  override def getCredentials: AWSCredentials = this
+  override def refresh(): Unit = ()
 }
 
 object AwsCreds {

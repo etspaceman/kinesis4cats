@@ -15,77 +15,64 @@
  */
 
 package kinesis4cats.localstack
-package aws.v2
+package aws.v1
 
 import scala.concurrent.duration._
 
 import cats.effect.syntax.all._
 import cats.effect.{Async, Resource}
 import cats.syntax.all._
+import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration
+import com.amazonaws.services.cloudwatch.{
+  AmazonCloudWatchAsync,
+  AmazonCloudWatchAsyncClientBuilder
+}
+import com.amazonaws.services.dynamodbv2.{
+  AmazonDynamoDBAsync,
+  AmazonDynamoDBAsyncClientBuilder
+}
+import com.amazonaws.services.kinesis.model.{
+  DescribeStreamSummaryRequest,
+  DescribeStreamSummaryResult,
+  ResourceNotFoundException
+}
+import com.amazonaws.services.kinesis.{
+  AmazonKinesisAsync,
+  AmazonKinesisAsyncClientBuilder
+}
 import retry.RetryPolicies._
 import retry._
-import software.amazon.awssdk.http.SdkHttpConfigurationOption
-import software.amazon.awssdk.http.async.SdkAsyncHttpClient
-import software.amazon.awssdk.http.nio.netty.NettyNioAsyncHttpClient
-import software.amazon.awssdk.regions.Region
-import software.amazon.awssdk.services.cloudwatch.CloudWatchAsyncClient
-import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient
-import software.amazon.awssdk.services.kinesis.KinesisAsyncClient
-import software.amazon.awssdk.services.kinesis.model.{
-  CreateStreamRequest,
-  DeleteStreamRequest,
-  DescribeStreamSummaryRequest,
-  DescribeStreamSummaryResponse,
-  ResourceNotFoundException,
-  StreamStatus
-}
-import software.amazon.awssdk.utils.AttributeMap
 
 object AwsClients {
-  private val trustAllCertificates =
-    AttributeMap
-      .builder()
-      .put(
-        SdkHttpConfigurationOption.TRUST_ALL_CERTIFICATES,
-        java.lang.Boolean.TRUE
-      )
-      .build()
-
-  def nettyClient: SdkAsyncHttpClient =
-    NettyNioAsyncHttpClient
-      .builder()
-      .buildWithDefaults(trustAllCertificates)
-
   def kinesisClient[F[_]](
       config: LocalstackConfig
-  )(implicit F: Async[F]): F[KinesisAsyncClient] =
+  )(implicit F: Async[F]): F[AmazonKinesisAsync] =
     F.delay(
-      KinesisAsyncClient
-        .builder()
-        .httpClient(nettyClient)
-        .region(Region.of(config.region.name))
-        .credentialsProvider(AwsCreds.LocalCreds)
-        .endpointOverride(config.endpointUri)
+      AmazonKinesisAsyncClientBuilder
+        .standard()
+        .withEndpointConfiguration(
+          new EndpointConfiguration(config.endpoint, config.region.name)
+        )
         .build()
     )
 
   def kinesisClient[F[_]](
       prefix: Option[String] = None
-  )(implicit F: Async[F]): F[KinesisAsyncClient] = for {
+  )(implicit F: Async[F]): F[AmazonKinesisAsync] = for {
     config <- LocalstackConfig.load[F](prefix)
     client <- kinesisClient(config)
   } yield client
 
   def kinesisClientResource[F[_]](config: LocalstackConfig)(implicit
       F: Async[F]
-  ): Resource[F, KinesisAsyncClient] =
+  ): Resource[F, AmazonKinesisAsync] =
     kinesisClient[F](config).toResource
 
   def kinesisClientResource[F[_]](
       prefix: Option[String] = None
   )(implicit
       F: Async[F]
-  ): Resource[F, KinesisAsyncClient] =
+  ): Resource[F, AmazonKinesisAsync] =
     kinesisClient[F](prefix).toResource
 
   def kinesisStreamResource[F[_]](
@@ -96,58 +83,36 @@ object AwsClients {
       describeRetryDuration: FiniteDuration
   )(implicit
       F: Async[F]
-  ): Resource[F, KinesisAsyncClient] = for {
+  ): Resource[F, AmazonKinesisAsync] = for {
     client <- kinesisClientResource(config)
     retryPolicy = constantDelay(describeRetryDuration).join(
       limitRetries(describeRetries)
     )
     result <- Resource.make(
       for {
-        _ <- F.fromCompletableFuture(
-          F.delay(
-            client.createStream(
-              CreateStreamRequest
-                .builder()
-                .streamName(streamName)
-                .shardCount(shardCount)
-                .build()
-            )
-          )
-        )
+        _ <- F.interruptibleMany(client.createStream(streamName, shardCount))
         _ <- retryingOnFailuresAndAllErrors(
           retryPolicy,
-          (x: DescribeStreamSummaryResponse) =>
+          (x: DescribeStreamSummaryResult) =>
             F.pure(
-              x.streamDescriptionSummary()
-                .streamStatus() == StreamStatus.ACTIVE
+              x.getStreamDescriptionSummary().getStreamStatus() === "ACTIVE"
             ),
-          noop[F, DescribeStreamSummaryResponse],
+          noop[F, DescribeStreamSummaryResult],
           noop[F, Throwable]
         )(
-          F.fromCompletableFuture(
-            F.delay(
-              client.describeStreamSummary(
-                DescribeStreamSummaryRequest
-                  .builder()
-                  .streamName(streamName)
-                  .build()
-              )
+          F.interruptibleMany(
+            client.describeStreamSummary(
+              new DescribeStreamSummaryRequest().withStreamName(streamName)
             )
           )
         )
       } yield client
     )(client =>
       for {
-        _ <- F.fromCompletableFuture(
-          F.delay(
-            client.deleteStream(
-              DeleteStreamRequest.builder().streamName(streamName).build()
-            )
-          )
-        )
+        _ <- F.interruptibleMany(client.deleteStream(streamName))
         _ <- retryingOnFailuresAndSomeErrors(
           retryPolicy,
-          (x: Either[Throwable, DescribeStreamSummaryResponse]) =>
+          (x: Either[Throwable, DescribeStreamSummaryResult]) =>
             F.pure(
               x.swap.exists {
                 case _: ResourceNotFoundException => true
@@ -159,17 +124,12 @@ object AwsClients {
               case _: ResourceNotFoundException => F.pure(false)
               case _                            => F.pure(true)
             },
-          noop[F, Either[Throwable, DescribeStreamSummaryResponse]],
+          noop[F, Either[Throwable, DescribeStreamSummaryResult]],
           noop[F, Throwable]
         )(
-          F.fromCompletableFuture(
-            F.delay(
-              client.describeStreamSummary(
-                DescribeStreamSummaryRequest
-                  .builder()
-                  .streamName(streamName)
-                  .build()
-              )
+          F.interruptibleMany(
+            client.describeStreamSummary(
+              new DescribeStreamSummaryRequest().withStreamName(streamName)
             )
           ).attempt
         )
@@ -185,7 +145,7 @@ object AwsClients {
       describeRetryDuration: FiniteDuration = 500.millis
   )(implicit
       F: Async[F]
-  ): Resource[F, KinesisAsyncClient] = for {
+  ): Resource[F, AmazonKinesisAsync] = for {
     config <- LocalstackConfig.resource(prefix)
     result <- kinesisStreamResource(
       config,
@@ -198,66 +158,64 @@ object AwsClients {
 
   def dynamoClient[F[_]](
       config: LocalstackConfig
-  )(implicit F: Async[F]): F[DynamoDbAsyncClient] =
+  )(implicit F: Async[F]): F[AmazonDynamoDBAsync] =
     F.delay(
-      DynamoDbAsyncClient
-        .builder()
-        .httpClient(nettyClient)
-        .region(Region.of(config.region.name))
-        .credentialsProvider(AwsCreds.LocalCreds)
-        .endpointOverride(config.endpointUri)
+      AmazonDynamoDBAsyncClientBuilder
+        .standard()
+        .withEndpointConfiguration(
+          new EndpointConfiguration(config.endpoint, config.region.name)
+        )
         .build()
     )
 
   def dynamoClient[F[_]](
       prefix: Option[String] = None
-  )(implicit F: Async[F]): F[DynamoDbAsyncClient] = for {
+  )(implicit F: Async[F]): F[AmazonDynamoDBAsync] = for {
     config <- LocalstackConfig.load[F](prefix)
     client <- dynamoClient(config)
   } yield client
 
   def dynamoClientResource[F[_]](config: LocalstackConfig)(implicit
       F: Async[F]
-  ): Resource[F, DynamoDbAsyncClient] =
+  ): Resource[F, AmazonDynamoDBAsync] =
     dynamoClient[F](config).toResource
 
   def dynamoClientResource[F[_]](
       prefix: Option[String] = None
   )(implicit
       F: Async[F]
-  ): Resource[F, DynamoDbAsyncClient] =
+  ): Resource[F, AmazonDynamoDBAsync] =
     dynamoClient[F](prefix).toResource
 
   def cloudwatchClient[F[_]](
       config: LocalstackConfig
-  )(implicit F: Async[F]): F[CloudWatchAsyncClient] =
+  )(implicit F: Async[F]): F[AmazonCloudWatchAsync] =
     F.delay(
-      CloudWatchAsyncClient
-        .builder()
-        .httpClient(nettyClient)
-        .region(Region.of(config.region.name))
-        .credentialsProvider(AwsCreds.LocalCreds)
-        .endpointOverride(config.endpointUri)
+      AmazonCloudWatchAsyncClientBuilder
+        .standard()
+        .withEndpointConfiguration(
+          new EndpointConfiguration(config.endpoint, config.region.name)
+        )
         .build()
     )
 
   def cloudwatchClient[F[_]](
       prefix: Option[String] = None
-  )(implicit F: Async[F]): F[CloudWatchAsyncClient] = for {
+  )(implicit F: Async[F]): F[AmazonCloudWatchAsync] = for {
     config <- LocalstackConfig.load[F](prefix)
     client <- cloudwatchClient(config)
   } yield client
 
   def cloudwatchClientResource[F[_]](config: LocalstackConfig)(implicit
       F: Async[F]
-  ): Resource[F, CloudWatchAsyncClient] =
+  ): Resource[F, AmazonCloudWatchAsync] =
     cloudwatchClient[F](config).toResource
 
   def cloudwatchClientResource[F[_]](
       prefix: Option[String] = None
   )(implicit
       F: Async[F]
-  ): Resource[F, CloudWatchAsyncClient] =
+  ): Resource[F, AmazonCloudWatchAsync] =
     cloudwatchClient[F](prefix).toResource
 
 }

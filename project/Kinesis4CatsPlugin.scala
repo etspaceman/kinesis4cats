@@ -90,7 +90,7 @@ object Kinesis4CatsPlugin extends AutoPlugin {
 
       val testWithCoverage = List(
         WorkflowStep.Sbt(
-          List("cov"),
+          List("IT / dockerComposeUp", "cov", "IT / dockerComposeDown"),
           name = Some("Test with coverage"),
           cond = Some(noScala3Cond.value)
         )
@@ -98,7 +98,12 @@ object Kinesis4CatsPlugin extends AutoPlugin {
 
       val test = List(
         WorkflowStep.Sbt(
-          List("test"),
+          List(
+            "IT / dockerComposeUp",
+            "test",
+            "IT / test",
+            "IT / dockerComposeDown"
+          ),
           name = Some("Test"),
           cond = Some(onlyScala3Cond.value)
         )
@@ -184,29 +189,31 @@ object Kinesis4CatsPlugin extends AutoPlugin {
       Munit.scalacheck % Test,
       Munit.scalacheckEffect % Test,
       Circe.core % Test,
-      Circe.parser % Test
+      Circe.parser % Test,
+      Logback % Test
     ),
     moduleName := "kinesis4cats-" + name.value,
     headerLicense := Some(
       HeaderLicense.ALv2(s"${startYear.value.get}-2023", organizationName.value)
-    )
+    ),
+    Test / fork := true
   ) ++ Seq(
-    addCommandAlias("cpl", ";+Test / compile"),
+    addCommandAlias("cpl", ";+Test / compile;+IT / compile"),
     addCommandAlias(
       "fixCheck",
-      ";Compile / scalafix --check;Test / scalafix --check"
+      ";Compile / scalafix --check;Test / scalafix --check;IT / scalafix --check"
     ),
     addCommandAlias(
       "fix",
-      ";Compile / scalafix;Test / scalafix"
+      ";Compile / scalafix;Test / scalafix;IT / scalafix"
     ),
     addCommandAlias(
       "fmtCheck",
-      ";Compile / scalafmtCheck;Test / scalafmtCheck;scalafmtSbtCheck"
+      ";Compile / scalafmtCheck;Test / scalafmtCheck;IT / scalafmtCheck;scalafmtSbtCheck"
     ),
     addCommandAlias(
       "fmt",
-      ";Compile / scalafmt;Test / scalafmt;scalafmtSbt"
+      ";Compile / scalafmt;Test / scalafmt;IT / scalafmt;scalafmtSbt"
     ),
     addCommandAlias(
       "pretty",
@@ -218,7 +225,7 @@ object Kinesis4CatsPlugin extends AutoPlugin {
     ),
     addCommandAlias(
       "cov",
-      ";clean;coverage;test;coverageReport;coverageOff"
+      ";clean;coverage;test;IT/test;coverageReport;coverageOff"
     )
   ).flatten
 }
@@ -242,10 +249,11 @@ object Kinesis4CatsPluginKeys {
         ScalafmtPlugin.scalafmtConfigSettings ++
           scalafixConfigSettings(IT) ++
           BloopSettings.default ++
-          DockerComposePlugin.settings(IT) ++
           Defaults.testSettings ++
-          Seq(parallelExecution := false)
+          Seq(
+            parallelExecution := false,
+            javaOptions += "-Dcom.amazonaws.sdk.disableCertChecking=true"
+          )
       })
-      .settings(DockerComposePlugin.settings(IT))
   }
 }
