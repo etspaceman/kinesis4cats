@@ -25,8 +25,8 @@ import cats.syntax.all._
 import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration
 import com.amazonaws.services.cloudwatch._
 import com.amazonaws.services.dynamodbv2._
-import com.amazonaws.services.kinesis.model._
 import com.amazonaws.services.kinesis._
+import com.amazonaws.services.kinesis.model._
 import retry.RetryPolicies._
 import retry._
 
