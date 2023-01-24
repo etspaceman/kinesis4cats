@@ -196,7 +196,11 @@ object Kinesis4CatsPlugin extends AutoPlugin {
     headerLicense := Some(
       HeaderLicense.ALv2(s"${startYear.value.get}-2023", organizationName.value)
     ),
-    Test / fork := true
+    Test / fork := true,
+    Compile / doc / sources := {
+      if (scalaVersion.value.startsWith("3.")) Nil
+      else (Compile / doc / sources).value
+    }
   ) ++ Seq(
     addCommandAlias("cpl", ";+Test / compile;+IT / compile"),
     addCommandAlias(
