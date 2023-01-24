@@ -16,9 +16,8 @@
 
 package kinesis4cats.kcl
 
-import cats.effect.Async
-import cats.effect.{Ref, Resource}
 import cats.effect.syntax.all._
+import cats.effect.{Async, Ref, Resource}
 import cats.syntax.all._
 import software.amazon.kinesis.coordinator.WorkerStateChangeListener.WorkerState
 import software.amazon.kinesis.coordinator._

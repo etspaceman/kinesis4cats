@@ -1,169 +1,307 @@
+/*
+ * Copyright 2023-2023 etspaceman
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package kinesis4cats.client
 
-import software.amazon.awssdk.services.kinesis.KinesisAsyncClient
-import cats.effect.Async
-import software.amazon.awssdk.services.kinesis.model._
-import cats.effect.Resource
-import software.amazon.awssdk.services.kinesis.paginators._
-import cats.syntax.all._
+import java.util.concurrent.CompletableFuture
 
-class KinesisClient[F[_]] private (client: KinesisAsyncClient)(implicit
-    F: Async[F]
+import cats.effect.syntax.all._
+import cats.effect.{Async, Resource}
+import cats.syntax.all._
+import org.typelevel.log4cats.StructuredLogger
+import org.typelevel.log4cats.slf4j.Slf4jLogger
+import software.amazon.awssdk.services.kinesis.KinesisAsyncClient
+import software.amazon.awssdk.services.kinesis.model._
+import software.amazon.awssdk.services.kinesis.paginators._
+
+import kinesis4cats.logging.{LogContext, LogEncoder}
+
+class KinesisClient[F[_]] private (
+    client: KinesisAsyncClient,
+    logger: StructuredLogger[F]
+)(implicit
+    F: Async[F],
+    LE: KinesisClientLogEncoders
 ) {
+
+  private def requestLogs[A: LogEncoder](
+      method: String,
+      request: A,
+      ctx: LogContext
+  ): F[Unit] =
+    for {
+      _ <- logger.debug(ctx.context)(s"Received $method request")
+      _ <- logger.trace(ctx.addEncoded("request", request).context)(
+        s"Logging $method request"
+      )
+    } yield ()
+
+  private def responseLogs[A: LogEncoder](
+      method: String,
+      response: A,
+      ctx: LogContext
+  ): F[Unit] = for {
+    _ <- logger.debug(ctx.context)(s"Completed $method request")
+    _ <- logger.trace(ctx.addEncoded("response", response).context)(
+      s"Logging $method response"
+    )
+  } yield ()
+
+  private def runRequest[A: LogEncoder, B: LogEncoder](
+      method: String,
+      request: A
+  )(fn: (KinesisAsyncClient, A) => CompletableFuture[B]): F[B] = {
+    val ctx = LogContext()
+    for {
+      _ <- requestLogs(method, request, ctx)
+      response <- F.fromCompletableFuture(
+        F.delay(fn(client, request))
+      )
+      _ <- responseLogs(method, response, ctx)
+    } yield response
+  }
+
+  private def runVoidRequest[A: LogEncoder](
+      method: String,
+      request: A
+  )(fn: (KinesisAsyncClient, A) => CompletableFuture[Void]): F[Unit] = {
+    val ctx = LogContext()
+    for {
+      _ <- requestLogs(method, request, ctx)
+      response <- F
+        .fromCompletableFuture(
+          F.delay(fn(client, request))
+        )
+        .void
+      _ <- responseLogs(method, "no response object", ctx)
+    } yield response
+  }
+
+  private def runRequest[A: LogEncoder](
+      method: String
+  )(fn: KinesisAsyncClient => CompletableFuture[A]): F[A] = {
+    val ctx = LogContext()
+    for {
+      _ <- requestLogs(method, "no request", ctx)
+      response <- F.fromCompletableFuture(
+        F.delay(fn(client))
+      )
+      _ <- responseLogs(method, response, ctx)
+    } yield response
+  }
+
+  private def runPaginatedRequest[A: LogEncoder, B](
+      method: String,
+      request: A
+  )(fn: (KinesisAsyncClient, A) => B): F[B] = {
+    val ctx = LogContext()
+    for {
+      _ <- requestLogs(method, request, ctx)
+      response <- F.delay(fn(client, request))
+      _ <- responseLogs(method, "paginated response object", ctx)
+    } yield response
+  }
+
+  private def runPaginatedRequest[A](
+      method: String
+  )(fn: KinesisAsyncClient => A): F[A] = {
+    val ctx = LogContext()
+    for {
+      _ <- requestLogs(method, "no request", ctx)
+      response <- F.delay(fn(client))
+      _ <- responseLogs(method, "paginated response object", ctx)
+    } yield response
+  }
+
+  import LE._
+
   def addTagsToStream(
       request: AddTagsToStreamRequest
   ): F[AddTagsToStreamResponse] =
-    F.fromCompletableFuture(F.delay(client.addTagsToStream(request)))
+    runRequest("addTagsToStream", request)(_.addTagsToStream(_))
 
   def createStream(request: CreateStreamRequest): F[CreateStreamResponse] =
-    F.fromCompletableFuture(F.delay(client.createStream(request)))
+    runRequest("createStream", request)(_.createStream(_))
 
   def decreaseStreamRetentionPeriod(
       request: DecreaseStreamRetentionPeriodRequest
   ): F[DecreaseStreamRetentionPeriodResponse] =
-    F.fromCompletableFuture(
-      F.delay(client.decreaseStreamRetentionPeriod(request))
+    runRequest("decreaseStreamRetentionPeriod", request)(
+      _.decreaseStreamRetentionPeriod(_)
     )
 
   def deleteStream(request: DeleteStreamRequest): F[DeleteStreamResponse] =
-    F.fromCompletableFuture(F.delay(client.deleteStream(request)))
+    runRequest("deleteStream", request)(_.deleteStream(_))
 
   def deregisterStreamConsumer(
       request: DeregisterStreamConsumerRequest
   ): F[DeregisterStreamConsumerResponse] =
-    F.fromCompletableFuture(F.delay(client.deregisterStreamConsumer(request)))
+    runRequest("deregisterStreamConsumer", request)(
+      _.deregisterStreamConsumer(_)
+    )
 
   def describeLimits(
       request: DescribeLimitsRequest
   ): F[DescribeLimitsResponse] =
-    F.fromCompletableFuture(F.delay(client.describeLimits(request)))
+    runRequest("describeLimits", request)(_.describeLimits(_))
 
   def describeLimits(): F[DescribeLimitsResponse] =
-    F.fromCompletableFuture(F.delay(client.describeLimits()))
+    runRequest("describeLimits")(_.describeLimits())
 
   def describeStream(
       request: DescribeStreamRequest
   ): F[DescribeStreamResponse] =
-    F.fromCompletableFuture(F.delay(client.describeStream(request)))
+    runRequest("describeStream", request)(_.describeStream(_))
 
   def describeStreamConsumer(
       request: DescribeStreamConsumerRequest
   ): F[DescribeStreamConsumerResponse] =
-    F.fromCompletableFuture(F.delay(client.describeStreamConsumer(request)))
+    runRequest("describeStreamConsumer", request)(_.describeStreamConsumer(_))
 
   def describeStreamSummary(
       request: DescribeStreamSummaryRequest
   ): F[DescribeStreamSummaryResponse] =
-    F.fromCompletableFuture(F.delay(client.describeStreamSummary(request)))
+    runRequest("describeStreamSummary", request)(_.describeStreamSummary(_))
 
   def disableEnhancedMonitoring(
       request: DisableEnhancedMonitoringRequest
   ): F[DisableEnhancedMonitoringResponse] =
-    F.fromCompletableFuture(F.delay(client.disableEnhancedMonitoring(request)))
+    runRequest("disableEnhancedMonitoring", request)(
+      _.disableEnhancedMonitoring(_)
+    )
 
   def enableEnhancedMonitoring(
       request: EnableEnhancedMonitoringRequest
   ): F[EnableEnhancedMonitoringResponse] =
-    F.fromCompletableFuture(F.delay(client.enableEnhancedMonitoring(request)))
+    runRequest("enableEnhancedMonitoring", request)(
+      _.enableEnhancedMonitoring(_)
+    )
 
   def getRecords(request: GetRecordsRequest): F[GetRecordsResponse] =
-    F.fromCompletableFuture(F.delay(client.getRecords(request)))
+    runRequest("getRecords", request)(_.getRecords(_))
 
   def getShardIterator(
       request: GetShardIteratorRequest
   ): F[GetShardIteratorResponse] =
-    F.fromCompletableFuture(F.delay(client.getShardIterator(request)))
+    runRequest("getShardIterator", request)(_.getShardIterator(_))
 
   def increaseStreamRetentionPeriod(
       request: IncreaseStreamRetentionPeriodRequest
   ): F[IncreaseStreamRetentionPeriodResponse] =
-    F.fromCompletableFuture(
-      F.delay(client.increaseStreamRetentionPeriod(request))
+    runRequest("increaseStreamRetentionPeriod", request)(
+      _.increaseStreamRetentionPeriod(_)
     )
 
   def listShards(request: ListShardsRequest): F[ListShardsResponse] =
-    F.fromCompletableFuture(F.delay(client.listShards(request)))
+    runRequest("listShards", request)(_.listShards(_))
 
   def listStreamConsumers(
       request: ListStreamConsumersRequest
   ): F[ListStreamConsumersResponse] =
-    F.fromCompletableFuture(F.delay(client.listStreamConsumers(request)))
+    runRequest("listStreamConsumers", request)(_.listStreamConsumers(_))
 
   def listStreamConsumersPaginator(
       request: ListStreamConsumersRequest
-  ): ListStreamConsumersPublisher = client.listStreamConsumersPaginator(request)
+  ): F[ListStreamConsumersPublisher] =
+    runPaginatedRequest("listStreamConsumersPaginator", request)(
+      _.listStreamConsumersPaginator(_)
+    )
 
   def listStreams(request: ListStreamsRequest): F[ListStreamsResponse] =
-    F.fromCompletableFuture(F.delay(client.listStreams(request)))
+    runRequest("listStreams", request)(_.listStreams(_))
 
   def listStreams(): F[ListStreamsResponse] =
-    F.fromCompletableFuture(F.delay(client.listStreams()))
+    runRequest("listStreams")(_.listStreams())
 
-  def listStreamsPaginator(request: ListStreamsRequest): ListStreamsPublisher =
-    client.listStreamsPaginator(request)
+  def listStreamsPaginator(
+      request: ListStreamsRequest
+  ): F[ListStreamsPublisher] =
+    runPaginatedRequest("listStreamsPaginator", request)(
+      _.listStreamsPaginator(_)
+    )
 
-  def listStreamsPaginator(): ListStreamsPublisher =
-    client.listStreamsPaginator()
+  def listStreamsPaginator(): F[ListStreamsPublisher] =
+    runPaginatedRequest("listStreamsPaginator")(
+      _.listStreamsPaginator()
+    )
 
   def listTagsForStream(
       request: ListTagsForStreamRequest
   ): F[ListTagsForStreamResponse] =
-    F.fromCompletableFuture(F.delay(client.listTagsForStream(request)))
+    runRequest("listTagsForStream", request)(_.listTagsForStream(_))
 
   def mergeShards(request: MergeShardsRequest): F[MergeShardsResponse] =
-    F.fromCompletableFuture(F.delay(client.mergeShards(request)))
+    runRequest("mergeShards", request)(_.mergeShards(_))
 
   def putRecord(request: PutRecordRequest): F[PutRecordResponse] =
-    F.fromCompletableFuture(F.delay(client.putRecord(request)))
+    runRequest("putRecord", request)(_.putRecord(_))
 
   def putRecords(request: PutRecordsRequest): F[PutRecordsResponse] =
-    F.fromCompletableFuture(F.delay(client.putRecords(request)))
+    runRequest("putRecords", request)(_.putRecords(_))
 
   def registerStreamConsumer(
       request: RegisterStreamConsumerRequest
   ): F[RegisterStreamConsumerResponse] =
-    F.fromCompletableFuture(F.delay(client.registerStreamConsumer(request)))
+    runRequest("registerStreamConsumer", request)(_.registerStreamConsumer(_))
 
   def removeTagsFromStream(
       request: RemoveTagsFromStreamRequest
   ): F[RemoveTagsFromStreamResponse] =
-    F.fromCompletableFuture(F.delay(client.removeTagsFromStream(request)))
+    runRequest("removeTagsFromStream", request)(_.removeTagsFromStream(_))
 
   def splitShard(request: SplitShardRequest): F[SplitShardResponse] =
-    F.fromCompletableFuture(F.delay(client.splitShard(request)))
+    runRequest("splitShard", request)(_.splitShard(_))
 
   def startStreamEncryption(
       request: StartStreamEncryptionRequest
   ): F[StartStreamEncryptionResponse] =
-    F.fromCompletableFuture(F.delay(client.startStreamEncryption(request)))
+    runRequest("startStreamEncryption", request)(_.startStreamEncryption(_))
 
   def stopStreamEncryption(
       request: StopStreamEncryptionRequest
   ): F[StopStreamEncryptionResponse] =
-    F.fromCompletableFuture(F.delay(client.stopStreamEncryption(request)))
+    runRequest("stopStreamEncryption", request)(_.stopStreamEncryption(_))
 
   def subscribeToShard(
       request: SubscribeToShardRequest,
       responseHandler: SubscribeToShardResponseHandler
   ): F[Unit] =
-    F.fromCompletableFuture(
-      F.delay(client.subscribeToShard(request, responseHandler))
-    ).void
+    runVoidRequest("subscribeToShard", request)(
+      _.subscribeToShard(_, responseHandler)
+    )
 
   def updateShardCount(
       request: UpdateShardCountRequest
   ): F[UpdateShardCountResponse] =
-    F.fromCompletableFuture(F.delay(client.updateShardCount(request)))
+    runRequest("updateShardCount", request)(_.updateShardCount(_))
 
   def updateStreamMode(
       request: UpdateStreamModeRequest
   ): F[UpdateStreamModeResponse] =
-    F.fromCompletableFuture(F.delay(client.updateStreamMode(request)))
+    runRequest("updateStreamMode", request)(_.updateStreamMode(_))
 }
 
 object KinesisClient {
   def apply[F[_]](
       client: KinesisAsyncClient
-  )(implicit F: Async[F]): Resource[F, KinesisClient[F]] =
-    Resource.fromAutoCloseable(F.pure(client)).map(x => new KinesisClient[F](x))
+  )(implicit
+      F: Async[F],
+      LE: KinesisClientLogEncoders
+  ): Resource[F, KinesisClient[F]] = for {
+    clientResource <- Resource.fromAutoCloseable(F.pure(client))
+    logger <- Slf4jLogger.create[F].toResource
+  } yield new KinesisClient[F](clientResource, logger)
 }

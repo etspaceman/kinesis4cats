@@ -18,8 +18,7 @@ package kinesis4cats.kcl
 
 import java.nio.ByteBuffer
 
-import cats.effect.Sync
-import cats.effect.Deferred
+import cats.effect.{Deferred, Sync}
 import cats.syntax.all._
 import software.amazon.kinesis.processor.RecordProcessorCheckpointer
 import software.amazon.kinesis.retrieval.KinesisClientRecord
