@@ -101,7 +101,7 @@ final class KinesisClientLogEncoders(implicit
     val putRecordResponseLogEncoder: LogEncoder[PutRecordResponse],
     val putRecordsRequestLogEncoder: LogEncoder[PutRecordsRequest],
     val putRecordsResponseLogEncoder: LogEncoder[PutRecordsResponse],
-    val registerStreamConsumerdRequestLogEncoder: LogEncoder[
+    val registerStreamConsumerRequestLogEncoder: LogEncoder[
       RegisterStreamConsumerRequest
     ],
     val registerStreamConsumerResponseLogEncoder: LogEncoder[
