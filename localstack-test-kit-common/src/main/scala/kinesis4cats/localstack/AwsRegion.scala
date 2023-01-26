@@ -16,6 +16,7 @@
 
 package kinesis4cats.localstack
 
+import cats.Eq
 import cats.syntax.all._
 import ciris.{ConfigDecoder, ConfigError}
 
@@ -99,4 +100,6 @@ object AwsRegion {
         ConfigError(s"$x is not a known region")
       )
     }
+
+  implicit val awsRegionEq: Eq[AwsRegion] = Eq.fromUniversalEquals
 }

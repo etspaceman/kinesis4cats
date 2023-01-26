@@ -34,10 +34,11 @@ lazy val `shared-ciris` = project
 
 lazy val `localstack-test-kit-common` = project
   .settings(
-    description := "Common utilities for the localstack test-kits"
+    description := "Common utilities for the localstack test-kits",
+    libraryDependencies ++= Seq(Scalacheck)
   )
   .enableIntegrationTests
-  .dependsOn(shared, `shared-ciris`)
+  .dependsOn(shared, `shared-ciris`, `shared-circe`)
 
 lazy val `localstack-aws-v2-test-kit` = project
   .settings(
@@ -110,6 +111,30 @@ lazy val `kpl-logging-circe` = project
     kpl % "it->it"
   )
 
+lazy val `kinesis-client` = project
+  .settings(
+    description := "Cats tooling for the Java Kinesis Client",
+    libraryDependencies ++= Seq(
+      Aws.V2.kinesis,
+      Log4Cats.slf4j,
+      FS2.reactiveStreams % IT
+    )
+  )
+  .enableIntegrationTests
+  .dependsOn(shared, `localstack-aws-v2-test-kit` % IT)
+
+lazy val `kinesis-client-logging-circe` = project
+  .settings(
+    description := "JSON structured logging instances for the Java Kinesis Client, via Circe"
+  )
+  .enableIntegrationTests
+  .dependsOn(
+    `kinesis-client`,
+    `shared-circe`,
+    `localstack-aws-v2-test-kit` % IT,
+    `kinesis-client` % "it->it"
+  )
+
 lazy val root =
   tlCrossRootProject
     .configure(
@@ -127,5 +152,7 @@ lazy val root =
       kcl,
       `kcl-logging-circe`,
       kpl,
-      `kpl-logging-circe`
+      `kpl-logging-circe`,
+      `kinesis-client`,
+      `kinesis-client-logging-circe`
     )

@@ -41,8 +41,16 @@ object show {
 
   implicit val javaLongShow: Show[java.lang.Long] = x => Show[Long].show(x)
 
+  implicit val javaIntegerShow: Show[java.lang.Integer] = x => Show[Int].show(x)
+
   implicit val javaDurationShow: Show[java.time.Duration] = x =>
     Show[FiniteDuration].show(x.toNanos().nanos)
+
+  implicit val javaBooleanShow: Show[java.lang.Boolean] = x =>
+    Show[Boolean].show(x)
+
+  implicit def javaMapShow[A: Show, B: Show]: Show[java.util.Map[A, B]] =
+    Show[Map[A, B]].contramap(_.asScala.toMap)
 
   implicit val byteBufferShow: Show[ByteBuffer] = x =>
     Show[String].show(x.asBase64String)

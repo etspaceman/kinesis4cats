@@ -20,8 +20,7 @@ import scala.jdk.CollectionConverters._
 
 import java.nio.ByteBuffer
 
-import cats.effect.kernel.Ref
-import cats.effect.{Async, Resource}
+import cats.effect.{Async, Ref, Resource}
 import cats.syntax.all._
 import com.amazonaws.services.kinesis.producer._
 import com.amazonaws.services.schemaregistry.common.Schema

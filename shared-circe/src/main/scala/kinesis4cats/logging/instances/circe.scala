@@ -21,8 +21,8 @@ import scala.jdk.CollectionConverters._
 
 import java.nio.ByteBuffer
 
-import io.circe.Encoder
 import io.circe.syntax._
+import io.circe.{Encoder, KeyEncoder}
 import retry.RetryDetails
 
 import kinesis4cats.logging.LogEncoder
@@ -45,6 +45,10 @@ object circe {
 
   implicit val finiteDurationEncoder: Encoder[FiniteDuration] =
     Encoder.forProduct2("length", "unit")(x => (x.length, x.unit.name))
+
+  implicit def javaMapEncoder[A: KeyEncoder, B: Encoder]
+      : Encoder[java.util.Map[A, B]] =
+    Encoder[Map[A, B]].contramap(_.asScala.toMap)
 
   implicit val retryDetailsGivingUpEncoder: Encoder[RetryDetails.GivingUp] =
     Encoder.forProduct6(
