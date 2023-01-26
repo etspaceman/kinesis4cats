@@ -57,13 +57,12 @@ object KCLConsumer {
     )
     _ <- F
       .race(
-        F.delay(scheduler.run()),
+        F.interruptibleMany(scheduler.run()),
         if (config.raiseOnError)
           config.deferredException.get.flatMap(F.raiseError(_).void)
         else F.never
       )
-      .toResource
-
+      .background
     _ <- Resource.onFinalize(
       F.fromCompletableFuture(F.delay(scheduler.startGracefulShutdown())).void
     )

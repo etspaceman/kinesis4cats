@@ -23,10 +23,7 @@ import cats.effect.syntax.all._
 import cats.effect.{Async, Deferred, Resource}
 import cats.syntax.all._
 import software.amazon.kinesis.checkpoint.CheckpointConfig
-import software.amazon.kinesis.common.{
-  InitialPositionInStream,
-  InitialPositionInStreamExtended
-}
+import software.amazon.kinesis.common._
 import software.amazon.kinesis.coordinator.CoordinatorConfig
 import software.amazon.kinesis.leases.LeaseManagementConfig
 import software.amazon.kinesis.lifecycle.LifecycleConfig
@@ -105,6 +102,7 @@ object LocalstackKCLConsumer {
       new RetrievalConfig(kinesisClient, streamName, appName)
         .retrievalSpecificConfig(retrievalConfig)
         .retrievalFactory(retrievalConfig.retrievalFactory())
+        .initialPositionInStreamExtended(position)
     )(cb)
   } yield result
 
@@ -341,8 +339,8 @@ object LocalstackKCLConsumer {
   /** Runs a [[kinesis4cats.kcl.KCLConsumer KCLConsumer]] that is compliant with
     * Localstack. Exposes a [[cats.effect.Deferred Deferred]] that will complete
     * when the consumer has started processing records, as well as a
-    * [[cats.effect.std.Queue Queue]] for tracking the received records. Useful for
-    * allowing tests time for the consumer to start before processing the
+    * [[cats.effect.std.Queue Queue]] for tracking the received records. Useful
+    * for allowing tests time for the consumer to start before processing the
     * stream, and testing those records that have been received.
     *
     * @param config
@@ -394,8 +392,8 @@ object LocalstackKCLConsumer {
   /** Runs a [[kinesis4cats.kcl.KCLConsumer KCLConsumer]] that is compliant with
     * Localstack. Exposes a [[cats.effect.Deferred Deferred]] that will complete
     * when the consumer has started processing records, as well as a
-    * [[cats.effect.std.Queue Queue]] for tracking the received records. Useful for
-    * allowing tests time for the consumer to start before processing the
+    * [[cats.effect.std.Queue Queue]] for tracking the received records. Useful
+    * for allowing tests time for the consumer to start before processing the
     * stream, and testing those records that have been received.
     *
     * @param streamName

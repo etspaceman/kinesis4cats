@@ -58,9 +58,7 @@ abstract class KCLConsumerSpec(implicit
   fixture(streamName, 1, appName).test("It should receive produced records") {
     resources =>
       for {
-        _ <- IO.println("I AM IN THE TEST!!")
         _ <- resources.deferredStarted.get
-        _ <- IO.println("THE CONSUMER HAS STARTED!!")
         records <- IO(Arbitrary.arbitrary[TestData].take(5).toList)
         _ <- records.traverse(record =>
           resources.client.putRecord(

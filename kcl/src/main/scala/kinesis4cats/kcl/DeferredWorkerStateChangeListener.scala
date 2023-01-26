@@ -39,14 +39,13 @@ class DeferredWorkerStateChangeListener[F[_]: Sync] private[kinesis4cats] (
     val deferred: Deferred[F, Unit],
     stateToCompleteOn: WorkerState
 ) extends WorkerStateChangeListener {
-  override def onWorkerStateChange(newState: WorkerState): Unit = {
-    println(s"RECEIVED WORKER STATE CHANGE!! ${newState.name()}")
+  override def onWorkerStateChange(newState: WorkerState): Unit =
     if (newState == stateToCompleteOn)
       dispatcher.unsafeRunSync(
         deferred.complete(()).void
       )
     else ()
-  }
+
   override def onAllInitializationAttemptsFailed(e: Throwable): Unit = ()
 }
 
@@ -57,7 +56,8 @@ object DeferredWorkerStateChangeListener {
     *
     * @param stateToCompleteOn
     *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/coordinator/WorkerStateChangeListener.java WorkerState]]
-    *   to expect when completing the [[cats.effect.Deferred Deferred]]. Default is STARTED.
+    *   to expect when completing the [[cats.effect.Deferred Deferred]]. Default
+    *   is STARTED.
     * @return
     *   [[cats.effect.Resource Resource]] of
     *   [[kinesis4cats.kcl.DeferredWorkerStateChangeListener DeferredWorkerStateChangeListener]]
