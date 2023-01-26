@@ -38,7 +38,7 @@ import software.amazon.awssdk.utils.AttributeMap
   * Localstack.
   */
 object AwsClients {
-  private val trustAllCertificates =
+  val trustAllCertificates =
     AttributeMap
       .builder()
       .put(
@@ -145,7 +145,7 @@ object AwsClients {
   ): Resource[F, KinesisAsyncClient] =
     kinesisClient[F](prefix).toResource
 
-  /** A resources that does the following:
+  /** A resource that does the following:
     *
     *   - Builds a
     *     [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/kinesis/KinesisAsyncClient.html KinesisAsyncClient]]
@@ -261,7 +261,7 @@ object AwsClients {
     )
   } yield result
 
-  /** A resources that does the following:
+  /** A resource that does the following:
     *
     *   - Builds a
     *     [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/kinesis/KinesisAsyncClient.html KinesisAsyncClient]]

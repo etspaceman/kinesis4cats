@@ -16,18 +16,16 @@
 
 package kinesis4cats.kpl
 
-import scala.concurrent.duration._
-
 import java.nio.ByteBuffer
 
-import cats.effect.{IO, Resource, SyncIO}
+import cats.effect.{IO, SyncIO}
 import com.amazonaws.services.kinesis.producer._
 import io.circe.syntax._
 import org.scalacheck.Arbitrary
 
-import kinesis4cats.localstack.aws.v1.{AwsClients, AwsCreds}
+import kinesis4cats.localstack.TestData
+import kinesis4cats.localstack.kpl.LocalstackKPLProducer
 import kinesis4cats.localstack.syntax.scalacheck._
-import kinesis4cats.localstack.{LocalstackConfig, TestData}
 
 abstract class KPLProducerSpec(implicit LE: KPLProducerLogEncoders)
     extends munit.CatsEffectSuite
@@ -36,7 +34,7 @@ abstract class KPLProducerSpec(implicit LE: KPLProducerLogEncoders)
       streamName: String,
       shardCount: Int
   ): SyncIO[FunFixture[KPLProducer[IO]]] = ResourceFixture(
-    KPLProducerSpec.resource(streamName, shardCount)
+    LocalstackKPLProducer.producerWithStream(streamName, shardCount)
   )
 
   fixture("test1", 1).test("It should produce successfully") { producer =>
@@ -48,29 +46,4 @@ abstract class KPLProducerSpec(implicit LE: KPLProducerLogEncoders)
         assert(result.isSuccessful())
     }
   }
-}
-
-object KPLProducerSpec {
-
-  def resource(
-      streamName: String,
-      shardCount: Int
-  )(implicit LE: KPLProducerLogEncoders): Resource[IO, KPLProducer[IO]] = for {
-    config <- LocalstackConfig.resource[IO]()
-    _ <- AwsClients
-      .kinesisStreamResource[IO](config, streamName, shardCount, 5, 500.millis)
-    producer <- KPLProducer[IO](
-      new KinesisProducerConfiguration()
-        .setVerifyCertificate(false)
-        .setKinesisEndpoint(config.host)
-        .setCloudwatchEndpoint(config.host)
-        .setCredentialsProvider(AwsCreds.LocalCredsProvider)
-        .setKinesisPort(config.servicePort.toLong)
-        .setCloudwatchPort(config.servicePort.toLong)
-        .setMetricsLevel("none")
-        .setLogLevel("warning")
-        .setRegion(config.region.name)
-    )
-  } yield producer
-
 }

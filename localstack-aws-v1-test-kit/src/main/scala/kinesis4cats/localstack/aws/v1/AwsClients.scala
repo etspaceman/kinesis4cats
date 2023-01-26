@@ -117,7 +117,7 @@ object AwsClients {
   ): Resource[F, AmazonKinesisAsync] =
     kinesisClient[F](prefix).toResource
 
-  /** A resources that does the following:
+  /** A resource that does the following:
     *
     *   - Builds a
     *     [[https://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/com/amazonaws/services/kinesis/AmazonKinesisAsync.html AmazonKinesisAsync]]
@@ -206,7 +206,7 @@ object AwsClients {
     )
   } yield result
 
-  /** A resources that does the following:
+  /** A resource that does the following:
     *
     *   - Builds a
     *     [[https://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/com/amazonaws/services/kinesis/AmazonKinesisAsync.html AmazonKinesisAsync]]

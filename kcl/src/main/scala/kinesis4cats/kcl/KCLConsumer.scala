@@ -16,6 +16,7 @@
 
 package kinesis4cats.kcl
 
+import cats.effect.kernel.Deferred
 import cats.effect.syntax.all._
 import cats.effect.{Async, Ref, Resource}
 import cats.syntax.all._
@@ -85,7 +86,7 @@ object KCLConsumer {
     *   [[cats.effect.Resource Resource]] that manages the lifecycle of the
     *   [[https://github.com/awslabs/amazon-kinesis-client KCL Consumer]]
     */
-  def runWithWorkerStateChangeListener[F[_]](
+  def runWithRefListener[F[_]](
       config: KCLConsumerConfig[F]
   )(implicit
       F: Async[F]
@@ -99,4 +100,47 @@ object KCLConsumer {
       )
     )
   } yield state
+
+  /** Runs a [[https://github.com/awslabs/amazon-kinesis-client KCL Consumer]]
+    * in the background as a [[cats.effect.Resource Resource]]. This exposes the
+    * [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/coordinator/WorkerStateChangeListener.java WorkerState]]
+    * which can be used as a means to determine if the KCL Consumer is running.
+    * A common use case for this is to service healthcheck endpoints when
+    * running these in an orchestration service (e.g. Kubernetes or AWS ECS) or
+    * running tests that require the consumer to be up before an assertion is
+    * checked.
+    *
+    * Unlike `runWithRefListener`, this method uses a
+    * [[cats.effect.Deferred Deferred]] instance. This is useful when you only
+    * need to react when the KCL has reached a specific state 1 time (e.g. wait
+    * to produce to a stream until the consumer is started)
+    *
+    * @param config
+    *   [[kinesis4cats.kcl.KCLConsumerConfig KCLConsumerConfig]] containing the
+    *   required configuration
+    * @param stateToCompleteOn
+    *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/coordinator/WorkerStateChangeListener.java WorkerState]]
+    *   to expect when completing the [[cats.effect.Deferred Deferred]]. Default
+    *   is STARTED.
+    * @param F
+    *   [[cats.effect.Async Async]] instance
+    * @return
+    *   [[cats.effect.Resource Resource]] that manages the lifecycle of the
+    *   [[https://github.com/awslabs/amazon-kinesis-client KCL Consumer]]
+    */
+  def runWithDeferredListener[F[_]](
+      config: KCLConsumerConfig[F],
+      stateToCompleteOn: WorkerState = WorkerState.STARTED
+  )(implicit
+      F: Async[F]
+  ): Resource[F, Deferred[F, Unit]] = for {
+    listener <- DeferredWorkerStateChangeListener[F](stateToCompleteOn)
+    deferred <- Resource.pure(listener.deferred)
+    _ <- run(
+      config.copy(
+        coordinatorConfig =
+          config.coordinatorConfig.workerStateChangeListener(listener)
+      )
+    )
+  } yield deferred
 }

@@ -189,7 +189,9 @@ object Kinesis4CatsPlugin extends AutoPlugin {
       Munit.scalacheck % Test,
       Munit.scalacheckEffect % Test,
       Logback % Test,
-      Scalacheck % Test
+      Scalacheck % Test,
+      FS2.core % Test,
+      FS2.reactiveStreams % Test
     ),
     moduleName := "kinesis4cats-" + name.value,
     headerLicense := Some(
