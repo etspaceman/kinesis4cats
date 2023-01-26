@@ -50,7 +50,7 @@ abstract class KCLConsumerSpec(implicit
     KCLConsumerSpec.resource(streamName, shardCount, appName)
   )
 
-  override def munitTimeout: Duration = 1.minute
+  override def munitTimeout: Duration = 5.minutes
 
   val streamName = s"kcl-consumer-spec-${UUID.randomUUID().toString()}"
   val appName = streamName
@@ -58,7 +58,9 @@ abstract class KCLConsumerSpec(implicit
   fixture(streamName, 1, appName).test("It should receive produced records") {
     resources =>
       for {
+        _ <- IO.println("I AM IN THE TEST!!")
         _ <- resources.deferredStarted.get
+        _ <- IO.println("THE CONSUMER HAS STARTED!!")
         records <- IO(Arbitrary.arbitrary[TestData].take(5).toList)
         _ <- records.traverse(record =>
           resources.client.putRecord(

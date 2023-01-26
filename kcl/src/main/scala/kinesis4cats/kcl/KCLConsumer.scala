@@ -63,6 +63,7 @@ object KCLConsumer {
         else F.never
       )
       .toResource
+
     _ <- Resource.onFinalize(
       F.fromCompletableFuture(F.delay(scheduler.startGracefulShutdown())).void
     )

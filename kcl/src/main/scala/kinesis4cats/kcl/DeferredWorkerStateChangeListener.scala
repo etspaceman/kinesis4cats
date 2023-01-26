@@ -39,12 +39,14 @@ class DeferredWorkerStateChangeListener[F[_]: Sync] private[kinesis4cats] (
     val deferred: Deferred[F, Unit],
     stateToCompleteOn: WorkerState
 ) extends WorkerStateChangeListener {
-  override def onWorkerStateChange(newState: WorkerState): Unit =
+  override def onWorkerStateChange(newState: WorkerState): Unit = {
+    println(s"RECEIVED WORKER STATE CHANGE!! ${newState.name()}")
     if (newState == stateToCompleteOn)
       dispatcher.unsafeRunSync(
         deferred.complete(()).void
       )
     else ()
+  }
   override def onAllInitializationAttemptsFailed(e: Throwable): Unit = ()
 }
 
