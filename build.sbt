@@ -34,10 +34,11 @@ lazy val `shared-ciris` = project
 
 lazy val `localstack-test-kit-common` = project
   .settings(
-    description := "Common utilities for the localstack test-kits"
+    description := "Common utilities for the localstack test-kits",
+    libraryDependencies ++= Seq(Scalacheck)
   )
   .enableIntegrationTests
-  .dependsOn(shared, `shared-ciris`)
+  .dependsOn(shared, `shared-ciris`, `shared-circe`)
 
 lazy val `localstack-aws-v2-test-kit` = project
   .settings(
@@ -115,7 +116,8 @@ lazy val `kinesis-client` = project
     description := "Cats tooling for the Java Kinesis Client",
     libraryDependencies ++= Seq(
       Aws.V2.kinesis,
-      Log4Cats.slf4j
+      Log4Cats.slf4j,
+      FS2.reactiveStreams % IT
     )
   )
   .enableIntegrationTests

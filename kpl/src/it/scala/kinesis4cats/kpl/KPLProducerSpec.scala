@@ -23,9 +23,11 @@ import java.nio.ByteBuffer
 import cats.effect.{IO, Resource, SyncIO}
 import com.amazonaws.services.kinesis.producer._
 import io.circe.syntax._
+import org.scalacheck.Arbitrary
 
-import kinesis4cats.localstack.LocalstackConfig
 import kinesis4cats.localstack.aws.v1.{AwsClients, AwsCreds}
+import kinesis4cats.localstack.syntax.scalacheck._
+import kinesis4cats.localstack.{LocalstackConfig, TestData}
 
 abstract class KPLProducerSpec(implicit LE: KPLProducerLogEncoders)
     extends munit.CatsEffectSuite
@@ -38,7 +40,7 @@ abstract class KPLProducerSpec(implicit LE: KPLProducerLogEncoders)
   )
 
   fixture("test1", 1).test("It should produce successfully") { producer =>
-    val testData = TestData("foo", 1.0f, 2.0, true, 3, 4L)
+    val testData = Arbitrary.arbitrary[TestData].one
     val testDataBB = ByteBuffer.wrap(testData.asJson.noSpaces.getBytes())
 
     producer.put(new UserRecord("test1", "partitionKey", testDataBB)).map {
@@ -70,4 +72,5 @@ object KPLProducerSpec {
         .setRegion(config.region.name)
     )
   } yield producer
+
 }

@@ -188,9 +188,8 @@ object Kinesis4CatsPlugin extends AutoPlugin {
       Munit.catsEffect % Test,
       Munit.scalacheck % Test,
       Munit.scalacheckEffect % Test,
-      Circe.core % Test,
-      Circe.parser % Test,
-      Logback % Test
+      Logback % Test,
+      Scalacheck % Test
     ),
     moduleName := "kinesis4cats-" + name.value,
     headerLicense := Some(

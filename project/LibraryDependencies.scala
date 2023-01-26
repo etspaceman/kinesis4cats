@@ -6,6 +6,13 @@ object LibraryDependencies {
   val Logback = "ch.qos.logback" % "logback-classic" % "1.4.5"
   val CatsRetry = "com.github.cb372" %% "cats-retry" % "3.1.0"
   val JavaXMLBind = "javax.xml.bind" % "jaxb-api" % "2.3.1"
+  val Scalacheck = "org.scalacheck" %% "scalacheck" % "1.17.0"
+
+  object FS2 {
+    val fs2Version = "3.5.0"
+    val core = "co.fs2" %% "fs2-core" % fs2Version
+    val reactiveStreams = "co.fs2" %% "fs2-reactive-streams" % fs2Version
+  }
 
   object Log4Cats {
     val log4CatsVersion = "2.5.0"
