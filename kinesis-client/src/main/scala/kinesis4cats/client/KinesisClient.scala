@@ -43,7 +43,7 @@ import kinesis4cats.logging.{LogContext, LogEncoder}
   * @param LE
   *   [[kinesis4cats.client.KinesisClientLogEncoders KinesisClientLogEncoders]]
   */
-class KinesisClient[F[_]] private (
+class KinesisClient[F[_]] private[kinesis4cats] (
     client: KinesisAsyncClient,
     logger: StructuredLogger[F]
 )(implicit

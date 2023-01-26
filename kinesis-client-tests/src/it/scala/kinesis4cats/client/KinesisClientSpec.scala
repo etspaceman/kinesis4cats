@@ -20,7 +20,7 @@ import scala.jdk.CollectionConverters._
 
 import java.util.UUID
 
-import cats.effect.{IO, Resource, SyncIO}
+import cats.effect.{IO, SyncIO}
 import cats.syntax.all._
 import fs2.interop.reactivestreams._
 import io.circe.parser._
@@ -29,15 +29,15 @@ import org.scalacheck.Arbitrary
 import software.amazon.awssdk.core.SdkBytes
 import software.amazon.awssdk.services.kinesis.model._
 
-import kinesis4cats.localstack.aws.v2.AwsClients
+import kinesis4cats.localstack._
+import kinesis4cats.localstack.client.LocalstackKinesisClient
 import kinesis4cats.localstack.syntax.scalacheck._
-import kinesis4cats.localstack.{LocalstackConfig, _}
 
 abstract class KinesisClientSpec(implicit LE: KinesisClientLogEncoders)
     extends munit.CatsEffectSuite {
   def fixture: SyncIO[FunFixture[KinesisClient[IO]]] =
     ResourceFixture(
-      KinesisClientSpec.resource
+      LocalstackKinesisClient.clientResource()
     )
 
   val streamName = s"kinesis-client-spec-${UUID.randomUUID().toString()}"
@@ -171,11 +171,7 @@ abstract class KinesisClientSpec(implicit LE: KinesisClientLogEncoders)
         .toList
         .map(x => new String(x.data().asByteArray()))
       recordsParsed <- recordBytes.traverse(bytes =>
-        IO.fromEither(
-          parse(bytes)
-            .flatMap(_.as[TestData])
-            .leftMap(e => new RuntimeException(e))
-        )
+        IO.fromEither(decode[TestData](bytes))
       )
       consumers <- client.listStreamConsumers(
         ListStreamConsumersRequest.builder().streamARN(streamArn).build()
@@ -263,15 +259,4 @@ abstract class KinesisClientSpec(implicit LE: KinesisClientLogEncoders)
     }
   }
 
-}
-
-object KinesisClientSpec {
-  def resource(implicit
-      LE: KinesisClientLogEncoders
-  ): Resource[IO, KinesisClient[IO]] =
-    for {
-      config <- LocalstackConfig.resource[IO]()
-      underlying <- AwsClients.kinesisClientResource[IO](config)
-      client <- KinesisClient[IO](underlying)
-    } yield client
 }

@@ -64,6 +64,20 @@ lazy val `localstack-aws-v1-test-kit` = project
   .enableIntegrationTests
   .dependsOn(`localstack-test-kit-common`)
 
+lazy val `localstack-kinesis-client-test-kit` = project
+  .settings(
+    description := "A test-kit for working with Kinesis and Localstack, via the Kinesis Client project"
+  )
+  .enableIntegrationTests
+  .dependsOn(`localstack-aws-v2-test-kit`, `kinesis-client`)
+
+lazy val `localstack-kpl-test-kit` = project
+  .settings(
+    description := "A test-kit for working with Kinesis and Localstack, via the KPL"
+  )
+  .enableIntegrationTests
+  .dependsOn(`localstack-aws-v1-test-kit`, kpl)
+
 lazy val kcl = project
   .settings(
     description := "Cats tooling for the Kinesis Client Library (KCL)",
@@ -73,7 +87,7 @@ lazy val kcl = project
     )
   )
   .enableIntegrationTests
-  .dependsOn(shared, `localstack-aws-v2-test-kit` % IT)
+  .dependsOn(shared)
 
 lazy val `kcl-logging-circe` = project
   .settings(
@@ -83,8 +97,29 @@ lazy val `kcl-logging-circe` = project
   .dependsOn(
     kcl,
     `shared-circe`,
-    `localstack-aws-v2-test-kit` % IT,
+    `localstack-kinesis-client-test-kit` % IT,
+    `localstack-kcl-test-kit` % IT,
     kcl % "it->it"
+  )
+
+lazy val `localstack-kcl-test-kit` = project
+  .settings(
+    description := "A test-kit for working with Kinesis and Localstack, via the KCL"
+  )
+  .enableIntegrationTests
+  .dependsOn(`localstack-aws-v2-test-kit`, kcl)
+
+lazy val `kcl-tests` = project
+  .enablePlugins(NoPublishPlugin)
+  .settings(
+    description := "Integration Tests for the KCL"
+  )
+  .enableIntegrationTests
+  .dependsOn(
+    `localstack-kinesis-client-test-kit` % IT,
+    `kcl-logging-circe` % IT,
+    `kinesis-client-logging-circe` % IT,
+    `localstack-kcl-test-kit` % IT
   )
 
 lazy val kpl = project
@@ -97,18 +132,24 @@ lazy val kpl = project
     )
   )
   .enableIntegrationTests
-  .dependsOn(shared, `localstack-aws-v1-test-kit` % IT)
+  .dependsOn(shared)
 
 lazy val `kpl-logging-circe` = project
   .settings(
     description := "JSON structured logging instances for the KPL, via Circe"
   )
   .enableIntegrationTests
+  .dependsOn(kpl, `shared-circe`)
+
+lazy val `kpl-tests` = project
+  .enablePlugins(NoPublishPlugin)
+  .settings(
+    description := "Integration Tests for the KPL"
+  )
+  .enableIntegrationTests
   .dependsOn(
-    kpl,
-    `shared-circe`,
-    `localstack-aws-v1-test-kit` % IT,
-    kpl % "it->it"
+    `localstack-kpl-test-kit` % IT,
+    `kpl-logging-circe` % IT
   )
 
 lazy val `kinesis-client` = project
@@ -116,12 +157,11 @@ lazy val `kinesis-client` = project
     description := "Cats tooling for the Java Kinesis Client",
     libraryDependencies ++= Seq(
       Aws.V2.kinesis,
-      Log4Cats.slf4j,
-      FS2.reactiveStreams % IT
+      Log4Cats.slf4j
     )
   )
   .enableIntegrationTests
-  .dependsOn(shared, `localstack-aws-v2-test-kit` % IT)
+  .dependsOn(shared)
 
 lazy val `kinesis-client-logging-circe` = project
   .settings(
@@ -133,6 +173,17 @@ lazy val `kinesis-client-logging-circe` = project
     `shared-circe`,
     `localstack-aws-v2-test-kit` % IT,
     `kinesis-client` % "it->it"
+  )
+
+lazy val `kinesis-client-tests` = project
+  .enablePlugins(NoPublishPlugin)
+  .settings(
+    description := "Integration Tests for the Kinesis Client"
+  )
+  .enableIntegrationTests
+  .dependsOn(
+    `localstack-kinesis-client-test-kit` % IT,
+    `kinesis-client-logging-circe` % IT
   )
 
 lazy val root =
@@ -149,10 +200,16 @@ lazy val root =
       `localstack-test-kit-common`,
       `localstack-aws-v1-test-kit`,
       `localstack-aws-v2-test-kit`,
+      `localstack-kinesis-client-test-kit`,
+      `localstack-kpl-test-kit`,
+      `localstack-kcl-test-kit`,
       kcl,
       `kcl-logging-circe`,
+      `kcl-tests`,
       kpl,
       `kpl-logging-circe`,
+      `kpl-tests`,
       `kinesis-client`,
-      `kinesis-client-logging-circe`
+      `kinesis-client-logging-circe`,
+      `kinesis-client-tests`
     )
