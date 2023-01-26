@@ -19,6 +19,15 @@ package kinesis4cats.localstack
 import io.circe.{Decoder, Encoder}
 import org.scalacheck.Arbitrary
 
+/** Basic test data class
+  *
+  * @param string
+  * @param float
+  * @param double
+  * @param boolean
+  * @param int
+  * @param long
+  */
 final case class TestData(
     string: String,
     float: Float,

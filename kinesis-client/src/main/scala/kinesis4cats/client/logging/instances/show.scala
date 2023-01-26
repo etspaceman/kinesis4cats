@@ -26,6 +26,9 @@ import kinesis4cats.ShowBuilder
 import kinesis4cats.client.KinesisClientLogEncoders
 import kinesis4cats.logging.instances.show._
 
+/** KinesisClient [[kinesis4cats.logging.LogEncoder LogEncoder]] instances for
+  * string encoding of log structures using [[cats.Show Show]]
+  */
 object show {
 
   implicit val kinesisResponseMetadataShow: Show[KinesisResponseMetadata] = x =>

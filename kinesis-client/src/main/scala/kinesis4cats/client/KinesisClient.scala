@@ -29,6 +29,20 @@ import software.amazon.awssdk.services.kinesis.paginators._
 
 import kinesis4cats.logging.{LogContext, LogEncoder}
 
+/** Wrapper class for the
+  * [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/kinesis/KinesisAsyncClient.html KinesisAsyncClient]],
+  * returning F as [[cats.effect.Async Async]] results (instead of
+  * CompletableFuture)
+  *
+  * @param client
+  *   [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/kinesis/KinesisAsyncClient.html KinesisAsyncClient]]
+  * @param logger
+  *   [[org.typelevel.log4cats.StructuredLogger StructuredLogger]] in use
+  * @param F
+  *   F with a [[cats.effect.Async Async]] instance
+  * @param LE
+  *   [[kinesis4cats.client.KinesisClientLogEncoders KinesisClientLogEncoders]]
+  */
 class KinesisClient[F[_]] private (
     client: KinesisAsyncClient,
     logger: StructuredLogger[F]
@@ -295,6 +309,20 @@ class KinesisClient[F[_]] private (
 }
 
 object KinesisClient {
+
+  /** Constructor for the KinesisClient, as a managed
+    * [[cats.effect.Resource Resource]]
+    *
+    * @param client
+    *   [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/kinesis/KinesisAsyncClient.html KinesisAsyncClient]]
+    * @param F
+    *   F with an [[cats.effect.Async Async]] instance
+    * @param LE
+    *   [[kinesis4cats.client.KinesisClientLogEncoders KinesisClientLogEncoders]]
+    * @return
+    *   [[cats.effect.Resource Resource]] containing a
+    *   [[kinesis4cats.client.KinesisClient]]
+    */
   def apply[F[_]](
       client: KinesisAsyncClient
   )(implicit

@@ -20,6 +20,10 @@ import software.amazon.awssdk.services.kinesis.model._
 
 import kinesis4cats.logging.LogEncoder
 
+/** Helper class containing required
+  * [[kinesis4cats.logging.LogEncoder LogEncoders]] for the
+  * [[kinesis4cats.client.KinesisClient KinesisClient]]
+  */
 final class KinesisClientLogEncoders(implicit
     val addTagsToStreamRequestLogEncoder: LogEncoder[AddTagsToStreamRequest],
     val addTagsToStreamResponseLogEncoder: LogEncoder[AddTagsToStreamResponse],

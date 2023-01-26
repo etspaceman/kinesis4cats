@@ -22,6 +22,15 @@ import cats.Eq
 import cats.syntax.all._
 import io.circe._
 
+/** Helper class for constructing and representing Kinesis stream ARN values
+  *
+  * @param awsRegion
+  *   [[kinesis4cats.localstack.AwsRegion AwsRegion]]
+  * @param streamName
+  *   Name of stream
+  * @param awsAccountId
+  *   12 digit AWS account ID. For Localstack, this is all 0s
+  */
 final case class StreamArn(
     awsRegion: AwsRegion,
     streamName: String,

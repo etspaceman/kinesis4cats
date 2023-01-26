@@ -26,6 +26,9 @@ import kinesis4cats.client.KinesisClientLogEncoders
 import kinesis4cats.logging.instances.circe._
 import kinesis4cats.logging.syntax.circe._
 
+/** KinesisClient [[kinesis4cats.logging.LogEncoder LogEncoder]] instances for
+  * string encoding of log structures using [[cats.Show Show]]
+  */
 object circe {
 
   implicit val kinesisResponseMetadataEncoder
