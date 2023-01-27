@@ -1,6 +1,6 @@
 # Localstack
 
-The ability to provide a @:source(kinesis4cats.kpl.KPLProducer) that is compliant with Localstack
+The ability to provide a @:source(kpl.src.main.scala.kinesis4cats.kpl.KPLProducer) that is compliant with Localstack
 
 ## Installation
 

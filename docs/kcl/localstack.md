@@ -1,6 +1,6 @@
 # Localstack
 
-The ability to provide a @:source(kinesis4cats.kcl.KCLConsumer) that is compliant with Localstack
+The ability to provide a @:source(kcl.src.main.scala.kinesis4cats.kcl.KCLConsumer) that is compliant with Localstack
 
 ## Installation
 

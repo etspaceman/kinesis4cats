@@ -217,7 +217,7 @@ lazy val docs = project
       LinkConfig(sourceLinks =
         Seq(
           SourceLinks(
-            baseUri = "https://github.com/etspaceman/kinesis4cats",
+            baseUri = "https://github.com/etspaceman/kinesis4cats/blob/main/",
             suffix = "scala"
           )
         )
