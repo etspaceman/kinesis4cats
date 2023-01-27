@@ -55,23 +55,26 @@ object Kinesis4CatsPlugin extends AutoPlugin {
     developers := List(tlGitHubDev("etspaceman", "Eric Meisel")),
     coverageScalacPluginVersion := "2.0.7",
     tlSitePublishBranch := Some("main"),
-    tlSiteApiUrl := Some(
-      url(
-        "https://www.javadoc.io/doc/io.github.etspaceman/kinesis4cats_2.13/latest/io/github/etspaceman/kinesis4cats/"
-      )
-    ),
-    tlSiteRelatedProjects := Seq(
-      "Cats" -> url("https://typelevel.org/cats/"),
-      "Cats Effect" -> url("https://typelevel.org/cats-effect/"),
-      "Kinesis Client Library (KCL)" -> url("https://docs.aws.amazon.com/streams/latest/dev/shared-throughput-kcl-consumers.html"),
-      "Kinesis Producer Library (KPL)" -> url("https://docs.aws.amazon.com/streams/latest/dev/developing-producers-with-kpl.html"),
-      "AWS Java SDK V1" -> url("https://docs.aws.amazon.com/sdk-for-java/v1/developer-guide/welcome.html"),
-      "AWS Java SDK V2" -> url("https://docs.aws.amazon.com/sdk-for-java/latest/developer-guide/home.html"),
-      "Circe" -> url("https://circe.github.io/circe/"),
-      "Ciris" -> url("https://cir.is/"),
-      "Localstack" -> url("https://localstack.cloud/"),
-      "Http4s" -> url("https://http4s.org/"),
-      "FS2" -> url("https://fs2.io/")
+    tlSiteApiPackage := Some("kinesis4cats"),
+    tlSiteRelatedProjects ++= Seq(
+      TypelevelProject.CatsEffect,
+      TypelevelProject.Fs2,
+      TypelevelProject.Http4s,
+      "kcl" -> url(
+        "https://docs.aws.amazon.com/streams/latest/dev/shared-throughput-kcl-consumers.html"
+      ),
+      "kpl" -> url(
+        "https://docs.aws.amazon.com/streams/latest/dev/developing-producers-with-kpl.html"
+      ),
+      "aws-java-sdk-v1" -> url(
+        "https://docs.aws.amazon.com/sdk-for-java/v1/developer-guide/welcome.html"
+      ),
+      "aws-java-sdk-v2" -> url(
+        "https://docs.aws.amazon.com/sdk-for-java/latest/developer-guide/home.html"
+      ),
+      "circe" -> url("https://circe.github.io/circe/"),
+      "ciris" -> url("https://cir.is/"),
+      "localstack" -> url("https://localstack.cloud/")
     ),
     githubWorkflowBuild := {
       val style = (tlCiHeaderCheck.value, tlCiScalafmtCheck.value) match {
