@@ -5,7 +5,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="Laika 0.18.1 + Helium Theme" />
-    <title>Overview</title>
+    <title>Getting Started</title>
     
       <meta name="author" content="Eric Meisel"/>
     
@@ -20,10 +20,10 @@
     
       <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/tonsky/FiraCode@1.207/distr/fira_code.css">
     
-    <link rel="stylesheet" type="text/css" href="helium/icofont.min.css" />
-    <link rel="stylesheet" type="text/css" href="helium/laika-helium.css" />
-    <link rel="stylesheet" type="text/css" href="site/styles.css" />
-    <script src="helium/laika-helium.js"></script>
+    <link rel="stylesheet" type="text/css" href="../helium/icofont.min.css" />
+    <link rel="stylesheet" type="text/css" href="../helium/laika-helium.css" />
+    <link rel="stylesheet" type="text/css" href="../site/styles.css" />
+    <script src="../helium/laika-helium.js"></script>
     
     
     <script> /* for avoiding page load transitions */ </script>
@@ -69,23 +69,23 @@
       </div>
 
       <ul class="nav-list">
-        <li class="level1 active"><a href="#">Overview</a></li>
+        <li class="level1"><a href="../index.html">Overview</a></li>
         <li class="level1 nav-header">Kinesis Producer Library (KPL)</li>
-        <li class="level2"><a href="kpl/getting-started.html">Getting Started</a></li>
-        <li class="level2"><a href="kpl/circe.html">Circe Logging</a></li>
-        <li class="level2"><a href="kpl/localstack.html">Localstack</a></li>
+        <li class="level2"><a href="../kpl/getting-started.html">Getting Started</a></li>
+        <li class="level2"><a href="../kpl/circe.html">Circe Logging</a></li>
+        <li class="level2"><a href="../kpl/localstack.html">Localstack</a></li>
         <li class="level1 nav-header">Kinesis Client Library (KCL)</li>
-        <li class="level2"><a href="kcl/getting-started.html">Getting Started</a></li>
-        <li class="level2"><a href="kcl/circe.html">Circe Logging</a></li>
-        <li class="level2"><a href="kcl/localstack.html">Localstack</a></li>
+        <li class="level2 active"><a href="#">Getting Started</a></li>
+        <li class="level2"><a href="circe.html">Circe Logging</a></li>
+        <li class="level2"><a href="localstack.html">Localstack</a></li>
         <li class="level1 nav-header">Kinesis Client</li>
-        <li class="level2"><a href="client/getting-started.html">Getting Started</a></li>
-        <li class="level2"><a href="client/circe.html">Circe Logging</a></li>
-        <li class="level2"><a href="client/localstack.html">Localstack</a></li>
+        <li class="level2"><a href="../client/getting-started.html">Getting Started</a></li>
+        <li class="level2"><a href="../client/circe.html">Circe Logging</a></li>
+        <li class="level2"><a href="../client/localstack.html">Localstack</a></li>
         <li class="level1 nav-header">Localstack</li>
-        <li class="level2"><a href="localstack/getting-started.html">Localstack</a></li>
-        <li class="level2"><a href="localstack/aws-v1.html">AWS V1</a></li>
-        <li class="level2"><a href="localstack/aws-v2.html">AWS V2</a></li>
+        <li class="level2"><a href="../localstack/getting-started.html">Localstack</a></li>
+        <li class="level2"><a href="../localstack/aws-v1.html">AWS V1</a></li>
+        <li class="level2"><a href="../localstack/aws-v2.html">AWS V2</a></li>
       </ul>
 
       <ul class="nav-list">
@@ -120,11 +120,11 @@
     <div id="container">
 
       <nav id="page-nav">
-        <p class="header"><a href="#">Overview</a></p>
+        <p class="header"><a href="#">Getting Started</a></p>
 
         <ul class="nav-list">
-          <li class="level1"><a href="#project-goals">Project Goals</a></li>
-          <li class="level1"><a href="#logging">Logging</a></li>
+          <li class="level1"><a href="#installation">Installation</a></li>
+          <li class="level1"><a href="#usage">Usage</a></li>
         </ul>
 
         <p class="footer"></p>
@@ -132,25 +132,38 @@
 
       <main class="content">
 
-        <h1 id="overview" class="title">Overview</h1>
-        <p><a href="https://github.com/etspaceman/kinesis4cats/actions/workflows/ci.yml"><img src="https://github.com/etspaceman/kinesis4cats/actions/workflows/ci.yml/badge.svg" alt="Build"></a>
-        <a href="https://codecov.io/gh/etspaceman/kinesis4cats"><img src="https://codecov.io/gh/etspaceman/kinesis4cats/branch/main/graph/badge.svg?token=HSJWGQ8M2W" alt="codecov"></a>
-        <a href="https://scala-steward.org"><img src="https://img.shields.io/badge/Scala_Steward-helping-blue.svg?style=flat&logo=data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA4AAAAQCAMAAAARSr4IAAAAVFBMVEUAAACHjojlOy5NWlrKzcYRKjGFjIbp293YycuLa3pYY2LSqql4f3pCUFTgSjNodYRmcXUsPD/NTTbjRS+2jomhgnzNc223cGvZS0HaSD0XLjbaSjElhIr+AAAAAXRSTlMAQObYZgAAAHlJREFUCNdNyosOwyAIhWHAQS1Vt7a77/3fcxxdmv0xwmckutAR1nkm4ggbyEcg/wWmlGLDAA3oL50xi6fk5ffZ3E2E3QfZDCcCN2YtbEWZt+Drc6u6rlqv7Uk0LdKqqr5rk2UCRXOk0vmQKGfc94nOJyQjouF9H/wCc9gECEYfONoAAAAASUVORK5CYII=" alt="Scala Steward badge"></a></p>
+        <h1 id="getting-started" class="title">Getting Started</h1>
+        <p>This module intends to be an enriched wrapper for the <a href="https://docs.aws.amazon.com/streams/latest/dev/shared-throughput-kcl-consumers.html">KCL</a>, offered by AWS.</p>
         
-        <h2 id="project-goals" class="section">Project Goals<a class="anchor-link right" href="#project-goals"><i class="icofont-laika">&#xef71;</i></a></h2>
-        <p>kinesis4cats is intended to give Scala developers a rich ecosystem of tooling when developing <a href="https://aws.amazon.com/kinesis/">Kinesis</a> applications, leveraging the <a href="https://typelevel.org/">typelevel</a> ecosystem. </p>
+        <h2 id="installation" class="section">Installation<a class="anchor-link right" href="#installation"><i class="icofont-laika">&#xef71;</i></a></h2>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">libraryDependencies</span><span> += </span><span class="string-literal">&quot;io.github.etspaceman&quot;</span><span> %% </span><span class="string-literal">&quot;kinesis4cats-kcl&quot;</span><span> % </span><span class="string-literal">&quot;0.0-9e1e522-SNAPSHOT&quot;</span></code></pre>
         
-        <h2 id="logging" class="section">Logging<a class="anchor-link right" href="#logging"><i class="icofont-laika">&#xef71;</i></a></h2>
-        <p>Logs are an important part of maintaining business applications. To accomplish this, most developers leverage some means of structured logging, which effectively boils down to having a context of keys and values that are parseable by a log ingestor (e.g. datadog, splunk, etc.).</p>
-        <p>This library takes structured logging seriously, and offers it as a first class citizen. This library adheres to the following log-level definitions:</p>
-        <ul>
-          <li>ERROR: Unhandled errors / outcomes</li>
-          <li>WARN: Handled errors / outcomes</li>
-          <li>INFO: Informational, low-frequency logs (e.g. startup/shutdown logs)</li>
-          <li>DEBUG: Informational, high-frequency logs (e.g. request logging)</li>
-          <li>TRACE: Data / class bodies</li>
-        </ul>
-        <p>Each offering leverages <a href="https://github.com/etspaceman/kinesis4cats/blob/main/shared/src/main/scala/kinesis4cats/logging/LogEncoder.scala">LogEncoder</a> instances to structure the logs that you see. There are <a href="https://typelevel.org/cats/typeclasses/show.html">Show</a> instances available to import out-of-the-box, which attempts to create a toString-like representation of the structures. That can be useful for most people, but if you are looking to introduce more searchability, using a JSON offering can be very beneficial. There are <a href="https://circe.github.io/circe/">Circe</a> modules for these instances that users can leverage for this purpose.</p>
+        <h2 id="usage" class="section">Usage<a class="anchor-link right" href="#usage"><i class="icofont-laika">&#xef71;</i></a></h2>
+        <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">effect</span><span>.</span><span class="identifier">_</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">syntax</span><span>.</span><span class="identifier">all</span><span>.</span><span class="identifier">_</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">software</span><span>.</span><span class="identifier">amazon</span><span>.</span><span class="identifier">awssdk</span><span>.</span><span class="identifier">services</span><span>.</span><span class="identifier">cloudwatch</span><span>.</span><span class="type-name">CloudWatchAsyncClient</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">software</span><span>.</span><span class="identifier">amazon</span><span>.</span><span class="identifier">awssdk</span><span>.</span><span class="identifier">services</span><span>.</span><span class="identifier">dynamodb</span><span>.</span><span class="type-name">DynamoDbAsyncClient</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">software</span><span>.</span><span class="identifier">amazon</span><span>.</span><span class="identifier">awssdk</span><span>.</span><span class="identifier">services</span><span>.</span><span class="identifier">kinesis</span><span>.</span><span class="type-name">KinesisAsyncClient</span><span>
+
+</span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">kcl</span><span>.</span><span class="identifier">_</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">kcl</span><span>.</span><span class="identifier">logging</span><span>.</span><span class="identifier">instances</span><span>.</span><span class="identifier">show</span><span>.</span><span class="identifier">_</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">syntax</span><span>.</span><span class="identifier">bytebuffer</span><span>.</span><span class="identifier">_</span><span>
+
+</span><span class="keyword">object</span><span> </span><span class="type-name">MyApp</span><span> </span><span class="keyword">extends</span><span> </span><span class="type-name">ResourceApp</span><span>.</span><span class="type-name">Forever</span><span> {
+    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">run</span><span>(</span><span class="identifier">args</span><span>: </span><span class="type-name">List</span><span>[</span><span class="type-name">String</span><span>]) = </span><span class="keyword">for</span><span> {
+        </span><span class="identifier">kinesisClient</span><span> &lt;- </span><span class="type-name">Resource</span><span>.</span><span class="identifier">fromAutoCloseable</span><span>(</span><span class="type-name">IO</span><span>(</span><span class="type-name">KinesisAsyncClient</span><span>.</span><span class="identifier">builder</span><span>().</span><span class="identifier">build</span><span>()))
+        </span><span class="identifier">dynamoClient</span><span> &lt;- </span><span class="type-name">Resource</span><span>.</span><span class="identifier">fromAutoCloseable</span><span>(</span><span class="type-name">IO</span><span>(</span><span class="type-name">DynamoDbAsyncClient</span><span>.</span><span class="identifier">builder</span><span>().</span><span class="identifier">build</span><span>()))
+        </span><span class="identifier">cloudWatchClient</span><span> &lt;- </span><span class="type-name">Resource</span><span>.</span><span class="identifier">fromAutoCloseable</span><span>(</span><span class="type-name">IO</span><span>(</span><span class="type-name">CloudWatchAsyncClient</span><span>.</span><span class="identifier">builder</span><span>().</span><span class="identifier">build</span><span>()))
+        </span><span class="identifier">consumer</span><span> &lt;- </span><span class="type-name">KCLConsumer</span><span>.</span><span class="identifier">configsBuilder</span><span>[</span><span class="type-name">IO</span><span>](
+            </span><span class="identifier">kinesisClient</span><span>, 
+            </span><span class="identifier">dynamoClient</span><span>, 
+            </span><span class="identifier">cloudWatchClient</span><span>, 
+            </span><span class="string-literal">&quot;my-stream&quot;</span><span>, 
+            </span><span class="string-literal">&quot;my-app-name&quot;</span><span>
+        )((</span><span class="identifier">records</span><span>: </span><span class="type-name">List</span><span>[</span><span class="type-name">CommittableRecord</span><span>[</span><span class="type-name">IO</span><span>]]) =&gt; </span><span class="identifier">records</span><span>.</span><span class="identifier">traverse_</span><span>(</span><span class="identifier">r</span><span> =&gt; </span><span class="type-name">IO</span><span>.</span><span class="identifier">println</span><span>(</span><span class="identifier">r</span><span>.</span><span class="identifier">data</span><span>.</span><span class="identifier">asString</span><span>)))()
+        </span><span class="identifier">_</span><span> &lt;- </span><span class="identifier">consumer</span><span>.</span><span class="identifier">run</span><span>()
+    } </span><span class="keyword">yield</span><span> ()
+}</span></code></pre>
 
         <hr style="margin-top: 30px"/>
         <footer style="font-size: 90%; text-align: center">
