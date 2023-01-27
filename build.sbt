@@ -189,7 +189,31 @@ lazy val `kinesis-client-tests` = project
 lazy val docs = project
   .in(file("site"))
   .enablePlugins(TypelevelSitePlugin)
-  .settings(tlFatalWarningsInCi := false)
+  .settings(
+    tlFatalWarningsInCi := false,
+    tlSiteApiPackage := Some("kinesis4cats"),
+    tlSitePublishBranch := Some("main"),
+    tlSiteRelatedProjects ++= Seq(
+      TypelevelProject.CatsEffect,
+      TypelevelProject.Fs2,
+      TypelevelProject.Http4s,
+      "kcl" -> url(
+        "https://docs.aws.amazon.com/streams/latest/dev/shared-throughput-kcl-consumers.html"
+      ),
+      "kpl" -> url(
+        "https://docs.aws.amazon.com/streams/latest/dev/developing-producers-with-kpl.html"
+      ),
+      "aws-java-sdk-v1" -> url(
+        "https://docs.aws.amazon.com/sdk-for-java/v1/developer-guide/welcome.html"
+      ),
+      "aws-java-sdk-v2" -> url(
+        "https://docs.aws.amazon.com/sdk-for-java/latest/developer-guide/home.html"
+      ),
+      "circe" -> url("https://circe.github.io/circe/"),
+      "ciris" -> url("https://cir.is/"),
+      "localstack" -> url("https://localstack.cloud/")
+    )
+  )
   .dependsOn(
     compat,
     shared,

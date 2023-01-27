@@ -54,28 +54,6 @@ object Kinesis4CatsPlugin extends AutoPlugin {
     licenses := Seq(License.Apache2),
     developers := List(tlGitHubDev("etspaceman", "Eric Meisel")),
     coverageScalacPluginVersion := "2.0.7",
-    tlSitePublishBranch := Some("main"),
-    tlSiteApiPackage := Some("kinesis4cats"),
-    tlSiteRelatedProjects ++= Seq(
-      TypelevelProject.CatsEffect,
-      TypelevelProject.Fs2,
-      TypelevelProject.Http4s,
-      "kcl" -> url(
-        "https://docs.aws.amazon.com/streams/latest/dev/shared-throughput-kcl-consumers.html"
-      ),
-      "kpl" -> url(
-        "https://docs.aws.amazon.com/streams/latest/dev/developing-producers-with-kpl.html"
-      ),
-      "aws-java-sdk-v1" -> url(
-        "https://docs.aws.amazon.com/sdk-for-java/v1/developer-guide/welcome.html"
-      ),
-      "aws-java-sdk-v2" -> url(
-        "https://docs.aws.amazon.com/sdk-for-java/latest/developer-guide/home.html"
-      ),
-      "circe" -> url("https://circe.github.io/circe/"),
-      "ciris" -> url("https://cir.is/"),
-      "localstack" -> url("https://localstack.cloud/")
-    ),
     githubWorkflowBuild := {
       val style = (tlCiHeaderCheck.value, tlCiScalafmtCheck.value) match {
         case (true, true) => // headers + formatting
