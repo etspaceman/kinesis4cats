@@ -186,11 +186,68 @@ lazy val `kinesis-client-tests` = project
     `kinesis-client-logging-circe` % IT
   )
 
+lazy val docs = project
+  .in(file("site"))
+  .enablePlugins(TypelevelSitePlugin)
+  .settings(tlFatalWarningsInCi := false)
+  .dependsOn(
+    compat,
+    shared,
+    `shared-circe`,
+    `shared-ciris`,
+    `localstack-test-kit-common`,
+    `localstack-aws-v1-test-kit`,
+    `localstack-aws-v2-test-kit`,
+    `localstack-kinesis-client-test-kit`,
+    `localstack-kpl-test-kit`,
+    `localstack-kcl-test-kit`,
+    kcl,
+    `kcl-logging-circe`,
+    `kcl-tests`,
+    kpl,
+    `kpl-logging-circe`,
+    `kpl-tests`,
+    `kinesis-client`,
+    `kinesis-client-logging-circe`,
+    `kinesis-client-tests`
+  )
+
+lazy val unidocs = project
+  .enablePlugins(TypelevelUnidocPlugin)
+  .settings(
+    name := "kinesis4cats-docs",
+    moduleName := name.value,
+    ScalaUnidoc / unidoc / unidocProjectFilter := inProjects(
+      compat,
+      shared,
+      `shared-circe`,
+      `shared-ciris`,
+      `localstack-test-kit-common`,
+      `localstack-aws-v1-test-kit`,
+      `localstack-aws-v2-test-kit`,
+      `localstack-kinesis-client-test-kit`,
+      `localstack-kpl-test-kit`,
+      `localstack-kcl-test-kit`,
+      kcl,
+      `kcl-logging-circe`,
+      `kcl-tests`,
+      kpl,
+      `kpl-logging-circe`,
+      `kpl-tests`,
+      `kinesis-client`,
+      `kinesis-client-logging-circe`,
+      `kinesis-client-tests`
+    )
+  )
+
 lazy val root =
   tlCrossRootProject
     .configure(
       _.enableIntegrationTests,
-      _.settings(DockerComposePlugin.settings(IT, false))
+      _.settings(
+        DockerComposePlugin.settings(IT, false),
+        name := "kinesis4cats"
+      )
     )
     .aggregate(
       compat,

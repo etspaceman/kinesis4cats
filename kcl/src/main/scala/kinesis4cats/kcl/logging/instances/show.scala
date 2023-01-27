@@ -15,7 +15,8 @@
  */
 
 package kinesis4cats
-package kcl.logging.instances
+package kcl
+package logging.instances
 
 import cats.Show
 import com.amazonaws.services.schemaregistry.common.Schema
@@ -24,8 +25,6 @@ import software.amazon.kinesis.lifecycle.events._
 import software.amazon.kinesis.retrieval.KinesisClientRecord
 import software.amazon.kinesis.retrieval.kpl.ExtendedSequenceNumber
 
-import kinesis4cats.ShowBuilder
-import kinesis4cats.kcl.processor.RecordProcessorLogEncoders
 import kinesis4cats.logging.instances.show._
 
 /** KCL [[kinesis4cats.logging.LogEncoder LogEncoder]] instances for string
@@ -95,6 +94,6 @@ object show {
       .add("data", x.data())
       .build
 
-  implicit val recordProcessorLogEncoders: RecordProcessorLogEncoders =
-    new RecordProcessorLogEncoders
+  implicit val recordProcessorLogEncoders: RecordProcessor.LogEncoders =
+    new RecordProcessor.LogEncoders
 }

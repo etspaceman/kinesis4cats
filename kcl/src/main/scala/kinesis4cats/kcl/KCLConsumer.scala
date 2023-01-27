@@ -16,57 +16,48 @@
 
 package kinesis4cats.kcl
 
+import java.util.UUID
+
 import cats.effect.kernel.Deferred
 import cats.effect.syntax.all._
 import cats.effect.{Async, Ref, Resource}
 import cats.syntax.all._
+import software.amazon.awssdk.services.cloudwatch.CloudWatchAsyncClient
+import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient
+import software.amazon.awssdk.services.kinesis.KinesisAsyncClient
+import software.amazon.kinesis.checkpoint.CheckpointConfig
+import software.amazon.kinesis.common.ConfigsBuilder
 import software.amazon.kinesis.coordinator.WorkerStateChangeListener.WorkerState
 import software.amazon.kinesis.coordinator._
+import software.amazon.kinesis.leases.LeaseManagementConfig
+import software.amazon.kinesis.lifecycle.LifecycleConfig
+import software.amazon.kinesis.metrics.MetricsConfig
+import software.amazon.kinesis.processor.ProcessorConfig
+import software.amazon.kinesis.retrieval.RetrievalConfig
 
-/** Primary entrypoint for running a consumer
+import kinesis4cats.kcl.WorkerListeners._
+
+/** Wrapper offering for the
+  * [[https://docs.aws.amazon.com/streams/latest/dev/shared-throughput-kcl-consumers.html KCL]]
+  *
+  * @param config
+  *   [[kinesis4cats.kcl.KCLConsumer.Config Config]]
+  * @param F
+  *   [[cats.effect.Async Async]]
   */
-object KCLConsumer {
+class KCLConsumer[F[_]] private[kinesis4cats] (
+    config: KCLConsumer.Config[F]
+)(implicit F: Async[F]) {
 
   /** Runs a [[https://github.com/awslabs/amazon-kinesis-client KCL Consumer]]
     * in the background as a [[cats.effect.Resource Resource]]
     *
-    * @param config
-    *   [[kinesis4cats.kcl.KCLConsumerConfig KCLConsumerConfig]] containing the
-    *   required configuration
-    * @param F
-    *   [[cats.effect.Async Async]] instance
     * @return
     *   [[cats.effect.Resource Resource]] that manages the lifecycle of the
     *   [[https://github.com/awslabs/amazon-kinesis-client KCL Consumer]]
     */
-  def run[F[_]](
-      config: KCLConsumerConfig[F]
-  )(implicit F: Async[F]): Resource[F, Unit] = for {
-    scheduler <- Resource.eval(
-      F.delay(
-        new Scheduler(
-          config.checkpointConfig,
-          config.coordinatorConfig,
-          config.leaseManagementConfig,
-          config.lifecycleConfig,
-          config.metricsConfig,
-          config.processorConfig,
-          config.retrievalConfig
-        )
-      )
-    )
-    _ <- F
-      .race(
-        F.interruptibleMany(scheduler.run()),
-        if (config.raiseOnError)
-          config.deferredException.get.flatMap(F.raiseError(_).void)
-        else F.never
-      )
-      .background
-    _ <- Resource.onFinalize(
-      F.fromCompletableFuture(F.delay(scheduler.startGracefulShutdown())).void
-    )
-  } yield ()
+  def run(): Resource[F, Unit] =
+    KCLConsumer.run(config)
 
   /** Runs a [[https://github.com/awslabs/amazon-kinesis-client KCL Consumer]]
     * in the background as a [[cats.effect.Resource Resource]]. This exposes the
@@ -77,23 +68,14 @@ object KCLConsumer {
     * running tests that require the consumer to be up before an assertion is
     * checked.
     *
-    * @param config
-    *   [[kinesis4cats.kcl.KCLConsumerConfig KCLConsumerConfig]] containing the
-    *   required configuration
-    * @param F
-    *   [[cats.effect.Async Async]] instance
     * @return
     *   [[cats.effect.Resource Resource]] that manages the lifecycle of the
     *   [[https://github.com/awslabs/amazon-kinesis-client KCL Consumer]]
     */
-  def runWithRefListener[F[_]](
-      config: KCLConsumerConfig[F]
-  )(implicit
-      F: Async[F]
-  ): Resource[F, Ref[F, WorkerState]] = for {
-    listener <- RefWorkerStateChangeListener[F]
-    state <- Resource.pure(listener.state)
-    _ <- run(
+  def runWithRefListener(): Resource[F, Ref[F, WorkerState]] = for {
+    listener <- RefListener[F]
+    state = listener.state
+    _ <- KCLConsumer.run(
       config.copy(
         coordinatorConfig =
           config.coordinatorConfig.workerStateChangeListener(listener)
@@ -115,32 +97,308 @@ object KCLConsumer {
     * need to react when the KCL has reached a specific state 1 time (e.g. wait
     * to produce to a stream until the consumer is started)
     *
-    * @param config
-    *   [[kinesis4cats.kcl.KCLConsumerConfig KCLConsumerConfig]] containing the
-    *   required configuration
     * @param stateToCompleteOn
     *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/coordinator/WorkerStateChangeListener.java WorkerState]]
     *   to expect when completing the [[cats.effect.Deferred Deferred]]. Default
     *   is STARTED.
-    * @param F
-    *   [[cats.effect.Async Async]] instance
     * @return
     *   [[cats.effect.Resource Resource]] that manages the lifecycle of the
     *   [[https://github.com/awslabs/amazon-kinesis-client KCL Consumer]]
     */
-  def runWithDeferredListener[F[_]](
-      config: KCLConsumerConfig[F],
+  def runWithDeferredListener(
       stateToCompleteOn: WorkerState = WorkerState.STARTED
-  )(implicit
-      F: Async[F]
   ): Resource[F, Deferred[F, Unit]] = for {
-    listener <- DeferredWorkerStateChangeListener[F](stateToCompleteOn)
-    deferred <- Resource.pure(listener.deferred)
-    _ <- run(
+    listener <- DeferredListener[F](stateToCompleteOn)
+    deferred = listener.deferred
+    _ <- KCLConsumer.run(
       config.copy(
         coordinatorConfig =
           config.coordinatorConfig.workerStateChangeListener(listener)
       )
     )
   } yield deferred
+}
+
+object KCLConsumer {
+
+  def apply[F[_]](
+      checkpointConfig: CheckpointConfig,
+      coordinatorConfig: CoordinatorConfig,
+      leaseManagementConfig: LeaseManagementConfig,
+      lifecycleConfig: LifecycleConfig,
+      metricsConfig: MetricsConfig,
+      retrievalConfig: RetrievalConfig,
+      raiseOnError: Boolean = true,
+      recordProcessorConfig: RecordProcessor.Config =
+        RecordProcessor.Config.default,
+      callProcessRecordsEvenForEmptyRecordList: Boolean = false
+  )(cb: List[CommittableRecord[F]] => F[Unit])(implicit
+      F: Async[F],
+      encoders: RecordProcessor.LogEncoders
+  ) = Config
+    .create(
+      checkpointConfig,
+      coordinatorConfig,
+      leaseManagementConfig,
+      lifecycleConfig,
+      metricsConfig,
+      retrievalConfig,
+      raiseOnError,
+      recordProcessorConfig,
+      callProcessRecordsEvenForEmptyRecordList
+    )(cb)
+    .map(new KCLConsumer[F](_))
+
+  def configsBuilder[F[_]](
+      kinesisClient: KinesisAsyncClient,
+      dynamoClient: DynamoDbAsyncClient,
+      cloudWatchClient: CloudWatchAsyncClient,
+      streamName: String,
+      appName: String,
+      raiseOnError: Boolean = true,
+      workerId: String = UUID.randomUUID.toString,
+      recordProcessorConfig: RecordProcessor.Config =
+        RecordProcessor.Config.default
+  )(
+      cb: List[CommittableRecord[F]] => F[Unit]
+  )(
+      tfn: Config[F] => Config[F] = (x: Config[F]) => x
+  )(implicit
+      F: Async[F],
+      encoders: RecordProcessor.LogEncoders
+  ) = Config
+    .configsBuilder(
+      kinesisClient,
+      dynamoClient,
+      cloudWatchClient,
+      streamName,
+      appName,
+      raiseOnError,
+      workerId,
+      recordProcessorConfig
+    )(cb)(tfn)
+    .map(new KCLConsumer[F](_))
+
+  final case class Config[F[_]] private (
+      checkpointConfig: CheckpointConfig,
+      coordinatorConfig: CoordinatorConfig,
+      leaseManagementConfig: LeaseManagementConfig,
+      lifecycleConfig: LifecycleConfig,
+      metricsConfig: MetricsConfig,
+      processorConfig: ProcessorConfig,
+      retrievalConfig: RetrievalConfig,
+      deferredException: Deferred[F, Throwable],
+      raiseOnError: Boolean
+  )
+
+  object Config {
+
+    /** Low-level constructor for
+      * [[kinesis4cats.kcl.KCLConsumer.Config KCLConsumer.Config]].
+      *
+      * @param checkpointConfig
+      *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/checkpoint/CheckpointConfig.java CheckpointConfig]]
+      * @param coordinatorConfig
+      *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/coordinator/CoordinatorConfig.java CoordinatorConfig]]
+      * @param leaseManagementConfig
+      *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/leases/LeaseManagementConfig.java LeaseManagementConfig]]
+      * @param lifecycleConfig
+      *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/lifecycle/LifecycleConfig.java LifecycleConfig]]
+      * @param metricsConfig
+      *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/metrics/MetricsConfig.java MetricsConfig]]
+      * @param retrievalConfig
+      *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/retrieval/RetrievalConfig.java RetrievalConfig]]
+      * @param raiseOnError
+      *   Whether the [[kinesis4cats.kcl.RecordProcessor RecordProcessor]]
+      *   should raise exceptions or simply log them. It is recommended to set
+      *   this to true. See this
+      *   [[https://github.com/awslabs/amazon-kinesis-client/issues/10 issue]]
+      *   for more information.
+      * @param recordProcessorConfig
+      *   [[kinesis4cats.kcl.RecordProcessor.Config RecordProcessor.Config]]
+      * @param callProcessRecordsEvenForEmptyRecordList
+      *   Determines if processRecords() should run on the record processor for
+      *   empty record lists.
+      * @param cb
+      *   Function to process
+      *   [[kinesis4cats.kcl.CommittableRecord CommittableRecords]] received
+      *   from Kinesis
+      * @param F
+      *   [[cats.effect.Async Async]] instance
+      * @param encoders
+      *   [[kinesis4cats.kcl.RecordProcessor.LogEncoders RecordProcessor.LogEncoders]]
+      *   for encoding structured logs
+      * @return
+      *   [[cats.effect.Resource Resource]] containing the
+      *   [[kinesis4cats.kcl.KCLConsumer.Config KCLConsumer.Config]]
+      */
+    def create[F[_]](
+        checkpointConfig: CheckpointConfig,
+        coordinatorConfig: CoordinatorConfig,
+        leaseManagementConfig: LeaseManagementConfig,
+        lifecycleConfig: LifecycleConfig,
+        metricsConfig: MetricsConfig,
+        retrievalConfig: RetrievalConfig,
+        raiseOnError: Boolean = true,
+        recordProcessorConfig: RecordProcessor.Config =
+          RecordProcessor.Config.default,
+        callProcessRecordsEvenForEmptyRecordList: Boolean = false
+    )(cb: List[CommittableRecord[F]] => F[Unit])(implicit
+        F: Async[F],
+        encoders: RecordProcessor.LogEncoders
+    ): Resource[F, Config[F]] =
+      for {
+        deferredException <- Resource.eval(Deferred[F, Throwable])
+        processorFactory <- RecordProcessor.Factory[F](
+          recordProcessorConfig,
+          deferredException,
+          raiseOnError
+        )(cb)
+      } yield Config(
+        checkpointConfig,
+        coordinatorConfig,
+        leaseManagementConfig,
+        lifecycleConfig,
+        metricsConfig,
+        new ProcessorConfig(processorFactory)
+          .callProcessRecordsEvenForEmptyRecordList(
+            callProcessRecordsEvenForEmptyRecordList
+          ),
+        retrievalConfig,
+        deferredException,
+        raiseOnError
+      )
+
+    /** Constructor for the
+      * [[kinesis4cats.kcl.KCLConsumer.Config KCLConsumer.Config]] that
+      * leverages the
+      * [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/common/ConfigsBuilder.java ConfigsBuilder]]
+      * from the KCL. This is a simpler entry-point for creating the
+      * configuration, and provides a transform function to add any custom
+      * configuration that was not covered by the default
+      *
+      * @param kinesisClient
+      *   [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/kinesis/KinesisAsyncClient.html KinesisAsyncClient]]
+      * @param dynamoClient
+      *   [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/dynamodb/DynamoDbAsyncClient.html DynamoDbAsyncClient]]
+      * @param cloudWatchClient
+      *   [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/cloudwatch/CloudWatchClient.html CloudWatchClient]]
+      * @param streamName
+      *   Name of the Kinesis stream to consume from
+      * @param appName
+      *   Name of the application. Usually also the dynamo table name for
+      *   checkpoints
+      * @param raiseOnError
+      *   Whether the [[kinesis4cats.kcl.RecordProcessor RecordProcessor]]
+      *   should raise exceptions or simply log them. It is recommended to set
+      *   this to true. See this
+      *   [[https://github.com/awslabs/amazon-kinesis-client/issues/10 issue]]
+      *   for more information.
+      * @param workerId
+      *   Unique identifier for a single instance of this consumer. Default is a
+      *   random UUID.
+      * @param recordProcessorConfig
+      *   [[kinesis4cats.kcl.RecordProcessor.Config RecordProcessor.Config]]
+      * @param cb
+      *   Function to process
+      *   [[kinesis4cats.kcl.CommittableRecord CommittableRecords]] received
+      *   from Kinesis
+      * @param tfn
+      *   Function to update the
+      *   [[kinesis4cats.kcl.KCLConsumer.Config KCLConsumer.Config]]. Useful for
+      *   overriding defaults.
+      * @param F
+      *   [[cats.effect.Async Async]] instance
+      * @param encoders
+      *   [[kinesis4cats.kcl.RecordProcessor.LogEncoders RecordProcessor.LogEncoders]]
+      *   for encoding structured logs
+      * @return
+      *   [[cats.effect.Resource Resource]] containing the
+      *   [[kinesis4cats.kcl.KCLConsumer.Config KCLConsumer.Config]]
+      * @return
+      */
+    def configsBuilder[F[_]](
+        kinesisClient: KinesisAsyncClient,
+        dynamoClient: DynamoDbAsyncClient,
+        cloudWatchClient: CloudWatchAsyncClient,
+        streamName: String,
+        appName: String,
+        raiseOnError: Boolean = true,
+        workerId: String = UUID.randomUUID.toString,
+        recordProcessorConfig: RecordProcessor.Config =
+          RecordProcessor.Config.default
+    )(
+        cb: List[CommittableRecord[F]] => F[Unit]
+    )(
+        tfn: Config[F] => Config[F] = (x: Config[F]) => x
+    )(implicit
+        F: Async[F],
+        encoders: RecordProcessor.LogEncoders
+    ): Resource[F, Config[F]] = for {
+      deferredException <- Resource.eval(Deferred[F, Throwable])
+      processorFactory <- RecordProcessor.Factory[F](
+        recordProcessorConfig,
+        deferredException,
+        raiseOnError
+      )(cb)
+      confBuilder = new ConfigsBuilder(
+        streamName,
+        appName,
+        kinesisClient,
+        dynamoClient,
+        cloudWatchClient,
+        workerId,
+        processorFactory
+      )
+    } yield tfn(
+      Config(
+        confBuilder.checkpointConfig(),
+        confBuilder.coordinatorConfig(),
+        confBuilder.leaseManagementConfig(),
+        confBuilder.lifecycleConfig(),
+        confBuilder.metricsConfig(),
+        confBuilder.processorConfig(),
+        confBuilder.retrievalConfig(),
+        deferredException,
+        raiseOnError
+      )
+    )
+  }
+
+  /** Runs a [[https://github.com/awslabs/amazon-kinesis-client KCL Consumer]]
+    * in the background as a [[cats.effect.Resource Resource]]
+    *
+    * @return
+    *   [[cats.effect.Resource Resource]] that manages the lifecycle of the
+    *   [[https://github.com/awslabs/amazon-kinesis-client KCL Consumer]]
+    */
+  private def run[F[_]](
+      config: Config[F]
+  )(implicit F: Async[F]): Resource[F, Unit] =
+    for {
+      scheduler <- Resource.eval(
+        F.delay(
+          new Scheduler(
+            config.checkpointConfig,
+            config.coordinatorConfig,
+            config.leaseManagementConfig,
+            config.lifecycleConfig,
+            config.metricsConfig,
+            config.processorConfig,
+            config.retrievalConfig
+          )
+        )
+      )
+      _ <- F
+        .race(
+          F.interruptibleMany(scheduler.run()),
+          if (config.raiseOnError)
+            config.deferredException.get.flatMap(F.raiseError(_).void)
+          else F.never
+        )
+        .background
+      _ <- Resource.onFinalize(
+        F.fromCompletableFuture(F.delay(scheduler.startGracefulShutdown())).void
+      )
+    } yield ()
 }

@@ -76,6 +76,6 @@ object circe {
     Json.obj(fields.toSeq: _*)
   }
 
-  implicit val kplProducerLogEncoders: KPLProducerLogEncoders =
-    new KPLProducerLogEncoders()
+  implicit val kplProducerLogEncoders: KPLProducer.LogEncoders =
+    new KPLProducer.LogEncoders()
 }

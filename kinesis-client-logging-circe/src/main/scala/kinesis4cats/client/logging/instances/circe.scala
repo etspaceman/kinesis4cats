@@ -22,7 +22,7 @@ import io.circe.{Encoder, Json}
 import software.amazon.awssdk.core.SdkBytes
 import software.amazon.awssdk.services.kinesis.model._
 
-import kinesis4cats.client.KinesisClientLogEncoders
+import kinesis4cats.client.KinesisClient
 import kinesis4cats.logging.instances.circe._
 import kinesis4cats.logging.syntax.circe._
 
@@ -894,7 +894,7 @@ object circe {
       Json.obj(fields.toSeq: _*)
     }
 
-  implicit val kinesisClientLogEncoders: KinesisClientLogEncoders =
-    new KinesisClientLogEncoders()
+  implicit val kinesisClientLogEncoders: KinesisClient.LogEncoders =
+    new KinesisClient.LogEncoders()
 
 }

@@ -21,7 +21,7 @@ import scala.concurrent.duration._
 import cats.effect.{Async, Resource}
 import com.amazonaws.services.kinesis.producer.KinesisProducerConfiguration
 
-import kinesis4cats.kpl.{KPLProducer, KPLProducerLogEncoders}
+import kinesis4cats.kpl.KPLProducer
 import kinesis4cats.localstack.LocalstackConfig
 import kinesis4cats.localstack.aws.v1.{AwsClients, AwsCreds}
 
@@ -57,14 +57,14 @@ object LocalstackKPLProducer {
     * @param F
     *   [[cats.effect.Async Async]]
     * @param LE
-    *   [[kinesis4cats.kpl.KPLProducerLogEncoders KPLProducerLogEncoders]]
+    *   [[kinesis4cats.kpl.KPLProducer.LogEncoders KPLProducer.LogEncoders]]
     * @return
     *   [[kinesis4cats.kpl.KPLProducer KPLProducer]] as a
     *   [[cats.effect.Resource Resource]]
     */
   def producer[F[_]](config: LocalstackConfig)(implicit
       F: Async[F],
-      LE: KPLProducerLogEncoders
+      LE: KPLProducer.LogEncoders
   ): Resource[F, KPLProducer[F]] = KPLProducer[F](kplConfig(config))
 
   /** Creates a [[kinesis4cats.kpl.KPLProducer KPLProducer]] that is compliant
@@ -75,14 +75,14 @@ object LocalstackKPLProducer {
     * @param F
     *   [[cats.effect.Async Async]]
     * @param LE
-    *   [[kinesis4cats.kpl.KPLProducerLogEncoders KPLProducerLogEncoders]]
+    *   [[kinesis4cats.kpl.KPLProducer.LogEncoders KPLProducer.LogEncoders]]
     * @return
     *   [[kinesis4cats.kpl.KPLProducer KPLProducer]] as a
     *   [[cats.effect.Resource Resource]]
     */
   def producer[F[_]](prefix: Option[String] = None)(implicit
       F: Async[F],
-      LE: KPLProducerLogEncoders
+      LE: KPLProducer.LogEncoders
   ): Resource[F, KPLProducer[F]] =
     LocalstackConfig.resource[F](prefix).flatMap(producer(_))
 
@@ -120,7 +120,7 @@ object LocalstackKPLProducer {
       describeRetryDuration: FiniteDuration
   )(implicit
       F: Async[F],
-      LE: KPLProducerLogEncoders
+      LE: KPLProducer.LogEncoders
   ): Resource[F, KPLProducer[F]] = AwsClients
     .kinesisStreamResource[F](
       config,
@@ -166,7 +166,7 @@ object LocalstackKPLProducer {
       describeRetryDuration: FiniteDuration = 500.millis
   )(implicit
       F: Async[F],
-      LE: KPLProducerLogEncoders
+      LE: KPLProducer.LogEncoders
   ): Resource[F, KPLProducer[F]] = AwsClients
     .kinesisStreamResource[F](
       streamName,

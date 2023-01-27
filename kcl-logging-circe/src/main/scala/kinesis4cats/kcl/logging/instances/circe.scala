@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-package kinesis4cats.kcl.logging.instances
+package kinesis4cats.kcl
+package logging.instances
 
 import com.amazonaws.services.schemaregistry.common.Schema
 import io.circe.{Encoder, Json}
@@ -24,7 +25,6 @@ import software.amazon.kinesis.lifecycle.{ShutdownInput, ShutdownReason}
 import software.amazon.kinesis.retrieval.KinesisClientRecord
 import software.amazon.kinesis.retrieval.kpl.ExtendedSequenceNumber
 
-import kinesis4cats.kcl.processor.RecordProcessorLogEncoders
 import kinesis4cats.logging.instances.circe._
 import kinesis4cats.logging.syntax.circe._
 
@@ -140,7 +140,7 @@ object circe {
     Json.obj(fields.toSeq: _*)
   }
 
-  implicit val recordProcessorLogEncoders: RecordProcessorLogEncoders =
-    new RecordProcessorLogEncoders
+  implicit val recordProcessorLogEncoders: RecordProcessor.LogEncoders =
+    new RecordProcessor.LogEncoders
 
 }
