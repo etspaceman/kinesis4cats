@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-package kinesis4cats.localstack.client
+package kinesis4cats.client
+package localstack
 
 import scala.concurrent.duration._
 
@@ -26,7 +27,6 @@ import retry.RetryPolicies._
 import retry._
 import software.amazon.awssdk.services.kinesis.model._
 
-import kinesis4cats.client.KinesisClient
 import kinesis4cats.localstack.LocalstackConfig
 import kinesis4cats.localstack.aws.v2.AwsClients
 

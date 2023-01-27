@@ -1,4 +1,4 @@
-# Getting started with the KCL
+# Getting Started
 
 This module intends to be an enriched wrapper for the [KCL](https://docs.aws.amazon.com/streams/latest/dev/shared-throughput-kcl-consumers.html), offered by AWS.
 

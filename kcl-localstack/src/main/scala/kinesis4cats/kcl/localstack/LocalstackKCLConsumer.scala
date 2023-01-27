@@ -14,23 +14,8 @@
  * limitations under the License.
  */
 
-package kinesis4cats.localstack.kcl
-
-/*
- * Copyright 2023-2023 etspaceman
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+package kinesis4cats.kcl
+package localstack
 
 import java.util.UUID
 
@@ -47,7 +32,6 @@ import software.amazon.kinesis.metrics.MetricsConfig
 import software.amazon.kinesis.retrieval.RetrievalConfig
 import software.amazon.kinesis.retrieval.polling.PollingConfig
 
-import kinesis4cats.kcl._
 import kinesis4cats.localstack.LocalstackConfig
 import kinesis4cats.localstack.aws.v2.AwsClients
 
@@ -188,7 +172,7 @@ object LocalstackKCLConsumer {
     * @param LE
     *   [[kinesis4cats.kcl.RecordProcessor.LogEncoders RecordProcessor.LogEncoders]]
     * @return
-    *   [[kinesis4cats.localstack.kcl.LocalstackKCLConsumer.ConfigWithResults ConfigWithResults]]
+    *   [[kinesis4cats.kcl.localstack.LocalstackKCLConsumer.ConfigWithResults ConfigWithResults]]
     */
   def kclConfigWithResults[F[_]](
       config: LocalstackConfig,
@@ -236,7 +220,7 @@ object LocalstackKCLConsumer {
     * @param LE
     *   [[kinesis4cats.kcl.RecordProcessor.LogEncoders RecordProcessor.LogEncoders]]
     * @return
-    *   [[kinesis4cats.localstack.kcl.LocalstackKCLConsumer.ConfigWithResults ConfigWithResults]]
+    *   [[kinesis4cats.kcl.localstack.LocalstackKCLConsumer.ConfigWithResults ConfigWithResults]]
     */
   def kclConfigWithResults[F[_]](
       streamName: String,
@@ -379,7 +363,7 @@ object LocalstackKCLConsumer {
     * @param LE
     *   [[kinesis4cats.kcl.RecordProcessor.LogEncoders RecordProcessor.LogEncoders]]
     * @return
-    *   [[kinesis4cats.localstack.kcl.LocalstackKCLConsumer.DeferredWithResults DeferredWithResults]]
+    *   [[kinesis4cats.kcl.localstack.LocalstackKCLConsumer.DeferredWithResults DeferredWithResults]]
     *   in a [[cats.effect.Resource Resource]], which completes when the
     *   consumer has started processing records
     */
@@ -434,7 +418,7 @@ object LocalstackKCLConsumer {
     * @param LE
     *   [[kinesis4cats.kcl.RecordProcessor.LogEncoders RecordProcessor.LogEncoders]]
     * @return
-    *   [[kinesis4cats.localstack.kcl.LocalstackKCLConsumer.DeferredWithResults DeferredWithResults]]
+    *   [[kinesis4cats.kcl.localstack.LocalstackKCLConsumer.DeferredWithResults DeferredWithResults]]
     *   in a [[cats.effect.Resource Resource]], which completes when the
     *   consumer has started processing records
     */

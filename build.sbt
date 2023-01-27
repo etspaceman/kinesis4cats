@@ -1,3 +1,4 @@
+import laika.rewrite.link._
 import LibraryDependencies._
 
 lazy val compat = project
@@ -32,7 +33,7 @@ lazy val `shared-ciris` = project
   .enableIntegrationTests
   .dependsOn(shared)
 
-lazy val `localstack-test-kit-common` = project
+lazy val `shared-localstack` = project
   .settings(
     description := "Common utilities for the localstack test-kits",
     libraryDependencies ++= Seq(Scalacheck)
@@ -40,7 +41,7 @@ lazy val `localstack-test-kit-common` = project
   .enableIntegrationTests
   .dependsOn(shared, `shared-ciris`, `shared-circe`)
 
-lazy val `localstack-aws-v2-test-kit` = project
+lazy val `aws-v2-localstack` = project
   .settings(
     description := "A test-kit for working with Kinesis and Localstack, via the V2 AWS SDK",
     libraryDependencies ++= Seq(
@@ -50,9 +51,9 @@ lazy val `localstack-aws-v2-test-kit` = project
     )
   )
   .enableIntegrationTests
-  .dependsOn(`localstack-test-kit-common`)
+  .dependsOn(`shared-localstack`)
 
-lazy val `localstack-aws-v1-test-kit` = project
+lazy val `aws-v1-localstack` = project
   .settings(
     description := "A test-kit for working with Kinesis and Localstack, via the V1 AWS SDK",
     libraryDependencies ++= Seq(
@@ -62,21 +63,21 @@ lazy val `localstack-aws-v1-test-kit` = project
     )
   )
   .enableIntegrationTests
-  .dependsOn(`localstack-test-kit-common`)
+  .dependsOn(`shared-localstack`)
 
-lazy val `localstack-kinesis-client-test-kit` = project
+lazy val `kinesis-client-localstack` = project
   .settings(
     description := "A test-kit for working with Kinesis and Localstack, via the Kinesis Client project"
   )
   .enableIntegrationTests
-  .dependsOn(`localstack-aws-v2-test-kit`, `kinesis-client`)
+  .dependsOn(`aws-v2-localstack`, `kinesis-client`)
 
-lazy val `localstack-kpl-test-kit` = project
+lazy val `kpl-localstack` = project
   .settings(
     description := "A test-kit for working with Kinesis and Localstack, via the KPL"
   )
   .enableIntegrationTests
-  .dependsOn(`localstack-aws-v1-test-kit`, kpl)
+  .dependsOn(`aws-v1-localstack`, kpl)
 
 lazy val kcl = project
   .settings(
@@ -97,17 +98,17 @@ lazy val `kcl-logging-circe` = project
   .dependsOn(
     kcl,
     `shared-circe`,
-    `localstack-kinesis-client-test-kit` % IT,
-    `localstack-kcl-test-kit` % IT,
+    `kinesis-client-localstack` % IT,
+    `kcl-localstack` % IT,
     kcl % "it->it"
   )
 
-lazy val `localstack-kcl-test-kit` = project
+lazy val `kcl-localstack` = project
   .settings(
     description := "A test-kit for working with Kinesis and Localstack, via the KCL"
   )
   .enableIntegrationTests
-  .dependsOn(`localstack-aws-v2-test-kit`, kcl)
+  .dependsOn(`aws-v2-localstack`, kcl)
 
 lazy val `kcl-tests` = project
   .enablePlugins(NoPublishPlugin)
@@ -116,10 +117,10 @@ lazy val `kcl-tests` = project
   )
   .enableIntegrationTests
   .dependsOn(
-    `localstack-kinesis-client-test-kit` % IT,
+    `kinesis-client-localstack` % IT,
     `kcl-logging-circe` % IT,
     `kinesis-client-logging-circe` % IT,
-    `localstack-kcl-test-kit` % IT
+    `kcl-localstack` % IT
   )
 
 lazy val kpl = project
@@ -148,7 +149,7 @@ lazy val `kpl-tests` = project
   )
   .enableIntegrationTests
   .dependsOn(
-    `localstack-kpl-test-kit` % IT,
+    `kpl-localstack` % IT,
     `kpl-logging-circe` % IT
   )
 
@@ -171,7 +172,7 @@ lazy val `kinesis-client-logging-circe` = project
   .dependsOn(
     `kinesis-client`,
     `shared-circe`,
-    `localstack-aws-v2-test-kit` % IT,
+    `aws-v2-localstack` % IT,
     `kinesis-client` % "it->it"
   )
 
@@ -182,7 +183,7 @@ lazy val `kinesis-client-tests` = project
   )
   .enableIntegrationTests
   .dependsOn(
-    `localstack-kinesis-client-test-kit` % IT,
+    `kinesis-client-localstack` % IT,
     `kinesis-client-logging-circe` % IT
   )
 
@@ -192,7 +193,6 @@ lazy val docs = project
   .settings(
     tlFatalWarningsInCi := false,
     tlSiteApiPackage := Some("kinesis4cats"),
-    tlSitePublishBranch := Some("main"),
     tlSiteRelatedProjects ++= Seq(
       TypelevelProject.CatsEffect,
       TypelevelProject.Fs2,
@@ -212,6 +212,16 @@ lazy val docs = project
       "circe" -> url("https://circe.github.io/circe/"),
       "ciris" -> url("https://cir.is/"),
       "localstack" -> url("https://localstack.cloud/")
+    ),
+    laikaConfig := LaikaConfig.defaults.withConfigValue(
+      LinkConfig(sourceLinks =
+        Seq(
+          SourceLinks(
+            baseUri = "https://github.com/etspaceman/kinesis4cats",
+            suffix = "scala"
+          )
+        )
+      )
     )
   )
   .dependsOn(
@@ -219,20 +229,20 @@ lazy val docs = project
     shared,
     `shared-circe`,
     `shared-ciris`,
-    `localstack-test-kit-common`,
-    `localstack-aws-v1-test-kit`,
-    `localstack-aws-v2-test-kit`,
-    `localstack-kinesis-client-test-kit`,
-    `localstack-kpl-test-kit`,
-    `localstack-kcl-test-kit`,
+    `shared-localstack`,
+    `aws-v1-localstack`,
+    `aws-v2-localstack`,
     kcl,
     `kcl-logging-circe`,
+    `kcl-localstack`,
     `kcl-tests`,
     kpl,
     `kpl-logging-circe`,
+    `kpl-localstack`,
     `kpl-tests`,
     `kinesis-client`,
     `kinesis-client-logging-circe`,
+    `kinesis-client-localstack`,
     `kinesis-client-tests`
   )
 
@@ -246,20 +256,20 @@ lazy val unidocs = project
       shared,
       `shared-circe`,
       `shared-ciris`,
-      `localstack-test-kit-common`,
-      `localstack-aws-v1-test-kit`,
-      `localstack-aws-v2-test-kit`,
-      `localstack-kinesis-client-test-kit`,
-      `localstack-kpl-test-kit`,
-      `localstack-kcl-test-kit`,
+      `shared-localstack`,
+      `aws-v1-localstack`,
+      `aws-v2-localstack`,
       kcl,
       `kcl-logging-circe`,
+      `kcl-localstack`,
       `kcl-tests`,
       kpl,
       `kpl-logging-circe`,
+      `kpl-localstack`,
       `kpl-tests`,
       `kinesis-client`,
       `kinesis-client-logging-circe`,
+      `kinesis-client-localstack`,
       `kinesis-client-tests`
     )
   )
@@ -278,19 +288,19 @@ lazy val root =
       shared,
       `shared-circe`,
       `shared-ciris`,
-      `localstack-test-kit-common`,
-      `localstack-aws-v1-test-kit`,
-      `localstack-aws-v2-test-kit`,
-      `localstack-kinesis-client-test-kit`,
-      `localstack-kpl-test-kit`,
-      `localstack-kcl-test-kit`,
+      `shared-localstack`,
+      `aws-v1-localstack`,
+      `aws-v2-localstack`,
       kcl,
       `kcl-logging-circe`,
+      `kcl-localstack`,
       `kcl-tests`,
       kpl,
       `kpl-logging-circe`,
+      `kpl-localstack`,
       `kpl-tests`,
       `kinesis-client`,
       `kinesis-client-logging-circe`,
+      `kinesis-client-localstack`,
       `kinesis-client-tests`
     )

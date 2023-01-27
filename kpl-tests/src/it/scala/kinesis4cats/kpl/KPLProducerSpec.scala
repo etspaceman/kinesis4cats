@@ -23,8 +23,8 @@ import com.amazonaws.services.kinesis.producer._
 import io.circe.syntax._
 import org.scalacheck.Arbitrary
 
+import kinesis4cats.kpl.localstack.LocalstackKPLProducer
 import kinesis4cats.localstack.TestData
-import kinesis4cats.localstack.kpl.LocalstackKPLProducer
 import kinesis4cats.localstack.syntax.scalacheck._
 
 abstract class KPLProducerSpec(implicit LE: KPLProducer.LogEncoders)

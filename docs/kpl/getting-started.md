@@ -1,4 +1,4 @@
-# Getting started with the KPL
+# Getting Started
 
 This module intends to be an enriched wrapper for the [KPL](https://docs.aws.amazon.com/streams/latest/dev/developing-producers-with-kpl.html), offered by AWS.
 

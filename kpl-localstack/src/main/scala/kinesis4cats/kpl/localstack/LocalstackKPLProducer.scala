@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package kinesis4cats.localstack.kpl
+package kinesis4cats.kpl
+package localstack
 
 import scala.concurrent.duration._
 
 import cats.effect.{Async, Resource}
 import com.amazonaws.services.kinesis.producer.KinesisProducerConfiguration
 
-import kinesis4cats.kpl.KPLProducer
 import kinesis4cats.localstack.LocalstackConfig
 import kinesis4cats.localstack.aws.v1.{AwsClients, AwsCreds}
 
