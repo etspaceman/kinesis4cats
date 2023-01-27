@@ -20,6 +20,7 @@ import scala.jdk.CollectionConverters._
 
 import java.nio.ByteBuffer
 
+import cats.Eq
 import cats.effect.{Async, Ref, Resource}
 import cats.syntax.all._
 import com.amazonaws.services.kinesis.producer._
@@ -28,7 +29,7 @@ import org.typelevel.log4cats.StructuredLogger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 
 import kinesis4cats.kpl.syntax.listenableFuture._
-import kinesis4cats.logging.LogContext
+import kinesis4cats.logging.{LogContext, LogEncoder}
 
 /** Scala wrapper for the
   * [[https://github.com/awslabs/amazon-kinesis-producer/blob/master/java/amazon-kinesis-producer/src/main/java/com/amazonaws/services/kinesis/producer/KinesisProducer.java KinesisProducer]]
@@ -42,10 +43,10 @@ import kinesis4cats.logging.LogContext
 class KPLProducer[F[_]] private (
     client: KinesisProducer,
     logger: StructuredLogger[F],
-    val state: Ref[F, KPLProducerState]
+    val state: Ref[F, KPLProducer.State]
 )(implicit
     F: Async[F],
-    LE: KPLProducerLogEncoders
+    LE: KPLProducer.LogEncoders
 ) {
 
   import LE._
@@ -63,7 +64,7 @@ class KPLProducer[F[_]] private (
     for {
       s <- state.get
       _ <-
-        if (s === KPLProducerState.ShuttingDown)
+        if (s === KPLProducer.State.ShuttingDown)
           F.raiseError(ShuttingDownException)
         else F.unit
       _ <- logger.debug(ctx.context)("Received put request")
@@ -106,7 +107,7 @@ class KPLProducer[F[_]] private (
     for {
       s <- state.get
       _ <-
-        if (s === KPLProducerState.ShuttingDown)
+        if (s === KPLProducer.State.ShuttingDown)
           F.raiseError(ShuttingDownException)
         else F.unit
       _ <- logger.debug(ctx.context)("Received put request")
@@ -167,7 +168,7 @@ class KPLProducer[F[_]] private (
     for {
       s <- state.get
       _ <-
-        if (s === KPLProducerState.ShuttingDown)
+        if (s === KPLProducer.State.ShuttingDown)
           F.raiseError(ShuttingDownException)
         else F.unit
       _ <- logger.debug(ctx.context)("Received put request")
@@ -437,19 +438,41 @@ object KPLProducer {
       config: KinesisProducerConfiguration = new KinesisProducerConfiguration()
   )(implicit
       F: Async[F],
-      LE: KPLProducerLogEncoders
+      LE: LogEncoders
   ): Resource[F, KPLProducer[F]] =
     Resource.make[F, KPLProducer[F]](
       for {
         client <- F.delay(new KinesisProducer(config))
         logger <- Slf4jLogger.create[F]
-        state <- Ref.of[F, KPLProducerState](KPLProducerState.Up)
+        state <- Ref.of[F, State](State.Up)
       } yield new KPLProducer(client, logger, state)
     ) { x =>
       for {
-        _ <- x.state.set(KPLProducerState.ShuttingDown)
+        _ <- x.state.set(State.ShuttingDown)
         _ <- x.flushSync()
         _ <- x.destroy()
       } yield ()
     }
+
+  /** Helper class containing required
+    * [[kinesis4cats.logging.LogEncoder LogEncoders]] for the
+    * [[kinesis4cats.kpl.KPLProducer KPLProducer]]
+    */
+  final class LogEncoders(implicit
+      val userRecordLogEncoder: LogEncoder[UserRecord],
+      val userRecordResultLogEncoder: LogEncoder[UserRecordResult],
+      val schemaLogEncoder: LogEncoder[Schema]
+  )
+
+  /** Tracks the [[kinesis4cats.kpl.KPLProducer KPLProducer]] current state.
+    */
+  sealed trait State
+
+  object State {
+    case object Up extends State
+    case object ShuttingDown extends State
+
+    implicit val kplProducerStateEq: Eq[State] =
+      Eq.fromUniversalEquals
+  }
 }

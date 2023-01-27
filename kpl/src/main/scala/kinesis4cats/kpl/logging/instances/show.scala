@@ -21,7 +21,7 @@ import com.amazonaws.services.kinesis.producer._
 import com.amazonaws.services.schemaregistry.common.Schema
 
 import kinesis4cats.ShowBuilder
-import kinesis4cats.kpl.KPLProducerLogEncoders
+import kinesis4cats.kpl.KPLProducer
 import kinesis4cats.logging.instances.show._
 
 /** KPL [[kinesis4cats.logging.LogEncoder LogEncoder]] instances for string
@@ -60,6 +60,6 @@ object show {
       .add("shardId", x.getShardId())
       .build
 
-  implicit val kplProducerLogEncoders: KPLProducerLogEncoders =
-    new KPLProducerLogEncoders()
+  implicit val kplProducerLogEncoders: KPLProducer.LogEncoders =
+    new KPLProducer.LogEncoders()
 }

@@ -27,7 +27,7 @@ import kinesis4cats.localstack.TestData
 import kinesis4cats.localstack.kpl.LocalstackKPLProducer
 import kinesis4cats.localstack.syntax.scalacheck._
 
-abstract class KPLProducerSpec(implicit LE: KPLProducerLogEncoders)
+abstract class KPLProducerSpec(implicit LE: KPLProducer.LogEncoders)
     extends munit.CatsEffectSuite
     with munit.CatsEffectFunFixtures {
   def fixture(

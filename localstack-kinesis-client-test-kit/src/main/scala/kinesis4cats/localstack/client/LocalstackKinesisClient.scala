@@ -26,7 +26,7 @@ import retry.RetryPolicies._
 import retry._
 import software.amazon.awssdk.services.kinesis.model._
 
-import kinesis4cats.client.{KinesisClient, KinesisClientLogEncoders}
+import kinesis4cats.client.KinesisClient
 import kinesis4cats.localstack.LocalstackConfig
 import kinesis4cats.localstack.aws.v2.AwsClients
 
@@ -39,12 +39,14 @@ object LocalstackKinesisClient {
     *   [[kinesis4cats.localstack.LocalstackConfig LocalstackConfig]]
     * @param F
     *   F with an [[cats.effect.Async Async]] instance
+    * @param LE
+    *   [[kinesis4cats.client.KinesisClient.LogEncoders LogEncoders]]
     * @return
     *   F of [[kinesis4cats.client.KinesisClient KinesisClient]]
     */
   def client[F[_]](
       config: LocalstackConfig
-  )(implicit F: Async[F], LE: KinesisClientLogEncoders): F[KinesisClient[F]] =
+  )(implicit F: Async[F], LE: KinesisClient.LogEncoders): F[KinesisClient[F]] =
     for {
       underlying <- AwsClients.kinesisClient(config)
       logger <- Slf4jLogger.create[F]
@@ -57,12 +59,14 @@ object LocalstackKinesisClient {
     *   Optional prefix for parsing configuration. Default to None
     * @param F
     *   F with an [[cats.effect.Async Async]] instance
+    * @param LE
+    *   [[kinesis4cats.client.KinesisClient.LogEncoders LogEncoders]]
     * @return
     *   F of [[kinesis4cats.client.KinesisClient KinesisClient]]
     */
   def client[F[_]](
       prefix: Option[String] = None
-  )(implicit F: Async[F], LE: KinesisClientLogEncoders): F[KinesisClient[F]] =
+  )(implicit F: Async[F], LE: KinesisClient.LogEncoders): F[KinesisClient[F]] =
     for {
       underlying <- AwsClients.kinesisClient(prefix)
       logger <- Slf4jLogger.create[F]
@@ -76,13 +80,15 @@ object LocalstackKinesisClient {
     *   [[kinesis4cats.localstack.LocalstackConfig LocalstackConfig]]
     * @param F
     *   F with an [[cats.effect.Async Async]] instance
+    * @param LE
+    *   [[kinesis4cats.client.KinesisClient.LogEncoders LogEncoders]]
     * @return
     *   [[cats.effect.Resource Resource]] of
     *   [[kinesis4cats.client.KinesisClient KinesisClient]]
     */
   def clientResource[F[_]](config: LocalstackConfig)(implicit
       F: Async[F],
-      LE: KinesisClientLogEncoders
+      LE: KinesisClient.LogEncoders
   ): Resource[F, KinesisClient[F]] =
     client[F](config).toResource
 
@@ -102,7 +108,7 @@ object LocalstackKinesisClient {
       prefix: Option[String] = None
   )(implicit
       F: Async[F],
-      LE: KinesisClientLogEncoders
+      LE: KinesisClient.LogEncoders
   ): Resource[F, KinesisClient[F]] =
     client[F](prefix).toResource
 
@@ -128,6 +134,8 @@ object LocalstackKinesisClient {
     *   How long to delay between retries of the DescribeStreamSummary call
     * @param F
     *   F with an [[cats.effect.Async Async]] instance
+    * @param LE
+    *   [[kinesis4cats.client.KinesisClient.LogEncoders LogEncoders]]
     * @return
     *   [[cats.effect.Resource Resource]] of
     *   [[kinesis4cats.client.KinesisClient KinesisClient]]
@@ -140,7 +148,7 @@ object LocalstackKinesisClient {
       describeRetryDuration: FiniteDuration
   )(implicit
       F: Async[F],
-      LE: KinesisClientLogEncoders
+      LE: KinesisClient.LogEncoders
   ): Resource[F, KinesisClient[F]] = for {
     client <- clientResource(config)
     retryPolicy = constantDelay(describeRetryDuration).join(
@@ -231,6 +239,8 @@ object LocalstackKinesisClient {
     *   Default to 500 ms
     * @param F
     *   F with an [[cats.effect.Async Async]] instance
+    * @param LE
+    *   [[kinesis4cats.client.KinesisClient.LogEncoders LogEncoders]]
     * @return
     *   [[cats.effect.Resource Resource]] of
     *   [[kinesis4cats.client.KinesisClient KinesisClient]]
@@ -243,7 +253,7 @@ object LocalstackKinesisClient {
       describeRetryDuration: FiniteDuration = 500.millis
   )(implicit
       F: Async[F],
-      LE: KinesisClientLogEncoders
+      LE: KinesisClient.LogEncoders
   ): Resource[F, KinesisClient[F]] = for {
     config <- LocalstackConfig.resource(prefix)
     result <- streamResource(

@@ -15,8 +15,8 @@
  */
 
 package kinesis4cats.kcl
-package processor
 
+import scala.concurrent.duration._
 import scala.jdk.CollectionConverters._
 
 import cats.effect._
@@ -24,13 +24,16 @@ import cats.effect.std.Dispatcher
 import cats.effect.syntax.all._
 import cats.syntax.all._
 import org.typelevel.log4cats.StructuredLogger
+import org.typelevel.log4cats.slf4j.Slf4jLogger
 import retry.RetryPolicies._
 import retry._
+import software.amazon.kinesis.common.StreamIdentifier
 import software.amazon.kinesis.lifecycle.events._
 import software.amazon.kinesis.processor._
+import software.amazon.kinesis.retrieval.KinesisClientRecord
 import software.amazon.kinesis.retrieval.kpl.ExtendedSequenceNumber
 
-import kinesis4cats.logging.LogContext
+import kinesis4cats.logging.{LogContext, LogEncoder}
 
 /** An implementation of the
   * [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/processor/ShardRecordProcessor.java ShardRecordProcessor]]
@@ -38,7 +41,7 @@ import kinesis4cats.logging.LogContext
   * committing records and logging results.
   *
   * @param config
-  *   [[kinesis4cats.kcl.processor.RecordProcessorConfig RecordProcessorConfig]]
+  *   [[kinesis4cats.kcl.RecordProcessor.Config RecordProcessor.Config]]
   *   instance
   * @param dispatcher
   *   [[cats.effect.std.Dispatcher Dispatcher]] instance, for running effects
@@ -47,15 +50,15 @@ import kinesis4cats.logging.LogContext
   *   routine
   * @param state
   *   [[cats.effect.Ref Ref]] that tracks the current state, via
-  *   [[kinesis4cats.kcl.processor.RecordProcessorState RecordProcessorState]]
+  *   [[kinesis4cats.kcl.RecordProcessor.State RecordProcessor.State]]
   * @param deferredException
   *   [[cats.effect.Deferred Deferred]] instance, for handling exceptions
   * @param logger
   *   [[org.typelevel.log4cats.StructuredLogger StructuredLogger]] instance, for
   *   logging
   * @param raiseOnError
-  *   Whether the [[kinesis4cats.kcl.processor.RecordProcessor RecordProcessor]]
-  *   should raise exceptions or simply log them.
+  *   Whether the [[kinesis4cats.kcl.RecordProcessor RecordProcessor]] should
+  *   raise exceptions or simply log them.
   * @param cb
   *   Function to process
   *   [[kinesis4cats.kcl.CommittableRecord CommittableRecords]] received from
@@ -63,20 +66,20 @@ import kinesis4cats.logging.LogContext
   * @param F
   *   [[cats.effect.Async Async]] instance
   * @param encoders
-  *   [[kinesis4cats.kcl.processor.RecordProcessorLogEncoders RecordProcessorLogEncoders]]
+  *   [[kinesis4cats.kcl.RecordProcessor.LogEncoders RecordProcessor.LogEncoders]]
   *   for encoding structured logs
   */
 class RecordProcessor[F[_]] private[kinesis4cats] (
-    config: RecordProcessorConfig,
+    config: RecordProcessor.Config,
     dispatcher: Dispatcher[F],
     val lastRecordDeferred: Deferred[F, Unit],
-    val state: Ref[F, RecordProcessorState],
+    val state: Ref[F, RecordProcessor.State],
     val deferredException: Deferred[F, Throwable],
     logger: StructuredLogger[F],
     raiseOnError: Boolean
 )(cb: List[CommittableRecord[F]] => F[Unit])(implicit
     F: Async[F],
-    encoders: RecordProcessorLogEncoders
+    encoders: RecordProcessor.LogEncoders
 ) extends ShardRecordProcessor {
 
   import encoders._
@@ -99,7 +102,7 @@ class RecordProcessor[F[_]] private[kinesis4cats] (
         _ <- F.delay(this.extendedSequenceNumber =
           initializationInput.extendedSequenceNumber()
         )
-        _ <- state.set(RecordProcessorState.Initialized)
+        _ <- state.set(RecordProcessor.State.Initialized)
         _ <- logger.info(ctx.context)("Initialization complete")
       } yield ()
     )
@@ -135,7 +138,7 @@ class RecordProcessor[F[_]] private[kinesis4cats] (
               )
               .context
           )("Logging received data records")
-          _ <- state.set(RecordProcessorState.Processing)
+          _ <- state.set(RecordProcessor.State.Processing)
           batch = processRecordsInput
             .records()
             .asScala
@@ -190,7 +193,7 @@ class RecordProcessor[F[_]] private[kinesis4cats] (
     dispatcher.unsafeRunSync(
       for {
         _ <- logger.warn(ctx.context)("Received lease-lost event")
-        _ <- state.set(RecordProcessorState.LeaseLost)
+        _ <- state.set(RecordProcessor.State.LeaseLost)
       } yield ()
     )
   }
@@ -211,7 +214,7 @@ class RecordProcessor[F[_]] private[kinesis4cats] (
         _ <- logger.info(ctx.context)(
           "Received shard-ended event. Waiting for all data in the shard to be processed and committed."
         )
-        _ <- state.set(RecordProcessorState.ShardEnded)
+        _ <- state.set(RecordProcessor.State.ShardEnded)
         _ <- config.shardEndTimeout.fold(lastRecordDeferred.get)(x =>
           lastRecordDeferred.get.timeout(x).attempt.flatMap {
             case Left(error) if raiseOnError =>
@@ -247,8 +250,170 @@ class RecordProcessor[F[_]] private[kinesis4cats] (
     dispatcher.unsafeRunSync(
       for {
         _ <- logger.warn(ctx.context)("Received shutdown request")
-        _ <- state.set(RecordProcessorState.Shutdown)
+        _ <- state.set(RecordProcessor.State.Shutdown)
       } yield ()
     )
+  }
+}
+
+object RecordProcessor {
+
+  /** Configuration for the [[kinesis4cats.kcl.RecordProcessor RecordProcessor]]
+    *
+    * @param shardEndTimeout
+    *   Optional timeout for the shard-end routine. It is recommended to not set
+    *   a timeout, as using a timeout could lead to potential data loss.
+    * @param checkpointRetries
+    *   Number of retries for running a checkpoint operation.
+    * @param checkpointRetryInterval
+    *   Amount of time to wait between retries
+    * @param autoCommit
+    *   Whether the processor should automatically commit records after it is
+    *   done processing
+    */
+  final case class Config(
+      shardEndTimeout: Option[FiniteDuration],
+      checkpointRetries: Int,
+      checkpointRetryInterval: FiniteDuration,
+      autoCommit: Boolean
+  )
+
+  object Config {
+    val default = Config(None, 5, 0.seconds, true)
+  }
+
+  /** An implementation of the
+    * [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/processor/ShardRecordProcessor.Factory.java ShardRecordProcessor.Factory]]
+    * interface. This is passed to the KCL Scheduler for generating
+    * [[kinesis4cats.kcl.RecordProcessor RecordProcessors]]
+    *
+    * @param config
+    *   [[kinesis4cats.kcl.RecordProcessor.Config RecordProcessor.Config]]
+    *   instance
+    * @param dispatcher
+    *   [[cats.effect.std.Dispatcher Dispatcher]] instance, for running effects
+    * @param state
+    *   [[cats.effect.Ref Ref]] that tracks the current state, via
+    *   [[kinesis4cats.kcl.RecordProcessor.State RecordProcessor.State]]
+    * @param deferredException
+    *   [[cats.effect.Deferred Deferred]] instance, for handling exceptions
+    * @param raiseOnError
+    *   Whether the RecordProcessor should raise exceptions or simply log them.
+    * @param cb
+    *   Function to process
+    *   [[kinesis4cats.kcl.CommittableRecord CommittableRecords]] received from
+    *   Kinesis
+    * @param F
+    *   [[cats.effect.Async Async]] instance
+    * @param encoders
+    *   [[kinesis4cats.kcl.RecordProcessor.LogEncoders RecordProcessor.LogEncoders]]
+    *   for encoding structured logs
+    */
+  class Factory[F[_]] private[kinesis4cats] (
+      config: Config,
+      dispatcher: Dispatcher[F],
+      deferredException: Deferred[F, Throwable],
+      raiseOnError: Boolean
+  )(cb: List[CommittableRecord[F]] => F[Unit])(implicit
+      F: Async[F],
+      encoders: RecordProcessor.LogEncoders
+  ) extends ShardRecordProcessorFactory {
+    override def shardRecordProcessor(): ShardRecordProcessor =
+      dispatcher.unsafeRunSync(
+        for {
+          lastRecordDeferred <- Deferred[F, Unit]
+          state <- Ref.of[F, RecordProcessor.State](
+            RecordProcessor.State.Created
+          )
+          logger <- Slf4jLogger.create[F]
+        } yield new RecordProcessor[F](
+          config,
+          dispatcher,
+          lastRecordDeferred,
+          state,
+          deferredException,
+          logger,
+          raiseOnError
+        )(cb)
+      )
+    override def shardRecordProcessor(
+        streamIdentifier: StreamIdentifier
+    ): ShardRecordProcessor = shardRecordProcessor()
+  }
+
+  object Factory {
+
+    /** Creates a [[kinesis4cats.kcl.RecordProcessor.Factory Factory]] as a
+      * [[cats.effect.Resource Resource]]
+      *
+      * @param config
+      *   [[kinesis4cats.kcl.RecordProcessor.Config RecordProcessor.Config]]
+      *   instance
+      * @param state
+      *   [[cats.effect.Ref Ref]] that tracks the current state, via
+      *   [[kinesis4cats.kcl.RecordProcessor.State RecordProcessor.State]]
+      * @param deferredException
+      *   [[cats.effect.Deferred Deferred]] instance, for handling exceptions
+      * @param raiseOnError
+      *   Whether the [[kinesis4cats.kcl.RecordProcessor RecordProcessor]]
+      *   should raise exceptions or simply log them.
+      * @param cb
+      *   Function to process
+      *   [[kinesis4cats.kcl.CommittableRecord CommittableRecords]] received
+      *   from Kinesis
+      * @param F
+      *   [[cats.effect.Async Async]] instance
+      * @param encoders
+      *   [[kinesis4cats.kcl.RecordProcessor.LogEncoders RecordProcessor.LogEncoders]]
+      *   for encoding structured logs
+      * @return
+      *   [[cats.effect.Resource Resource]] containing a
+      *   [[kinesis4cats.kcl.RecordProcessor.Factory RecordProcessor.Factory]]
+      */
+    def apply[F[_]](
+        config: Config,
+        deferredException: Deferred[F, Throwable],
+        raiseOnError: Boolean
+    )(
+        cb: List[CommittableRecord[F]] => F[Unit]
+    )(implicit
+        F: Async[F],
+        encoders: RecordProcessor.LogEncoders
+    ): Resource[F, RecordProcessor.Factory[F]] =
+      Dispatcher.parallel.map { dispatcher =>
+        new RecordProcessor.Factory[F](
+          config,
+          dispatcher,
+          deferredException,
+          raiseOnError
+        )(cb)
+      }
+  }
+
+  /** Helper class containing required
+    * [[kinesis4cats.logging.LogEncoder LogEncoders]] for the
+    * [[kinesis4cats.kcl.RecordProcessor RecordProcessor]]
+    */
+  final class LogEncoders(implicit
+      val inititalizationInputLogEncoder: LogEncoder[InitializationInput],
+      val processRecordsInputLogEncoder: LogEncoder[ProcessRecordsInput],
+      val retryDetailsLogEncoder: LogEncoder[RetryDetails],
+      val kinesisClientRecordListLogEncoder: LogEncoder[
+        List[KinesisClientRecord]
+      ]
+  )
+
+  /** Tracks the [[kinesis4cats.kcl.RecordProcessor RecordProcessor]] current
+    * state.
+    */
+  sealed trait State
+
+  object State {
+    case object Created extends State
+    case object Initialized extends State
+    case object ShardEnded extends State
+    case object Processing extends State
+    case object Shutdown extends State
+    case object LeaseLost extends State
   }
 }

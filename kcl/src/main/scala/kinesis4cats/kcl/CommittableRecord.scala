@@ -24,16 +24,14 @@ import software.amazon.kinesis.processor.RecordProcessorCheckpointer
 import software.amazon.kinesis.retrieval.KinesisClientRecord
 import software.amazon.kinesis.retrieval.kpl.ExtendedSequenceNumber
 
-import kinesis4cats.kcl.processor.{RecordProcessor, RecordProcessorState}
-
 /** A message from Kinesis that is able to be committed.
   *
   * @param shardId
   *   The unique identifier for the shard from which this record originated
   * @param recordProcessorStartingSequenceNumber
   *   The starting sequence number for the
-  *   [[kinesis4cats.kcl.processor.RecordProcessor RecordProcessor]] which
-  *   received this record
+  *   [[kinesis4cats.kcl.RecordProcessor RecordProcessor]] which received this
+  *   record
   * @param millisBehindLatest
   *   Milleseconds behind the latest record, used to detect if the consumer is
   *   lagging the producer
@@ -41,9 +39,8 @@ import kinesis4cats.kcl.processor.{RecordProcessor, RecordProcessorState}
   *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/retrieval/KinesisClientRecord.java KinesisClientRecord]]
   *   representing the original record received by Kinesis.
   * @param recordProcessor
-  *   Reference to the
-  *   [[kinesis4cats.kcl.processor.RecordProcessor RecordProcessor]] that is
-  *   responsible for processing this message
+  *   Reference to the [[kinesis4cats.kcl.RecordProcessor RecordProcessor]] that
+  *   is responsible for processing this message
   * @param checkpointer
   *   Reference to the
   *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/processor/RecordProcessorCheckpointer.java RecordProcessorCheckpointer]]
@@ -64,15 +61,14 @@ final case class CommittableRecord[F[_]](
 
   val data: ByteBuffer = record.data()
 
-  /** Determines if the
-    * [[kinesis4cats.kcl.processor.RecordProcessor RecordProcesor]] is in a
-    * state that is allowed to commit this record.
+  /** Determines if the [[kinesis4cats.kcl.RecordProcessor RecordProcesor]] is
+    * in a state that is allowed to commit this record.
     *
     * @return
     *   F containing a Boolean indicator of commit availability
     */
   def canCheckpoint: F[Boolean] = recordProcessor.state.get.map {
-    case RecordProcessorState.Processing | RecordProcessorState.ShardEnded =>
+    case RecordProcessor.State.Processing | RecordProcessor.State.ShardEnded =>
       true
     case _ => false
   }

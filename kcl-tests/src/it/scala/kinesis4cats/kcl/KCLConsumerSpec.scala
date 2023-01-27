@@ -16,10 +16,28 @@
 
 package kinesis4cats.kcl
 
+/*
+ * Copyright 2023-2023 etspaceman
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 import scala.concurrent.duration._
 
 import java.util.UUID
 
+import cats.effect.kernel.Deferred
+import cats.effect.std.Queue
 import cats.effect.{IO, Resource, SyncIO}
 import cats.syntax.all._
 import io.circe.parser._
@@ -30,8 +48,7 @@ import retry._
 import software.amazon.awssdk.core.SdkBytes
 import software.amazon.awssdk.services.kinesis.model.PutRecordRequest
 
-import kinesis4cats.client.KinesisClientLogEncoders
-import kinesis4cats.kcl.processor.RecordProcessorLogEncoders
+import kinesis4cats.client.KinesisClient
 import kinesis4cats.localstack.TestData
 import kinesis4cats.localstack.client.LocalstackKinesisClient
 import kinesis4cats.localstack.kcl.LocalstackKCLConsumer
@@ -39,14 +56,14 @@ import kinesis4cats.localstack.syntax.scalacheck._
 import kinesis4cats.syntax.bytebuffer._
 
 abstract class KCLConsumerSpec(implicit
-    KCLLE: RecordProcessorLogEncoders,
-    CLE: KinesisClientLogEncoders
+    KCLLE: RecordProcessor.LogEncoders,
+    CLE: KinesisClient.LogEncoders
 ) extends munit.CatsEffectSuite {
   def fixture(
       streamName: String,
       shardCount: Int,
       appName: String
-  ): SyncIO[FunFixture[KCLConsumerSpecResources[IO]]] = ResourceFixture(
+  ): SyncIO[FunFixture[KCLConsumerSpec.Resources[IO]]] = ResourceFixture(
     KCLConsumerSpec.resource(streamName, shardCount, appName)
   )
 
@@ -87,17 +104,23 @@ abstract class KCLConsumerSpec(implicit
 
 object KCLConsumerSpec {
   def resource(streamName: String, shardCount: Int, appName: String)(implicit
-      KCLLE: RecordProcessorLogEncoders,
-      CLE: KinesisClientLogEncoders
-  ): Resource[IO, KCLConsumerSpecResources[IO]] = for {
+      KCLLE: RecordProcessor.LogEncoders,
+      CLE: KinesisClient.LogEncoders
+  ): Resource[IO, Resources[IO]] = for {
     client <- LocalstackKinesisClient.streamResource[IO](streamName, shardCount)
     deferredWithResults <- LocalstackKCLConsumer.kclConsumerWithResults(
       streamName,
       appName
     )((_: List[CommittableRecord[IO]]) => IO.unit)
-  } yield KCLConsumerSpecResources(
+  } yield Resources(
     client,
     deferredWithResults.deferred,
     deferredWithResults.resultsQueue
+  )
+
+  final case class Resources[F[_]](
+      client: KinesisClient[F],
+      deferredStarted: Deferred[F, Unit],
+      resultsQueue: Queue[F, CommittableRecord[F]]
   )
 }

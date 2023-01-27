@@ -21,6 +21,7 @@ object Kinesis4CatsPlugin extends AutoPlugin {
   import TypelevelKernelPlugin.autoImport._
   import TypelevelCiPlugin.autoImport._
   import GenerativePlugin.autoImport._
+  import TypelevelSitePlugin.autoImport._
   import scalafix.sbt.ScalafixPlugin.autoImport._
   import de.heikoseeberger.sbtheader.HeaderPlugin.autoImport._
   import scoverage.ScoverageSbtPlugin.autoImport._
@@ -51,11 +52,14 @@ object Kinesis4CatsPlugin extends AutoPlugin {
     githubWorkflowScalaVersions := crossScalaVersions.value,
     startYear := Some(2023),
     licenses := Seq(License.Apache2),
-    developers := List(
-      // your GitHub handle and name
-      tlGitHubDev("etspaceman", "Eric Meisel")
-    ),
+    developers := List(tlGitHubDev("etspaceman", "Eric Meisel")),
     coverageScalacPluginVersion := "2.0.7",
+    tlSitePublishBranch := Some("main"),
+    tlSiteApiUrl := Some(
+      url(
+        "https://www.javadoc.io/doc/io.github.etspaceman/kinesis4cats_2.13/latest/io/github/etspaceman/kinesis4cats/"
+      )
+    ),
     githubWorkflowBuild := {
       val style = (tlCiHeaderCheck.value, tlCiScalafmtCheck.value) match {
         case (true, true) => // headers + formatting

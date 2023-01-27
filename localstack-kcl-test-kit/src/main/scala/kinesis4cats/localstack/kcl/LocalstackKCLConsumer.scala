@@ -16,6 +16,22 @@
 
 package kinesis4cats.localstack.kcl
 
+/*
+ * Copyright 2023-2023 etspaceman
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 import java.util.UUID
 
 import cats.effect.std.Queue
@@ -32,7 +48,6 @@ import software.amazon.kinesis.retrieval.RetrievalConfig
 import software.amazon.kinesis.retrieval.polling.PollingConfig
 
 import kinesis4cats.kcl._
-import kinesis4cats.kcl.processor.RecordProcessorLogEncoders
 import kinesis4cats.localstack.LocalstackConfig
 import kinesis4cats.localstack.aws.v2.AwsClients
 
@@ -41,7 +56,7 @@ import kinesis4cats.localstack.aws.v2.AwsClients
 object LocalstackKCLConsumer {
 
   final case class ConfigWithResults[F[_]](
-      kclConfig: KCLConsumerConfig[F],
+      kclConfig: KCLConsumer.Config[F],
       resultsQueue: Queue[F, CommittableRecord[F]]
   )
 
@@ -50,8 +65,8 @@ object LocalstackKCLConsumer {
       resultsQueue: Queue[F, CommittableRecord[F]]
   )
 
-  /** Creates a [[kinesis4cats.kcl.KCLConsumerConfig KCLConsumerConfig]] that is
-    * compliant with Localstack.
+  /** Creates a [[kinesis4cats.kcl.KCLConsumer.Config KCLConsumer.Config]] that
+    * is compliant with Localstack.
     *
     * @param config
     *   [[kinesis4cats.localstack.LocalstackConfig LocalstackConfig]]
@@ -69,9 +84,9 @@ object LocalstackKCLConsumer {
     * @param F
     *   [[cats.effect.Async Async]]
     * @param LE
-    *   [[kinesis4cats.kcl.processor.RecordProcessorLogEncoders RecordProcessorLogEncoders]]
+    *   [[kinesis4cats.kcl.RecordProcessor.LogEncoders RecordProcessor.LogEncoders]]
     * @return
-    *   [[kinesis4cats.kcl.KCLConsumerConfig KCLConsumerConfig]]
+    *   [[kinesis4cats.kcl.KCLConsumer.Config KCLConsumer.Config]]
     */
   def kclConfig[F[_]](
       config: LocalstackConfig,
@@ -81,13 +96,13 @@ object LocalstackKCLConsumer {
       position: InitialPositionInStreamExtended
   )(cb: List[CommittableRecord[F]] => F[Unit])(implicit
       F: Async[F],
-      LE: RecordProcessorLogEncoders
-  ): Resource[F, KCLConsumerConfig[F]] = for {
+      LE: RecordProcessor.LogEncoders
+  ): Resource[F, KCLConsumer.Config[F]] = for {
     kinesisClient <- AwsClients.kinesisClientResource(config)
     cloudwatchClient <- AwsClients.cloudwatchClientResource(config)
     dynamoClient <- AwsClients.dynamoClientResource(config)
     retrievalConfig = new PollingConfig(streamName, kinesisClient)
-    result <- KCLConsumerConfig.create[F](
+    result <- KCLConsumer.Config.create[F](
       new CheckpointConfig(),
       new CoordinatorConfig(appName).parentShardPollIntervalMillis(1000L),
       new LeaseManagementConfig(
@@ -106,8 +121,8 @@ object LocalstackKCLConsumer {
     )(cb)
   } yield result
 
-  /** Creates a [[kinesis4cats.kcl.KCLConsumerConfig KCLConsumerConfig]] that is
-    * compliant with Localstack.
+  /** Creates a [[kinesis4cats.kcl.KCLConsumer.Config KCLConsumer.Config]] that
+    * is compliant with Localstack.
     *
     * @param streamName
     *   Name of stream to consume
@@ -126,9 +141,9 @@ object LocalstackKCLConsumer {
     * @param F
     *   [[cats.effect.Async Async]]
     * @param LE
-    *   [[kinesis4cats.kcl.processor.RecordProcessorLogEncoders RecordProcessorLogEncoders]]
+    *   [[kinesis4cats.kcl.RecordProcessor.LogEncoders RecordProcessor.LogEncoders]]
     * @return
-    *   [[kinesis4cats.kcl.KCLConsumerConfig KCLConsumerConfig]]
+    *   [[kinesis4cats.kcl.KCLConsumer.Config KCLConsumer.Config]]
     */
   def kclConfig[F[_]](
       streamName: String,
@@ -141,14 +156,14 @@ object LocalstackKCLConsumer {
         )
   )(cb: List[CommittableRecord[F]] => F[Unit])(implicit
       F: Async[F],
-      LE: RecordProcessorLogEncoders
-  ): Resource[F, KCLConsumerConfig[F]] = for {
+      LE: RecordProcessor.LogEncoders
+  ): Resource[F, KCLConsumer.Config[F]] = for {
     config <- LocalstackConfig.resource(prefix)
     result <- kclConfig(config, streamName, appName, workerId, position)(cb)
   } yield result
 
-  /** Creates a [[kinesis4cats.kcl.KCLConsumerConfig KCLConsumerConfig]] that is
-    * compliant with Localstack. Also creates a results
+  /** Creates a [[kinesis4cats.kcl.KCLConsumer.Config KCLConsumer.Config]] that
+    * is compliant with Localstack. Also creates a results
     * [[cats.effect.std.Queue queue]] for the consumer to stick results into.
     * Helpful when confirming data that has been produced to a stream.
     *
@@ -171,7 +186,7 @@ object LocalstackKCLConsumer {
     * @param F
     *   [[cats.effect.Async Async]]
     * @param LE
-    *   [[kinesis4cats.kcl.processor.RecordProcessorLogEncoders RecordProcessorLogEncoders]]
+    *   [[kinesis4cats.kcl.RecordProcessor.LogEncoders RecordProcessor.LogEncoders]]
     * @return
     *   [[kinesis4cats.localstack.kcl.LocalstackKCLConsumer.ConfigWithResults ConfigWithResults]]
     */
@@ -184,7 +199,7 @@ object LocalstackKCLConsumer {
       resultsQueueSize: Int
   )(cb: List[CommittableRecord[F]] => F[Unit])(implicit
       F: Async[F],
-      LE: RecordProcessorLogEncoders
+      LE: RecordProcessor.LogEncoders
   ): Resource[F, ConfigWithResults[F]] = for {
     resultsQueue <- Queue
       .bounded[F, CommittableRecord[F]](resultsQueueSize)
@@ -195,8 +210,8 @@ object LocalstackKCLConsumer {
     )
   } yield ConfigWithResults(kclConf, resultsQueue)
 
-  /** Creates a [[kinesis4cats.kcl.KCLConsumerConfig KCLConsumerConfig]] that is
-    * compliant with Localstack. Also creates a results
+  /** Creates a [[kinesis4cats.kcl.KCLConsumer.Config KCLConsumer.Config]] that
+    * is compliant with Localstack. Also creates a results
     * [[cats.effect.std.Queue queue]] for the consumer to stick results into.
     * Helpful when confirming data that has been produced to a stream.
     *
@@ -219,7 +234,7 @@ object LocalstackKCLConsumer {
     * @param F
     *   [[cats.effect.Async Async]]
     * @param LE
-    *   [[kinesis4cats.kcl.processor.RecordProcessorLogEncoders RecordProcessorLogEncoders]]
+    *   [[kinesis4cats.kcl.RecordProcessor.LogEncoders RecordProcessor.LogEncoders]]
     * @return
     *   [[kinesis4cats.localstack.kcl.LocalstackKCLConsumer.ConfigWithResults ConfigWithResults]]
     */
@@ -235,7 +250,7 @@ object LocalstackKCLConsumer {
       resultsQueueSize: Int = 50
   )(cb: List[CommittableRecord[F]] => F[Unit])(implicit
       F: Async[F],
-      LE: RecordProcessorLogEncoders
+      LE: RecordProcessor.LogEncoders
   ): Resource[F, ConfigWithResults[F]] = for {
     config <- LocalstackConfig.resource(prefix)
     result <- kclConfigWithResults(
@@ -270,7 +285,7 @@ object LocalstackKCLConsumer {
     * @param F
     *   [[cats.effect.Async Async]]
     * @param LE
-    *   [[kinesis4cats.kcl.processor.RecordProcessorLogEncoders RecordProcessorLogEncoders]]
+    *   [[kinesis4cats.kcl.RecordProcessor.LogEncoders RecordProcessor.LogEncoders]]
     * @return
     *   [[cats.effect.Deferred Deferred]] in a
     *   [[cats.effect.Resource Resource]], which completes when the consumer has
@@ -284,10 +299,11 @@ object LocalstackKCLConsumer {
       position: InitialPositionInStreamExtended
   )(cb: List[CommittableRecord[F]] => F[Unit])(implicit
       F: Async[F],
-      LE: RecordProcessorLogEncoders
+      LE: RecordProcessor.LogEncoders
   ): Resource[F, Deferred[F, Unit]] = for {
     config <- kclConfig(config, streamName, appName, workerId, position)(cb)
-    deferred <- KCLConsumer.runWithDeferredListener(config)
+    consumer = new KCLConsumer(config)
+    deferred <- consumer.runWithDeferredListener()
   } yield deferred
 
   /** Runs a [[kinesis4cats.kcl.KCLConsumer KCLConsumer]] that is compliant with
@@ -313,7 +329,7 @@ object LocalstackKCLConsumer {
     * @param F
     *   [[cats.effect.Async Async]]
     * @param LE
-    *   [[kinesis4cats.kcl.processor.RecordProcessorLogEncoders RecordProcessorLogEncoders]]
+    *   [[kinesis4cats.kcl.RecordProcessor.LogEncoders RecordProcessor.LogEncoders]]
     * @return
     *   [[cats.effect.Deferred Deferred]] in a
     *   [[cats.effect.Resource Resource]], which completes when the consumer has
@@ -330,7 +346,7 @@ object LocalstackKCLConsumer {
         )
   )(cb: List[CommittableRecord[F]] => F[Unit])(implicit
       F: Async[F],
-      LE: RecordProcessorLogEncoders
+      LE: RecordProcessor.LogEncoders
   ): Resource[F, Deferred[F, Unit]] = for {
     config <- LocalstackConfig.resource(prefix)
     result <- kclConsumer(config, streamName, appName, workerId, position)(cb)
@@ -361,7 +377,7 @@ object LocalstackKCLConsumer {
     * @param F
     *   [[cats.effect.Async Async]]
     * @param LE
-    *   [[kinesis4cats.kcl.processor.RecordProcessorLogEncoders RecordProcessorLogEncoders]]
+    *   [[kinesis4cats.kcl.RecordProcessor.LogEncoders RecordProcessor.LogEncoders]]
     * @return
     *   [[kinesis4cats.localstack.kcl.LocalstackKCLConsumer.DeferredWithResults DeferredWithResults]]
     *   in a [[cats.effect.Resource Resource]], which completes when the
@@ -376,7 +392,7 @@ object LocalstackKCLConsumer {
       resultsQueueSize: Int
   )(cb: List[CommittableRecord[F]] => F[Unit])(implicit
       F: Async[F],
-      LE: RecordProcessorLogEncoders
+      LE: RecordProcessor.LogEncoders
   ): Resource[F, DeferredWithResults[F]] = for {
     configWithResults <- kclConfigWithResults(
       config,
@@ -386,7 +402,8 @@ object LocalstackKCLConsumer {
       position,
       resultsQueueSize
     )(cb)
-    deferred <- KCLConsumer.runWithDeferredListener(configWithResults.kclConfig)
+    consumer = new KCLConsumer(configWithResults.kclConfig)
+    deferred <- consumer.runWithDeferredListener()
   } yield DeferredWithResults(deferred, configWithResults.resultsQueue)
 
   /** Runs a [[kinesis4cats.kcl.KCLConsumer KCLConsumer]] that is compliant with
@@ -415,7 +432,7 @@ object LocalstackKCLConsumer {
     * @param F
     *   [[cats.effect.Async Async]]
     * @param LE
-    *   [[kinesis4cats.kcl.processor.RecordProcessorLogEncoders RecordProcessorLogEncoders]]
+    *   [[kinesis4cats.kcl.RecordProcessor.LogEncoders RecordProcessor.LogEncoders]]
     * @return
     *   [[kinesis4cats.localstack.kcl.LocalstackKCLConsumer.DeferredWithResults DeferredWithResults]]
     *   in a [[cats.effect.Resource Resource]], which completes when the
@@ -433,7 +450,7 @@ object LocalstackKCLConsumer {
       resultsQueueSize: Int = 50
   )(cb: List[CommittableRecord[F]] => F[Unit])(implicit
       F: Async[F],
-      LE: RecordProcessorLogEncoders
+      LE: RecordProcessor.LogEncoders
   ): Resource[F, DeferredWithResults[F]] = for {
     configWithResults <- kclConfigWithResults(
       streamName,
@@ -443,7 +460,8 @@ object LocalstackKCLConsumer {
       position,
       resultsQueueSize
     )(cb)
-    deferred <- KCLConsumer.runWithDeferredListener(configWithResults.kclConfig)
+    consumer = new KCLConsumer(configWithResults.kclConfig)
+    deferred <- consumer.runWithDeferredListener()
   } yield DeferredWithResults(deferred, configWithResults.resultsQueue)
 
 }

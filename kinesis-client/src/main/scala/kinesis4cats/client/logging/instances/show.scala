@@ -23,7 +23,7 @@ import software.amazon.awssdk.core.SdkBytes
 import software.amazon.awssdk.services.kinesis.model._
 
 import kinesis4cats.ShowBuilder
-import kinesis4cats.client.KinesisClientLogEncoders
+import kinesis4cats.client.KinesisClient
 import kinesis4cats.logging.instances.show._
 
 /** KinesisClient [[kinesis4cats.logging.LogEncoder LogEncoder]] instances for
@@ -635,7 +635,7 @@ object show {
         .add("responseMetadata", x.responseMetadata())
         .build
 
-  implicit val kinesisClientLogEncoders: KinesisClientLogEncoders =
-    new KinesisClientLogEncoders()
+  implicit val kinesisClientLogEncoders: KinesisClient.LogEncoders =
+    new KinesisClient.LogEncoders()
 
 }

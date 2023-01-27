@@ -33,7 +33,7 @@ import kinesis4cats.localstack._
 import kinesis4cats.localstack.client.LocalstackKinesisClient
 import kinesis4cats.localstack.syntax.scalacheck._
 
-abstract class KinesisClientSpec(implicit LE: KinesisClientLogEncoders)
+abstract class KinesisClientSpec(implicit LE: KinesisClient.LogEncoders)
     extends munit.CatsEffectSuite {
   def fixture: SyncIO[FunFixture[KinesisClient[IO]]] =
     ResourceFixture(
