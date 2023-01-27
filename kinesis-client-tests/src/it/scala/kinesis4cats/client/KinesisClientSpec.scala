@@ -29,8 +29,8 @@ import org.scalacheck.Arbitrary
 import software.amazon.awssdk.core.SdkBytes
 import software.amazon.awssdk.services.kinesis.model._
 
+import kinesis4cats.client.localstack.LocalstackKinesisClient
 import kinesis4cats.localstack._
-import kinesis4cats.localstack.client.LocalstackKinesisClient
 import kinesis4cats.localstack.syntax.scalacheck._
 
 abstract class KinesisClientSpec(implicit LE: KinesisClient.LogEncoders)
