@@ -5,7 +5,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="Laika 0.18.1 + Helium Theme" />
-    <title>Getting started with the KPL</title>
+    <title>Circe Logging</title>
     
       <meta name="author" content="Eric Meisel"/>
     
@@ -77,8 +77,8 @@
         <li class="level2"><a href="../kcl/circe.html">Circe Logging</a></li>
         <li class="level2"><a href="../kcl/index.html">Getting started with the KCL</a></li>
         <li class="level1 nav-header">kpl</li>
-        <li class="level2"><a href="circe.html">Circe Logging</a></li>
-        <li class="level2 active"><a href="#">Getting started with the KPL</a></li>
+        <li class="level2 active"><a href="#">Circe Logging</a></li>
+        <li class="level2"><a href="index.html">Getting started with the KPL</a></li>
       </ul>
 
       <ul class="nav-list">
@@ -93,7 +93,7 @@
     <div id="container">
 
       <nav id="page-nav">
-        <p class="header"><a href="#">Getting started with the KPL</a></p>
+        <p class="header"><a href="#">Circe Logging</a></p>
 
         <ul class="nav-list">
           <li class="level1"><a href="#installation">Installation</a></li>
@@ -105,31 +105,14 @@
 
       <main class="content">
 
-        <h1 id="getting-started-with-the-kpl" class="title">Getting started with the KPL</h1>
-        <p>This module intends to be an enriched wrapper for the <a href="https://docs.aws.amazon.com/streams/latest/dev/developing-producers-with-kpl.html">KPL</a>, offered by AWS.</p>
+        <h1 id="circe-logging" class="title">Circe Logging</h1>
+        <p>Circe instances for the KPL LogEncoders. Offers a richer experience with log ingestors that can work with JSON data easily.</p>
         
         <h2 id="installation" class="section">Installation<a class="anchor-link right" href="#installation"><i class="icofont-laika">&#xef71;</i></a></h2>
-        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">libraryDependencies</span><span> += </span><span class="string-literal">&quot;io.github.etspaceman&quot;</span><span> %% </span><span class="string-literal">&quot;kinesis4cats-kpl&quot;</span><span> % </span><span class="string-literal">&quot;0.0-1de8898-SNAPSHOT&quot;</span></code></pre>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">libraryDependencies</span><span> += </span><span class="string-literal">&quot;io.github.etspaceman&quot;</span><span> %% </span><span class="string-literal">&quot;kinesis4cats-kpl-logging-circe&quot;</span><span> % </span><span class="string-literal">&quot;0.0-1de8898-SNAPSHOT&quot;</span></code></pre>
         
         <h2 id="usage" class="section">Usage<a class="anchor-link right" href="#usage"><i class="icofont-laika">&#xef71;</i></a></h2>
-        <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">java</span><span>.</span><span class="identifier">nio</span><span>.</span><span class="type-name">ByteBuffer</span><span>
-
-</span><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">effect</span><span>.</span><span class="identifier">_</span><span>
-</span><span class="keyword">import</span><span> </span><span class="identifier">com</span><span>.</span><span class="identifier">amazonaws</span><span>.</span><span class="identifier">services</span><span>.</span><span class="identifier">kinesis</span><span>.</span><span class="identifier">producer</span><span>.</span><span class="identifier">_</span><span>
-
-</span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">kpl</span><span>.</span><span class="type-name">KPLProducer</span><span>
-</span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">kpl</span><span>.</span><span class="identifier">logging</span><span>.</span><span class="identifier">instances</span><span>.</span><span class="identifier">show</span><span>.</span><span class="identifier">_</span><span>
-
-</span><span class="keyword">object</span><span> </span><span class="type-name">MyApp</span><span> </span><span class="keyword">extends</span><span> </span><span class="type-name">IOApp</span><span> {
-    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">run</span><span>(</span><span class="identifier">args</span><span>: </span><span class="type-name">List</span><span>[</span><span class="type-name">String</span><span>]) = {
-        </span><span class="type-name">KPLProducer</span><span>[</span><span class="type-name">IO</span><span>]().</span><span class="identifier">use</span><span>(</span><span class="identifier">kpl</span><span> =&gt; 
-            </span><span class="keyword">for</span><span> {
-                </span><span class="identifier">_</span><span> &lt;- </span><span class="identifier">kpl</span><span>.</span><span class="identifier">put</span><span>(</span><span class="keyword">new</span><span> </span><span class="type-name">UserRecord</span><span>(</span><span class="string-literal">&quot;my-stream&quot;</span><span>, </span><span class="string-literal">&quot;my-partition-key&quot;</span><span>, </span><span class="type-name">ByteBuffer</span><span>.</span><span class="identifier">wrap</span><span>(</span><span class="string-literal">&quot;some-data&quot;</span><span>.</span><span class="identifier">getBytes</span><span>())))
-                </span><span class="identifier">_</span><span> &lt;- </span><span class="identifier">kpl</span><span>.</span><span class="identifier">put</span><span>(</span><span class="keyword">new</span><span> </span><span class="type-name">UserRecord</span><span>(</span><span class="string-literal">&quot;my-stream&quot;</span><span>, </span><span class="string-literal">&quot;my-partition-key2&quot;</span><span>, </span><span class="type-name">ByteBuffer</span><span>.</span><span class="identifier">wrap</span><span>(</span><span class="string-literal">&quot;some-data2&quot;</span><span>.</span><span class="identifier">getBytes</span><span>())))
-            } </span><span class="keyword">yield</span><span> </span><span class="type-name">ExitCode</span><span>.</span><span class="type-name">Success</span><span>
-        )
-    }
-}</span></code></pre>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">kpl</span><span>.</span><span class="identifier">logging</span><span>.</span><span class="identifier">instances</span><span>.</span><span class="identifier">circe</span><span>.</span><span class="identifier">_</span></code></pre>
 
         <hr style="margin-top: 30px"/>
         <footer style="font-size: 90%; text-align: center">
