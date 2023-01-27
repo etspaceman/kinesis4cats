@@ -164,11 +164,14 @@ class RecordProcessor[F[_]] private[kinesis4cats] (
           _ <- logger.debug(ctx.context)("Starting user-defined callback")
           _ <- cb(records)
           _ <- logger.debug(ctx.context)("Callback complete, checkpointing")
-          _ <- retryingOnAllErrors(
-            limitRetries(config.checkpointRetries)
-              .join(constantDelay(config.checkpointRetryInterval)),
-            (err, details) => logCommitError(err, details, ctx)
-          )(records.max.checkpoint)
+          _ <-
+            if (config.autoCommit)
+              retryingOnAllErrors(
+                limitRetries(config.checkpointRetries)
+                  .join(constantDelay(config.checkpointRetryInterval)),
+                (err, details) => logCommitError(err, details, ctx)
+              )(records.max.checkpoint)
+            else F.unit
         } yield ()
       ).flatMap {
         case Left(error) if (raiseOnError) =>
@@ -232,13 +235,11 @@ class RecordProcessor[F[_]] private[kinesis4cats] (
           }
         )
         _ <-
-          if (config.autoCommit)
-            retryingOnAllErrors(
-              limitRetries(config.checkpointRetries)
-                .join(constantDelay(config.checkpointRetryInterval)),
-              (error, details) => logCommitError(error, details, ctx)
-            )(F.interruptibleMany(shardEndedInput.checkpointer().checkpoint()))
-          else F.unit
+          retryingOnAllErrors(
+            limitRetries(config.checkpointRetries)
+              .join(constantDelay(config.checkpointRetryInterval)),
+            (error, details) => logCommitError(error, details, ctx)
+          )(F.interruptibleMany(shardEndedInput.checkpointer().checkpoint()))
       } yield ()
     )
   }

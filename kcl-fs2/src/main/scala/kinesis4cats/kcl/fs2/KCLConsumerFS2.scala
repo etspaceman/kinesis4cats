@@ -40,6 +40,7 @@ import software.amazon.kinesis.retrieval.RetrievalConfig
 
 import kinesis4cats.kcl.WorkerListeners._
 import kinesis4cats.kcl.{CommittableRecord, RecordProcessor}
+import cats.Parallel
 
 /** Wrapper offering for the
   * [[https://docs.aws.amazon.com/streams/latest/dev/shared-throughput-kcl-consumers.html KCL]]
@@ -52,7 +53,7 @@ import kinesis4cats.kcl.{CommittableRecord, RecordProcessor}
   */
 class KCLConsumerFS2[F[_]] private[kinesis4cats] (
     config: KCLConsumerFS2.Config[F]
-)(implicit F: Async[F]) {
+)(implicit F: Async[F], P: Parallel[F]) {
 
   /** Runs a [[https://github.com/awslabs/amazon-kinesis-client KCL Consumer]]
     * as an [[fs2.Stream fs2.Stream]]
@@ -61,7 +62,7 @@ class KCLConsumerFS2[F[_]] private[kinesis4cats] (
     *   [[fs2.Stream fs2.Stream]] that manages the lifecycle of the
     *   [[https://github.com/awslabs/amazon-kinesis-client KCL Consumer]]
     */
-  def stream(): Stream[F, CommittableRecord[F]] =
+  def stream(): Resource[F, Stream[F, CommittableRecord[F]]] =
     KCLConsumerFS2.stream(config)
 
   /** Runs a [[https://github.com/awslabs/amazon-kinesis-client KCL Consumer]]
@@ -81,7 +82,7 @@ class KCLConsumerFS2[F[_]] private[kinesis4cats] (
     for {
       listener <- RefListener[F]
       state = listener.state
-      stream = KCLConsumerFS2.stream(
+      stream <- KCLConsumerFS2.stream(
         config.copy(underlying =
           config.underlying.copy(
             coordinatorConfig = config.underlying.coordinatorConfig
@@ -118,7 +119,7 @@ class KCLConsumerFS2[F[_]] private[kinesis4cats] (
   ): Resource[F, KCLConsumerFS2.StreamAndDeferred[F]] = for {
     listener <- DeferredListener[F](stateToCompleteOn)
     deferred = listener.deferred
-    stream = KCLConsumerFS2.stream(
+    stream <- KCLConsumerFS2.stream(
       config.copy(underlying =
         config.underlying.copy(
           coordinatorConfig = config.underlying.coordinatorConfig
@@ -182,7 +183,9 @@ object KCLConsumerFS2 {
     *   [[cats.effect.Async Async]]
     * @return
     */
-  private def callback[F[_]](queue: Queue[F, CommittableRecord[F]])(implicit
+  private[kinesis4cats] def callback[F[_]](
+      queue: Queue[F, CommittableRecord[F]]
+  )(implicit
       F: Async[F]
   ): List[CommittableRecord[F]] => F[Unit] =
     (records: List[CommittableRecord[F]]) => records.traverse_(queue.offer)
@@ -243,10 +246,11 @@ object KCLConsumerFS2 {
       commitMaxWait: FiniteDuration = 10.seconds,
       raiseOnError: Boolean = true,
       recordProcessorConfig: RecordProcessor.Config =
-        RecordProcessor.Config.default,
+        RecordProcessor.Config.default.copy(autoCommit = false),
       callProcessRecordsEvenForEmptyRecordList: Boolean = false
   )(implicit
       F: Async[F],
+      P: Parallel[F],
       encoders: RecordProcessor.LogEncoders
   ): Resource[F, KCLConsumerFS2[F]] = Config
     .create(
@@ -328,7 +332,7 @@ object KCLConsumerFS2 {
       raiseOnError: Boolean = true,
       workerId: String = UUID.randomUUID.toString,
       recordProcessorConfig: RecordProcessor.Config =
-        RecordProcessor.Config.default
+        RecordProcessor.Config.default.copy(autoCommit = false)
   )(
       tfn: kinesis4cats.kcl.KCLConsumer.Config[
         F
@@ -336,6 +340,7 @@ object KCLConsumerFS2 {
         (x: kinesis4cats.kcl.KCLConsumer.Config[F]) => x
   )(implicit
       F: Async[F],
+      P: Parallel[F],
       encoders: RecordProcessor.LogEncoders
   ): Resource[F, KCLConsumerFS2[F]] = Config
     .configsBuilder(
@@ -418,7 +423,7 @@ object KCLConsumerFS2 {
         commitMaxWait: FiniteDuration = 10.seconds,
         raiseOnError: Boolean = true,
         recordProcessorConfig: RecordProcessor.Config =
-          RecordProcessor.Config.default,
+          RecordProcessor.Config.default.copy(autoCommit = false),
         callProcessRecordsEvenForEmptyRecordList: Boolean = false
     )(implicit
         F: Async[F],
@@ -437,11 +442,16 @@ object KCLConsumerFS2 {
           recordProcessorConfig,
           callProcessRecordsEvenForEmptyRecordList
         )(callback(queue))
-    } yield Config(underlying, queue, commitMaxChunk, commitMaxWait)
+    } yield Config(
+      underlying,
+      queue,
+      commitMaxChunk,
+      commitMaxWait
+    )
 
     /** Constructor for the
-      * [[kinesis4cats.kcl.fs2.KCLConsumerFS2.Config KCLConsumerFS2.Config]] that
-      * leverages the
+      * [[kinesis4cats.kcl.fs2.KCLConsumerFS2.Config KCLConsumerFS2.Config]]
+      * that leverages the
       * [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/common/ConfigsBuilder.java ConfigsBuilder]]
       * from the KCL. This is a simpler entry-point for creating the
       * configuration, and provides a transform function to add any custom
@@ -503,7 +513,7 @@ object KCLConsumerFS2 {
         raiseOnError: Boolean = true,
         workerId: String = UUID.randomUUID.toString,
         recordProcessorConfig: RecordProcessor.Config =
-          RecordProcessor.Config.default
+          RecordProcessor.Config.default.copy(autoCommit = false)
     )(
         tfn: kinesis4cats.kcl.KCLConsumer.Config[
           F
@@ -525,7 +535,12 @@ object KCLConsumerFS2 {
           workerId,
           recordProcessorConfig
         )(callback(queue))(tfn)
-    } yield Config(underlying, queue, commitMaxChunk, commitMaxWait)
+    } yield Config(
+      underlying,
+      queue,
+      commitMaxChunk,
+      commitMaxWait
+    )
   }
 
   /** Runs a [[https://github.com/awslabs/amazon-kinesis-client KCL Consumer]]
@@ -541,14 +556,12 @@ object KCLConsumerFS2 {
     */
   private[kinesis4cats] def stream[F[_]](
       config: Config[F]
-  )(implicit F: Async[F]): Stream[F, CommittableRecord[F]] = for {
-    interruptSignal <- Stream.eval(SignallingRef[F, Boolean](false))
-    _ <- Stream.resource(
-      kinesis4cats.kcl.KCLConsumer
-        .run(config.underlying)
-        .onFinalize(interruptSignal.set(true))
-    )
-    stream <- Stream
+  )(implicit F: Async[F]): Resource[F, Stream[F, CommittableRecord[F]]] = for {
+    interruptSignal <- SignallingRef[F, Boolean](false).toResource
+    _ <- kinesis4cats.kcl.KCLConsumer
+      .run(config.underlying)
+      .onFinalize(interruptSignal.set(true))
+    stream = Stream
       .fromQueueUnterminated(config.queue)
       .interruptWhen(interruptSignal)
   } yield stream
@@ -565,11 +578,17 @@ object KCLConsumerFS2 {
     */
   private[kinesis4cats] def commitRecords[F[_]](
       config: Config[F]
-  )(implicit F: Async[F]): Pipe[F, CommittableRecord[F], CommittableRecord[F]] =
+  )(implicit
+      F: Async[F],
+      P: Parallel[F]
+  ): Pipe[F, CommittableRecord[F], CommittableRecord[F]] =
     _.groupWithin(config.maxCommitChunk, config.maxCommitWait)
-      .collect { case chunk if chunk.size > 0 => chunk.toList.max }
-      .flatTap(rec =>
-        Stream.eval(rec.canCheckpoint.ifM(rec.checkpoint, F.unit))
+      .evalTap(chunk =>
+        chunk.toList.groupBy(_.shardId).toList.parTraverse_ {
+          case (_, records) =>
+            val max = records.max
+            max.canCheckpoint.ifM(max.checkpoint, F.unit)
+        }
       )
-
+      .unchunks
 }

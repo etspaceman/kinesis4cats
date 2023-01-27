@@ -19,5 +19,4 @@ services:
         condition: service_healthy
 networks:
   default:
-    external:
-      name: ${DOCKER_NET_NAME}
+    name: ${DOCKER_NET_NAME}

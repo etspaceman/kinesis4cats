@@ -35,7 +35,7 @@ import software.amazon.kinesis.retrieval.polling.PollingConfig
 import kinesis4cats.localstack.LocalstackConfig
 import kinesis4cats.localstack.aws.v2.AwsClients
 
-/** Helpers for constructing and leveraging the KPL with Localstack.
+/** Helpers for constructing and leveraging the KCL with Localstack.
   */
 object LocalstackKCLConsumer {
 
