@@ -1,4 +1,4 @@
-# Kinesis Client Wrapper
+# Getting started with the Kinesis Client
 
 This module intends to be an enriched wrapper for the [KinesisAsyncClient](https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/kinesis/KinesisAsyncClient.html) class, offered by the Java SDK. 
 

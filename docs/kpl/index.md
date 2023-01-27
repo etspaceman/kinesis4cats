@@ -1,6 +1,6 @@
-# Kinesis Producer Library Wrapper
+# Getting started with the KPL
 
-This module intends to be an enriched wrapper for the [KinesisProducer](https://docs.aws.amazon.com/streams/latest/dev/developing-producers-with-kpl.html) class, offered by AWS.
+This module intends to be an enriched wrapper for the [KPL](https://docs.aws.amazon.com/streams/latest/dev/developing-producers-with-kpl.html), offered by AWS.
 
 ## Installation
 

@@ -1,6 +1,6 @@
-# Kinesis Client Library Wrapper
+# Getting started with the KCL
 
-This module intends to be an enriched wrapper for the [Kinesis Client Library](https://docs.aws.amazon.com/streams/latest/dev/shared-throughput-kcl-consumers.html) class, offered by AWS.
+This module intends to be an enriched wrapper for the [KCL](https://docs.aws.amazon.com/streams/latest/dev/shared-throughput-kcl-consumers.html), offered by AWS.
 
 ## Installation
 

@@ -1,4 +1,4 @@
-# kinesis4cats
+# Overview
 
 [![Build](https://github.com/etspaceman/kinesis4cats/actions/workflows/ci.yml/badge.svg)](https://github.com/etspaceman/kinesis4cats/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/etspaceman/kinesis4cats/branch/main/graph/badge.svg?token=HSJWGQ8M2W)](https://codecov.io/gh/etspaceman/kinesis4cats)
@@ -20,7 +20,7 @@ This library takes structured logging seriously, and offers it as a first class 
 - DEBUG: Informational, high-frequency logs (e.g. request logging)
 - TRACE: Data / class bodies
 
-Each offering leverages [LogEncoder](https://github.com/etspaceman/kinesis4cats/shared/src/main/scala/kinesis4cats/logging/LogEncoder.scala) instances to structure the logs that you see. There are [Show](https://typelevel.org/cats/typeclasses/show.html) instances available to import out-of-the-box, which attempts to create a toString-like representation of the structures. That can be useful for most people, but if you are looking to introduce more searchability, using a JSON offering can be very beneficial. There are [Circe](https://circe.github.io/circe/) modules for these instances that users can leverage for this purpose.
+Each offering leverages [LogEncoder](https://github.com/etspaceman/kinesis4cats/blob/main/shared/src/main/scala/kinesis4cats/logging/LogEncoder.scala) instances to structure the logs that you see. There are [Show](https://typelevel.org/cats/typeclasses/show.html) instances available to import out-of-the-box, which attempts to create a toString-like representation of the structures. That can be useful for most people, but if you are looking to introduce more searchability, using a JSON offering can be very beneficial. There are [Circe](https://circe.github.io/circe/) modules for these instances that users can leverage for this purpose.
 
 ## Offerings
 
