@@ -59,7 +59,7 @@ object LocalstackConfig {
       Protocol.Https
     )
     region <- CirisReader.readDefaulted[AwsRegion](
-      List("aws", "region"),
+      List("localstack", "aws", "region"),
       AwsRegion.US_EAST_1,
       prefix
     )
