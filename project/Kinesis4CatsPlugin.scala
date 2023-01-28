@@ -191,6 +191,7 @@ object Kinesis4CatsPlugin extends AutoPlugin {
       FS2.core % Test,
       FS2.reactiveStreams % Test
     ),
+    libraryDependencySchemes += "org.scala-lang.modules" %% "scala-xml" % VersionScheme.Always,
     moduleName := "kinesis4cats-" + name.value,
     headerLicense := Some(
       HeaderLicense.ALv2(s"${startYear.value.get}-2023", organizationName.value)

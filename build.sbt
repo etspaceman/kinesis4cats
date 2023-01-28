@@ -98,6 +98,18 @@ lazy val `kcl-fs2` = project
   .enableIntegrationTests
   .dependsOn(kcl)
 
+lazy val `kcl-http4s` = project
+  .enablePlugins(Smithy4sCodegenPlugin)
+  .settings(
+    description := "Http4s interfaces for the KCL",
+    libraryDependencies ++= Seq(
+      "com.disneystreaming.smithy4s" %% "smithy4s-core" % smithy4sVersion.value,
+      "com.disneystreaming.smithy4s" %% "smithy4s-http4s" % smithy4sVersion.value,
+      "org.http4s" %% "http4s-ember-server" % "0.23.18"
+    )
+  )
+  .dependsOn(kcl)
+
 lazy val `kcl-logging-circe` = project
   .settings(
     description := "JSON structured logging instances for the KCL, via Circe"
@@ -240,6 +252,7 @@ lazy val docs = project
     `aws-v2-localstack`,
     kcl,
     `kcl-fs2`,
+    `kcl-http4s`,
     `kcl-logging-circe`,
     `kcl-localstack`,
     `kcl-tests`,
@@ -268,6 +281,7 @@ lazy val unidocs = project
       `aws-v2-localstack`,
       kcl,
       `kcl-fs2`,
+      `kcl-http4s`,
       `kcl-logging-circe`,
       `kcl-localstack`,
       `kcl-tests`,
@@ -301,6 +315,7 @@ lazy val root =
       `aws-v2-localstack`,
       kcl,
       `kcl-fs2`,
+      `kcl-http4s`,
       `kcl-logging-circe`,
       `kcl-localstack`,
       `kcl-tests`,
