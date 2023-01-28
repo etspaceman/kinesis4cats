@@ -5,7 +5,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="Laika 0.18.1 + Helium Theme" />
-    <title>Circe Logging</title>
+    <title>FS2</title>
     
       <meta name="author" content="Eric Meisel"/>
     
@@ -75,14 +75,14 @@
         <li class="level2"><a href="../kpl/circe.html">Circe Logging</a></li>
         <li class="level2"><a href="../kpl/localstack.html">Localstack</a></li>
         <li class="level1 nav-header">Kinesis Client Library (KCL)</li>
-        <li class="level2"><a href="../kcl/getting-started.html">Getting Started</a></li>
-        <li class="level2"><a href="../kcl/fs2.html">FS2</a></li>
-        <li class="level2"><a href="../kcl/circe.html">Circe Logging</a></li>
-        <li class="level2"><a href="../kcl/localstack.html">Localstack</a></li>
-        <li class="level1 nav-header">Kinesis Client</li>
         <li class="level2"><a href="getting-started.html">Getting Started</a></li>
-        <li class="level2 active"><a href="#">Circe Logging</a></li>
+        <li class="level2 active"><a href="#">FS2</a></li>
+        <li class="level2"><a href="circe.html">Circe Logging</a></li>
         <li class="level2"><a href="localstack.html">Localstack</a></li>
+        <li class="level1 nav-header">Kinesis Client</li>
+        <li class="level2"><a href="../client/getting-started.html">Getting Started</a></li>
+        <li class="level2"><a href="../client/circe.html">Circe Logging</a></li>
+        <li class="level2"><a href="../client/localstack.html">Localstack</a></li>
         <li class="level1 nav-header">Localstack</li>
         <li class="level2"><a href="../localstack/getting-started.html">Localstack</a></li>
         <li class="level2"><a href="../localstack/aws-v1.html">AWS V1</a></li>
@@ -121,7 +121,7 @@
     <div id="container">
 
       <nav id="page-nav">
-        <p class="header"><a href="#">Circe Logging</a></p>
+        <p class="header"><a href="#">FS2</a></p>
 
         <ul class="nav-list">
           <li class="level1"><a href="#installation">Installation</a></li>
@@ -133,14 +133,46 @@
 
       <main class="content">
 
-        <h1 id="circe-logging" class="title">Circe Logging</h1>
-        <p>Circe instances for the KinesisClient LogEncoders. Offers a richer experience with log ingestors that can work with JSON data easily.</p>
+        <h1 id="fs2" class="title">FS2</h1>
+        <p>This module intends to be an enriched wrapper for the <a href="https://docs.aws.amazon.com/streams/latest/dev/shared-throughput-kcl-consumers.html">KCL</a>, offered by AWS. This specific wrapper uses an <a href="https://fs2.io/#/guide?id=building-streams">FS2 Stream</a></p>
         
         <h2 id="installation" class="section">Installation<a class="anchor-link right" href="#installation"><i class="icofont-laika">&#xef71;</i></a></h2>
-        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">libraryDependencies</span><span> += </span><span class="string-literal">&quot;io.github.etspaceman&quot;</span><span> %% </span><span class="string-literal">&quot;kinesis4cats-client-logging-circe&quot;</span><span> % </span><span class="string-literal">&quot;0.0-6318c5a-SNAPSHOT&quot;</span></code></pre>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">libraryDependencies</span><span> += </span><span class="string-literal">&quot;io.github.etspaceman&quot;</span><span> %% </span><span class="string-literal">&quot;kinesis4cats-kcl-fs2&quot;</span><span> % </span><span class="string-literal">&quot;0.0-6318c5a-SNAPSHOT&quot;</span></code></pre>
         
         <h2 id="usage" class="section">Usage<a class="anchor-link right" href="#usage"><i class="icofont-laika">&#xef71;</i></a></h2>
-        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">client</span><span>.</span><span class="identifier">logging</span><span>.</span><span class="identifier">instances</span><span>.</span><span class="identifier">circe</span><span>.</span><span class="identifier">_</span></code></pre>
+        <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">effect</span><span>.</span><span class="identifier">_</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">software</span><span>.</span><span class="identifier">amazon</span><span>.</span><span class="identifier">awssdk</span><span>.</span><span class="identifier">services</span><span>.</span><span class="identifier">cloudwatch</span><span>.</span><span class="type-name">CloudWatchAsyncClient</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">software</span><span>.</span><span class="identifier">amazon</span><span>.</span><span class="identifier">awssdk</span><span>.</span><span class="identifier">services</span><span>.</span><span class="identifier">dynamodb</span><span>.</span><span class="type-name">DynamoDbAsyncClient</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">software</span><span>.</span><span class="identifier">amazon</span><span>.</span><span class="identifier">awssdk</span><span>.</span><span class="identifier">services</span><span>.</span><span class="identifier">kinesis</span><span>.</span><span class="type-name">KinesisAsyncClient</span><span>
+
+</span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">kcl</span><span>.</span><span class="identifier">fs2</span><span>.</span><span class="type-name">KCLConsumerFS2</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">kcl</span><span>.</span><span class="identifier">logging</span><span>.</span><span class="identifier">instances</span><span>.</span><span class="identifier">show</span><span>.</span><span class="identifier">_</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">syntax</span><span>.</span><span class="identifier">bytebuffer</span><span>.</span><span class="identifier">_</span><span>
+
+</span><span class="keyword">object</span><span> </span><span class="type-name">MyApp</span><span> </span><span class="keyword">extends</span><span> </span><span class="type-name">ResourceApp</span><span>.</span><span class="type-name">Forever</span><span> {
+    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">run</span><span>(</span><span class="identifier">args</span><span>: </span><span class="type-name">List</span><span>[</span><span class="type-name">String</span><span>]) = </span><span class="keyword">for</span><span> {
+        </span><span class="identifier">kinesisClient</span><span> &lt;- </span><span class="type-name">Resource</span><span>.</span><span class="identifier">fromAutoCloseable</span><span>(</span><span class="type-name">IO</span><span>(</span><span class="type-name">KinesisAsyncClient</span><span>.</span><span class="identifier">builder</span><span>().</span><span class="identifier">build</span><span>()))
+        </span><span class="identifier">dynamoClient</span><span> &lt;- </span><span class="type-name">Resource</span><span>.</span><span class="identifier">fromAutoCloseable</span><span>(</span><span class="type-name">IO</span><span>(</span><span class="type-name">DynamoDbAsyncClient</span><span>.</span><span class="identifier">builder</span><span>().</span><span class="identifier">build</span><span>()))
+        </span><span class="identifier">cloudWatchClient</span><span> &lt;- </span><span class="type-name">Resource</span><span>.</span><span class="identifier">fromAutoCloseable</span><span>(</span><span class="type-name">IO</span><span>(</span><span class="type-name">CloudWatchAsyncClient</span><span>.</span><span class="identifier">builder</span><span>().</span><span class="identifier">build</span><span>()))
+        </span><span class="identifier">consumer</span><span> &lt;- </span><span class="type-name">KCLConsumerFS2</span><span>.</span><span class="identifier">configsBuilder</span><span>[</span><span class="type-name">IO</span><span>](
+            </span><span class="identifier">kinesisClient</span><span>, 
+            </span><span class="identifier">dynamoClient</span><span>, 
+            </span><span class="identifier">cloudWatchClient</span><span>, 
+            </span><span class="string-literal">&quot;my-stream&quot;</span><span>, 
+            </span><span class="string-literal">&quot;my-app-name&quot;</span><span>
+        )()
+        </span><span class="identifier">_</span><span> &lt;- </span><span class="identifier">consumer</span><span>
+            .</span><span class="identifier">stream</span><span>()
+            .</span><span class="identifier">flatMap</span><span>(</span><span class="identifier">stream</span><span> =&gt;
+                </span><span class="identifier">stream</span><span>
+                .</span><span class="identifier">evalTap</span><span>(</span><span class="identifier">x</span><span> =&gt; </span><span class="type-name">IO</span><span>.</span><span class="identifier">println</span><span>(</span><span class="identifier">x</span><span>.</span><span class="identifier">data</span><span>.</span><span class="identifier">asString</span><span>))
+                .</span><span class="identifier">through</span><span>(</span><span class="identifier">consumer</span><span>.</span><span class="identifier">commitRecords</span><span>)
+                .</span><span class="identifier">compile</span><span>
+                .</span><span class="identifier">resource</span><span>
+                .</span><span class="identifier">drain</span><span>
+            )
+    } </span><span class="keyword">yield</span><span> ()
+}</span></code></pre>
 
         <hr style="margin-top: 30px"/>
         <footer style="font-size: 90%; text-align: center">
