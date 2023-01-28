@@ -80,7 +80,7 @@ object LocalstackKCLConsumerFS2 {
       position,
       recordProcessorConfig
     )(KCLConsumerFS2.callback(queue))
-  } yield KCLConsumerFS2.Config[F](underlying, queue, 5, 1.second)
+  } yield KCLConsumerFS2.Config[F](underlying, queue, 5, 1.second, 5, 0.seconds)
 
   /** Creates a
     * [[kinesis4cats.kcl.fs2.KCLConsumerFS2.Config KCLConsumerFS2.Config]] that

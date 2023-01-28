@@ -28,6 +28,8 @@ import cats.effect.{Async, Ref, Resource}
 import cats.syntax.all._
 import fs2.concurrent.SignallingRef
 import fs2.{Pipe, Stream}
+import retry.RetryPolicies._
+import retry._
 import software.amazon.awssdk.services.cloudwatch.CloudWatchAsyncClient
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient
 import software.amazon.awssdk.services.kinesis.KinesisAsyncClient
@@ -244,6 +246,8 @@ object KCLConsumerFS2 {
       queueSize: Int = 100,
       commitMaxChunk: Int = 1000,
       commitMaxWait: FiniteDuration = 10.seconds,
+      commitMaxRetries: Int = 5,
+      commitRetryDuration: FiniteDuration = 0.seconds,
       raiseOnError: Boolean = true,
       recordProcessorConfig: RecordProcessor.Config =
         RecordProcessor.Config.default.copy(autoCommit = false),
@@ -263,6 +267,8 @@ object KCLConsumerFS2 {
       queueSize,
       commitMaxChunk,
       commitMaxWait,
+      commitMaxRetries,
+      commitRetryDuration,
       raiseOnError,
       recordProcessorConfig,
       callProcessRecordsEvenForEmptyRecordList
@@ -329,6 +335,8 @@ object KCLConsumerFS2 {
       queueSize: Int = 100,
       commitMaxChunk: Int = 1000,
       commitMaxWait: FiniteDuration = 10.seconds,
+      commitMaxRetries: Int = 5,
+      commitRetryDuration: FiniteDuration = 0.seconds,
       raiseOnError: Boolean = true,
       workerId: String = UUID.randomUUID.toString,
       recordProcessorConfig: RecordProcessor.Config =
@@ -352,17 +360,40 @@ object KCLConsumerFS2 {
       queueSize,
       commitMaxChunk,
       commitMaxWait,
+      commitMaxRetries,
+      commitRetryDuration,
       raiseOnError,
       workerId,
       recordProcessorConfig
     )(tfn)
     .map(new KCLConsumerFS2[F](_))
 
+  /** Configuration for the
+    * [[kinesis4cats.kcl.fs2.KCLConsumerFS2 KCLConsumerFS2]]
+    *
+    * @param underlying
+    *   [[kinesis4cats.kcl.KCLConsumer.Config KCLConsumer.Config]]
+    * @param queue
+    *   [[cats.effect.std.Queue Queue]] of
+    *   [[kinesis4cats.kcl.CommittableRecord CommittableRecord]]
+    * @param maxCommitChunk
+    *   Max records to be received in the commitRecords [[fs2.Pipe Pipe]] before
+    *   a commit is run.
+    * @param maxCommitWait
+    *   Max duration to wait in commitRecords [[fs2.Pipe Pipe]] before a commit
+    *   is run.
+    * @param maxCommitRetries
+    *   Max number of retries for a commit operation
+    * @param maxCommitRetryDuration
+    *   Delay between retries of commits
+    */
   final case class Config[F[_]](
       underlying: kinesis4cats.kcl.KCLConsumer.Config[F],
       queue: Queue[F, CommittableRecord[F]],
       maxCommitChunk: Int,
-      maxCommitWait: FiniteDuration
+      maxCommitWait: FiniteDuration,
+      maxCommitRetries: Int,
+      maxCommitRetryDuration: FiniteDuration
   )
 
   object Config {
@@ -391,6 +422,10 @@ object KCLConsumerFS2 {
       * @param commitMaxWait
       *   Max duration to wait in commitRecords [[fs2.Pipe Pipe]] before a
       *   commit is run. Default is 10 seconds
+      * @param commitMaxRetries
+      *   Max number of retries for a commit operation
+      * @param commitMaxRetryDuration
+      *   Delay between retries of commits
       * @param raiseOnError
       *   Whether the [[kinesis4cats.kcl.RecordProcessor RecordProcessor]]
       *   should raise exceptions or simply log them. It is recommended to set
@@ -421,6 +456,8 @@ object KCLConsumerFS2 {
         queueSize: Int = 100,
         commitMaxChunk: Int = 1000,
         commitMaxWait: FiniteDuration = 10.seconds,
+        commitMaxRetries: Int = 5,
+        commitRetryDuration: FiniteDuration = 0.seconds,
         raiseOnError: Boolean = true,
         recordProcessorConfig: RecordProcessor.Config =
           RecordProcessor.Config.default.copy(autoCommit = false),
@@ -446,7 +483,9 @@ object KCLConsumerFS2 {
       underlying,
       queue,
       commitMaxChunk,
-      commitMaxWait
+      commitMaxWait,
+      commitMaxRetries,
+      commitRetryDuration
     )
 
     /** Constructor for the
@@ -477,6 +516,9 @@ object KCLConsumerFS2 {
       * @param commitMaxWait
       *   Max duration to wait in commitRecords [[fs2.Pipe Pipe]] before a
       *   commit is run. Default is 10 seconds
+      * @param commitMaxRetries
+      *   Max number of retries for a commit operation
+      * @param commitMaxRetryDuration
       * @param raiseOnError
       *   Whether the [[kinesis4cats.kcl.RecordProcessor RecordProcessor]]
       *   should raise exceptions or simply log them. It is recommended to set
@@ -510,6 +552,8 @@ object KCLConsumerFS2 {
         queueSize: Int = 100,
         commitMaxChunk: Int = 1000,
         commitMaxWait: FiniteDuration = 10.seconds,
+        commitMaxRetries: Int = 5,
+        commitRetryDuration: FiniteDuration = 0.seconds,
         raiseOnError: Boolean = true,
         workerId: String = UUID.randomUUID.toString,
         recordProcessorConfig: RecordProcessor.Config =
@@ -539,7 +583,9 @@ object KCLConsumerFS2 {
       underlying,
       queue,
       commitMaxChunk,
-      commitMaxWait
+      commitMaxWait,
+      commitMaxRetries,
+      commitRetryDuration
     )
   }
 
@@ -587,7 +633,14 @@ object KCLConsumerFS2 {
         chunk.toList.groupBy(_.shardId).toList.parTraverse_ {
           case (_, records) =>
             val max = records.max
-            max.canCheckpoint.ifM(max.checkpoint, F.unit)
+            max.canCheckpoint.ifM(
+              retryingOnAllErrors(
+                limitRetries(config.maxCommitRetries)
+                  .join(constantDelay(config.maxCommitRetryDuration)),
+                noop[F, Throwable]
+              )(max.checkpoint),
+              F.unit
+            )
         }
       )
       .unchunks
