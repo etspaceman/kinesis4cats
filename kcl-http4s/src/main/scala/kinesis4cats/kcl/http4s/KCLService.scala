@@ -22,8 +22,10 @@ import cats.syntax.all._
 import com.comcast.ip4s.{Host, Port}
 import org.http4s.HttpRoutes
 import org.http4s.ember.server._
+import org.http4s.implicits._
 import org.http4s.server.Server
 import smithy4s.http4s.SimpleRestJsonBuilder
+import smithy4s.http4s.swagger.docs
 import software.amazon.kinesis.coordinator.WorkerStateChangeListener.WorkerState
 
 import kinesis4cats.kcl.http4s.generated.{Response, ServiceNotReadyError}
@@ -77,7 +79,8 @@ object KCLService {
   ): Resource[F, KCLService[F]] =
     consumer.runWithRefListener().map(new KCLService[F](_))
 
-  /** Creates [[org.http4s.HttpRoutes HttpRoutes]] that represents this service
+  /** Creates [[org.http4s.HttpRoutes HttpRoutes]] that represents this service.
+    * Includes Swagger routes.
     *
     * @param consumer
     *   [[kinesis4cats.kcl.KCLConsumer KCLConsumer]]
@@ -91,7 +94,10 @@ object KCLService {
       consumer: KCLConsumer[F]
   )(implicit F: Async[F]): Resource[F, HttpRoutes[F]] = for {
     service <- KCLService[F](consumer)
-    routes <- SimpleRestJsonBuilder.routes(service).resource
+    routes <- SimpleRestJsonBuilder
+      .routes(service)
+      .resource
+      .map(docs[F](generated.KCLService) <+> _)
   } yield routes
 
   /** Creates [[org.http4s.server.Server Server]] that represents this service.
