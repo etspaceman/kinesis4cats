@@ -90,6 +90,14 @@ lazy val kcl = project
   .enableIntegrationTests
   .dependsOn(shared)
 
+lazy val `kcl-fs2` = project
+  .settings(
+    description := "FS2 interfaces for the KCL",
+    libraryDependencies ++= Seq(FS2.core)
+  )
+  .enableIntegrationTests
+  .dependsOn(kcl)
+
 lazy val `kcl-logging-circe` = project
   .settings(
     description := "JSON structured logging instances for the KCL, via Circe"
@@ -99,8 +107,7 @@ lazy val `kcl-logging-circe` = project
     kcl,
     `shared-circe`,
     `kinesis-client-localstack` % IT,
-    `kcl-localstack` % IT,
-    kcl % "it->it"
+    `kcl-localstack` % IT
   )
 
 lazy val `kcl-localstack` = project
@@ -108,7 +115,7 @@ lazy val `kcl-localstack` = project
     description := "A test-kit for working with Kinesis and Localstack, via the KCL"
   )
   .enableIntegrationTests
-  .dependsOn(`aws-v2-localstack`, kcl)
+  .dependsOn(`aws-v2-localstack`, kcl, `kcl-fs2`)
 
 lazy val `kcl-tests` = project
   .enablePlugins(NoPublishPlugin)
@@ -172,8 +179,7 @@ lazy val `kinesis-client-logging-circe` = project
   .dependsOn(
     `kinesis-client`,
     `shared-circe`,
-    `aws-v2-localstack` % IT,
-    `kinesis-client` % "it->it"
+    `aws-v2-localstack` % IT
   )
 
 lazy val `kinesis-client-tests` = project
@@ -233,6 +239,7 @@ lazy val docs = project
     `aws-v1-localstack`,
     `aws-v2-localstack`,
     kcl,
+    `kcl-fs2`,
     `kcl-logging-circe`,
     `kcl-localstack`,
     `kcl-tests`,
@@ -260,6 +267,7 @@ lazy val unidocs = project
       `aws-v1-localstack`,
       `aws-v2-localstack`,
       kcl,
+      `kcl-fs2`,
       `kcl-logging-circe`,
       `kcl-localstack`,
       `kcl-tests`,
@@ -292,6 +300,7 @@ lazy val root =
       `aws-v1-localstack`,
       `aws-v2-localstack`,
       kcl,
+      `kcl-fs2`,
       `kcl-logging-circe`,
       `kcl-localstack`,
       `kcl-tests`,
