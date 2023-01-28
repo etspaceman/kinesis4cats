@@ -20,6 +20,7 @@ import scala.concurrent.duration._
 
 import java.util.UUID
 
+import cats.Parallel
 import cats.effect.kernel.Deferred
 import cats.effect.std.Queue
 import cats.effect.syntax.all._
@@ -40,7 +41,6 @@ import software.amazon.kinesis.retrieval.RetrievalConfig
 
 import kinesis4cats.kcl.WorkerListeners._
 import kinesis4cats.kcl.{CommittableRecord, RecordProcessor}
-import cats.Parallel
 
 /** Wrapper offering for the
   * [[https://docs.aws.amazon.com/streams/latest/dev/shared-throughput-kcl-consumers.html KCL]]
