@@ -29,3 +29,15 @@ LocalstackKCLConsumer.kclConsumer[IO]("my-stream", "my-app-name")(processRecords
 // - A results Queue, which contains records received by the consumer
 LocalstackKCLConsumer.kclConsumerWithResults[IO]("my-stream", "my-app-name")(processRecords)
 ```
+
+## Usage - FS2
+
+```scala mdoc:compile-only
+import cats.effect.IO
+
+import kinesis4cats.kcl.logging.instances.show._
+import kinesis4cats.kcl.fs2.localstack.LocalstackKCLConsumerFS2
+
+// Runs a KCLConsumerFS2 as a Resource, which contains FS2 Streaming methods.
+LocalstackKCLConsumerFS2.kclConsumer[IO]("my-stream", "my-app-name")
+```
