@@ -28,6 +28,7 @@ object Kinesis4CatsPlugin extends AutoPlugin {
   import org.scalafmt.sbt.ScalafmtPlugin.autoImport._
   import DockerComposePlugin.autoImport._
   import DockerImagePlugin.autoImport._
+  import sbtassembly.AssemblyPlugin.autoImport._
 
   private val primaryJavaOSCond = Def.setting {
     val java = githubWorkflowJavaVersions.value.head
@@ -88,7 +89,14 @@ object Kinesis4CatsPlugin extends AutoPlugin {
 
       val testWithCoverage = List(
         WorkflowStep.Sbt(
-          List("IT / dockerComposeUp", "cov", "IT / dockerComposeDown"),
+          List(
+            "IT / dockerComposeUp",
+            "cov",
+            "IT / dockerComposeDown",
+            "FunctionalTest / dockerComposeUp",
+            "FunctionalTest / test",
+            "FunctionalTest / dockerComposeDown"
+          ),
           name = Some("Test with coverage"),
           cond = Some(noScala3Cond.value)
         )
@@ -100,7 +108,10 @@ object Kinesis4CatsPlugin extends AutoPlugin {
             "IT / dockerComposeUp",
             "test",
             "IT / test",
-            "IT / dockerComposeDown"
+            "IT / dockerComposeDown",
+            "FunctionalTest / dockerComposeUp",
+            "FunctionalTest / test",
+            "FunctionalTest / dockerComposeDown"
           ),
           name = Some("Test"),
           cond = Some(onlyScala3Cond.value)
@@ -200,24 +211,28 @@ object Kinesis4CatsPlugin extends AutoPlugin {
     Compile / doc / sources := {
       if (scalaVersion.value.startsWith("3.")) Nil
       else (Compile / doc / sources).value
-    }
+    },
+    assembly / test := {}
   ) ++ Seq(
-    addCommandAlias("cpl", ";+Test / compile;+IT / compile"),
+    addCommandAlias(
+      "cpl",
+      ";+Test / compile;+IT / compile;+FunctionalTest / compile"
+    ),
     addCommandAlias(
       "fixCheck",
-      ";Compile / scalafix --check;Test / scalafix --check;IT / scalafix --check"
+      ";Compile / scalafix --check;Test / scalafix --check;IT / scalafix --check;FunctionalTest / scalafix --check"
     ),
     addCommandAlias(
       "fix",
-      ";Compile / scalafix;Test / scalafix;IT / scalafix"
+      ";Compile / scalafix;Test / scalafix;IT / scalafix;FunctionalTest / scalafix"
     ),
     addCommandAlias(
       "fmtCheck",
-      ";Compile / scalafmtCheck;Test / scalafmtCheck;IT / scalafmtCheck;scalafmtSbtCheck"
+      ";Compile / scalafmtCheck;Test / scalafmtCheck;IT / scalafmtCheck;FunctionalTest / scalafmtCheck;scalafmtSbtCheck"
     ),
     addCommandAlias(
       "fmt",
-      ";Compile / scalafmt;Test / scalafmt;IT / scalafmt;scalafmtSbt"
+      ";Compile / scalafmt;Test / scalafmt;IT / scalafmt;FunctionalTest / scalafmt;scalafmtSbt"
     ),
     addCommandAlias(
       "pretty",
@@ -245,6 +260,7 @@ object Kinesis4CatsPluginKeys {
   import de.heikoseeberger.sbtheader.HeaderPlugin.autoImport._
 
   val IT = config("it").extend(Test)
+  val FunctionalTest = config("fun").extend(Test)
 
   final implicit class Kinesi4catsProjectOps(private val p: Project)
       extends AnyVal {
@@ -256,6 +272,20 @@ object Kinesis4CatsPluginKeys {
           BloopSettings.default ++
           Defaults.testSettings ++
           headerSettings(IT) ++
+          Seq(
+            parallelExecution := false,
+            javaOptions += "-Dcom.amazonaws.sdk.disableCertChecking=true"
+          )
+      })
+
+    def enableFunctionalTests = p
+      .configs(FunctionalTest)
+      .settings(inConfig(FunctionalTest) {
+        ScalafmtPlugin.scalafmtConfigSettings ++
+          scalafixConfigSettings(FunctionalTest) ++
+          BloopSettings.default ++
+          Defaults.testSettings ++
+          headerSettings(FunctionalTest) ++
           Seq(
             parallelExecution := false,
             javaOptions += "-Dcom.amazonaws.sdk.disableCertChecking=true"

@@ -68,4 +68,19 @@ object LibraryDependencies {
     val cirisVersion = "3.0.0"
     val core = "is.cir" %% "ciris" % cirisVersion
   }
+
+  object Http4s {
+    val http4sVersion = "0.23.18"
+    val emberServer = "org.http4s" %% "http4s-ember-server" % http4sVersion
+    val emberClient = "org.http4s" %% "http4s-ember-client" % http4sVersion
+  }
+
+  object Smithy4s {
+    def core(version: String) =
+      "com.disneystreaming.smithy4s" %% "smithy4s-core" % version
+    def http4s(version: String) =
+      "com.disneystreaming.smithy4s" %% "smithy4s-http4s" % version
+    def http4sSwagger(version: String) =
+      "com.disneystreaming.smithy4s" %% "smithy4s-http4s-swagger" % version
+  }
 }

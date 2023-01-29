@@ -11,6 +11,8 @@ object DockerImagePlugin extends AutoPlugin {
   val autoImport: DockerImagePluginKeys.type = DockerImagePluginKeys
   import autoImport._
 
+  import sbtassembly.AssemblyPlugin.autoImport._
+
   val dockerTagTask: Def.Initialize[Task[String]] = Def.task {
     s"${dockerRepository.value}/${dockerNamespace.value}/${name.value}:${imageTag.value}"
   }

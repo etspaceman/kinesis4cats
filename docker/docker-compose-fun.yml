@@ -1,0 +1,41 @@
+version: '2.4'
+services:
+  localstack:
+    image: "localstack/localstack:latest"
+    environment:
+      - "SERVICES=cloudwatch,kinesis,dynamodb"
+      - "KINESIS_LATENCY=0"
+      - "KINESIS_INITIALIZE_STREAMS=test-kcl-service-stream:1"
+    healthcheck:
+      test: "awslocal cloudwatch list-metrics"
+      interval: 5s
+      timeout: 10s
+      start_period: 10s
+    ports:
+      - "4566:4566"
+  testKclService:
+    image: "ghcr.io/etspaceman/kcl-tests:${DOCKER_TAG_VERSION}"
+    environment:
+      - "LOG_LEVEL=TRACE"
+      - "TEST_STREAM=test-kcl-service-stream"
+      - "LOCALSTACK_HOST=localstack"
+    healthcheck:
+      test: "curl --fail http://localhost:8080/initialized || exit 1"
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    ports:
+      - "8080:8080"
+    depends_on:
+      localstack:
+        condition: service_healthy
+  ready:
+    image: "library/hello-world"
+    depends_on:
+      localstack:
+        condition: service_healthy
+      testKclService:
+        condition: service_healthy
+networks:
+  default:
+    name: ${DOCKER_NET_NAME}

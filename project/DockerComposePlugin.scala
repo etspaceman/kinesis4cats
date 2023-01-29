@@ -9,6 +9,7 @@ object DockerComposePlugin extends AutoPlugin {
 
   val autoImport: DockerComposePluginKeys.type = DockerComposePluginKeys
   import autoImport._
+  import DockerImagePlugin.autoImport._
 
   val createNetworkTask: Def.Initialize[Task[Unit]] = Def.task {
     val log = sbt.Keys.streams.value.log
@@ -52,7 +53,7 @@ object DockerComposePlugin extends AutoPlugin {
   val dockerComposeUpTask: Def.Initialize[Task[Unit]] = Def.taskDyn {
     if (buildImage.value) {
       dockerComposeUpBaseTask.dependsOn(
-        DockerImagePlugin.packageAndBuildDockerImageTask
+        projectsToBuild.value.map(p => p / packageAndBuildDockerImage): _*
       )
     } else dockerComposeUpBaseTask
   }
@@ -135,7 +136,11 @@ object DockerComposePlugin extends AutoPlugin {
       dockerComposeDown
     )
 
-  def settings(configuration: Configuration, build: Boolean): Seq[Setting[_]] =
+  def settings(
+      configuration: Configuration,
+      build: Boolean,
+      projects: List[Project]
+  ): Seq[Setting[_]] =
     Seq(
       createNetwork := createNetworkTask.value,
       removeNetwork := removeNetworkTask.value,
@@ -150,7 +155,8 @@ object DockerComposePlugin extends AutoPlugin {
         .getOrElse("DOCKER_NET_NAME", "kinesis4cats_network"),
       composeProjectName := sys.env
         .getOrElse("COMPOSE_PROJECT_NAME", "kinesis4cats"),
-      buildImage := build
+      buildImage := build,
+      projectsToBuild := projects
     )
 
 }
@@ -166,6 +172,7 @@ object DockerComposePluginKeys {
   val buildImage = settingKey[Boolean](
     "Determines if dockerComposeUp should also build a docker image via the DockerImagePlugin"
   )
+  val projectsToBuild = settingKey[Seq[Project]]("Projects to build images for")
   val createNetwork = taskKey[Unit]("Creates a docker network")
   val removeNetwork = taskKey[Unit]("Removes a docker network")
   val dockerComposeTestQuick =
