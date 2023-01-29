@@ -94,10 +94,11 @@ object KCLService {
       consumer: KCLConsumer[F]
   )(implicit F: Async[F]): Resource[F, HttpRoutes[F]] = for {
     service <- KCLService[F](consumer)
+    docRoutes = docs[F](generated.KCLService)
     routes <- SimpleRestJsonBuilder
       .routes(service)
       .resource
-      .map(docs[F](generated.KCLService) <+> _)
+      .map(serviceRoutes => docRoutes <+> serviceRoutes)
   } yield routes
 
   /** Creates [[org.http4s.server.Server Server]] that represents this service.

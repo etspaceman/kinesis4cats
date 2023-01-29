@@ -7,5 +7,5 @@
 .DS_STORE
 docker/image/lib/*.jar
 **/metals.sbt
-.smith.lsp.log
+.smithy.lsp.log
 !/**/.gitkeep
