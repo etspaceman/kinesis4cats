@@ -5,6 +5,7 @@
 .bsp/
 .idea/
 .DS_STORE
-docker/image/lib/
+docker/image/lib/*.jar
 **/metals.sbt
 .smith.lsp.log
+!/**/.gitkeep
