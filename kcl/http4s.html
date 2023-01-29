@@ -5,7 +5,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="Laika 0.18.1 + Helium Theme" />
-    <title>Localstack</title>
+    <title>Http4s</title>
     
       <meta name="author" content="Eric Meisel"/>
     
@@ -77,9 +77,9 @@
         <li class="level1 nav-header">Kinesis Client Library (KCL)</li>
         <li class="level2"><a href="getting-started.html">Getting Started</a></li>
         <li class="level2"><a href="fs2.html">FS2</a></li>
-        <li class="level2"><a href="http4s.html">Http4s</a></li>
+        <li class="level2 active"><a href="#">Http4s</a></li>
         <li class="level2"><a href="circe.html">Circe Logging</a></li>
-        <li class="level2 active"><a href="#">Localstack</a></li>
+        <li class="level2"><a href="localstack.html">Localstack</a></li>
         <li class="level1 nav-header">Kinesis Client</li>
         <li class="level2"><a href="../client/getting-started.html">Getting Started</a></li>
         <li class="level2"><a href="../client/circe.html">Circe Logging</a></li>
@@ -122,12 +122,11 @@
     <div id="container">
 
       <nav id="page-nav">
-        <p class="header"><a href="#">Localstack</a></p>
+        <p class="header"><a href="#">Http4s</a></p>
 
         <ul class="nav-list">
           <li class="level1"><a href="#installation">Installation</a></li>
           <li class="level1"><a href="#usage">Usage</a></li>
-          <li class="level1"><a href="#usage-fs2">Usage - FS2</a></li>
         </ul>
 
         <p class="footer"></p>
@@ -135,39 +134,44 @@
 
       <main class="content">
 
-        <h1 id="localstack" class="title">Localstack</h1>
-        <p>The ability to provide a <a href="https://github.com/etspaceman/kinesis4cats/blob/main/kcl/src/main/scala/kinesis4cats/kcl/KCLConsumer.scala">KCLConsumer</a> that is compliant with Localstack</p>
+        <h1 id="http4s" class="title">Http4s</h1>
+        <p>Provides a coupling of a <a href="https://github.com/etspaceman/kinesis4cats/blob/main/kcl/src/main/scala/kinesis4cats/kcl/KCLConsumer.scala">KCLConsumer</a> with an <a href="https://http4s.org/">Http4s</a> server, that services two routes:</p>
+        <ul>
+          <li>healthcheck (determines whether the http server is up)</li>
+          <li>initialized (determines whether the KCL is up)</li>
+        </ul>
         
         <h2 id="installation" class="section">Installation<a class="anchor-link right" href="#installation"><i class="icofont-laika">&#xef71;</i></a></h2>
-        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">libraryDependencies</span><span> += </span><span class="string-literal">&quot;io.github.etspaceman&quot;</span><span> %% </span><span class="string-literal">&quot;kinesis4cats-kcl-localstack&quot;</span><span> % </span><span class="string-literal">&quot;0.0-2885fb5-SNAPSHOT&quot;</span></code></pre>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">libraryDependencies</span><span> += </span><span class="string-literal">&quot;io.github.etspaceman&quot;</span><span> %% </span><span class="string-literal">&quot;kinesis4cats-kcl-http4s&quot;</span><span> % </span><span class="string-literal">&quot;0.0-2885fb5-SNAPSHOT&quot;</span></code></pre>
         
         <h2 id="usage" class="section">Usage<a class="anchor-link right" href="#usage"><i class="icofont-laika">&#xef71;</i></a></h2>
-        <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">effect</span><span>.</span><span class="type-name">IO</span><span>
+        <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">effect</span><span>.</span><span class="identifier">_</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">syntax</span><span>.</span><span class="identifier">all</span><span>.</span><span class="identifier">_</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">com</span><span>.</span><span class="identifier">comcast</span><span>.</span><span class="identifier">ip4s</span><span>.</span><span class="identifier">_</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">software</span><span>.</span><span class="identifier">amazon</span><span>.</span><span class="identifier">awssdk</span><span>.</span><span class="identifier">services</span><span>.</span><span class="identifier">cloudwatch</span><span>.</span><span class="type-name">CloudWatchAsyncClient</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">software</span><span>.</span><span class="identifier">amazon</span><span>.</span><span class="identifier">awssdk</span><span>.</span><span class="identifier">services</span><span>.</span><span class="identifier">dynamodb</span><span>.</span><span class="type-name">DynamoDbAsyncClient</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">software</span><span>.</span><span class="identifier">amazon</span><span>.</span><span class="identifier">awssdk</span><span>.</span><span class="identifier">services</span><span>.</span><span class="identifier">kinesis</span><span>.</span><span class="type-name">KinesisAsyncClient</span><span>
 
 </span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">kcl</span><span>.</span><span class="identifier">_</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">kcl</span><span>.</span><span class="identifier">http4s</span><span>.</span><span class="type-name">KCLService</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">kcl</span><span>.</span><span class="identifier">logging</span><span>.</span><span class="identifier">instances</span><span>.</span><span class="identifier">show</span><span>.</span><span class="identifier">_</span><span>
-</span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">kcl</span><span>.</span><span class="identifier">localstack</span><span>.</span><span class="type-name">LocalstackKCLConsumer</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">syntax</span><span>.</span><span class="identifier">bytebuffer</span><span>.</span><span class="identifier">_</span><span>
 
-</span><span class="keyword">val</span><span> </span><span class="identifier">processRecords</span><span> = (</span><span class="identifier">records</span><span>: </span><span class="type-name">List</span><span>[</span><span class="type-name">CommittableRecord</span><span>[</span><span class="type-name">IO</span><span>]]) =&gt; </span><span class="identifier">records</span><span>.</span><span class="identifier">traverse_</span><span>(</span><span class="identifier">record</span><span> =&gt; </span><span class="type-name">IO</span><span>.</span><span class="identifier">println</span><span>(</span><span class="identifier">record</span><span>.</span><span class="identifier">data</span><span>.</span><span class="identifier">asString</span><span>))
-
-</span><span class="comment">// Runs a KCLConsumer as a Resource. Resource contains a Deferred value, which completes when the consumer has begun to process records.
-</span><span class="type-name">LocalstackKCLConsumer</span><span>.</span><span class="identifier">kclConsumer</span><span>[</span><span class="type-name">IO</span><span>](</span><span class="string-literal">&quot;my-stream&quot;</span><span>, </span><span class="string-literal">&quot;my-app-name&quot;</span><span>)(</span><span class="identifier">processRecords</span><span>)
-
-</span><span class="comment">// Runs a KCLConsumer as a Resource. Resource contains 2 things: 
-// - A Deferred value, which completes when the consumer has begun to process records. 
-// - A results Queue, which contains records received by the consumer
-</span><span class="type-name">LocalstackKCLConsumer</span><span>.</span><span class="identifier">kclConsumerWithResults</span><span>[</span><span class="type-name">IO</span><span>](</span><span class="string-literal">&quot;my-stream&quot;</span><span>, </span><span class="string-literal">&quot;my-app-name&quot;</span><span>)(</span><span class="identifier">processRecords</span><span>)</span></code></pre>
-        
-        <h2 id="usage-fs2" class="section">Usage - FS2<a class="anchor-link right" href="#usage-fs2"><i class="icofont-laika">&#xef71;</i></a></h2>
-        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">effect</span><span>.</span><span class="type-name">IO</span><span>
-
-</span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">kcl</span><span>.</span><span class="identifier">logging</span><span>.</span><span class="identifier">instances</span><span>.</span><span class="identifier">show</span><span>.</span><span class="identifier">_</span><span>
-</span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">kcl</span><span>.</span><span class="identifier">fs2</span><span>.</span><span class="identifier">localstack</span><span>.</span><span class="type-name">LocalstackKCLConsumerFS2</span><span>
-
-</span><span class="comment">// Runs a KCLConsumerFS2 as a Resource, which contains FS2 Streaming methods.
-</span><span class="type-name">LocalstackKCLConsumerFS2</span><span>.</span><span class="identifier">kclConsumer</span><span>[</span><span class="type-name">IO</span><span>](</span><span class="string-literal">&quot;my-stream&quot;</span><span>, </span><span class="string-literal">&quot;my-app-name&quot;</span><span>)</span></code></pre>
+</span><span class="keyword">object</span><span> </span><span class="type-name">MyApp</span><span> </span><span class="keyword">extends</span><span> </span><span class="type-name">ResourceApp</span><span>.</span><span class="type-name">Forever</span><span> {
+    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">run</span><span>(</span><span class="identifier">args</span><span>: </span><span class="type-name">List</span><span>[</span><span class="type-name">String</span><span>]) = </span><span class="keyword">for</span><span> {
+        </span><span class="identifier">kinesisClient</span><span> &lt;- </span><span class="type-name">Resource</span><span>.</span><span class="identifier">fromAutoCloseable</span><span>(</span><span class="type-name">IO</span><span>(</span><span class="type-name">KinesisAsyncClient</span><span>.</span><span class="identifier">builder</span><span>().</span><span class="identifier">build</span><span>()))
+        </span><span class="identifier">dynamoClient</span><span> &lt;- </span><span class="type-name">Resource</span><span>.</span><span class="identifier">fromAutoCloseable</span><span>(</span><span class="type-name">IO</span><span>(</span><span class="type-name">DynamoDbAsyncClient</span><span>.</span><span class="identifier">builder</span><span>().</span><span class="identifier">build</span><span>()))
+        </span><span class="identifier">cloudWatchClient</span><span> &lt;- </span><span class="type-name">Resource</span><span>.</span><span class="identifier">fromAutoCloseable</span><span>(</span><span class="type-name">IO</span><span>(</span><span class="type-name">CloudWatchAsyncClient</span><span>.</span><span class="identifier">builder</span><span>().</span><span class="identifier">build</span><span>()))
+        </span><span class="identifier">consumer</span><span> &lt;- </span><span class="type-name">KCLConsumer</span><span>.</span><span class="identifier">configsBuilder</span><span>[</span><span class="type-name">IO</span><span>](
+            </span><span class="identifier">kinesisClient</span><span>, 
+            </span><span class="identifier">dynamoClient</span><span>, 
+            </span><span class="identifier">cloudWatchClient</span><span>, 
+            </span><span class="string-literal">&quot;my-stream&quot;</span><span>, 
+            </span><span class="string-literal">&quot;my-app-name&quot;</span><span>
+        )((</span><span class="identifier">records</span><span>: </span><span class="type-name">List</span><span>[</span><span class="type-name">CommittableRecord</span><span>[</span><span class="type-name">IO</span><span>]]) =&gt; </span><span class="identifier">records</span><span>.</span><span class="identifier">traverse_</span><span>(</span><span class="identifier">r</span><span> =&gt; </span><span class="type-name">IO</span><span>.</span><span class="identifier">println</span><span>(</span><span class="identifier">r</span><span>.</span><span class="identifier">data</span><span>.</span><span class="identifier">asString</span><span>)))()
+        </span><span class="identifier">_</span><span> &lt;- </span><span class="type-name">KCLService</span><span>.</span><span class="identifier">server</span><span>[</span><span class="type-name">IO</span><span>](</span><span class="identifier">consumer</span><span>, </span><span class="string-literal">port&quot;8080&quot;</span><span>, </span><span class="string-literal">host&quot;0.0.0.0&quot;</span><span>)
+    } </span><span class="keyword">yield</span><span> ()
+}</span></code></pre>
 
         <hr style="margin-top: 30px"/>
         <footer style="font-size: 90%; text-align: center">
