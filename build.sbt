@@ -146,6 +146,7 @@ lazy val `kcl-tests` = project
       case "module-info.class"                        => MergeStrategy.discard
       case "AUTHORS"                                  => MergeStrategy.discard
       case "META-INF/smithy/smithy4s.tracking.smithy" => MergeStrategy.discard
+      case "scala/jdk/CollectionConverters$.class"    => MergeStrategy.first
       case PathList("google", "protobuf", _ @_*)      => MergeStrategy.first
       case PathList("codegen-resources", _ @_*)       => MergeStrategy.first
       case PathList("META-INF", xs @ _*) =>
