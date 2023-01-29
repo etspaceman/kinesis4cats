@@ -1,3 +1,4 @@
+import org.eclipse.jgit.api.MergeCommand.FastForwardMode.Merge
 import laika.rewrite.link._
 import LibraryDependencies._
 
@@ -98,6 +99,19 @@ lazy val `kcl-fs2` = project
   .enableIntegrationTests
   .dependsOn(kcl)
 
+lazy val `kcl-http4s` = project
+  .enablePlugins(Smithy4sCodegenPlugin)
+  .settings(
+    description := "Http4s interfaces for the KCL",
+    libraryDependencies ++= Seq(
+      LibraryDependencies.Smithy4s.core(smithy4sVersion.value),
+      LibraryDependencies.Smithy4s.http4s(smithy4sVersion.value),
+      LibraryDependencies.Smithy4s.http4sSwagger(smithy4sVersion.value),
+      Http4s.emberServer
+    )
+  )
+  .dependsOn(kcl)
+
 lazy val `kcl-logging-circe` = project
   .settings(
     description := "JSON structured logging instances for the KCL, via Circe"
@@ -118,16 +132,39 @@ lazy val `kcl-localstack` = project
   .dependsOn(`aws-v2-localstack`, kcl, `kcl-fs2`)
 
 lazy val `kcl-tests` = project
-  .enablePlugins(NoPublishPlugin)
-  .settings(
-    description := "Integration Tests for the KCL"
-  )
+  .enablePlugins(NoPublishPlugin, DockerImagePlugin)
+  .settings(DockerImagePlugin.settings)
   .enableIntegrationTests
+  .enableFunctionalTests
+  .settings(
+    description := "Integration Tests for the KCL",
+    libraryDependencies ++= Seq(
+      Logback,
+      Http4s.emberClient % FunctionalTest
+    ),
+    assembly / assemblyMergeStrategy := {
+      case "module-info.class"                        => MergeStrategy.discard
+      case "AUTHORS"                                  => MergeStrategy.discard
+      case "META-INF/smithy/smithy4s.tracking.smithy" => MergeStrategy.discard
+      case "META-INF/smithy/manifest"                 => MergeStrategy.first
+      case "scala/jdk/CollectionConverters$.class"    => MergeStrategy.first
+      case PathList("google", "protobuf", _ @_*)      => MergeStrategy.first
+      case PathList("codegen-resources", _ @_*)       => MergeStrategy.first
+      case PathList("META-INF", xs @ _*) =>
+        (xs map { _.toLowerCase }) match {
+          case "services" :: xs => MergeStrategy.filterDistinctLines
+          case _                => MergeStrategy.discard
+        }
+      case x => MergeStrategy.defaultMergeStrategy(x)
+    },
+    assembly / mainClass := Some("kinesis4cats.kcl.http4s.TestKCLService")
+  )
   .dependsOn(
-    `kinesis-client-localstack` % IT,
+    `kcl-http4s`,
+    `kcl-localstack`,
     `kcl-logging-circe` % IT,
-    `kinesis-client-logging-circe` % IT,
-    `kcl-localstack` % IT
+    `kinesis-client-localstack` % IT,
+    `kinesis-client-logging-circe` % IT
   )
 
 lazy val kpl = project
@@ -240,6 +277,7 @@ lazy val docs = project
     `aws-v2-localstack`,
     kcl,
     `kcl-fs2`,
+    `kcl-http4s`,
     `kcl-logging-circe`,
     `kcl-localstack`,
     `kcl-tests`,
@@ -268,6 +306,7 @@ lazy val unidocs = project
       `aws-v2-localstack`,
       kcl,
       `kcl-fs2`,
+      `kcl-http4s`,
       `kcl-logging-circe`,
       `kcl-localstack`,
       `kcl-tests`,
@@ -286,8 +325,10 @@ lazy val root =
   tlCrossRootProject
     .configure(
       _.enableIntegrationTests,
+      _.enableFunctionalTests,
       _.settings(
-        DockerComposePlugin.settings(IT, false),
+        DockerComposePlugin.settings(IT, false, Nil),
+        DockerComposePlugin.settings(FunctionalTest, true, List(`kcl-tests`)),
         name := "kinesis4cats"
       )
     )
@@ -301,6 +342,7 @@ lazy val root =
       `aws-v2-localstack`,
       kcl,
       `kcl-fs2`,
+      `kcl-http4s`,
       `kcl-logging-circe`,
       `kcl-localstack`,
       `kcl-tests`,

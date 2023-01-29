@@ -50,7 +50,7 @@ object LocalstackConfig {
       prefix: Option[String] = None
   ): ConfigValue[Effect, LocalstackConfig] = for {
     servicePort <- CirisReader.readDefaulted(
-      List("localstack", "service", "port"),
+      List("localstack", "port"),
       4566,
       prefix
     )

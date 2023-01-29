@@ -14,12 +14,12 @@ libraryDependencies += "io.github.etspaceman" %% "kinesis4cats-shared-localstack
 
 Configuration is loaded through [Ciris](https://cir.is/)
 
-| Environment Variable      | System Property           | Default   | Description                                           |
-| ------------------------- | ------------------------- | --------- | ----------------------------------------------------- |
-| `LOCALSTACK_SERVICE_PORT` | `localstack.service.port` | 4566      | Localstack port                                       |
-| `LOCALSTACK_PROTOCOL`     | `localstack.protocol`     | https     | Either https or http. Both work on the same host/port |
-| `LOCALSTACK_AWS_REGION`   | `localstack.aws.region`   | us-east-1 | Default region used for API calls to Localstack       |
-| `LOCALSTACK_HOST`         | `localstack.host    `     | localhost | Localstack hostname                                   |
+| Environment Variable    | System Property         | Default   | Description                                           |
+| ----------------------- | ----------------------- | --------- | ----------------------------------------------------- |
+| `LOCALSTACK_PORT`       | `localstack.port`       | 4566      | Localstack port                                       |
+| `LOCALSTACK_PROTOCOL`   | `localstack.protocol`   | https     | Either https or http. Both work on the same host/port |
+| `LOCALSTACK_AWS_REGION` | `localstack.aws.region` | us-east-1 | Default region used for API calls to Localstack       |
+| `LOCALSTACK_HOST`       | `localstack.host`       | localhost | Localstack hostname                                   |
 
 ## Usage
 
