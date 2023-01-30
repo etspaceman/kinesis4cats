@@ -201,7 +201,7 @@ object show {
     ShowBuilder("CreateStreamRequest")
       .add("streamName", x.streamName())
       .add("shardCount", x.shardCount())
-      .add("streamARN", x.streamModeDetails())
+      .add("streamModeDetails", x.streamModeDetails())
       .build
 
   implicit val createStreamResponseShow: Show[CreateStreamResponse] = x =>
