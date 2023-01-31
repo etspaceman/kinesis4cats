@@ -37,7 +37,6 @@ import kinesis4cats.instances.ciris._
 import kinesis4cats.kpl.instances.ciris._
 import kinesis4cats.syntax.id._
 
-// $COVERAGE-OFF$
 /** Standard configuration loader of env variables and system properties for
   * [[https://github.com/awslabs/amazon-kinesis-producer/blob/master/java/amazon-kinesis-producer/src/main/java/com/amazonaws/services/kinesis/producer/KinesisProducerConfiguration.java KinesisProducerConfiguration]]
   * via [[https://cir.is/ Ciris]].
@@ -534,4 +533,3 @@ object KPLCiris {
     kpl <- KPLProducer[F](kplConfig)
   } yield kpl
 }
-// $COVERAGE-ON$
