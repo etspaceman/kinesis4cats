@@ -25,6 +25,14 @@ trait IdSyntax {
 object IdSyntax {
   final class IdOps[A](private val a: A) extends AnyVal {
     def safeTransform[B](b: B)(fn: (A, B) => A): A =
-      Option(b).fold(a)(fn(a, _))
+      maybeTransform(Option(b))(fn)
+    def maybeTransform[B](b: Option[B])(fn: (A, B) => A): A =
+      b.fold(a)(fn(a, _))
+    def maybeRunUnsafe[B](b: Option[B])(fn: (A, B) => Unit): A =
+      b.fold(a)(x => runUnsafe(x)(fn))
+    def runUnsafe[B](b: B)(fn: (A, B) => Unit): A = {
+      fn(a, b)
+      a
+    }
   }
 }

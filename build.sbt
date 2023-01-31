@@ -66,20 +66,6 @@ lazy val `aws-v1-localstack` = project
   .enableIntegrationTests
   .dependsOn(`shared-localstack`)
 
-lazy val `kinesis-client-localstack` = project
-  .settings(
-    description := "A test-kit for working with Kinesis and Localstack, via the Kinesis Client project"
-  )
-  .enableIntegrationTests
-  .dependsOn(`aws-v2-localstack`, `kinesis-client`)
-
-lazy val `kpl-localstack` = project
-  .settings(
-    description := "A test-kit for working with Kinesis and Localstack, via the KPL"
-  )
-  .enableIntegrationTests
-  .dependsOn(`aws-v1-localstack`, kpl)
-
 lazy val kcl = project
   .settings(
     description := "Cats tooling for the Kinesis Client Library (KCL)",
@@ -179,12 +165,26 @@ lazy val kpl = project
   .enableIntegrationTests
   .dependsOn(shared)
 
+lazy val `kpl-ciris` = project
+  .settings(
+    description := "Circe tooling for the Kinesis Producer Library (KPL)"
+  )
+  .enableIntegrationTests
+  .dependsOn(kpl, `shared-ciris`)
+
 lazy val `kpl-logging-circe` = project
   .settings(
     description := "JSON structured logging instances for the KPL, via Circe"
   )
   .enableIntegrationTests
   .dependsOn(kpl, `shared-circe`)
+
+lazy val `kpl-localstack` = project
+  .settings(
+    description := "A test-kit for working with Kinesis and Localstack, via the KPL"
+  )
+  .enableIntegrationTests
+  .dependsOn(`aws-v1-localstack`, kpl)
 
 lazy val `kpl-tests` = project
   .enablePlugins(NoPublishPlugin)
@@ -218,6 +218,13 @@ lazy val `kinesis-client-logging-circe` = project
     `shared-circe`,
     `aws-v2-localstack` % IT
   )
+
+lazy val `kinesis-client-localstack` = project
+  .settings(
+    description := "A test-kit for working with Kinesis and Localstack, via the Kinesis Client project"
+  )
+  .enableIntegrationTests
+  .dependsOn(`aws-v2-localstack`, `kinesis-client`)
 
 lazy val `kinesis-client-tests` = project
   .enablePlugins(NoPublishPlugin)
@@ -282,6 +289,7 @@ lazy val docs = project
     `kcl-localstack`,
     `kcl-tests`,
     kpl,
+    `kpl-ciris`,
     `kpl-logging-circe`,
     `kpl-localstack`,
     `kpl-tests`,
@@ -311,6 +319,7 @@ lazy val unidocs = project
       `kcl-localstack`,
       `kcl-tests`,
       kpl,
+      `kpl-ciris`,
       `kpl-logging-circe`,
       `kpl-localstack`,
       `kpl-tests`,
@@ -347,6 +356,7 @@ lazy val root =
       `kcl-localstack`,
       `kcl-tests`,
       kpl,
+      `kpl-ciris`,
       `kpl-logging-circe`,
       `kpl-localstack`,
       `kpl-tests`,
