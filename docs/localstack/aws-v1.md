@@ -19,7 +19,7 @@ import kinesis4cats.localstack.aws.v1.AwsClients
 AwsClients.kinesisClient[IO]()
 
 // Load an AmazonKinesisAsync as a resource
-AwsClients.kinesisClient[IO]()
+AwsClients.kinesisClientResource[IO]()
 
 // Load a AmazonKinesisAsync as a resource.
 // Also creates and deletes a stream during it's usage. Useful for tests.
