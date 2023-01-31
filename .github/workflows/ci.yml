@@ -28,7 +28,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        scala: [2.13.10, 2.12.17, 3.2.1]
+        scala: [2.13.10, 2.12.17, 3.2.2]
         java: [temurin@17]
         project: [rootJVM]
     runs-on: ${{ matrix.os }}
@@ -74,15 +74,15 @@ jobs:
         run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' headerCheckAll fmtCheck
 
       - name: Test with coverage
-        if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-latest' && matrix.scala != '3.2.1'
+        if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-latest' && matrix.scala != '3.2.2'
         run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' 'IT / dockerComposeUp' cov 'IT / dockerComposeDown' 'FunctionalTest / dockerComposeUp' 'FunctionalTest / test' 'FunctionalTest / dockerComposeDown'
 
       - name: Test
-        if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-latest' && matrix.scala == '3.2.1'
+        if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-latest' && matrix.scala == '3.2.2'
         run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' 'IT / dockerComposeUp' test 'IT / test' 'IT / dockerComposeDown' 'FunctionalTest / dockerComposeUp' 'FunctionalTest / test' 'FunctionalTest / dockerComposeDown'
 
       - name: Check scalafix lints
-        if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-latest' && matrix.scala != '3.2.1'
+        if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-latest' && matrix.scala != '3.2.2'
         run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' fixCheck
 
       - name: Check binary compatibility
@@ -175,12 +175,12 @@ jobs:
           tar xf targets.tar
           rm targets.tar
 
-      - name: Download target directories (3.2.1, rootJVM)
+      - name: Download target directories (3.2.2, rootJVM)
         uses: actions/download-artifact@v3
         with:
-          name: target-${{ matrix.os }}-${{ matrix.java }}-3.2.1-rootJVM
+          name: target-${{ matrix.os }}-${{ matrix.java }}-3.2.2-rootJVM
 
-      - name: Inflate target directories (3.2.1, rootJVM)
+      - name: Inflate target directories (3.2.2, rootJVM)
         run: |
           tar xf targets.tar
           rm targets.tar
