@@ -23,7 +23,7 @@ import cats.syntax.all._
 import com.amazonaws.regions.Regions
 import com.amazonaws.services.kinesis.producer.KinesisProducerConfiguration.ThreadingModel
 import com.amazonaws.services.schemaregistry.utils.AWSSchemaRegistryConstants.COMPRESSION
-import com.amazonaws.services.schemaregistry.utils.{AvroRecordType, ProtobufMessageType}
+import com.amazonaws.services.schemaregistry.utils._
 import software.amazon.awssdk.services.glue.model.Compatibility
 
 object ciris {
@@ -76,13 +76,13 @@ object ciris {
   }
 
   implicit val threadingModelConfigDecoder
-      : ConfigDecoder[String, ThreadingModel] = ConfigDecoder[String].mapEither {
-    case (_, value) =>
+      : ConfigDecoder[String, ThreadingModel] =
+    ConfigDecoder[String].mapEither { case (_, value) =>
       Try(ThreadingModel.valueOf(value)).toEither.leftMap(e =>
         ConfigError(
           s"Could not parse $value as threading model: ${e.getMessage}"
         )
       )
-  }
+    }
 
 }
