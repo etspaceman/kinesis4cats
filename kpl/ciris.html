@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="Laika 0.18.1 + Helium Theme" />
+    <title>Ciris</title>
+    
+      <meta name="author" content="Eric Meisel"/>
+    
+    
+      <meta name="description" content="docs"/>
+    
+    
+      <link rel="icon" sizes="32x32" type="image/png" href="https://typelevel.org/img/favicon.png"/>
+    
+    
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato:400,700">
+    
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/tonsky/FiraCode@1.207/distr/fira_code.css">
+    
+    <link rel="stylesheet" type="text/css" href="../helium/icofont.min.css" />
+    <link rel="stylesheet" type="text/css" href="../helium/laika-helium.css" />
+    <link rel="stylesheet" type="text/css" href="../site/styles.css" />
+    <script src="../helium/laika-helium.js"></script>
+    
+    
+    <script> /* for avoiding page load transitions */ </script>
+  </head>
+
+  <body>
+
+    <header id="top-bar">
+
+      <div class="row">
+        <a id="nav-icon">
+          <i class="icofont-laika" title="Navigation">&#xefa2;</i>
+        </a>
+        
+      </div>
+
+      <a class="image-link" href="https://typelevel.org"><img src="https://typelevel.org/img/logo.svg"></a>
+
+      <span class="row links"><a class="icon-link svg-link" href="https://oss.sonatype.org/service/local/repositories/snapshots/archive/io/github/etspaceman/kinesis4cats-docs_2.13/0.0-6a4ec37-SNAPSHOT/kinesis4cats-docs_2.13-0.0-6a4ec37-SNAPSHOT-javadoc.jar/!/index.html"><span title="API"><svg class="svg-icon" width="100%" height="100%" viewBox="0 0 100 100" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
+  <g class="svg-shape">
+    <path d="M75,47.5c13.246,0 24,10.754 24,24c0,13.246 -10.754,24 -24,24c-13.246,0 -24,-10.754 -24,-24c0,-13.246 10.754,-24 24,-24Zm-50,-0c13.246,-0 24,10.754 24,24c0,13.246 -10.754,24 -24,24c-13.246,-0 -24,-10.754 -24,-24c0,-13.246 10.754,-24 24,-24Zm2.705,16.735l7.239,0l0.622,-4.904l-21.833,0l-0,4.904l7.589,0l0,22.067l6.383,0l-0,-22.067Zm58.076,7.265c-0,-8.757 -3.698,-14.166 -10.781,-14.166c-7.083,-0 -10.781,5.604 -10.781,14.166c0,8.757 3.698,14.166 10.781,14.166c7.083,0 10.781,-5.604 10.781,-14.166Zm-6.539,0c0,6.538 -1.128,9.496 -4.242,9.496c-2.997,0 -4.242,-2.88 -4.242,-9.496c-0,-6.616 1.206,-9.496 4.242,-9.496c3.036,-0 4.242,2.88 4.242,9.496Zm-29.242,-67c13.246,0 24,10.754 24,24c0,13.246 -10.754,24 -24,24c-13.246,0 -24,-10.754 -24,-24c0,-13.246 10.754,-24 24,-24Zm0.512,9.834c-7.122,-0 -12.609,5.098 -12.609,14.127c-0,9.263 5.215,14.205 12.532,14.205c4.164,0 7.083,-1.634 9.068,-3.658l-2.88,-3.697c-1.518,1.206 -3.153,2.413 -5.838,2.413c-3.697,-0 -6.266,-2.763 -6.266,-9.263c-0,-6.616 2.724,-9.379 6.149,-9.379c2.102,-0 3.892,0.778 5.371,1.984l3.113,-3.775c-2.257,-1.868 -4.748,-2.957 -8.64,-2.957Z"/>
+  </g>
+</svg></span></a><a class="icon-link svg-link" href="https://github.com/etspaceman/kinesis4cats"><span title="Source Code"><svg class="svg-icon" width="100%" height="100%" viewBox="0 0 100 100" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
+  <g class="svg-shape">
+    <path d="M49.995,1c-27.609,-0 -49.995,22.386 -49.995,50.002c-0,22.09 14.325,40.83 34.194,47.444c2.501,0.458 3.413,-1.086 3.413,-2.412c0,-1.185 -0.043,-4.331 -0.067,-8.503c-13.908,3.021 -16.843,-6.704 -16.843,-6.704c-2.274,-5.773 -5.552,-7.311 -5.552,-7.311c-4.54,-3.103 0.344,-3.042 0.344,-3.042c5.018,0.356 7.658,5.154 7.658,5.154c4.46,7.64 11.704,5.433 14.552,4.156c0.454,-3.232 1.744,-5.436 3.174,-6.685c-11.102,-1.262 -22.775,-5.553 -22.775,-24.713c-0,-5.457 1.949,-9.92 5.147,-13.416c-0.516,-1.265 -2.231,-6.348 0.488,-13.233c0,0 4.199,-1.344 13.751,5.126c3.988,-1.108 8.266,-1.663 12.518,-1.682c4.245,0.019 8.523,0.574 12.517,1.682c9.546,-6.47 13.736,-5.126 13.736,-5.126c2.728,6.885 1.013,11.968 0.497,13.233c3.204,3.496 5.141,7.959 5.141,13.416c0,19.209 -11.691,23.436 -22.83,24.673c1.795,1.544 3.394,4.595 3.394,9.26c0,6.682 -0.061,12.076 -0.061,13.715c0,1.338 0.899,2.894 3.438,2.406c19.853,-6.627 34.166,-25.354 34.166,-47.438c-0,-27.616 -22.389,-50.002 -50.005,-50.002"/>
+  </g>
+</svg></span></a><a class="icon-link" href="https://discord.gg/XF3CXcMzqD"><i class="icofont-laika" title="Chat">&#xeed5;</i></a><a class="icon-link" href="https://twitter.com/typelevel"><i class="icofont-laika" title="Twitter">&#xed7a;</i></a></span>
+
+    </header>
+
+    <nav id="sidebar">
+
+      <div class="row">
+        <a class="icon-link svg-link" href="https://oss.sonatype.org/service/local/repositories/snapshots/archive/io/github/etspaceman/kinesis4cats-docs_2.13/0.0-6a4ec37-SNAPSHOT/kinesis4cats-docs_2.13-0.0-6a4ec37-SNAPSHOT-javadoc.jar/!/index.html"><span title="API"><svg class="svg-icon" width="100%" height="100%" viewBox="0 0 100 100" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
+  <g class="svg-shape">
+    <path d="M75,47.5c13.246,0 24,10.754 24,24c0,13.246 -10.754,24 -24,24c-13.246,0 -24,-10.754 -24,-24c0,-13.246 10.754,-24 24,-24Zm-50,-0c13.246,-0 24,10.754 24,24c0,13.246 -10.754,24 -24,24c-13.246,-0 -24,-10.754 -24,-24c0,-13.246 10.754,-24 24,-24Zm2.705,16.735l7.239,0l0.622,-4.904l-21.833,0l-0,4.904l7.589,0l0,22.067l6.383,0l-0,-22.067Zm58.076,7.265c-0,-8.757 -3.698,-14.166 -10.781,-14.166c-7.083,-0 -10.781,5.604 -10.781,14.166c0,8.757 3.698,14.166 10.781,14.166c7.083,0 10.781,-5.604 10.781,-14.166Zm-6.539,0c0,6.538 -1.128,9.496 -4.242,9.496c-2.997,0 -4.242,-2.88 -4.242,-9.496c-0,-6.616 1.206,-9.496 4.242,-9.496c3.036,-0 4.242,2.88 4.242,9.496Zm-29.242,-67c13.246,0 24,10.754 24,24c0,13.246 -10.754,24 -24,24c-13.246,0 -24,-10.754 -24,-24c0,-13.246 10.754,-24 24,-24Zm0.512,9.834c-7.122,-0 -12.609,5.098 -12.609,14.127c-0,9.263 5.215,14.205 12.532,14.205c4.164,0 7.083,-1.634 9.068,-3.658l-2.88,-3.697c-1.518,1.206 -3.153,2.413 -5.838,2.413c-3.697,-0 -6.266,-2.763 -6.266,-9.263c-0,-6.616 2.724,-9.379 6.149,-9.379c2.102,-0 3.892,0.778 5.371,1.984l3.113,-3.775c-2.257,-1.868 -4.748,-2.957 -8.64,-2.957Z"/>
+  </g>
+</svg></span></a><a class="icon-link svg-link" href="https://github.com/etspaceman/kinesis4cats"><span title="Source Code"><svg class="svg-icon" width="100%" height="100%" viewBox="0 0 100 100" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
+  <g class="svg-shape">
+    <path d="M49.995,1c-27.609,-0 -49.995,22.386 -49.995,50.002c-0,22.09 14.325,40.83 34.194,47.444c2.501,0.458 3.413,-1.086 3.413,-2.412c0,-1.185 -0.043,-4.331 -0.067,-8.503c-13.908,3.021 -16.843,-6.704 -16.843,-6.704c-2.274,-5.773 -5.552,-7.311 -5.552,-7.311c-4.54,-3.103 0.344,-3.042 0.344,-3.042c5.018,0.356 7.658,5.154 7.658,5.154c4.46,7.64 11.704,5.433 14.552,4.156c0.454,-3.232 1.744,-5.436 3.174,-6.685c-11.102,-1.262 -22.775,-5.553 -22.775,-24.713c-0,-5.457 1.949,-9.92 5.147,-13.416c-0.516,-1.265 -2.231,-6.348 0.488,-13.233c0,0 4.199,-1.344 13.751,5.126c3.988,-1.108 8.266,-1.663 12.518,-1.682c4.245,0.019 8.523,0.574 12.517,1.682c9.546,-6.47 13.736,-5.126 13.736,-5.126c2.728,6.885 1.013,11.968 0.497,13.233c3.204,3.496 5.141,7.959 5.141,13.416c0,19.209 -11.691,23.436 -22.83,24.673c1.795,1.544 3.394,4.595 3.394,9.26c0,6.682 -0.061,12.076 -0.061,13.715c0,1.338 0.899,2.894 3.438,2.406c19.853,-6.627 34.166,-25.354 34.166,-47.438c-0,-27.616 -22.389,-50.002 -50.005,-50.002"/>
+  </g>
+</svg></span></a><a class="icon-link" href="https://discord.gg/XF3CXcMzqD"><i class="icofont-laika" title="Chat">&#xeed5;</i></a><a class="icon-link" href="https://twitter.com/typelevel"><i class="icofont-laika" title="Twitter">&#xed7a;</i></a>
+      </div>
+
+      <ul class="nav-list">
+        <li class="level1"><a href="../index.html">Overview</a></li>
+        <li class="level1 nav-header">Kinesis Producer Library (KPL)</li>
+        <li class="level2"><a href="getting-started.html">Getting Started</a></li>
+        <li class="level2 active"><a href="#">Ciris</a></li>
+        <li class="level2"><a href="circe.html">Circe Logging</a></li>
+        <li class="level2"><a href="localstack.html">Localstack</a></li>
+        <li class="level1 nav-header">Kinesis Client Library (KCL)</li>
+        <li class="level2"><a href="../kcl/getting-started.html">Getting Started</a></li>
+        <li class="level2"><a href="../kcl/fs2.html">FS2</a></li>
+        <li class="level2"><a href="../kcl/http4s.html">Http4s</a></li>
+        <li class="level2"><a href="../kcl/circe.html">Circe Logging</a></li>
+        <li class="level2"><a href="../kcl/localstack.html">Localstack</a></li>
+        <li class="level1 nav-header">Kinesis Client</li>
+        <li class="level2"><a href="../client/getting-started.html">Getting Started</a></li>
+        <li class="level2"><a href="../client/circe.html">Circe Logging</a></li>
+        <li class="level2"><a href="../client/localstack.html">Localstack</a></li>
+        <li class="level1 nav-header">Localstack</li>
+        <li class="level2"><a href="../localstack/getting-started.html">Localstack</a></li>
+        <li class="level2"><a href="../localstack/aws-v1.html">AWS V1</a></li>
+        <li class="level2"><a href="../localstack/aws-v2.html">AWS V2</a></li>
+      </ul>
+
+      <ul class="nav-list">
+        <li class="level1 nav-header">Related Projects</li>
+        
+          <li class="level2"><a href="https://typelevel.org/cats/">cats</a></li>
+        
+          <li class="level2"><a href="https://typelevel.org/cats-effect/">cats-effect</a></li>
+        
+          <li class="level2"><a href="https://fs2.io/">fs2</a></li>
+        
+          <li class="level2"><a href="https://http4s.org/">http4s</a></li>
+        
+          <li class="level2"><a href="https://docs.aws.amazon.com/streams/latest/dev/shared-throughput-kcl-consumers.html">kcl</a></li>
+        
+          <li class="level2"><a href="https://docs.aws.amazon.com/streams/latest/dev/developing-producers-with-kpl.html">kpl</a></li>
+        
+          <li class="level2"><a href="https://docs.aws.amazon.com/sdk-for-java/v1/developer-guide/welcome.html">aws-java-sdk-v1</a></li>
+        
+          <li class="level2"><a href="https://docs.aws.amazon.com/sdk-for-java/latest/developer-guide/home.html">aws-java-sdk-v2</a></li>
+        
+          <li class="level2"><a href="https://circe.github.io/circe/">circe</a></li>
+        
+          <li class="level2"><a href="https://cir.is/">ciris</a></li>
+        
+          <li class="level2"><a href="https://localstack.cloud/">localstack</a></li>
+        
+      </ul>
+
+    </nav>
+
+    <div id="container">
+
+      <nav id="page-nav">
+        <p class="header"><a href="#">Ciris</a></p>
+
+        <ul class="nav-list">
+          <li class="level1"><a href="#installation">Installation</a></li>
+          <li class="level1"><a href="#usage">Usage</a></li>
+          <li class="level1"><a href="#configuration">Configuration</a></li>
+          <li class="level2"><a href="#duration">Duration</a></li>
+        </ul>
+
+        <p class="footer"></p>
+      </nav>
+
+      <main class="content">
+
+        <h1 id="ciris" class="title">Ciris</h1>
+        <p>Standard environment variables and system properties for configuring a <a href="https://github.com/etspaceman/kinesis4cats/blob/main/kpl/src/main/scala/kinesis4cats/kpl/KPLProducer.scala">KPLProducer</a>, via <a href="https://cir.is/">Ciris</a></p>
+        
+        <h2 id="installation" class="section">Installation<a class="anchor-link right" href="#installation"><i class="icofont-laika">&#xef71;</i></a></h2>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">libraryDependencies</span><span> += </span><span class="string-literal">&quot;io.github.etspaceman&quot;</span><span> %% </span><span class="string-literal">&quot;kinesis4cats-kpl-ciris&quot;</span><span> % </span><span class="string-literal">&quot;0.0-6a4ec37-SNAPSHOT&quot;</span></code></pre>
+        
+        <h2 id="usage" class="section">Usage<a class="anchor-link right" href="#usage"><i class="icofont-laika">&#xef71;</i></a></h2>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">effect</span><span>.</span><span class="type-name">IO</span><span>
+
+</span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">kpl</span><span>.</span><span class="identifier">ciris</span><span>.</span><span class="type-name">KPLCiris</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">kpl</span><span>.</span><span class="identifier">logging</span><span>.</span><span class="identifier">instances</span><span>.</span><span class="identifier">show</span><span>.</span><span class="identifier">_</span><span>
+
+</span><span class="type-name">KPLCiris</span><span>.</span><span class="identifier">kpl</span><span>[</span><span class="type-name">IO</span><span>]()</span></code></pre>
+        
+        <h2 id="configuration" class="section">Configuration<a class="anchor-link right" href="#configuration"><i class="icofont-laika">&#xef71;</i></a></h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Environment Variable</th>
+              <th>System Property</th>
+              <th>Default</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>KPL_ADDITIONAL_METRICS_DIMENSIONS</code></td>
+              <td><code>kpl.additional.metrics.dimensions</code></td>
+              <td></td>
+              <td>Add additional, custom dimensions to the KPL metrics</td>
+            </tr>
+            <tr>
+              <td><code>KPL_CA_CERT_PATH</code></td>
+              <td><code>kpl.ca.cert.path</code></td>
+              <td></td>
+              <td>Path to a provided cacert</td>
+            </tr>
+            <tr>
+              <td><code>KPL_AGGREGATION_ENABLED</code></td>
+              <td><code>kpl.aggregation.enabled</code></td>
+              <td>true</td>
+              <td>If true, the KPL will aggregate multiple records that share a partition key into a single record.</td>
+            </tr>
+            <tr>
+              <td><code>KPL_AGGREGATION_MAX_COUNT</code></td>
+              <td><code>kpl.aggregation.max.count</code></td>
+              <td>4294967295</td>
+              <td>Maximum number of items to pack into an aggregated record. Between 1-9223372036854775807</td>
+            </tr>
+            <tr>
+              <td><code>KPL_AGGREGATION_MAX_SIZE</code></td>
+              <td><code>kpl.aggregation.max.size</code></td>
+              <td>51200</td>
+              <td>Maximum number of bytes to pack into an aggregated Kinesis record. Between 64-1048576</td>
+            </tr>
+            <tr>
+              <td><code>KPL_CLOUDWATCH_ENDPOINT</code></td>
+              <td><code>kpl.cloudwatch.endpoint</code></td>
+              <td></td>
+              <td>Custom endpoint for Cloudwatch interactions. Must accept TLS.</td>
+            </tr>
+            <tr>
+              <td><code>KPL_CLOUDWATCH_PORT</code></td>
+              <td><code>kpl.cloudwatch.port</code></td>
+              <td>443</td>
+              <td>Port for Cloudwatch interactions. Between 1-65535</td>
+            </tr>
+            <tr>
+              <td><code>KPL_COLLECTION_MAX_COUNT</code></td>
+              <td><code>kpl.collection.max.count</code></td>
+              <td>500</td>
+              <td>Maximum number of items to pack into an PutRecords request. Between 1-500</td>
+            </tr>
+            <tr>
+              <td><code>KPL_COLLECTION_MAX_SIZE</code></td>
+              <td><code>kpl.collection.max.size</code></td>
+              <td>5242880</td>
+              <td>Maximum amount of data to send with a PutRecords request. Between 52224-9223372036854775807</td>
+            </tr>
+            <tr>
+              <td><code>KPL_CONNECT_TIMEOUT</code></td>
+              <td><code>kpl.connect.timeout</code></td>
+              <td>6 seconds</td>
+              <td>Timeout for establishing TLS connections. Between 100 ms and 5 minutes</td>
+            </tr>
+            <tr>
+              <td><code>KPL_CREDENTIALS_REFRESH_DELAY</code></td>
+              <td><code>kpl.credentials.refresh.delay</code></td>
+              <td>5 seconds</td>
+              <td>How often to refresh credentials. Between 1 ms and 5 minutes</td>
+            </tr>
+            <tr>
+              <td><code>KPL_ENABLE_CORE_DUMPS</code></td>
+              <td><code>kpl.enable.core.dumps</code></td>
+              <td>false</td>
+              <td>If set to true, the KPL native process will attempt to raise its own core file size soft limit to 128MB, or the hard limit, whichever is lower. No impact on Windows.</td>
+            </tr>
+            <tr>
+              <td><code>KPL_FAIL_IF_THROTTLED</code></td>
+              <td><code>kpl.fail.if.throttled</code></td>
+              <td>false</td>
+              <td>If true, throttled puts are not retried.</td>
+            </tr>
+            <tr>
+              <td><code>KPL_KINESIS_ENDPOINT</code></td>
+              <td><code>kpl.kinesis.endpoint</code></td>
+              <td></td>
+              <td>Custom endpoint for Kinesis interactions. Must accept TLS.</td>
+            </tr>
+            <tr>
+              <td><code>KPL_KINESIS_PORT</code></td>
+              <td><code>kpl.kinesis.port</code></td>
+              <td>443</td>
+              <td>Port for Kinesis interactions. Between 1-65535</td>
+            </tr>
+            <tr>
+              <td><code>KPL_LOG_LEVEL</code></td>
+              <td><code>kpl.log.level</code></td>
+              <td>info</td>
+              <td>Minimum level of logs. Valid values: trace, debug, info, warning, error</td>
+            </tr>
+            <tr>
+              <td><code>KPL_MAX_CONNECTIONS</code></td>
+              <td><code>kpl.max.connections</code></td>
+              <td>24</td>
+              <td>Maximum number of connections to open to the backend. HTTP requests are sent in parallel over multiple connections. Between 1-256</td>
+            </tr>
+            <tr>
+              <td><code>KPL_METRICS_GRANULARITY</code></td>
+              <td><code>kpl.metrics.granularity</code></td>
+              <td>shard</td>
+              <td>Controls the granularity of metrics that are uploaded to CloudWatch. Valid values: global, stream, shard</td>
+            </tr>
+            <tr>
+              <td><code>KPL_METRICS_LEVEL</code></td>
+              <td><code>kpl.metrics.level</code></td>
+              <td>detailed</td>
+              <td>Controls the number of metrics that are uploaded to CloudWatch. Valid values: none, summary, detailed</td>
+            </tr>
+            <tr>
+              <td><code>KPL_METRICS_NAMESPACE</code></td>
+              <td><code>kpl.metrics.namespace</code></td>
+              <td>KinesisProducerLibrary</td>
+              <td>The namespace to upload metrics under</td>
+            </tr>
+            <tr>
+              <td><code>KPL_METRICS_UPLOAD_DELAY</code></td>
+              <td><code>kpl.metrics.upload.delay</code></td>
+              <td>60 seconds</td>
+              <td>Delay between each metrics upload. Between 1 ms and 60 seconds</td>
+            </tr>
+            <tr>
+              <td><code>KPL_MIN_CONNECTIONS</code></td>
+              <td><code>kpl.min.connections</code></td>
+              <td>1</td>
+              <td>Minimum number of connections to open to the backend. Between 1-16</td>
+            </tr>
+            <tr>
+              <td><code>KPL_RATE_LIMIT</code></td>
+              <td><code>kpl.rate.limit</code></td>
+              <td>150</td>
+              <td>Limits the maximum allowed put rate for a shard, as a percentage of the backend limits. Between 1-9223372036854775807</td>
+            </tr>
+            <tr>
+              <td><code>KPL_RECORD_MAX_BUFFERED_TIME</code></td>
+              <td><code>kpl.record.max.buffered.time</code></td>
+              <td>100ms</td>
+              <td>Maximum amount of time a record may spend being buffered before it gets sent. Between 0ms and 292271023 years</td>
+            </tr>
+            <tr>
+              <td><code>KPL_RECORD_TTL</code></td>
+              <td><code>kpl.record.ttl</code></td>
+              <td>30 seconds</td>
+              <td>Set a time-to-live on records. Records that do not get successfully put within the limit are failed. Between 100ms and 292271023 years</td>
+            </tr>
+            <tr>
+              <td><code>KPL_AWS_REGION</code></td>
+              <td><code>kpl.aws.region</code></td>
+              <td><code>AWS_REGION</code>/<code>aws.region</code> value</td>
+              <td>Which region to send records to, e.g. <code>us-east-1</code>. Defaults to the <code>AWS_REGION</code>/<code>aws.region</code> values if not set. These values would be set by an EC2 if deployed in AWS.</td>
+            </tr>
+            <tr>
+              <td><code>KPL_REQUEST_TIMEOUT</code></td>
+              <td><code>kpl.request.timeout</code></td>
+              <td>6 seconds</td>
+              <td>The maximum total time elapsed between when we begin a HTTP request and eceiving all of the response. Between 100ms and 10 minutes</td>
+            </tr>
+            <tr>
+              <td><code>KPL_TEMP_DIRECTORY</code></td>
+              <td><code>kpl.temp.directory</code></td>
+              <td>6 seconds</td>
+              <td>The maximum total time elapsed between when we begin a HTTP request and eceiving all of the response. Between 100ms and 10 minutes</td>
+            </tr>
+            <tr>
+              <td><code>KPL_VERIFY_CERTIFICATE</code></td>
+              <td><code>kpl.verify.certificate</code></td>
+              <td>true</td>
+              <td>If true, verifies SSL certificates.</td>
+            </tr>
+            <tr>
+              <td><code>KPL_PROXY_HOST</code></td>
+              <td><code>kpl.proxy.host</code></td>
+              <td></td>
+              <td>If you have users going through a proxy, set the host here.</td>
+            </tr>
+            <tr>
+              <td><code>KPL_PROXY_PORT</code></td>
+              <td><code>kpl.proxy.port</code></td>
+              <td>443</td>
+              <td>If you have users going through a proxy, set the port here. Between 1-65535</td>
+            </tr>
+            <tr>
+              <td><code>KPL_PROXY_USER_NAME</code></td>
+              <td><code>kpl.proxy.user.name</code></td>
+              <td></td>
+              <td>If you have users going through a proxy, set the user-name here.</td>
+            </tr>
+            <tr>
+              <td><code>KPL_PROXY_PASSWORD</code></td>
+              <td><code>kpl.proxy.password</code></td>
+              <td></td>
+              <td>If you have users going through a proxy, set the password here.</td>
+            </tr>
+            <tr>
+              <td><code>KPL_THREADING_MODEL</code></td>
+              <td><code>kpl.threading.model</code></td>
+              <td>PER_REQUEST</td>
+              <td>Sets the threading model that the native process will use. Valid values are PER_REQUEST, POOLED</td>
+            </tr>
+            <tr>
+              <td><code>KPL_THREAD_POOL_SIZE</code></td>
+              <td><code>kpl.thread.pool.size</code></td>
+              <td></td>
+              <td>Sets the maximum number of threads that the native process&#39; thread pool will be configured with. Must be a non-negative number.</td>
+            </tr>
+            <tr>
+              <td><code>KPL_USER_RECORD_TIMEOUT</code></td>
+              <td><code>kpl.user.record.timeout</code></td>
+              <td></td>
+              <td>Set the value when the user submitted records will be timed out at the Java layer. Valid values are durations (e.g. <code>1 second</code>)</td>
+            </tr>
+          </tbody>
+        </table>
+        
+        <h3 id="duration" class="section">Duration<a class="anchor-link right" href="#duration"><i class="icofont-laika">&#xef71;</i></a></h3>
+        <p>Some of these environment variables are loaded as a <a href="https://www.scala-lang.org/api/2.13.10/scala/concurrent/duration/Duration$.html">Scala Duration</a>, and are parsed through its apply method.</p>
+        <p>For example, if you wanted to set the duration to a day, you could use:
+        - <code>1d</code>
+        - <code>1 day</code>
+        - <code>24 hours</code>
+        - <code>24h</code></p>
+
+        <hr style="margin-top: 30px"/>
+        <footer style="font-size: 90%; text-align: center">
+          kinesis4cats is a <a href="https://typelevel.org/">Typelevel</a> project distributed under the <a href="https://www.apache.org/licenses/LICENSE-2.0.txt">Apache-2.0</a> license.
+        </footer>
+
+      </main>
+
+    </div>
+
+  </body>
+</html>
