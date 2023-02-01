@@ -36,6 +36,7 @@ import software.amazon.kinesis.processor.ProcessorConfig
 import software.amazon.kinesis.retrieval.RetrievalConfig
 
 import kinesis4cats.kcl.WorkerListeners._
+import kinesis4cats.syntax.id._
 
 /** Wrapper offering for the
   * [[https://docs.aws.amazon.com/streams/latest/dev/shared-throughput-kcl-consumers.html KCL]]
@@ -146,7 +147,7 @@ object KCLConsumer {
     *   [[kinesis4cats.kcl.RecordProcessor.Config RecordProcessor.Config]]
     * @param callProcessRecordsEvenForEmptyRecordList
     *   Determines if processRecords() should run on the record processor for
-    *   empty record lists.
+    *   empty record lists. Default None
     * @param cb
     *   Function to process
     *   [[kinesis4cats.kcl.CommittableRecord CommittableRecords]] received from
@@ -170,7 +171,7 @@ object KCLConsumer {
       raiseOnError: Boolean = true,
       recordProcessorConfig: RecordProcessor.Config =
         RecordProcessor.Config.default,
-      callProcessRecordsEvenForEmptyRecordList: Boolean = false
+      callProcessRecordsEvenForEmptyRecordList: Option[Boolean] = None
   )(cb: List[CommittableRecord[F]] => F[Unit])(implicit
       F: Async[F],
       encoders: RecordProcessor.LogEncoders
@@ -329,7 +330,7 @@ object KCLConsumer {
       *   [[kinesis4cats.kcl.RecordProcessor.Config RecordProcessor.Config]]
       * @param callProcessRecordsEvenForEmptyRecordList
       *   Determines if processRecords() should run on the record processor for
-      *   empty record lists.
+      *   empty record lists. Default None.
       * @param cb
       *   Function to process
       *   [[kinesis4cats.kcl.CommittableRecord CommittableRecords]] received
@@ -353,7 +354,7 @@ object KCLConsumer {
         raiseOnError: Boolean = true,
         recordProcessorConfig: RecordProcessor.Config =
           RecordProcessor.Config.default,
-        callProcessRecordsEvenForEmptyRecordList: Boolean = false
+        callProcessRecordsEvenForEmptyRecordList: Option[Boolean] = None
     )(cb: List[CommittableRecord[F]] => F[Unit])(implicit
         F: Async[F],
         encoders: RecordProcessor.LogEncoders
@@ -372,8 +373,8 @@ object KCLConsumer {
         lifecycleConfig,
         metricsConfig,
         new ProcessorConfig(processorFactory)
-          .callProcessRecordsEvenForEmptyRecordList(
-            callProcessRecordsEvenForEmptyRecordList
+          .maybeTransform(callProcessRecordsEvenForEmptyRecordList)(
+            _.callProcessRecordsEvenForEmptyRecordList(_)
           ),
         retrievalConfig,
         deferredException,

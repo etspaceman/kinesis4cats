@@ -22,6 +22,8 @@ import cats.effect.{Async, Resource}
 import ciris._
 
 import kinesis4cats.ciris.CirisReader
+import kinesis4cats.instances.ciris._
+import kinesis4cats.models.AwsRegion
 
 /** Configuration loading for
   * [[https://docs.localstack.cloud/references/configuration/ Localstack]]

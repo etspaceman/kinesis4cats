@@ -14,18 +14,16 @@
  * limitations under the License.
  */
 
-package kinesis4cats.localstack
+package kinesis4cats.models
 
 import scala.util.Try
 
-import cats.Eq
 import cats.syntax.all._
-import io.circe._
 
 /** Helper class for constructing and representing Kinesis stream ARN values
   *
   * @param awsRegion
-  *   [[kinesis4cats.localstack.AwsRegion AwsRegion]]
+  *   [[kinesis4cats.models.AwsRegion AwsRegion]]
   * @param streamName
   *   Name of stream
   * @param awsAccountId
@@ -62,21 +60,4 @@ object StreamArn {
       )
     } yield StreamArn(awsRegion, streamName, awsAccountId)
   }
-
-  implicit val streamArnCirceEncoder: Encoder[StreamArn] =
-    Encoder[String].contramap(_.streamArn)
-  implicit val streamArnCirceDecoder: Decoder[StreamArn] =
-    Decoder[String].emap(StreamArn.fromArn)
-  implicit val streamArnCirceKeyEncoder: KeyEncoder[StreamArn] =
-    KeyEncoder[String].contramap(_.streamArn)
-  implicit val streamArnCirceKeyDecoder: KeyDecoder[StreamArn] =
-    KeyDecoder.instance(StreamArn.fromArn(_).toOption)
-  implicit val streamArnEq: Eq[StreamArn] = (x, y) =>
-    x.awsRegion === y.awsRegion &&
-      x.streamName === y.streamName &&
-      x.awsAccountId === y.awsAccountId &&
-      x.streamArn === y.streamArn
-  implicit val streamArnOrdering: Ordering[StreamArn] =
-    (x: StreamArn, y: StreamArn) =>
-      Ordering[String].compare(x.streamArn, y.streamArn)
 }

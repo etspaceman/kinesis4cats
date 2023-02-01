@@ -251,7 +251,7 @@ object KCLConsumerFS2 {
       raiseOnError: Boolean = true,
       recordProcessorConfig: RecordProcessor.Config =
         RecordProcessor.Config.default.copy(autoCommit = false),
-      callProcessRecordsEvenForEmptyRecordList: Boolean = false
+      callProcessRecordsEvenForEmptyRecordList: Option[Boolean] = None
   )(implicit
       F: Async[F],
       P: Parallel[F],
@@ -461,7 +461,7 @@ object KCLConsumerFS2 {
         raiseOnError: Boolean = true,
         recordProcessorConfig: RecordProcessor.Config =
           RecordProcessor.Config.default.copy(autoCommit = false),
-        callProcessRecordsEvenForEmptyRecordList: Boolean = false
+        callProcessRecordsEvenForEmptyRecordList: Option[Boolean] = None
     )(implicit
         F: Async[F],
         encoders: RecordProcessor.LogEncoders

@@ -165,7 +165,7 @@ object KPLCiris {
       prefix: Option[String] = None
   ): ConfigValue[Effect, KinesisProducerConfiguration] = for {
     additionalMetricsDimensions <- CirisReader
-      .readOptional[AdditionalMetricsDimensions](
+      .readOptional[List[AdditionalMetricsDimension]](
         List("kpl", "additional", "metrics", "dimensions"),
         prefix
       )
@@ -388,7 +388,7 @@ object KPLCiris {
     .maybeTransform(userRecordTimeout)(_.setUserRecordTimeoutInMillis(_))
     .maybeRunUnsafe(additionalMetricsDimensions) {
       case (conf, additionalDims) =>
-        additionalDims.dimensions.foreach(x =>
+        additionalDims.foreach(x =>
           conf.addAdditionalMetricsDimension(
             x.key,
             x.value,
