@@ -24,7 +24,7 @@ import java.{util => ju}
 
 import cats.effect.Async
 import cats.syntax.all._
-import software.amazon.kinesis.common.{InitialPositionInStreamExtended, StreamConfig, StreamIdentifier}
+import software.amazon.kinesis.common._
 import software.amazon.kinesis.processor.FormerStreamsLeasesDeletionStrategy
 import software.amazon.kinesis.processor.FormerStreamsLeasesDeletionStrategy._
 

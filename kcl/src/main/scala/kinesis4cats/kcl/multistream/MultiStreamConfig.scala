@@ -18,7 +18,7 @@ package kinesis4cats.kcl.multistream
 
 import cats.effect.Async
 import cats.syntax.all._
-import software.amazon.kinesis.common.{InitialPositionInStreamExtended, StreamConfig}
+import software.amazon.kinesis.common._
 
 import kinesis4cats.client.KinesisClient
 import kinesis4cats.models.{ConsumerArn, StreamArn}
