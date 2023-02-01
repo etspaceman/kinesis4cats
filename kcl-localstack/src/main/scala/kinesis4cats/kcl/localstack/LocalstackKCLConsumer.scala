@@ -63,8 +63,8 @@ object LocalstackKCLConsumer {
     *   Unique identifier for the worker. Typically a UUID.
     * @param position
     *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/common/InitialPositionInStreamExtended.java InitialPositionInStreamExtended]]
-    * @param recordProcessorConfig
-    *   [[kinesis4cats.kcl.RecordProcessor.Config RecordProcessor.Config]]
+    * @param processConfig
+    *   [[kinesis4cats.kcl.KCLConsumer.ProcessConfig KCLConsumer.ProcessConfig]]
     * @param cb
     *   User-defined callback function for processing records
     * @param F
@@ -80,7 +80,7 @@ object LocalstackKCLConsumer {
       appName: String,
       workerId: String,
       position: InitialPositionInStreamExtended,
-      recordProcessorConfig: RecordProcessor.Config
+      processConfig: KCLConsumer.ProcessConfig
   )(cb: List[CommittableRecord[F]] => F[Unit])(implicit
       F: Async[F],
       LE: RecordProcessor.LogEncoders
@@ -105,7 +105,7 @@ object LocalstackKCLConsumer {
         .retrievalSpecificConfig(retrievalConfig)
         .retrievalFactory(retrievalConfig.retrievalFactory())
         .initialPositionInStreamExtended(position),
-      recordProcessorConfig = recordProcessorConfig
+      processConfig = processConfig
     )(cb)
   } yield result
 
@@ -124,9 +124,9 @@ object LocalstackKCLConsumer {
     * @param position
     *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/common/InitialPositionInStreamExtended.java InitialPositionInStreamExtended]]
     *   Default is TRIM_HORIZON
-    * @param recordProcessorConfig
-    *   [[kinesis4cats.kcl.RecordProcessor.Config RecordProcessor.Config]].
-    *   Default is `RecordProcessor.Config.default`
+    * @param processConfig
+    *   [[kinesis4cats.kcl.KCLConsumer.ProcessConfig KCLConsumer.ProcessConfig]]
+    *   Default is `ProcessConfig.default`
     * @param cb
     *   User-defined callback function for processing records
     * @param F
@@ -145,8 +145,8 @@ object LocalstackKCLConsumer {
         InitialPositionInStreamExtended.newInitialPosition(
           InitialPositionInStream.TRIM_HORIZON
         ),
-      recordProcessorConfig: RecordProcessor.Config =
-        RecordProcessor.Config.default
+      processConfig: KCLConsumer.ProcessConfig =
+        KCLConsumer.ProcessConfig.default
   )(cb: List[CommittableRecord[F]] => F[Unit])(implicit
       F: Async[F],
       LE: RecordProcessor.LogEncoders
@@ -158,7 +158,7 @@ object LocalstackKCLConsumer {
       appName,
       workerId,
       position,
-      recordProcessorConfig
+      processConfig
     )(cb)
   } yield result
 
@@ -178,8 +178,8 @@ object LocalstackKCLConsumer {
     *   Unique identifier for the worker. Typically a UUID.
     * @param position
     *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/common/InitialPositionInStreamExtended.java InitialPositionInStreamExtended]]
-    * @param recordProcessorConfig
-    *   [[kinesis4cats.kcl.RecordProcessor.Config RecordProcessor.Config]]
+    * @param processConfig
+    *   [[kinesis4cats.kcl.KCLConsumer.ProcessConfig KCLConsumer.ProcessConfig]]
     * @param resultsQueueSize
     *   Bounded size of the [[cats.effect.std.Queue Queue]]
     * @param cb
@@ -198,7 +198,7 @@ object LocalstackKCLConsumer {
       appName: String,
       workerId: String,
       position: InitialPositionInStreamExtended,
-      recordProcessorConfig: RecordProcessor.Config,
+      processConfig: KCLConsumer.ProcessConfig,
       resultsQueueSize: Int
   )(cb: List[CommittableRecord[F]] => F[Unit])(implicit
       F: Async[F],
@@ -213,7 +213,7 @@ object LocalstackKCLConsumer {
       appName,
       workerId,
       position,
-      recordProcessorConfig
+      processConfig
     )((recs: List[CommittableRecord[F]]) =>
       resultsQueue.tryOfferN(recs) >> cb(recs)
     )
@@ -235,9 +235,9 @@ object LocalstackKCLConsumer {
     *   Unique identifier for the worker. Default to random UUID
     * @param position
     *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/common/InitialPositionInStreamExtended.java InitialPositionInStreamExtended]]
-    * @param recordProcessorConfig
-    *   [[kinesis4cats.kcl.RecordProcessor.Config RecordProcessor.Config]].
-    *   Default is `RecordProcessor.Config.default`
+    * @param processConfig
+    *   [[kinesis4cats.kcl.KCLConsumer.ProcessConfig KCLConsumer.ProcessConfig]]
+    *   Default is `ProcessConfig.default`
     * @param resultsQueueSize
     *   Bounded size of the [[cats.effect.std.Queue Queue]]. Default to 50.
     * @param cb
@@ -259,8 +259,8 @@ object LocalstackKCLConsumer {
         InitialPositionInStreamExtended.newInitialPosition(
           InitialPositionInStream.TRIM_HORIZON
         ),
-      recordProcessorConfig: RecordProcessor.Config =
-        RecordProcessor.Config.default,
+      processConfig: KCLConsumer.ProcessConfig =
+        KCLConsumer.ProcessConfig.default,
       resultsQueueSize: Int = 50
   )(cb: List[CommittableRecord[F]] => F[Unit])(implicit
       F: Async[F],
@@ -273,7 +273,7 @@ object LocalstackKCLConsumer {
       appName,
       workerId,
       position,
-      recordProcessorConfig,
+      processConfig,
       resultsQueueSize
     )(cb)
   } yield result
@@ -295,8 +295,8 @@ object LocalstackKCLConsumer {
     *   Unique identifier for the worker. Typically a UUID.
     * @param position
     *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/common/InitialPositionInStreamExtended.java InitialPositionInStreamExtended]]
-    * @param recordProcessorConfig
-    *   [[kinesis4cats.kcl.RecordProcessor.Config RecordProcessor.Config]].
+    * @param processConfig
+    *   [[kinesis4cats.kcl.KCLConsumer.ProcessConfig KCLConsumer.ProcessConfig]]
     * @param cb
     *   User-defined callback function for processing records
     * @param F
@@ -314,7 +314,7 @@ object LocalstackKCLConsumer {
       appName: String,
       workerId: String,
       position: InitialPositionInStreamExtended,
-      recordProcessorConfig: RecordProcessor.Config
+      processConfig: KCLConsumer.ProcessConfig
   )(cb: List[CommittableRecord[F]] => F[Unit])(implicit
       F: Async[F],
       LE: RecordProcessor.LogEncoders
@@ -325,7 +325,7 @@ object LocalstackKCLConsumer {
       appName,
       workerId,
       position,
-      recordProcessorConfig
+      processConfig
     )(cb)
     consumer = new KCLConsumer(config)
     deferred <- consumer.runWithDeferredListener()
@@ -349,9 +349,9 @@ object LocalstackKCLConsumer {
     * @param position
     *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/common/InitialPositionInStreamExtended.java InitialPositionInStreamExtended]].
     *   Default to TRIM_HORIZON
-    * @param recordProcessorConfig
-    *   [[kinesis4cats.kcl.RecordProcessor.Config RecordProcessor.Config]].
-    *   Default is `RecordProcessor.Config.default`
+    * @param processConfig
+    *   [[kinesis4cats.kcl.KCLConsumer.ProcessConfig KCLConsumer.ProcessConfig]]
+    *   Default is `ProcessConfig.default`
     * @param cb
     *   User-defined callback function for processing records
     * @param F
@@ -372,8 +372,8 @@ object LocalstackKCLConsumer {
         InitialPositionInStreamExtended.newInitialPosition(
           InitialPositionInStream.TRIM_HORIZON
         ),
-      recordProcessorConfig: RecordProcessor.Config =
-        RecordProcessor.Config.default
+      processConfig: KCLConsumer.ProcessConfig =
+        KCLConsumer.ProcessConfig.default
   )(cb: List[CommittableRecord[F]] => F[Unit])(implicit
       F: Async[F],
       LE: RecordProcessor.LogEncoders
@@ -385,7 +385,7 @@ object LocalstackKCLConsumer {
       appName,
       workerId,
       position,
-      recordProcessorConfig
+      processConfig
     )(cb)
   } yield result
 
@@ -407,8 +407,8 @@ object LocalstackKCLConsumer {
     *   Unique identifier for the worker. Typically a UUID.
     * @param position
     *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/common/InitialPositionInStreamExtended.java InitialPositionInStreamExtended]]
-    * @param recordProcessorConfig
-    *   [[kinesis4cats.kcl.RecordProcessor.Config RecordProcessor.Config]].
+    * @param processConfig
+    *   [[kinesis4cats.kcl.KCLConsumer.ProcessConfig KCLConsumer.ProcessConfig]]
     * @param resultsQueueSize
     *   Bounded size of the [[cats.effect.std.Queue Queue]].
     * @param cb
@@ -428,7 +428,7 @@ object LocalstackKCLConsumer {
       appName: String,
       workerId: String,
       position: InitialPositionInStreamExtended,
-      recordProcessorConfig: RecordProcessor.Config,
+      processConfig: KCLConsumer.ProcessConfig,
       resultsQueueSize: Int
   )(cb: List[CommittableRecord[F]] => F[Unit])(implicit
       F: Async[F],
@@ -440,7 +440,7 @@ object LocalstackKCLConsumer {
       appName,
       workerId,
       position,
-      recordProcessorConfig,
+      processConfig,
       resultsQueueSize
     )(cb)
     consumer = new KCLConsumer(configWithResults.kclConfig)
@@ -466,9 +466,9 @@ object LocalstackKCLConsumer {
     * @param position
     *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/common/InitialPositionInStreamExtended.java InitialPositionInStreamExtended]].
     *   Default to TRIM_HORIZON.
-    * @param recordProcessorConfig
-    *   [[kinesis4cats.kcl.RecordProcessor.Config RecordProcessor.Config]].
-    *   Default is `RecordProcessor.Config.default`
+    * @param processConfig
+    *   [[kinesis4cats.kcl.KCLConsumer.ProcessConfig KCLConsumer.ProcessConfig]]
+    *   Default is `ProcessConfig.default`
     * @param resultsQueueSize
     *   Bounded size of the [[cats.effect.std.Queue Queue]]. Default to 50.
     * @param cb
@@ -491,8 +491,8 @@ object LocalstackKCLConsumer {
         InitialPositionInStreamExtended.newInitialPosition(
           InitialPositionInStream.TRIM_HORIZON
         ),
-      recordProcessorConfig: RecordProcessor.Config =
-        RecordProcessor.Config.default,
+      processConfig: KCLConsumer.ProcessConfig =
+        KCLConsumer.ProcessConfig.default,
       resultsQueueSize: Int = 50
   )(cb: List[CommittableRecord[F]] => F[Unit])(implicit
       F: Async[F],
@@ -504,7 +504,7 @@ object LocalstackKCLConsumer {
       prefix,
       workerId,
       position,
-      recordProcessorConfig,
+      processConfig,
       resultsQueueSize
     )(cb)
     consumer = new KCLConsumer(configWithResults.kclConfig)

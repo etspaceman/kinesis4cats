@@ -36,6 +36,7 @@ import software.amazon.kinesis.processor.ProcessorConfig
 import software.amazon.kinesis.retrieval.RetrievalConfig
 
 import kinesis4cats.kcl.WorkerListeners._
+import kinesis4cats.kcl.multistream.MultiStreamTracker
 import kinesis4cats.syntax.id._
 
 /** Wrapper offering for the
@@ -137,17 +138,8 @@ object KCLConsumer {
     *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/metrics/MetricsConfig.java MetricsConfig]]
     * @param retrievalConfig
     *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/retrieval/RetrievalConfig.java RetrievalConfig]]
-    * @param raiseOnError
-    *   Whether the [[kinesis4cats.kcl.RecordProcessor RecordProcessor]] should
-    *   raise exceptions or simply log them. It is recommended to set this to
-    *   true. See this
-    *   [[https://github.com/awslabs/amazon-kinesis-client/issues/10 issue]] for
-    *   more information.
-    * @param recordProcessorConfig
-    *   [[kinesis4cats.kcl.RecordProcessor.Config RecordProcessor.Config]]
-    * @param callProcessRecordsEvenForEmptyRecordList
-    *   Determines if processRecords() should run on the record processor for
-    *   empty record lists. Default None
+    * @param processConfig
+    *   [[kinesis4cats.kcl.KCLConsumer.ProcessConfig KCLConsumer.ProcessConfig]]
     * @param cb
     *   Function to process
     *   [[kinesis4cats.kcl.CommittableRecord CommittableRecords]] received from
@@ -168,10 +160,7 @@ object KCLConsumer {
       lifecycleConfig: LifecycleConfig,
       metricsConfig: MetricsConfig,
       retrievalConfig: RetrievalConfig,
-      raiseOnError: Boolean = true,
-      recordProcessorConfig: RecordProcessor.Config =
-        RecordProcessor.Config.default,
-      callProcessRecordsEvenForEmptyRecordList: Option[Boolean] = None
+      processConfig: ProcessConfig = ProcessConfig.default
   )(cb: List[CommittableRecord[F]] => F[Unit])(implicit
       F: Async[F],
       encoders: RecordProcessor.LogEncoders
@@ -183,9 +172,7 @@ object KCLConsumer {
       lifecycleConfig,
       metricsConfig,
       retrievalConfig,
-      raiseOnError,
-      recordProcessorConfig,
-      callProcessRecordsEvenForEmptyRecordList
+      processConfig
     )(cb)
     .map(new KCLConsumer[F](_))
 
@@ -207,17 +194,11 @@ object KCLConsumer {
     * @param appName
     *   Name of the application. Usually also the dynamo table name for
     *   checkpoints
-    * @param raiseOnError
-    *   Whether the [[kinesis4cats.kcl.RecordProcessor RecordProcessor]] should
-    *   raise exceptions or simply log them. It is recommended to set this to
-    *   true. See this
-    *   [[https://github.com/awslabs/amazon-kinesis-client/issues/10 issue]] for
-    *   more information.
     * @param workerId
     *   Unique identifier for a single instance of this consumer. Default is a
     *   random UUID.
-    * @param recordProcessorConfig
-    *   [[kinesis4cats.kcl.RecordProcessor.Config RecordProcessor.Config]]
+    * @param processConfig
+    *   [[kinesis4cats.kcl.KCLConsumer.ProcessConfig KCLConsumer.ProcessConfig]]
     * @param cb
     *   Function to process
     *   [[kinesis4cats.kcl.CommittableRecord CommittableRecords]] received from
@@ -242,10 +223,8 @@ object KCLConsumer {
       cloudWatchClient: CloudWatchAsyncClient,
       streamName: String,
       appName: String,
-      raiseOnError: Boolean = true,
       workerId: String = UUID.randomUUID.toString,
-      recordProcessorConfig: RecordProcessor.Config =
-        RecordProcessor.Config.default
+      processConfig: ProcessConfig = ProcessConfig.default
   )(
       cb: List[CommittableRecord[F]] => F[Unit]
   )(
@@ -260,9 +239,8 @@ object KCLConsumer {
       cloudWatchClient,
       streamName,
       appName,
-      raiseOnError,
       workerId,
-      recordProcessorConfig
+      processConfig
     )(cb)(tfn)
     .map(new KCLConsumer[F](_))
 
@@ -303,6 +281,33 @@ object KCLConsumer {
       raiseOnError: Boolean
   )
 
+  /** Helper class to hold configuration for the
+    * [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/processor/ProcessorConfig.java ProcessorConfig]]
+    * construction
+    *
+    * @param raiseOnError
+    *   Whether the [[kinesis4cats.kcl.RecordProcessor RecordProcessor]] should
+    *   raise exceptions or simply log them. It is recommended to set this to
+    *   true. See this
+    *   [[https://github.com/awslabs/amazon-kinesis-client/issues/10 issue]] for
+    *   more information.
+    * @param recordProcessorConfig
+    *   [[kinesis4cats.kcl.RecordProcessor.Config RecordProcessor.Config]]
+    * @param callProcessRecordsEvenForEmptyRecordList
+    *   Determines if processRecords() should run on the record processor for
+    *   empty record lists. Default None.
+    */
+  final case class ProcessConfig(
+      raiseOnError: Boolean,
+      recordProcessorConfig: RecordProcessor.Config,
+      callProcessRecordsEvenForEmptyRecordList: Option[Boolean]
+  )
+
+  object ProcessConfig {
+    val default: ProcessConfig =
+      ProcessConfig(true, RecordProcessor.Config.default, None)
+  }
+
   object Config {
 
     /** Low-level constructor for
@@ -320,17 +325,8 @@ object KCLConsumer {
       *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/metrics/MetricsConfig.java MetricsConfig]]
       * @param retrievalConfig
       *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/retrieval/RetrievalConfig.java RetrievalConfig]]
-      * @param raiseOnError
-      *   Whether the [[kinesis4cats.kcl.RecordProcessor RecordProcessor]]
-      *   should raise exceptions or simply log them. It is recommended to set
-      *   this to true. See this
-      *   [[https://github.com/awslabs/amazon-kinesis-client/issues/10 issue]]
-      *   for more information.
-      * @param recordProcessorConfig
-      *   [[kinesis4cats.kcl.RecordProcessor.Config RecordProcessor.Config]]
-      * @param callProcessRecordsEvenForEmptyRecordList
-      *   Determines if processRecords() should run on the record processor for
-      *   empty record lists. Default None.
+      * @param processConfig
+      *   [[kinesis4cats.kcl.KCLConsumer.ProcessConfig KCLConsumer.ProcessConfig]]
       * @param cb
       *   Function to process
       *   [[kinesis4cats.kcl.CommittableRecord CommittableRecords]] received
@@ -351,10 +347,7 @@ object KCLConsumer {
         lifecycleConfig: LifecycleConfig,
         metricsConfig: MetricsConfig,
         retrievalConfig: RetrievalConfig,
-        raiseOnError: Boolean = true,
-        recordProcessorConfig: RecordProcessor.Config =
-          RecordProcessor.Config.default,
-        callProcessRecordsEvenForEmptyRecordList: Option[Boolean] = None
+        processConfig: ProcessConfig = ProcessConfig.default
     )(cb: List[CommittableRecord[F]] => F[Unit])(implicit
         F: Async[F],
         encoders: RecordProcessor.LogEncoders
@@ -362,9 +355,9 @@ object KCLConsumer {
       for {
         deferredException <- Resource.eval(Deferred[F, Throwable])
         processorFactory <- RecordProcessor.Factory[F](
-          recordProcessorConfig,
+          processConfig.recordProcessorConfig,
           deferredException,
-          raiseOnError
+          processConfig.raiseOnError
         )(cb)
       } yield Config(
         checkpointConfig,
@@ -373,12 +366,14 @@ object KCLConsumer {
         lifecycleConfig,
         metricsConfig,
         new ProcessorConfig(processorFactory)
-          .maybeTransform(callProcessRecordsEvenForEmptyRecordList)(
+          .maybeTransform(
+            processConfig.callProcessRecordsEvenForEmptyRecordList
+          )(
             _.callProcessRecordsEvenForEmptyRecordList(_)
           ),
         retrievalConfig,
         deferredException,
-        raiseOnError
+        processConfig.raiseOnError
       )
 
     /** Constructor for the
@@ -400,17 +395,11 @@ object KCLConsumer {
       * @param appName
       *   Name of the application. Usually also the dynamo table name for
       *   checkpoints
-      * @param raiseOnError
-      *   Whether the [[kinesis4cats.kcl.RecordProcessor RecordProcessor]]
-      *   should raise exceptions or simply log them. It is recommended to set
-      *   this to true. See this
-      *   [[https://github.com/awslabs/amazon-kinesis-client/issues/10 issue]]
-      *   for more information.
       * @param workerId
       *   Unique identifier for a single instance of this consumer. Default is a
       *   random UUID.
-      * @param recordProcessorConfig
-      *   [[kinesis4cats.kcl.RecordProcessor.Config RecordProcessor.Config]]
+      * @param processConfig
+      *   [[kinesis4cats.kcl.KCLConsumer.ProcessConfig KCLConsumer.ProcessConfig]]
       * @param cb
       *   Function to process
       *   [[kinesis4cats.kcl.CommittableRecord CommittableRecords]] received
@@ -435,6 +424,97 @@ object KCLConsumer {
         cloudWatchClient: CloudWatchAsyncClient,
         streamName: String,
         appName: String,
+        workerId: String = UUID.randomUUID.toString,
+        processConfig: ProcessConfig = ProcessConfig.default
+    )(
+        cb: List[CommittableRecord[F]] => F[Unit]
+    )(
+        tfn: Config[F] => Config[F] = (x: Config[F]) => x
+    )(implicit
+        F: Async[F],
+        encoders: RecordProcessor.LogEncoders
+    ): Resource[F, Config[F]] = for {
+      deferredException <- Resource.eval(Deferred[F, Throwable])
+      processorFactory <- RecordProcessor.Factory[F](
+        processConfig.recordProcessorConfig,
+        deferredException,
+        processConfig.raiseOnError
+      )(cb)
+      confBuilder = new ConfigsBuilder(
+        streamName,
+        appName,
+        kinesisClient,
+        dynamoClient,
+        cloudWatchClient,
+        workerId,
+        processorFactory
+      )
+    } yield tfn(
+      Config(
+        confBuilder.checkpointConfig(),
+        confBuilder.coordinatorConfig(),
+        confBuilder.leaseManagementConfig(),
+        confBuilder.lifecycleConfig(),
+        confBuilder.metricsConfig(),
+        confBuilder.processorConfig(),
+        confBuilder.retrievalConfig(),
+        deferredException,
+        processConfig.raiseOnError
+      )
+    )
+
+    /** Constructor for the
+      * [[kinesis4cats.kcl.KCLConsumer.Config KCLConsumer.Config]] that
+      * leverages the
+      * [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/common/ConfigsBuilder.java ConfigsBuilder]]
+      * from the KCL. This is a simpler entry-point for creating the
+      * configuration, and provides a transform function to add any custom
+      * configuration that was not covered by the default. This constructor
+      * specifically leverages the
+      * [[kinesis4cats.kcl.multistream.MultiStreamTracker MultiStreamTracker]]
+      * to allow for consumption from multiple streams.
+      *
+      * @param kinesisClient
+      *   [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/kinesis/KinesisAsyncClient.html KinesisAsyncClient]]
+      * @param dynamoClient
+      *   [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/dynamodb/DynamoDbAsyncClient.html DynamoDbAsyncClient]]
+      * @param cloudWatchClient
+      *   [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/cloudwatch/CloudWatchClient.html CloudWatchClient]]
+      * @param tracker
+      *   [[kinesis4cats.kcl.multistream.MultiStreamTracker MultiStreamTracker]]
+      *   containing the streams and positions for consumption
+      * @param appName
+      *   Name of the application. Usually also the dynamo table name for
+      *   checkpoints
+      * @param workerId
+      *   Unique identifier for a single instance of this consumer. Default is a
+      *   random UUID.
+      * @param processConfig
+      *   [[kinesis4cats.kcl.KCLConsumer.ProcessConfig KCLConsumer.ProcessConfig]]
+      * @param cb
+      *   Function to process
+      *   [[kinesis4cats.kcl.CommittableRecord CommittableRecords]] received
+      *   from Kinesis
+      * @param tfn
+      *   Function to update the
+      *   [[kinesis4cats.kcl.KCLConsumer.Config KCLConsumer.Config]]. Useful for
+      *   overriding defaults.
+      * @param F
+      *   [[cats.effect.Async Async]] instance
+      * @param encoders
+      *   [[kinesis4cats.kcl.RecordProcessor.LogEncoders RecordProcessor.LogEncoders]]
+      *   for encoding structured logs
+      * @return
+      *   [[cats.effect.Resource Resource]] containing the
+      *   [[kinesis4cats.kcl.KCLConsumer.Config KCLConsumer.Config]]
+      * @return
+      */
+    def configsBuilderMultiStream[F[_]](
+        kinesisClient: KinesisAsyncClient,
+        dynamoClient: DynamoDbAsyncClient,
+        cloudWatchClient: CloudWatchAsyncClient,
+        tracker: MultiStreamTracker,
+        appName: String,
         raiseOnError: Boolean = true,
         workerId: String = UUID.randomUUID.toString,
         recordProcessorConfig: RecordProcessor.Config =
@@ -454,7 +534,7 @@ object KCLConsumer {
         raiseOnError
       )(cb)
       confBuilder = new ConfigsBuilder(
-        streamName,
+        tracker,
         appName,
         kinesisClient,
         dynamoClient,

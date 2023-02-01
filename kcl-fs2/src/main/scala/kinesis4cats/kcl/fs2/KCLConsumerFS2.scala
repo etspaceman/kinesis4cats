@@ -42,7 +42,7 @@ import software.amazon.kinesis.metrics.MetricsConfig
 import software.amazon.kinesis.retrieval.RetrievalConfig
 
 import kinesis4cats.kcl.WorkerListeners._
-import kinesis4cats.kcl.{CommittableRecord, RecordProcessor}
+import kinesis4cats.kcl.{CommittableRecord, KCLConsumer, RecordProcessor}
 
 /** Wrapper offering for the
   * [[https://docs.aws.amazon.com/streams/latest/dev/shared-throughput-kcl-consumers.html KCL]]
@@ -143,6 +143,11 @@ class KCLConsumerFS2[F[_]] private[kinesis4cats] (
 
 object KCLConsumerFS2 {
 
+  private[kinesis4cats] val defaultProcessConfig: KCLConsumer.ProcessConfig =
+    KCLConsumer.ProcessConfig.default.copy(recordProcessorConfig =
+      RecordProcessor.Config.default.copy(autoCommit = false)
+    )
+
   /** Helper class that holds both an [[fs2.Stream fs2.Stream]] and a
     * [[cats.effect.Deferred Deferred]]
     *
@@ -216,17 +221,8 @@ object KCLConsumerFS2 {
     * @param commitMaxWait
     *   Max duration to wait in commitRecords [[fs2.Pipe Pipe]] before a commit
     *   is run. Default is 10 seconds
-    * @param raiseOnError
-    *   Whether the [[kinesis4cats.kcl.RecordProcessor RecordProcessor]] should
-    *   raise exceptions or simply log them. It is recommended to set this to
-    *   true. See this
-    *   [[https://github.com/awslabs/amazon-kinesis-client/issues/10 issue]] for
-    *   more information.
-    * @param recordProcessorConfig
-    *   [[kinesis4cats.kcl.RecordProcessor.Config RecordProcessor.Config]]
-    * @param callProcessRecordsEvenForEmptyRecordList
-    *   Determines if processRecords() should run on the record processor for
-    *   empty record lists.
+    * @param processConfig
+    *   [[kinesis4cats.kcl.KCLConsumer.ProcessConfig KCLConsumer.ProcessConfig]]
     * @param F
     *   [[cats.effect.Async Async]] instance
     * @param encoders
@@ -248,10 +244,10 @@ object KCLConsumerFS2 {
       commitMaxWait: FiniteDuration = 10.seconds,
       commitMaxRetries: Int = 5,
       commitRetryDuration: FiniteDuration = 0.seconds,
-      raiseOnError: Boolean = true,
-      recordProcessorConfig: RecordProcessor.Config =
-        RecordProcessor.Config.default.copy(autoCommit = false),
-      callProcessRecordsEvenForEmptyRecordList: Option[Boolean] = None
+      processConfig: KCLConsumer.ProcessConfig =
+        KCLConsumer.ProcessConfig.default.copy(recordProcessorConfig =
+          RecordProcessor.Config.default.copy(autoCommit = false)
+        )
   )(implicit
       F: Async[F],
       P: Parallel[F],
@@ -269,9 +265,7 @@ object KCLConsumerFS2 {
       commitMaxWait,
       commitMaxRetries,
       commitRetryDuration,
-      raiseOnError,
-      recordProcessorConfig,
-      callProcessRecordsEvenForEmptyRecordList
+      processConfig
     )
     .map(new KCLConsumerFS2[F](_))
 
@@ -302,17 +296,11 @@ object KCLConsumerFS2 {
     * @param commitMaxWait
     *   Max duration to wait in commitRecords [[fs2.Pipe Pipe]] before a commit
     *   is run. Default is 10 seconds
-    * @param raiseOnError
-    *   Whether the [[kinesis4cats.kcl.RecordProcessor RecordProcessor]] should
-    *   raise exceptions or simply log them. It is recommended to set this to
-    *   true. See this
-    *   [[https://github.com/awslabs/amazon-kinesis-client/issues/10 issue]] for
-    *   more information.
     * @param workerId
     *   Unique identifier for a single instance of this consumer. Default is a
     *   random UUID.
-    * @param recordProcessorConfig
-    *   [[kinesis4cats.kcl.RecordProcessor.Config RecordProcessor.Config]]
+    * @param processConfig
+    *   [[kinesis4cats.kcl.KCLConsumer.ProcessConfig KCLConsumer.ProcessConfig]]
     * @param tfn
     *   Function to update the
     *   [[kinesis4cats.kcl.KCLConsumer.Config KCLConsumer.Config]]. Useful for
@@ -337,10 +325,8 @@ object KCLConsumerFS2 {
       commitMaxWait: FiniteDuration = 10.seconds,
       commitMaxRetries: Int = 5,
       commitRetryDuration: FiniteDuration = 0.seconds,
-      raiseOnError: Boolean = true,
       workerId: String = UUID.randomUUID.toString,
-      recordProcessorConfig: RecordProcessor.Config =
-        RecordProcessor.Config.default.copy(autoCommit = false)
+      processConfig: KCLConsumer.ProcessConfig = defaultProcessConfig
   )(
       tfn: kinesis4cats.kcl.KCLConsumer.Config[
         F
@@ -362,9 +348,8 @@ object KCLConsumerFS2 {
       commitMaxWait,
       commitMaxRetries,
       commitRetryDuration,
-      raiseOnError,
       workerId,
-      recordProcessorConfig
+      processConfig
     )(tfn)
     .map(new KCLConsumerFS2[F](_))
 
@@ -426,17 +411,8 @@ object KCLConsumerFS2 {
       *   Max number of retries for a commit operation
       * @param commitMaxRetryDuration
       *   Delay between retries of commits
-      * @param raiseOnError
-      *   Whether the [[kinesis4cats.kcl.RecordProcessor RecordProcessor]]
-      *   should raise exceptions or simply log them. It is recommended to set
-      *   this to true. See this
-      *   [[https://github.com/awslabs/amazon-kinesis-client/issues/10 issue]]
-      *   for more information.
-      * @param recordProcessorConfig
-      *   [[kinesis4cats.kcl.RecordProcessor.Config RecordProcessor.Config]]
-      * @param callProcessRecordsEvenForEmptyRecordList
-      *   Determines if processRecords() should run on the record processor for
-      *   empty record lists.
+      * @param processConfig
+      *   [[kinesis4cats.kcl.KCLConsumer.ProcessConfig KCLConsumer.ProcessConfig]]
       * @param F
       *   [[cats.effect.Async Async]] instance
       * @param encoders
@@ -458,10 +434,7 @@ object KCLConsumerFS2 {
         commitMaxWait: FiniteDuration = 10.seconds,
         commitMaxRetries: Int = 5,
         commitRetryDuration: FiniteDuration = 0.seconds,
-        raiseOnError: Boolean = true,
-        recordProcessorConfig: RecordProcessor.Config =
-          RecordProcessor.Config.default.copy(autoCommit = false),
-        callProcessRecordsEvenForEmptyRecordList: Option[Boolean] = None
+        processConfig: KCLConsumer.ProcessConfig = defaultProcessConfig
     )(implicit
         F: Async[F],
         encoders: RecordProcessor.LogEncoders
@@ -475,9 +448,7 @@ object KCLConsumerFS2 {
           lifecycleConfig,
           metricsConfig,
           retrievalConfig,
-          raiseOnError,
-          recordProcessorConfig,
-          callProcessRecordsEvenForEmptyRecordList
+          processConfig
         )(callback(queue))
     } yield Config(
       underlying,
@@ -519,17 +490,11 @@ object KCLConsumerFS2 {
       * @param commitMaxRetries
       *   Max number of retries for a commit operation
       * @param commitMaxRetryDuration
-      * @param raiseOnError
-      *   Whether the [[kinesis4cats.kcl.RecordProcessor RecordProcessor]]
-      *   should raise exceptions or simply log them. It is recommended to set
-      *   this to true. See this
-      *   [[https://github.com/awslabs/amazon-kinesis-client/issues/10 issue]]
-      *   for more information.
       * @param workerId
       *   Unique identifier for a single instance of this consumer. Default is a
       *   random UUID.
-      * @param recordProcessorConfig
-      *   [[kinesis4cats.kcl.RecordProcessor.Config RecordProcessor.Config]]
+      * @param processConfig
+      *   [[kinesis4cats.kcl.KCLConsumer.ProcessConfig KCLConsumer.ProcessConfig]]
       * @param tfn
       *   Function to update the
       *   [[kinesis4cats.kcl.KCLConsumer.Config KCLConsumer.Config]]. Useful for
@@ -554,10 +519,8 @@ object KCLConsumerFS2 {
         commitMaxWait: FiniteDuration = 10.seconds,
         commitMaxRetries: Int = 5,
         commitRetryDuration: FiniteDuration = 0.seconds,
-        raiseOnError: Boolean = true,
         workerId: String = UUID.randomUUID.toString,
-        recordProcessorConfig: RecordProcessor.Config =
-          RecordProcessor.Config.default.copy(autoCommit = false)
+        processConfig: KCLConsumer.ProcessConfig = defaultProcessConfig
     )(
         tfn: kinesis4cats.kcl.KCLConsumer.Config[
           F
@@ -575,9 +538,8 @@ object KCLConsumerFS2 {
           cloudWatchClient,
           streamName,
           appName,
-          raiseOnError,
           workerId,
-          recordProcessorConfig
+          processConfig
         )(callback(queue))(tfn)
     } yield Config(
       underlying,

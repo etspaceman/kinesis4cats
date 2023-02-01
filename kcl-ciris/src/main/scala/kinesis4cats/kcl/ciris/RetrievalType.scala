@@ -18,6 +18,13 @@ package kinesis4cats.kcl.ciris
 
 import ciris.{ConfigDecoder, ConfigError}
 
+/** Polling or FanOut enum, used to help determine which
+  * [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/retrieval/RetrievalSpecificConfig.java RetrievalSpecificConfig]]
+  * to load from the configuration loaders
+  *
+  * @param value
+  *   Underlying value
+  */
 sealed abstract class RetrievalType(val value: String)
 
 object RetrievalType {

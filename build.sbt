@@ -75,7 +75,7 @@ lazy val kcl = project
     )
   )
   .enableIntegrationTests
-  .dependsOn(shared)
+  .dependsOn(shared, `kinesis-client`)
 
 lazy val `kcl-fs2` = project
   .settings(

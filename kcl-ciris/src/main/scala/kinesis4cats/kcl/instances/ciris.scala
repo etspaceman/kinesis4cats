@@ -21,7 +21,7 @@ import scala.util.Try
 import _root_.ciris._
 import cats.syntax.all._
 import software.amazon.awssdk.services.dynamodb.model.BillingMode
-import software.amazon.kinesis.common.{InitialPositionInStream, InitialPositionInStreamExtended}
+import software.amazon.kinesis.common._
 import software.amazon.kinesis.metrics.MetricsLevel
 
 import kinesis4cats.instances.ciris._
@@ -77,8 +77,7 @@ object ciris {
       }
     }
 
-  implicit val metricsLevelConfigDecoder
-      : ConfigDecoder[String, MetricsLevel] =
+  implicit val metricsLevelConfigDecoder: ConfigDecoder[String, MetricsLevel] =
     ConfigDecoder[String].mapEither { case (_, value) =>
       Try(MetricsLevel.valueOf(value)).toEither.leftMap(e =>
         ConfigError(

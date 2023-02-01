@@ -48,8 +48,63 @@ import kinesis4cats.kcl.instances.ciris._
 import kinesis4cats.models
 import kinesis4cats.syntax.id._
 
+/** Standard configuration loader of env variables and system properties for
+  * [[https://github.com/awslabs/amazon-kinesis-producer/blob/master/java/amazon-kinesis-producer/src/main/java/com/amazonaws/services/kinesis/producer/KinesisProducerConfiguration.java KinesisProducerConfiguration]]
+  * via [[https://cir.is/ Ciris]].
+  */
 object KCLCiris {
 
+  /** Reads environment variables and system properties to load a
+    * [[kinesis4cats.kcl.KCLConsumer KCLConsumer]]
+    *
+    * @param kinesisClient
+    *   [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/kinesis/KinesisAsyncClient.html KinesisAsyncClient]]
+    * @param dynamoClient
+    *   [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/dynamodb/DynamoDbAsyncClient.html DynamoDbAsyncClient]]
+    * @param cloudWatchClient
+    *   [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/cloudwatch/CloudWatchClient.html CloudWatchClient]]
+    * @param prefix
+    *   Optional prefix to apply to configuration loaders. Default None
+    * @param shardPrioritization
+    *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/leases/ShardPrioritization.java ShardPrioritization]]
+    * @param workerStateChangeListener
+    *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/coordinator/WorkerStateChangeListener.java WorkerStateChangeListener]]
+    * @param coordinatorFactory
+    *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/coordinator/CoordinatorFactory.java CoordinatorFactory]]
+    * @param customShardDetectorProvider
+    *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/common/StreamConfig.java StreamConfig]]
+    *   \=>
+    *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/leases/ShardDetector.java ShardDetector]]
+    * @param tableCreatorCallback
+    *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/leases/dynamodb/TableCreatorCallback.java TableCreatorCallback]]
+    * @param hierarchicalShardSyncer
+    *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/leases/HierarchicalShardSyncer.java HierarchicalShardSyncer]]
+    * @param leaseManagementFactory
+    *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/leases/LeaseManagementFactory.java LeaseManagementFactory]]
+    * @param leaseExecutorService
+    *   [[https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/ExecutorService.html ExecutorService]]
+    *   for the lease management
+    * @param aggregatorUtil
+    *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/retrieval/AggregatorUtil.java AggregatorUtil]]
+    * @param taskExecutionListener
+    *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/lifecycle/TaskExecutionListener.java TaskExecutionListener]]
+    * @param metricsFactory
+    *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/metrics/MetricsFactory.java MetricsFactory]]
+    * @param glueSchemaRegistryDeserializer
+    *   [[https://github.com/awslabs/aws-glue-schema-registry/blob/master/serializer-deserializer/src/main/java/com/amazonaws/services/schemaregistry/deserializers/GlueSchemaRegistryDeserializer.java GlueSchemaRegistryDeserializer]]
+    * @param cb
+    *   Function to process
+    *   [[kinesis4cats.kcl.CommittableRecord CommittableRecords]] received from
+    *   Kinesis
+    * @param F
+    *   [[cats.effect.Async Async]] instance
+    * @param LE
+    *   [[kinesis4cats.kcl.RecordProcessor.LogEncoders RecordProcessor.LogEncoders]]
+    *   for encoding structured logs
+    * @return
+    *   [[cats.effect.Resource Resource]] containing the
+    *   [[kinesis4cats.kcl.KCLConsumer KCLConsumer]]
+    */
   def consumer[F[_]](
       kinesisClient: KinesisAsyncClient,
       dynamoClient: DynamoDbAsyncClient,
@@ -90,6 +145,57 @@ object KCLCiris {
     glueSchemaRegistryDeserializer
   )(cb).map(new KCLConsumer[F](_))
 
+  /** Reads environment variables and system properties to load a
+    * [[kinesis4cats.kcl.KCLConsumer.Config KCLConsumer.Config]]
+    *
+    * @param kinesisClient
+    *   [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/kinesis/KinesisAsyncClient.html KinesisAsyncClient]]
+    * @param dynamoClient
+    *   [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/dynamodb/DynamoDbAsyncClient.html DynamoDbAsyncClient]]
+    * @param cloudWatchClient
+    *   [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/cloudwatch/CloudWatchClient.html CloudWatchClient]]
+    * @param prefix
+    *   Optional prefix to apply to configuration loaders. Default None
+    * @param shardPrioritization
+    *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/leases/ShardPrioritization.java ShardPrioritization]]
+    * @param workerStateChangeListener
+    *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/coordinator/WorkerStateChangeListener.java WorkerStateChangeListener]]
+    * @param coordinatorFactory
+    *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/coordinator/CoordinatorFactory.java CoordinatorFactory]]
+    * @param customShardDetectorProvider
+    *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/common/StreamConfig.java StreamConfig]]
+    *   \=>
+    *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/leases/ShardDetector.java ShardDetector]]
+    * @param tableCreatorCallback
+    *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/leases/dynamodb/TableCreatorCallback.java TableCreatorCallback]]
+    * @param hierarchicalShardSyncer
+    *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/leases/HierarchicalShardSyncer.java HierarchicalShardSyncer]]
+    * @param leaseManagementFactory
+    *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/leases/LeaseManagementFactory.java LeaseManagementFactory]]
+    * @param leaseExecutorService
+    *   [[https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/ExecutorService.html ExecutorService]]
+    *   for the lease management
+    * @param aggregatorUtil
+    *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/retrieval/AggregatorUtil.java AggregatorUtil]]
+    * @param taskExecutionListener
+    *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/lifecycle/TaskExecutionListener.java TaskExecutionListener]]
+    * @param metricsFactory
+    *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/metrics/MetricsFactory.java MetricsFactory]]
+    * @param glueSchemaRegistryDeserializer
+    *   [[https://github.com/awslabs/aws-glue-schema-registry/blob/master/serializer-deserializer/src/main/java/com/amazonaws/services/schemaregistry/deserializers/GlueSchemaRegistryDeserializer.java GlueSchemaRegistryDeserializer]]
+    * @param cb
+    *   Function to process
+    *   [[kinesis4cats.kcl.CommittableRecord CommittableRecords]] received from
+    *   Kinesis
+    * @param F
+    *   [[cats.effect.Async Async]] instance
+    * @param LE
+    *   [[kinesis4cats.kcl.RecordProcessor.LogEncoders RecordProcessor.LogEncoders]]
+    *   for encoding structured logs
+    * @return
+    *   [[cats.effect.Resource Resource]] containing the
+    *   [[kinesis4cats.kcl.KCLConsumer KCLConsumer]]
+    */
   def kclConfig[F[_]](
       kinesisClient: KinesisAsyncClient,
       dynamoClient: DynamoDbAsyncClient,
@@ -135,7 +241,7 @@ object KCLCiris {
       .resource[F](cloudwatchClient, prefix, metricsFactory)
     retrievalConfig <- Retrieval
       .resource[F](kinesisClient, prefix, glueSchemaRegistryDeserializer)
-    processorConfig <- Processor.resource[F](prefix)
+    processConfig <- Processor.resource[F](prefix)
     config <- KCLConsumer.Config.create[F](
       checkpointConfig,
       coordinatorConfig,
@@ -143,42 +249,111 @@ object KCLCiris {
       lifecycleConfig,
       metricsConfig,
       retrievalConfig,
-      processorConfig.raiseOnError,
-      processorConfig.recordProcessor,
-      processorConfig.callProcessRecordsEvenForEmptyRecordList
+      processConfig
     )(cb)
   } yield config
 
   object Common {
+
+    /** Reads the KCL's application name
+      *
+      * @param prefix
+      *   Optional prefix to apply to configuration loaders. Default None
+      * @return
+      *   [[https://cir.is/api/ciris/ConfigDecoder.html ConfigDecoder]] of the
+      *   app name string
+      */
     def readAppName(
         prefix: Option[String] = None
     ): ConfigValue[Effect, String] =
       CirisReader.read[String](List("kcl", "app", "name"), prefix)
 
+    /** Reads the KCL's stream name to consume
+      *
+      * @param prefix
+      *   Optional prefix to apply to configuration loaders. Default None
+      * @return
+      *   [[https://cir.is/api/ciris/ConfigDecoder.html ConfigDecoder]] of the
+      *   stream name string
+      */
     def readStreamName(
         prefix: Option[String] = None
     ): ConfigValue[Effect, String] =
       CirisReader.read[String](List("kcl", "stream", "name"), prefix)
 
+    /** Reads the initial position to consume from
+      *
+      * @param prefix
+      *   Optional prefix to apply to configuration loaders. Default None
+      * @return
+      *   [[https://cir.is/api/ciris/ConfigDecoder.html ConfigDecoder]] of the
+      *   initial position
+      */
     def readInitialPosition(
         prefix: Option[String] = None
-    ): ConfigValue[Effect, Option[InitialPositionInStreamExtended]] =
-      CirisReader.readOptional[InitialPositionInStreamExtended](
+    ): ConfigValue[Effect, InitialPositionInStreamExtended] =
+      CirisReader.readDefaulted[InitialPositionInStreamExtended](
         List("kcl", "initial", "position"),
+        InitialPositionInStreamExtended
+          .newInitialPosition(InitialPositionInStream.LATEST),
         prefix
       )
   }
 
   object Checkpoint {
+
+    /** Reads the
+      * [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/checkpoint/CheckpointConfig.java CheckpointConfig]]
+      *
+      * @return
+      *   [[https://cir.is/api/ciris/ConfigDecoder.html ConfigDecoder]] of
+      *   [[[[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/checkpoint/CheckpointConfig.java CheckpointConfig]]
+      */
     def read: ConfigValue[Effect, CheckpointConfig] =
       ConfigValue.default(new CheckpointConfig())
 
+    /** Reads the
+      * [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/checkpoint/CheckpointConfig.java CheckpointConfig]]
+      * into an [[cats.effect.Async Async]]
+      *
+      * @param F
+      *   [[cats.effect.Async Async]]
+      * @return
+      *   [[cats.effect.Async Async]] of
+      *   [[[[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/checkpoint/CheckpointConfig.java CheckpointConfig]]
+      */
     def load[F[_]](implicit F: Async[F]) = read.load[F]
 
+    /** Reads the
+      * [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/checkpoint/CheckpointConfig.java CheckpointConfig]]
+      * into a [[cats.effect.Resource Resource]]
+      *
+      * @param F
+      *   [[cats.effect.Async Async]]
+      * @return
+      *   [[cats.effect.Resource Resource]] of
+      *   [[[[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/checkpoint/CheckpointConfig.java CheckpointConfig]]
+      */
     def resource[F[_]](implicit F: Async[F]) = read.resource[F]
   }
 
   object Coordinator {
+
+    /** Reads the
+      * [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/coordinator/CoordinatorConfig.java CoordinatorConfig]]
+      *
+      * @param prefix
+      *   Optional prefix to apply to configuration loaders. Default None
+      * @param shardPrioritization
+      *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/leases/ShardPrioritization.java ShardPrioritization]]
+      * @param workerStateChangeListener
+      *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/coordinator/WorkerStateChangeListener.java WorkerStateChangeListener]]
+      * @param coordinatorFactory
+      *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/coordinator/CoordinatorFactory.java CoordinatorFactory]]
+      * @return
+      *   [[https://cir.is/api/ciris/ConfigDecoder.html ConfigDecoder]] of
+      *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/coordinator/CoordinatorConfig.java CoordinatorConfig]]
+      */
     def read(
         prefix: Option[String],
         shardPrioritization: Option[ShardPrioritization] = None,
@@ -256,6 +431,24 @@ object KCLCiris {
         )
         .maybeTransform(coordinatorFactory)(_.coordinatorFactory(_))
 
+    /** Reads the
+      * [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/coordinator/CoordinatorConfig.java CoordinatorConfig]]
+      * into an [[cats.effect.Async Async]]
+      *
+      * @param prefix
+      *   Optional prefix to apply to configuration loaders. Default None
+      * @param shardPrioritization
+      *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/leases/ShardPrioritization.java ShardPrioritization]]
+      * @param workerStateChangeListener
+      *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/coordinator/WorkerStateChangeListener.java WorkerStateChangeListener]]
+      * @param coordinatorFactory
+      *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/coordinator/CoordinatorFactory.java CoordinatorFactory]]
+      * @param F
+      *   [[cats.effect.Async Async]]
+      * @return
+      *   [[cats.effect.Async Async]] of
+      *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/coordinator/CoordinatorConfig.java CoordinatorConfig]]
+      */
     def load[F[_]](
         prefix: Option[String],
         shardPrioritization: Option[ShardPrioritization] = None,
@@ -268,6 +461,24 @@ object KCLCiris {
       coordinatorFactory
     ).load[F]
 
+    /** Reads the
+      * [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/coordinator/CoordinatorConfig.java CoordinatorConfig]]
+      * into a [[cats.effect.Resource Resource]]
+      *
+      * @param prefix
+      *   Optional prefix to apply to configuration loaders. Default None
+      * @param shardPrioritization
+      *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/leases/ShardPrioritization.java ShardPrioritization]]
+      * @param workerStateChangeListener
+      *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/coordinator/WorkerStateChangeListener.java WorkerStateChangeListener]]
+      * @param coordinatorFactory
+      *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/coordinator/CoordinatorFactory.java CoordinatorFactory]]
+      * @param F
+      *   [[cats.effect.Async Async]]
+      * @return
+      *   [[cats.effect.Resource Resource]] of
+      *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/coordinator/CoordinatorConfig.java CoordinatorConfig]]
+      */
     def resource[F[_]](
         prefix: Option[String],
         shardPrioritization: Option[ShardPrioritization] = None,
@@ -282,6 +493,33 @@ object KCLCiris {
   }
 
   object Lease {
+
+    /** Reads the
+      * [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/leases/LeaseManagementConfig.java LeaseManagementConfig]]
+      *
+      * @param dynamoClient
+      *   [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/dynamodb/DynamoDbAsyncClient.html DynamoDbAsyncClient]]
+      * @param kinesisClient
+      *   [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/kinesis/KinesisAsyncClient.html KinesisAsyncClient]]
+      * @param prefix
+      *   Optional prefix to apply to configuration loaders. Default None
+      * @param customShardDetectorProvider
+      *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/common/StreamConfig.java StreamConfig]]
+      *   \=>
+      *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/leases/ShardDetector.java ShardDetector]]
+      * @param tableCreatorCallback
+      *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/leases/dynamodb/TableCreatorCallback.java TableCreatorCallback]]
+      * @param hierarchicalShardSyncer
+      *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/leases/HierarchicalShardSyncer.java HierarchicalShardSyncer]]
+      * @param leaseManagementFactory
+      *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/leases/LeaseManagementFactory.java LeaseManagementFactory]]
+      * @param leaseExecutorService
+      *   [[https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/ExecutorService.html ExecutorService]]
+      *   for the lease management
+      * @return
+      *   [[https://cir.is/api/ciris/ConfigDecoder.html ConfigDecoder]] of
+      *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/leases/LeaseManagementConfig.java LeaseManagementConfig]]
+      */
     def read(
         dynamoClient: DynamoDbAsyncClient,
         kinesisClient: KinesisAsyncClient,
@@ -404,7 +642,8 @@ object KCLCiris {
       dynamoClient,
       kinesisClient,
       workerId
-    ).maybeTransform(failoverTime)(_.failoverTimeMillis(_))
+    ).initialPositionInStream(initialPositionInStream)
+      .maybeTransform(failoverTime)(_.failoverTimeMillis(_))
       .maybeTransform(shardSyncInterval)(_.shardSyncIntervalMillis(_))
       .maybeTransform(cleanupLeasesUponShardCompletion)(
         _.cleanupLeasesUponShardCompletion(_)
@@ -435,7 +674,6 @@ object KCLCiris {
       .maybeTransform(leasesRecoveryAuditorInconsistencyConfidenceThreshold)(
         _.leasesRecoveryAuditorInconsistencyConfidenceThreshold(_)
       )
-      .maybeTransform(initialPositionInStream)(_.initialPositionInStream(_))
       .maybeTransform(maxCacheMissesBeforeReload)(
         _.maxCacheMissesBeforeReload(_)
       )
@@ -451,6 +689,35 @@ object KCLCiris {
       .maybeTransform(executorService)(_.executorService(_))
       .maybeTransform(leaseManagementFactory)(_.leaseManagementFactory(_))
 
+    /** Reads the
+      * [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/leases/LeaseManagementConfig.java LeaseManagementConfig]]
+      * as an [[cats.effect.Async Async]]
+      *
+      * @param dynamoClient
+      *   [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/dynamodb/DynamoDbAsyncClient.html DynamoDbAsyncClient]]
+      * @param kinesisClient
+      *   [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/kinesis/KinesisAsyncClient.html KinesisAsyncClient]]
+      * @param prefix
+      *   Optional prefix to apply to configuration loaders. Default None
+      * @param customShardDetectorProvider
+      *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/common/StreamConfig.java StreamConfig]]
+      *   \=>
+      *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/leases/ShardDetector.java ShardDetector]]
+      * @param tableCreatorCallback
+      *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/leases/dynamodb/TableCreatorCallback.java TableCreatorCallback]]
+      * @param hierarchicalShardSyncer
+      *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/leases/HierarchicalShardSyncer.java HierarchicalShardSyncer]]
+      * @param leaseManagementFactory
+      *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/leases/LeaseManagementFactory.java LeaseManagementFactory]]
+      * @param leaseExecutorService
+      *   [[https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/ExecutorService.html ExecutorService]]
+      *   for the lease management
+      * @param F
+      *   [[cats.effect.Async Async]]
+      * @return
+      *   [[cats.effect.Async Async]] of
+      *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/leases/LeaseManagementConfig.java LeaseManagementConfig]]
+      */
     def load[F[_]](
         dynamoClient: DynamoDbAsyncClient,
         kinesisClient: KinesisAsyncClient,
@@ -472,6 +739,35 @@ object KCLCiris {
       executorService
     ).load[F]
 
+    /** Reads the
+      * [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/leases/LeaseManagementConfig.java LeaseManagementConfig]]
+      * as a [[cats.effect.Resource Resource]]
+      *
+      * @param dynamoClient
+      *   [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/dynamodb/DynamoDbAsyncClient.html DynamoDbAsyncClient]]
+      * @param kinesisClient
+      *   [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/kinesis/KinesisAsyncClient.html KinesisAsyncClient]]
+      * @param prefix
+      *   Optional prefix to apply to configuration loaders. Default None
+      * @param customShardDetectorProvider
+      *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/common/StreamConfig.java StreamConfig]]
+      *   \=>
+      *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/leases/ShardDetector.java ShardDetector]]
+      * @param tableCreatorCallback
+      *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/leases/dynamodb/TableCreatorCallback.java TableCreatorCallback]]
+      * @param hierarchicalShardSyncer
+      *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/leases/HierarchicalShardSyncer.java HierarchicalShardSyncer]]
+      * @param leaseManagementFactory
+      *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/leases/LeaseManagementFactory.java LeaseManagementFactory]]
+      * @param leaseExecutorService
+      *   [[https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/ExecutorService.html ExecutorService]]
+      *   for the lease management
+      * @param F
+      *   [[cats.effect.Async Async]]
+      * @return
+      *   [[cats.effect.Resource Resource]] of
+      *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/leases/LeaseManagementConfig.java LeaseManagementConfig]]
+      */
     def resource[F[_]](
         dynamoClient: DynamoDbAsyncClient,
         kinesisClient: KinesisAsyncClient,
@@ -495,6 +791,20 @@ object KCLCiris {
   }
 
   object Lifecycle {
+
+    /** Reads the
+      * [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/lifecycle/LifecycleConfig.java LifecycleConfig]]
+      *
+      * @param prefix
+      *   Optional prefix to apply to configuration loaders. Default None
+      * @param aggregatorUtil
+      *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/retrieval/AggregatorUtil.java AggregatorUtil]]
+      * @param taskExecutionListener
+      *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/lifecycle/TaskExecutionListener.java TaskExecutionListener]]
+      * @return
+      *   [[https://cir.is/api/ciris/ConfigDecoder.html ConfigDecoder]] of
+      *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/lifecycle/LifecycleConfig.java LifecycleConfig]]
+      */
     def read(
         prefix: Option[String] = None,
         aggregatorUtil: Option[AggregatorUtil] = None,
@@ -536,6 +846,22 @@ object KCLCiris {
       .maybeTransform(aggregatorUtil)(_.aggregatorUtil(_))
       .maybeTransform(taskExecutionListener)(_.taskExecutionListener(_))
 
+    /** Reads the
+      * [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/lifecycle/LifecycleConfig.java LifecycleConfig]]
+      * as an [[cats.effect.Async Async]]
+      *
+      * @param prefix
+      *   Optional prefix to apply to configuration loaders. Default None
+      * @param aggregatorUtil
+      *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/retrieval/AggregatorUtil.java AggregatorUtil]]
+      * @param taskExecutionListener
+      *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/lifecycle/TaskExecutionListener.java TaskExecutionListener]]
+      * @param F
+      *   [[cats.effect.Async Async]]
+      * @return
+      *   [[cats.effect.Async Async]] of
+      *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/lifecycle/LifecycleConfig.java LifecycleConfig]]
+      */
     def load[F[_]](
         prefix: Option[String] = None,
         aggregatorUtil: Option[AggregatorUtil] = None,
@@ -543,6 +869,22 @@ object KCLCiris {
     )(implicit F: Async[F]): F[LifecycleConfig] =
       read(prefix, aggregatorUtil, taskExecutionListener).load[F]
 
+    /** Reads the
+      * [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/lifecycle/LifecycleConfig.java LifecycleConfig]]
+      * as a [[cats.effect.Resource Resource]]
+      *
+      * @param prefix
+      *   Optional prefix to apply to configuration loaders. Default None
+      * @param aggregatorUtil
+      *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/retrieval/AggregatorUtil.java AggregatorUtil]]
+      * @param taskExecutionListener
+      *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/lifecycle/TaskExecutionListener.java TaskExecutionListener]]
+      * @param F
+      *   [[cats.effect.Async Async]]
+      * @return
+      *   [[cats.effect.Resource Resource]] of
+      *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/lifecycle/LifecycleConfig.java LifecycleConfig]]
+      */
     def resource[F[_]](
         prefix: Option[String] = None,
         aggregatorUtil: Option[AggregatorUtil] = None,
@@ -552,6 +894,20 @@ object KCLCiris {
   }
 
   object Metrics {
+
+    /** Reads the
+      * [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/metrics/MetricsConfig.java MetricsConfig]]
+      *
+      * @param cloudWatchClient
+      *   [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/cloudwatch/CloudWatchClient.html CloudWatchClient]]
+      * @param prefix
+      *   Optional prefix to apply to configuration loaders. Default None
+      * @param metricsFactory
+      *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/metrics/MetricsFactory.java MetricsFactory]]
+      * @return
+      *   [[https://cir.is/api/ciris/ConfigDecoder.html ConfigDecoder]] of
+      *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/metrics/MetricsConfig.java MetricsConfig]]
+      */
     def read(
         cloudwatchClient: CloudWatchAsyncClient,
         prefix: Option[String] = None,
@@ -597,6 +953,22 @@ object KCLCiris {
       .maybeTransform(publisherFlushBuffer)(_.publisherFlushBuffer(_))
       .maybeTransform(metricsFactory)(_.metricsFactory(_))
 
+    /** Reads the
+      * [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/metrics/MetricsConfig.java MetricsConfig]]
+      * into an [[cats.effect.Async Async]]
+      *
+      * @param cloudWatchClient
+      *   [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/cloudwatch/CloudWatchClient.html CloudWatchClient]]
+      * @param prefix
+      *   Optional prefix to apply to configuration loaders. Default None
+      * @param metricsFactory
+      *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/metrics/MetricsFactory.java MetricsFactory]]
+      * @param F
+      *   [[cats.effect.Async Async]]
+      * @return
+      *   [[cats.effect.Async Async]] of
+      *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/metrics/MetricsConfig.java MetricsConfig]]
+      */
     def load[F[_]](
         cloudwatchClient: CloudWatchAsyncClient,
         prefix: Option[String] = None,
@@ -604,6 +976,22 @@ object KCLCiris {
     )(implicit F: Async[F]): F[MetricsConfig] =
       read(cloudwatchClient, prefix, metricsFactory).load[F]
 
+    /** Reads the
+      * [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/metrics/MetricsConfig.java MetricsConfig]]
+      * into a [[cats.effect.Resource Resource]]
+      *
+      * @param cloudWatchClient
+      *   [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/cloudwatch/CloudWatchClient.html CloudWatchClient]]
+      * @param prefix
+      *   Optional prefix to apply to configuration loaders. Default None
+      * @param metricsFactory
+      *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/metrics/MetricsFactory.java MetricsFactory]]
+      * @param F
+      *   [[cats.effect.Async Async]]
+      * @return
+      *   [[cats.effect.Resource Resource]] of
+      *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/metrics/MetricsConfig.java MetricsConfig]]
+      */
     def resource[F[_]](
         cloudwatchClient: CloudWatchAsyncClient,
         prefix: Option[String] = None,
@@ -613,6 +1001,18 @@ object KCLCiris {
   }
 
   object Retrieval {
+
+    /** Reads the
+      * [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/retrieval/polling/PollingConfig.java PollingConfig]]
+      *
+      * @param kinesisClient
+      *   [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/kinesis/KinesisAsyncClient.html KinesisAsyncClient]]
+      * @param prefix
+      *   Optional prefix to apply to configuration loaders. Default None
+      * @return
+      *   [[https://cir.is/api/ciris/ConfigDecoder.html ConfigDecoder]] of
+      *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/retrieval/polling/PollingConfig.java PollingConfig]]
+      */
     def readPollingConfig(
         kinesisClient: KinesisAsyncClient,
         prefix: Option[String] = None
@@ -663,6 +1063,17 @@ object KCLCiris {
       .retryGetRecordsInSeconds(retryGetRecords)
       .maxGetRecordsThreadPool(maxGetRecordsThreadPool)
 
+    /** Reads the
+      * [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/retrieval/fanout/FanOutConfig.java FanOutConfig]]
+      *
+      * @param kinesisClient
+      *   [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/kinesis/KinesisAsyncClient.html KinesisAsyncClient]]
+      * @param prefix
+      *   Optional prefix to apply to configuration loaders. Default None
+      * @return
+      *   [[https://cir.is/api/ciris/ConfigDecoder.html ConfigDecoder]] of
+      *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/retrieval/fanout/FanOutConfig.java FanOutConfig]]
+      */
     def readFanOutConfig(
         kinesisClient: KinesisAsyncClient,
         prefix: Option[String] = None
@@ -739,6 +1150,19 @@ object KCLCiris {
       )
       .maybeTransform(retryBackoff)(_.retryBackoffMillis(_))
 
+    /** Reads the
+      * [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/retrieval/RetrievalConfig.java RetrievalConfig]]
+      *
+      * @param kinesisClient
+      *   [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/kinesis/KinesisAsyncClient.html KinesisAsyncClient]]
+      * @param prefix
+      *   Optional prefix to apply to configuration loaders. Default None
+      * @param glueSchemaRegistryDeserializer
+      *   [[https://github.com/awslabs/aws-glue-schema-registry/blob/master/serializer-deserializer/src/main/java/com/amazonaws/services/schemaregistry/deserializers/GlueSchemaRegistryDeserializer.java GlueSchemaRegistryDeserializer]]
+      * @return
+      *   [[https://cir.is/api/ciris/ConfigDecoder.html ConfigDecoder]] of
+      *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/retrieval/RetrievalConfig.java RetrievalConfig]]
+      */
     def read(
         kinesisClient: KinesisAsyncClient,
         prefix: Option[String] = None,
@@ -772,9 +1196,7 @@ object KCLCiris {
     } yield new RetrievalConfig(kinesisClient, streamName, appName)
       .retrievalSpecificConfig(retrievalConfig)
       .retrievalFactory(retrievalConfig.retrievalFactory())
-      .maybeTransform(position)(
-        _.initialPositionInStreamExtended(_)
-      )
+      .initialPositionInStreamExtended(position)
       .maybeTransform(listShardsBackoffTime)(
         _.listShardsBackoffTimeInMillis(_)
       )
@@ -785,6 +1207,22 @@ object KCLCiris {
         _.glueSchemaRegistryDeserializer(_)
       )
 
+    /** Reads the
+      * [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/retrieval/RetrievalConfig.java RetrievalConfig]]
+      * as an [[cats.effect.Async Async]]
+      *
+      * @param kinesisClient
+      *   [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/kinesis/KinesisAsyncClient.html KinesisAsyncClient]]
+      * @param prefix
+      *   Optional prefix to apply to configuration loaders. Default None
+      * @param glueSchemaRegistryDeserializer
+      *   [[https://github.com/awslabs/aws-glue-schema-registry/blob/master/serializer-deserializer/src/main/java/com/amazonaws/services/schemaregistry/deserializers/GlueSchemaRegistryDeserializer.java GlueSchemaRegistryDeserializer]]
+      * @param F
+      *   [[cats.effect.Async Async]]
+      * @return
+      *   [[cats.effect.Async Async]] of
+      *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/retrieval/RetrievalConfig.java RetrievalConfig]]
+      */
     def load[F[_]](
         kinesisClient: KinesisAsyncClient,
         prefix: Option[String] = None,
@@ -793,6 +1231,22 @@ object KCLCiris {
     )(implicit F: Async[F]): F[RetrievalConfig] =
       read(kinesisClient, prefix, glueSchemaRegistryDeserializer).load[F]
 
+    /** Reads the
+      * [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/retrieval/RetrievalConfig.java RetrievalConfig]]
+      * as a [[cats.effect.Resource Resource]]
+      *
+      * @param kinesisClient
+      *   [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/kinesis/KinesisAsyncClient.html KinesisAsyncClient]]
+      * @param prefix
+      *   Optional prefix to apply to configuration loaders. Default None
+      * @param glueSchemaRegistryDeserializer
+      *   [[https://github.com/awslabs/aws-glue-schema-registry/blob/master/serializer-deserializer/src/main/java/com/amazonaws/services/schemaregistry/deserializers/GlueSchemaRegistryDeserializer.java GlueSchemaRegistryDeserializer]]
+      * @param F
+      *   [[cats.effect.Async Async]]
+      * @return
+      *   [[cats.effect.Resource Resource]] of
+      *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/retrieval/RetrievalConfig.java RetrievalConfig]]
+      */
     def resource[F[_]](
         kinesisClient: KinesisAsyncClient,
         prefix: Option[String] = None,
@@ -803,12 +1257,16 @@ object KCLCiris {
   }
 
   object Processor {
-    final case class Config(
-        recordProcessor: RecordProcessor.Config,
-        callProcessRecordsEvenForEmptyRecordList: Option[Boolean],
-        raiseOnError: Boolean
-    )
 
+    /** Reads the
+      * [[kinesis4cats.kcl.RecordProcessor.Config RecordProcessor.Config]]
+      *
+      * @param prefix
+      *   Optional prefix to apply to configuration loaders. Default None
+      * @return
+      *   [[https://cir.is/api/ciris/ConfigDecoder.html ConfigDecoder]] of
+      *   [[kinesis4cats.kcl.RecordProcessor.Config RecordProcessor.Config]]
+      */
     def readRecordProcessorConfig(
         prefix: Option[String] = None
     ): ConfigValue[Effect, RecordProcessor.Config] = for {
@@ -838,9 +1296,18 @@ object KCLCiris {
       autoCommit
     )
 
+    /** Reads the
+      * [[kinesis4cats.kcl.KCLConsumer.ProcessConfig KCLConsumer.ProcessConfig]]
+      *
+      * @param prefix
+      *   Optional prefix to apply to configuration loaders. Default None
+      * @return
+      *   [[https://cir.is/api/ciris/ConfigDecoder.html ConfigDecoder]] of
+      *   [[kinesis4cats.kcl.KCLConsumer.ProcessConfig KCLConsumer.ProcessConfig]]
+      */
     def read(
         prefix: Option[String] = None
-    ): ConfigValue[Effect, Config] = for {
+    ): ConfigValue[Effect, KCLConsumer.ProcessConfig] = for {
       recordProcessor <- readRecordProcessorConfig(prefix)
       callProcessRecordsEvenForEmptyRecordList <- CirisReader
         .readOptional[Boolean](
@@ -862,19 +1329,45 @@ object KCLCiris {
         true,
         prefix
       )
-    } yield Config(
+    } yield KCLConsumer.ProcessConfig(
+      raiseOnError,
       recordProcessor,
-      callProcessRecordsEvenForEmptyRecordList,
-      raiseOnError
+      callProcessRecordsEvenForEmptyRecordList
     )
 
+    /** Reads the
+      * [[kinesis4cats.kcl.KCLConsumer.ProcessConfig KCLConsumer.ProcessConfig]]
+      * as an [[cats.effect.Async Async]]
+      *
+      * @param prefix
+      *   Optional prefix to apply to configuration loaders. Default None
+      * @param F
+      *   [[cats.effect.Async Async]]
+      * @return
+      *   [[cats.effect.Async Async]] of
+      *   [[kinesis4cats.kcl.KCLConsumer.ProcessConfig KCLConsumer.ProcessConfig]]
+      */
     def load[F[_]](
         prefix: Option[String] = None
-    )(implicit F: Async[F]): F[Config] = read(prefix).load[F]
+    )(implicit F: Async[F]): F[KCLConsumer.ProcessConfig] = read(prefix).load[F]
 
+    /** Reads the
+      * [[kinesis4cats.kcl.KCLConsumer.ProcessConfig KCLConsumer.ProcessConfig]]
+      * as a [[cats.effect.Resource Resource]]
+      *
+      * @param prefix
+      *   Optional prefix to apply to configuration loaders. Default None
+      * @param F
+      *   [[cats.effect.Async Async]]
+      * @return
+      *   [[cats.effect.Resource Resource]] of
+      *   [[kinesis4cats.kcl.KCLConsumer.ProcessConfig KCLConsumer.ProcessConfig]]
+      */
     def resource[F[_]](
         prefix: Option[String] = None
-    )(implicit F: Async[F]): Resource[F, Config] = read(prefix).resource[F]
+    )(implicit F: Async[F]): Resource[F, KCLConsumer.ProcessConfig] = read(
+      prefix
+    ).resource[F]
   }
 
 }
