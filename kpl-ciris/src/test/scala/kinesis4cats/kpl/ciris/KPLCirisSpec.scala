@@ -16,7 +16,6 @@
 
 package kinesis4cats.kpl.ciris
 
-import scala.concurrent.duration.Duration
 import scala.jdk.CollectionConverters._
 
 import cats.effect.IO
@@ -30,6 +29,7 @@ import software.amazon.awssdk.services.glue.model.Compatibility
 import kinesis4cats.kpl.instances.eq._
 import kinesis4cats.kpl.instances.show._
 import kinesis4cats.syntax.id._
+import kinesis4cats.syntax.string._
 
 class KPLCirisSpec extends munit.CatsEffectSuite {
 
@@ -40,95 +40,77 @@ class KPLCirisSpec extends munit.CatsEffectSuite {
     val expected = new KinesisProducerConfiguration()
       .setGlueSchemaRegistryConfiguration(
         new GlueSchemaRegistryConfiguration("us-east-1")
-          .runUnsafe(COMPRESSION.valueOf(BuildInfo.glueCompression))(
+          .runUnsafe(COMPRESSION.valueOf(BuildInfo.kplGlueCompressionType))(
             _.setCompressionType(_)
           )
-          .runUnsafe(BuildInfo.glueEndpoint)(_.setEndPoint(_))
-          .runUnsafe(Duration(BuildInfo.glueTtl).toMillis)(
+          .runUnsafe(BuildInfo.kplGlueEndpoint)(_.setEndPoint(_))
+          .runUnsafe(BuildInfo.kplGlueTtl.asMillisUnsafe)(
             _.setTimeToLiveMillis(_)
           )
-          .runUnsafe(BuildInfo.glueCacheSize.toInt)(_.setCacheSize(_))
-          .runUnsafe(AvroRecordType.valueOf(BuildInfo.glueAvroRecordType))(
+          .runUnsafe(BuildInfo.kplGlueCacheSize.toInt)(_.setCacheSize(_))
+          .runUnsafe(AvroRecordType.valueOf(BuildInfo.kplGlueAvroRecordType))(
             _.setAvroRecordType(_)
           )
           .runUnsafe(
-            ProtobufMessageType.valueOf(BuildInfo.glueProtobufMessageType)
+            ProtobufMessageType.valueOf(BuildInfo.kplGlueProtobufMessageType)
           )(
             _.setProtobufMessageType(_)
           )
-          .runUnsafe(BuildInfo.glueRegistryName)(_.setRegistryName(_))
-          .runUnsafe(Compatibility.valueOf(BuildInfo.glueCompatibility))(
+          .runUnsafe(BuildInfo.kplGlueRegistryName)(_.setRegistryName(_))
+          .runUnsafe(Compatibility.valueOf(BuildInfo.kplGlueCompatibility))(
             _.setCompatibilitySetting(_)
           )
-          .runUnsafe(BuildInfo.glueDescription)(_.setDescription(_))
-          .runUnsafe(BuildInfo.glueSchemaAutoRegistrationEnabled.toBoolean)(
+          .runUnsafe(BuildInfo.kplGlueDescription)(_.setDescription(_))
+          .runUnsafe(BuildInfo.kplGlueSchemaAutoRegistrationEnabled.toBoolean)(
             _.setSchemaAutoRegistrationEnabled(_)
           )
-          .runUnsafe(
-            BuildInfo.glueTags
-              .split(",")
-              .map(_.split(":").toList match {
-                case key :: value :: Nil => key -> value
-                case _                   => fail("Couldn't parse tags map")
-              })
-              .toMap
-              .asJava
-          )(_.setTags(_))
-          .runUnsafe(
-            BuildInfo.glueMetadata
-              .split(",")
-              .map(_.split(":").toList match {
-                case key :: value :: Nil => key -> value
-                case _                   => fail("Couldn't parse metadata map")
-              })
-              .toMap
-              .asJava
-          )(_.setMetadata(_))
-          .runUnsafe(BuildInfo.glueSecondaryDeserializer)(
+          .runUnsafe(BuildInfo.kplGlueTags.asMapUnsafe.asJava)(_.setTags(_))
+          .runUnsafe(BuildInfo.kplGlueMetadata.asMapUnsafe.asJava)(_.setMetadata(_))
+          .runUnsafe(BuildInfo.kplGlueSecondaryDeserializer)(
             _.setSecondaryDeserializer(_)
           )
-          .runUnsafe(BuildInfo.glueUserAgentApp)(_.setUserAgentApp(_))
+          .runUnsafe(BuildInfo.kplGlueUserAgentApp)(_.setUserAgentApp(_))
       )
-      .safeTransform(BuildInfo.caCertPath)(_.setCaCertPath(_))
-      .safeTransform(BuildInfo.aggregationEnabled.toBoolean)(_.setAggregationEnabled(_))
-      .safeTransform(BuildInfo.aggregationMaxCount.toLong)(_.setAggregationMaxCount(_))
-      .safeTransform(BuildInfo.aggregationMaxSize.toLong)(_.setAggregationMaxSize(_))
-      .safeTransform(BuildInfo.cloudwatchEndpoint)(_.setCloudwatchEndpoint(_))
-      .safeTransform(BuildInfo.cloudwatchPort.toLong)(_.setCloudwatchPort(_))
-      .safeTransform(BuildInfo.collectionMaxCount.toLong)(_.setCollectionMaxCount(_))
-      .safeTransform(BuildInfo.collectionMaxSize.toLong)(_.setCollectionMaxSize(_))
-      .safeTransform(Duration(BuildInfo.connectTimeout).toMillis)(_.setConnectTimeout(_))
-      .safeTransform(Duration(BuildInfo.credentialsRefreshDelay).toMillis)(
+      .safeTransform(BuildInfo.kplCaCertPath)(_.setCaCertPath(_))
+      .safeTransform(BuildInfo.kplAggregationEnabled.toBoolean)(_.setAggregationEnabled(_))
+      .safeTransform(BuildInfo.kplAggregationMaxCount.toLong)(_.setAggregationMaxCount(_))
+      .safeTransform(BuildInfo.kplAggregationMaxSize.toLong)(_.setAggregationMaxSize(_))
+      .safeTransform(BuildInfo.kplCloudwatchEndpoint)(_.setCloudwatchEndpoint(_))
+      .safeTransform(BuildInfo.kplCloudwatchPort.toLong)(_.setCloudwatchPort(_))
+      .safeTransform(BuildInfo.kplCollectionMaxCount.toLong)(_.setCollectionMaxCount(_))
+      .safeTransform(BuildInfo.kplCollectionMaxSize.toLong)(_.setCollectionMaxSize(_))
+      .safeTransform(BuildInfo.kplConnectTimeout.asMillisUnsafe)(_.setConnectTimeout(_))
+      .safeTransform(BuildInfo.kplCredentialsRefreshDelay.asMillisUnsafe)(
         _.setCredentialsRefreshDelay(_)
       )
-      .safeTransform(BuildInfo.enableCoreDumps.toBoolean)(_.setEnableCoreDumps(_))
-      .safeTransform(BuildInfo.failIfThrottled.toBoolean)(_.setFailIfThrottled(_))
-      .safeTransform(BuildInfo.kinesisEndpoint)(_.setKinesisEndpoint(_))
-      .safeTransform(BuildInfo.kinesisPort.toLong)(_.setKinesisPort(_))
-      .safeTransform(BuildInfo.logLevel)(_.setLogLevel(_))
-      .safeTransform(BuildInfo.maxConnections.toLong)(_.setMaxConnections(_))
-      .safeTransform(BuildInfo.metricsGranularity)(_.setMetricsGranularity(_))
-      .safeTransform(BuildInfo.metricsLevel)(_.setMetricsLevel(_))
-      .safeTransform(BuildInfo.metricsNamespace)(_.setMetricsNamespace(_))
-      .safeTransform(Duration(BuildInfo.metricsUploadDelay).toMillis)(_.setMetricsUploadDelay(_))
-      .safeTransform(BuildInfo.minConnections.toLong)(_.setMinConnections(_))
-      .safeTransform(BuildInfo.nativeExecutable)(_.setNativeExecutable(_))
-      .safeTransform(BuildInfo.rateLimit.toLong)(_.setRateLimit(_))
-      .safeTransform(Duration(BuildInfo.recordMaxBufferedTime).toMillis)(
+      .safeTransform(BuildInfo.kplEnableCoreDumps.toBoolean)(_.setEnableCoreDumps(_))
+      .safeTransform(BuildInfo.kplFailIfThrottled.toBoolean)(_.setFailIfThrottled(_))
+      .safeTransform(BuildInfo.kplKinesisEndpoint)(_.setKinesisEndpoint(_))
+      .safeTransform(BuildInfo.kplKinesisPort.toLong)(_.setKinesisPort(_))
+      .safeTransform(BuildInfo.kplLogLevel)(_.setLogLevel(_))
+      .safeTransform(BuildInfo.kplMaxConnections.toLong)(_.setMaxConnections(_))
+      .safeTransform(BuildInfo.kplMetricsGranularity)(_.setMetricsGranularity(_))
+      .safeTransform(BuildInfo.kplMetricsLevel)(_.setMetricsLevel(_))
+      .safeTransform(BuildInfo.kplMetricsNamespace)(_.setMetricsNamespace(_))
+      .safeTransform(BuildInfo.kplMetricsUploadDelay.asMillisUnsafe)(_.setMetricsUploadDelay(_))
+      .safeTransform(BuildInfo.kplMinConnections.toLong)(_.setMinConnections(_))
+      .safeTransform(BuildInfo.kplNativeExecutable)(_.setNativeExecutable(_))
+      .safeTransform(BuildInfo.kplRateLimit.toLong)(_.setRateLimit(_))
+      .safeTransform(BuildInfo.kplRecordMaxBufferedTime.asMillisUnsafe)(
         _.setRecordMaxBufferedTime(_)
       )
-      .safeTransform(Duration(BuildInfo.recordTtl).toMillis)(_.setRecordTtl(_))
-      .safeTransform(BuildInfo.awsRegion)(_.setRegion(_))
-      .safeTransform(Duration(BuildInfo.requestTimeout).toMillis)(_.setRequestTimeout(_))
-      .safeTransform(BuildInfo.tempDirectory)(_.setTempDirectory(_))
-      .safeTransform(BuildInfo.verifyCertificate.toBoolean)(_.setVerifyCertificate(_))
-      .safeTransform(BuildInfo.proxyHost)(_.setProxyHost(_))
-      .safeTransform(BuildInfo.proxyPort.toLong)(_.setProxyPort(_))
-      .safeTransform(BuildInfo.proxyUserName)(_.setProxyUserName(_))
-      .safeTransform(BuildInfo.proxyPassword)(_.setProxyPassword(_))
-      .safeTransform(BuildInfo.threadingModel)(_.setThreadingModel(_))
-      .safeTransform(BuildInfo.threadPoolSize.toInt)(_.setThreadPoolSize(_))
-      .safeTransform(Duration(BuildInfo.userRecordTimeout).toMillis)(
+      .safeTransform(BuildInfo.kplRecordTtl.asMillisUnsafe)(_.setRecordTtl(_))
+      .safeTransform(BuildInfo.kplAwsRegion)(_.setRegion(_))
+      .safeTransform(BuildInfo.kplRequestTimeout.asMillisUnsafe)(_.setRequestTimeout(_))
+      .safeTransform(BuildInfo.kplTempDirectory)(_.setTempDirectory(_))
+      .safeTransform(BuildInfo.kplVerifyCertificate.toBoolean)(_.setVerifyCertificate(_))
+      .safeTransform(BuildInfo.kplProxyHost)(_.setProxyHost(_))
+      .safeTransform(BuildInfo.kplProxyPort.toLong)(_.setProxyPort(_))
+      .safeTransform(BuildInfo.kplProxyUserName)(_.setProxyUserName(_))
+      .safeTransform(BuildInfo.kplProxyPassword)(_.setProxyPassword(_))
+      .safeTransform(BuildInfo.kplThreadingModel)(_.setThreadingModel(_))
+      .safeTransform(BuildInfo.kplThreadPoolSize.toInt)(_.setThreadPoolSize(_))
+      .safeTransform(BuildInfo.kplUserRecordTimeout.asMillisUnsafe)(
         _.setUserRecordTimeoutInMillis(_)
       )
     // format: on

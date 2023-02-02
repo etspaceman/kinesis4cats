@@ -27,6 +27,7 @@ import _root_.ciris.{ConfigDecoder, ConfigError}
 import cats.syntax.all._
 
 import kinesis4cats.models.{AwsRegion, ConsumerArn}
+import kinesis4cats.syntax.string._
 
 /** Common [[https://cir.is/docs/configurations#decoders ConfigDecoder]]
   * instances
@@ -61,7 +62,7 @@ object ciris {
       CDA: ConfigDecoder[String, A]
   ): ConfigDecoder[String, Seq[A]] = ConfigDecoder[String].mapEither {
     case (configKey, value) =>
-      value.split(",").toList.traverse(x => CDA.decode(configKey, x))
+      value.asList.traverse(x => CDA.decode(configKey, x))
   }
 
   implicit def listDecoder[A](implicit
@@ -81,24 +82,18 @@ object ciris {
       CDB: ConfigDecoder[String, B]
   ): ConfigDecoder[String, Map[A, B]] = ConfigDecoder[String].mapEither {
     case (configKey, x) =>
-      x.split(",")
-        .toList
-        .traverse { kv =>
-          kv.split(":").toList match {
-            case keyStr :: valueStr :: Nil =>
+      x.asMap
+        .leftMap(ConfigError(_))
+        .flatMap(
+          _.toList
+            .traverse { case (keyStr, valueStr) =>
               for {
                 key <- CDA.decode(configKey, keyStr)
                 value <- CDB.decode(configKey, valueStr)
               } yield key -> value
-            case y =>
-              Left(
-                ConfigError(
-                  s"Could not decode Map entry. Expected key:value, got $y. Full config value: $x"
-                )
-              )
-          }
-        }
-        .map(_.toMap)
+            }
+            .map(_.toMap)
+        )
   }
 
   implicit def javaMapConfigDecoder[A, B](implicit
