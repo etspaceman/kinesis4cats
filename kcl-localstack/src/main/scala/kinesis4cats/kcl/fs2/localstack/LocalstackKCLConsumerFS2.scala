@@ -30,6 +30,7 @@ import cats.syntax.all._
 import software.amazon.kinesis.common._
 
 import kinesis4cats.kcl.localstack.LocalstackKCLConsumer
+import kinesis4cats.kcl.multistream.MultiStreamTracker
 import kinesis4cats.localstack.LocalstackConfig
 
 /** Helpers for constructing and leveraging the KCL with Localstack via FS2.
@@ -86,6 +87,48 @@ object LocalstackKCLConsumerFS2 {
     * [[kinesis4cats.kcl.fs2.KCLConsumerFS2.Config KCLConsumerFS2.Config]] that
     * is compliant with Localstack.
     *
+    * @param config
+    *   [[kinesis4cats.localstack.LocalstackConfig LocalstackConfig]]
+    * @param tracker
+    *   [[kinesis4cats.kcl.multistream.MultiStreamTracker MultiStreamTracker]]
+    * @param appName
+    *   Application name for the consumer. Used for the dynamodb table name as
+    *   well as the metrics namespace.
+    * @param workerId
+    *   Unique identifier for the worker. Typically a UUID.
+    * @param processConfig
+    *   [[kinesis4cats.kcl.KCLConsumer.ProcessConfig KCLConsumer.ProcessConfig]]
+    * @param F
+    *   [[cats.effect.Async Async]]
+    * @param LE
+    *   [[kinesis4cats.kcl.RecordProcessor.LogEncoders RecordProcessor.LogEncoders]]
+    * @return
+    *   [[kinesis4cats.kcl.fs2.KCLConsumerFS2.Config KCLConsumerFS2.Config]]
+    */
+  def kclMultiConfig[F[_]](
+      config: LocalstackConfig,
+      tracker: MultiStreamTracker,
+      appName: String,
+      workerId: String,
+      processConfig: KCLConsumer.ProcessConfig
+  )(implicit
+      F: Async[F],
+      LE: RecordProcessor.LogEncoders
+  ): Resource[F, KCLConsumerFS2.Config[F]] = for {
+    queue <- Queue.bounded[F, CommittableRecord[F]](100).toResource
+    underlying <- LocalstackKCLConsumer.kclMultiConfig(
+      config,
+      tracker,
+      appName,
+      workerId,
+      processConfig
+    )(KCLConsumerFS2.callback(queue))
+  } yield KCLConsumerFS2.Config[F](underlying, queue, 5, 1.second, 5, 0.seconds)
+
+  /** Creates a
+    * [[kinesis4cats.kcl.fs2.KCLConsumerFS2.Config KCLConsumerFS2.Config]] that
+    * is compliant with Localstack.
+    *
     * @param streamName
     *   Name of stream to consume
     * @param appName
@@ -130,6 +173,51 @@ object LocalstackKCLConsumerFS2 {
       appName,
       workerId,
       position,
+      processConfig
+    )
+  } yield result
+
+  /** Creates a
+    * [[kinesis4cats.kcl.fs2.KCLConsumerFS2.Config KCLConsumerFS2.Config]] that
+    * is compliant with Localstack.
+    *
+    * @param tracker
+    *   [[kinesis4cats.kcl.multistream.MultiStreamTracker MultiStreamTracker]]
+    * @param appName
+    *   Application name for the consumer. Used for the dynamodb table name as
+    *   well as the metrics namespace.
+    * @param prefix
+    *   Optional prefix for parsing configuration. Default to None
+    * @param workerId
+    *   Unique identifier for the worker. Default is a random UUID Default is
+    *   TRIM_HORIZON
+    * @param processConfig
+    *   [[kinesis4cats.kcl.KCLConsumer.ProcessConfig KCLConsumer.ProcessConfig]]
+    *   Default is `ProcessConfig.default` with autoCommit set to false
+    * @param F
+    *   [[cats.effect.Async Async]]
+    * @param LE
+    *   [[kinesis4cats.kcl.RecordProcessor.LogEncoders RecordProcessor.LogEncoders]]
+    * @return
+    *   [[kinesis4cats.kcl.fs2.KCLConsumerFS2.Config KCLConsumerFS2.Config]]
+    */
+  def kclMultiConfig[F[_]](
+      tracker: MultiStreamTracker,
+      appName: String,
+      prefix: Option[String] = None,
+      workerId: String = UUID.randomUUID().toString,
+      processConfig: KCLConsumer.ProcessConfig =
+        KCLConsumerFS2.defaultProcessConfig
+  )(implicit
+      F: Async[F],
+      LE: RecordProcessor.LogEncoders
+  ): Resource[F, KCLConsumerFS2.Config[F]] = for {
+    config <- LocalstackConfig.resource(prefix)
+    result <- kclMultiConfig(
+      config,
+      tracker,
+      appName,
+      workerId,
       processConfig
     )
   } yield result
@@ -190,6 +278,52 @@ object LocalstackKCLConsumerFS2 {
     * started processing records. Useful for allowing tests time for the
     * consumer to start before processing the stream.
     *
+    * @param config
+    *   [[kinesis4cats.localstack.LocalstackConfig LocalstackConfig]]
+    * @param tracker
+    *   [[kinesis4cats.kcl.multistream.MultiStreamTracker MultiStreamTracker]]
+    * @param appName
+    *   Application name for the consumer. Used for the dynamodb table name as
+    *   well as the metrics namespace.
+    * @param workerId
+    *   Unique identifier for the worker. Typically a UUID.
+    * @param processConfig
+    *   [[kinesis4cats.kcl.KCLConsumer.ProcessConfig KCLConsumer.ProcessConfig]]
+    * @param F
+    *   [[cats.effect.Async Async]]
+    * @param LE
+    *   [[kinesis4cats.kcl.RecordProcessor.LogEncoders RecordProcessor.LogEncoders]]
+    * @return
+    *   [[kinesis4cats.kcl.fs2.KCLConsumerFS2]] in a
+    *   [[cats.effect.Resource Resource]]
+    */
+  def kclMultiConsumer[F[_]](
+      config: LocalstackConfig,
+      tracker: MultiStreamTracker,
+      appName: String,
+      workerId: String,
+      processConfig: KCLConsumer.ProcessConfig
+  )(implicit
+      F: Async[F],
+      P: Parallel[F],
+      LE: RecordProcessor.LogEncoders
+  ): Resource[F, KCLConsumerFS2[F]] =
+    kclMultiConfig(
+      config,
+      tracker,
+      appName,
+      workerId,
+      processConfig
+    ).map(
+      new KCLConsumerFS2[F](_)
+    )
+
+  /** Runs a [[kinesis4cats.kcl.fs2.KCLConsumerFS2 KCLConsumerFS2]] that is
+    * compliant with Localstack. Also exposes a
+    * [[cats.effect.Deferred Deferred]] that will complete when the consumer has
+    * started processing records. Useful for allowing tests time for the
+    * consumer to start before processing the stream.
+    *
     * @param streamName
     *   Name of stream to consume
     * @param appName
@@ -236,6 +370,54 @@ object LocalstackKCLConsumerFS2 {
       appName,
       workerId,
       position,
+      processConfig
+    )
+  } yield result
+
+  /** Runs a [[kinesis4cats.kcl.fs2.KCLConsumerFS2 KCLConsumerFS2]] that is
+    * compliant with Localstack. Also exposes a
+    * [[cats.effect.Deferred Deferred]] that will complete when the consumer has
+    * started processing records. Useful for allowing tests time for the
+    * consumer to start before processing the stream.
+    *
+    * @param tracker
+    *   [[kinesis4cats.kcl.multistream.MultiStreamTracker MultiStreamTracker]]
+    * @param appName
+    *   Application name for the consumer. Used for the dynamodb table name as
+    *   well as the metrics namespace.
+    * @param prefix
+    *   Optional prefix for parsing configuration. Default to None
+    * @param workerId
+    *   Unique identifier for the worker. Default to a random UUID.
+    * @param processConfig
+    *   [[kinesis4cats.kcl.KCLConsumer.ProcessConfig KCLConsumer.ProcessConfig]]
+    *   Default is `ProcessConfig.default` with autoCommit set to false
+    * @param F
+    *   [[cats.effect.Async Async]]
+    * @param LE
+    *   [[kinesis4cats.kcl.RecordProcessor.LogEncoders RecordProcessor.LogEncoders]]
+    * @return
+    *   [[kinesis4cats.kcl.fs2.KCLConsumerFS2 KCLConsumerFS2]] in a
+    *   [[cats.effect.Resource Resource]]
+    */
+  def kclMultiConsumer[F[_]](
+      tracker: MultiStreamTracker,
+      appName: String,
+      prefix: Option[String] = None,
+      workerId: String = UUID.randomUUID().toString(),
+      processConfig: KCLConsumer.ProcessConfig =
+        KCLConsumerFS2.defaultProcessConfig
+  )(implicit
+      F: Async[F],
+      P: Parallel[F],
+      LE: RecordProcessor.LogEncoders
+  ): Resource[F, KCLConsumerFS2[F]] = for {
+    config <- LocalstackConfig.resource(prefix)
+    result <- kclMultiConsumer(
+      config,
+      tracker,
+      appName,
+      workerId,
       processConfig
     )
   } yield result

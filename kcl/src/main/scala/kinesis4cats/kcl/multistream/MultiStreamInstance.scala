@@ -41,7 +41,9 @@ object MultiStreamInstance {
       .describeStreamSummary(
         DescribeStreamSummaryRequest
           .builder()
-          .streamARN(streamArn.streamArn)
+          // TODO: Switch this to streamARN when localstack has a new release
+          // .streamARN(streamArn.streamArn)
+          .streamName(streamArn.streamName)
           .build()
       )
       .map { resp =>

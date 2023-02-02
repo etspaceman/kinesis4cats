@@ -244,6 +244,77 @@ object KCLConsumer {
     )(cb)(tfn)
     .map(new KCLConsumer[F](_))
 
+  /** Constructor for the [[kinesis4cats.kcl.KCLConsumer KCLConsumer]] that
+    * leverages the
+    * [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/common/ConfigsBuilder.java ConfigsBuilder]]
+    * from the KCL. This is a simpler entry-point for creating the
+    * configuration, and provides a transform function to add any custom
+    * configuration that was not covered by the default. This constructor
+    * specifically leverages the
+    * [[kinesis4cats.kcl.multistream.MultiStreamTracker MultiStreamTracker]] to
+    * allow for consumption from multiple streams.
+    *
+    * @param kinesisClient
+    *   [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/kinesis/KinesisAsyncClient.html KinesisAsyncClient]]
+    * @param dynamoClient
+    *   [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/dynamodb/DynamoDbAsyncClient.html DynamoDbAsyncClient]]
+    * @param cloudWatchClient
+    *   [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/cloudwatch/CloudWatchClient.html CloudWatchClient]]
+    * @param tracker
+    *   [[kinesis4cats.kcl.multistream.MultiStreamTracker MultiStreamTracker]]
+    * @param appName
+    *   Name of the application. Usually also the dynamo table name for
+    *   checkpoints
+    * @param workerId
+    *   Unique identifier for a single instance of this consumer. Default is a
+    *   random UUID.
+    * @param processConfig
+    *   [[kinesis4cats.kcl.KCLConsumer.ProcessConfig KCLConsumer.ProcessConfig]]
+    * @param cb
+    *   Function to process
+    *   [[kinesis4cats.kcl.CommittableRecord CommittableRecords]] received from
+    *   Kinesis
+    * @param tfn
+    *   Function to update the
+    *   [[kinesis4cats.kcl.KCLConsumer.Config KCLConsumer.Config]]. Useful for
+    *   overriding defaults.
+    * @param F
+    *   [[cats.effect.Async Async]] instance
+    * @param encoders
+    *   [[kinesis4cats.kcl.RecordProcessor.LogEncoders RecordProcessor.LogEncoders]]
+    *   for encoding structured logs
+    * @return
+    *   [[cats.effect.Resource Resource]] containing the
+    *   [[kinesis4cats.kcl.KCLConsumer KCLConsumer]]
+    * @return
+    */
+  def configsBuilderMultiStream[F[_]](
+      kinesisClient: KinesisAsyncClient,
+      dynamoClient: DynamoDbAsyncClient,
+      cloudWatchClient: CloudWatchAsyncClient,
+      tracker: MultiStreamTracker,
+      appName: String,
+      workerId: String = UUID.randomUUID.toString,
+      processConfig: ProcessConfig = ProcessConfig.default
+  )(
+      cb: List[CommittableRecord[F]] => F[Unit]
+  )(
+      tfn: Config[F] => Config[F] = (x: Config[F]) => x
+  )(implicit
+      F: Async[F],
+      encoders: RecordProcessor.LogEncoders
+  ): Resource[F, KCLConsumer[F]] = Config
+    .configsBuilderMultiStream(
+      kinesisClient,
+      dynamoClient,
+      cloudWatchClient,
+      tracker,
+      appName,
+      workerId,
+      processConfig
+    )(cb)(tfn)
+    .map(new KCLConsumer[F](_))
+
   /** Config class for the [[kinesis4cats.kcl.KCLConsumer KCLConsumer]]
     *
     * @param checkpointConfig
@@ -515,10 +586,9 @@ object KCLConsumer {
         cloudWatchClient: CloudWatchAsyncClient,
         tracker: MultiStreamTracker,
         appName: String,
-        raiseOnError: Boolean = true,
         workerId: String = UUID.randomUUID.toString,
-        recordProcessorConfig: RecordProcessor.Config =
-          RecordProcessor.Config.default
+        processConfig: KCLConsumer.ProcessConfig =
+          KCLConsumer.ProcessConfig.default
     )(
         cb: List[CommittableRecord[F]] => F[Unit]
     )(
@@ -529,9 +599,9 @@ object KCLConsumer {
     ): Resource[F, Config[F]] = for {
       deferredException <- Resource.eval(Deferred[F, Throwable])
       processorFactory <- RecordProcessor.Factory[F](
-        recordProcessorConfig,
+        processConfig.recordProcessorConfig,
         deferredException,
-        raiseOnError
+        processConfig.raiseOnError
       )(cb)
       confBuilder = new ConfigsBuilder(
         tracker,
@@ -552,7 +622,7 @@ object KCLConsumer {
         confBuilder.processorConfig(),
         confBuilder.retrievalConfig(),
         deferredException,
-        raiseOnError
+        processConfig.raiseOnError
       )
     )
   }
