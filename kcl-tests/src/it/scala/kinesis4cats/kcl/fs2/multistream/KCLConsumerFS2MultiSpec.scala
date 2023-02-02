@@ -30,7 +30,7 @@ import io.circe.syntax._
 import org.scalacheck.Arbitrary
 import software.amazon.awssdk.core.SdkBytes
 import software.amazon.awssdk.services.kinesis.model.PutRecordRequest
-import software.amazon.kinesis.common.{InitialPositionInStream, InitialPositionInStreamExtended}
+import software.amazon.kinesis.common._
 
 import kinesis4cats.client.KinesisClient
 import kinesis4cats.client.localstack.LocalstackKinesisClient
