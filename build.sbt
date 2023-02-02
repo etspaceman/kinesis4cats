@@ -153,7 +153,8 @@ lazy val `kcl-tests` = project
       case PathList("META-INF", xs @ _*) =>
         (xs map { _.toLowerCase }) match {
           case "services" :: xs => MergeStrategy.filterDistinctLines
-          case _                => MergeStrategy.discard
+          case "resources" :: "webjars" :: xs => MergeStrategy.first
+          case _                              => MergeStrategy.discard
         }
       case x => MergeStrategy.defaultMergeStrategy(x)
     },
@@ -180,8 +181,15 @@ lazy val kpl = project
   .dependsOn(shared)
 
 lazy val `kpl-ciris` = project
+  .settings(BuildInfoPlugin.buildInfoDefaultSettings)
+  .settings(BuildInfoPlugin.buildInfoScopedSettings(Test))
   .settings(
-    description := "Circe tooling for the Kinesis Producer Library (KPL)"
+    description := "Circe tooling for the Kinesis Producer Library (KPL)",
+    Test / envVars ++= KPLCirisSpecVars.env,
+    Test / javaOptions ++= KPLCirisSpecVars.prop,
+    Test / buildInfoKeys := KPLCirisSpecVars.buildInfoKeys,
+    Test / buildInfoPackage := "kinesis4cats.kpl.ciris",
+    Test / buildInfoOptions += BuildInfoOption.ConstantValue
   )
   .enableIntegrationTests
   .dependsOn(kpl, `shared-ciris`)

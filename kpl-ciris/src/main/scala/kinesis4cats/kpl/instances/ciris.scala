@@ -38,7 +38,7 @@ object ciris {
 
   implicit val regionsConfigDecoder: ConfigDecoder[String, Regions] =
     ConfigDecoder[String].mapEither { case (_, value) =>
-      Try(Regions.valueOf(value)).toEither.leftMap(e =>
+      Try(Regions.fromName(value)).toEither.leftMap(e =>
         ConfigError(
           s"Could not parse $value as region: ${e.getMessage}"
         )
