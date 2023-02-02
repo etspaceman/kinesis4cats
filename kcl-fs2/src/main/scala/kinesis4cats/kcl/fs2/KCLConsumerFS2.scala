@@ -243,11 +243,8 @@ object KCLConsumerFS2 {
       commitMaxChunk: Int = 1000,
       commitMaxWait: FiniteDuration = 10.seconds,
       commitMaxRetries: Int = 5,
-      commitRetryDuration: FiniteDuration = 0.seconds,
-      processConfig: KCLConsumer.ProcessConfig =
-        KCLConsumer.ProcessConfig.default.copy(recordProcessorConfig =
-          RecordProcessor.Config.default.copy(autoCommit = false)
-        )
+      commitRetryInterval: FiniteDuration = 0.seconds,
+      processConfig: KCLConsumer.ProcessConfig = defaultProcessConfig
   )(implicit
       F: Async[F],
       P: Parallel[F],
@@ -264,7 +261,7 @@ object KCLConsumerFS2 {
       commitMaxChunk,
       commitMaxWait,
       commitMaxRetries,
-      commitRetryDuration,
+      commitRetryInterval,
       processConfig
     )
     .map(new KCLConsumerFS2[F](_))
@@ -324,7 +321,7 @@ object KCLConsumerFS2 {
       commitMaxChunk: Int = 1000,
       commitMaxWait: FiniteDuration = 10.seconds,
       commitMaxRetries: Int = 5,
-      commitRetryDuration: FiniteDuration = 0.seconds,
+      commitRetryInterval: FiniteDuration = 0.seconds,
       workerId: String = UUID.randomUUID.toString,
       processConfig: KCLConsumer.ProcessConfig = defaultProcessConfig
   )(
@@ -347,7 +344,7 @@ object KCLConsumerFS2 {
       commitMaxChunk,
       commitMaxWait,
       commitMaxRetries,
-      commitRetryDuration,
+      commitRetryInterval,
       workerId,
       processConfig
     )(tfn)
@@ -409,7 +406,7 @@ object KCLConsumerFS2 {
       *   commit is run. Default is 10 seconds
       * @param commitMaxRetries
       *   Max number of retries for a commit operation
-      * @param commitMaxRetryDuration
+      * @param commitRetryInterval
       *   Delay between retries of commits
       * @param processConfig
       *   [[kinesis4cats.kcl.KCLConsumer.ProcessConfig KCLConsumer.ProcessConfig]]
@@ -433,7 +430,7 @@ object KCLConsumerFS2 {
         commitMaxChunk: Int = 1000,
         commitMaxWait: FiniteDuration = 10.seconds,
         commitMaxRetries: Int = 5,
-        commitRetryDuration: FiniteDuration = 0.seconds,
+        commitRetryInterval: FiniteDuration = 0.seconds,
         processConfig: KCLConsumer.ProcessConfig = defaultProcessConfig
     )(implicit
         F: Async[F],
@@ -456,7 +453,7 @@ object KCLConsumerFS2 {
       commitMaxChunk,
       commitMaxWait,
       commitMaxRetries,
-      commitRetryDuration
+      commitRetryInterval
     )
 
     /** Constructor for the
@@ -489,7 +486,7 @@ object KCLConsumerFS2 {
       *   commit is run. Default is 10 seconds
       * @param commitMaxRetries
       *   Max number of retries for a commit operation
-      * @param commitMaxRetryDuration
+      * @param commitRetryInterval
       * @param workerId
       *   Unique identifier for a single instance of this consumer. Default is a
       *   random UUID.
@@ -518,7 +515,7 @@ object KCLConsumerFS2 {
         commitMaxChunk: Int = 1000,
         commitMaxWait: FiniteDuration = 10.seconds,
         commitMaxRetries: Int = 5,
-        commitRetryDuration: FiniteDuration = 0.seconds,
+        commitRetryInterval: FiniteDuration = 0.seconds,
         workerId: String = UUID.randomUUID.toString,
         processConfig: KCLConsumer.ProcessConfig = defaultProcessConfig
     )(
@@ -547,7 +544,7 @@ object KCLConsumerFS2 {
       commitMaxChunk,
       commitMaxWait,
       commitMaxRetries,
-      commitRetryDuration
+      commitRetryInterval
     )
   }
 
