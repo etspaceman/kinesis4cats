@@ -19,25 +19,6 @@ package kinesis4cats.kpl.ciris
 import cats.syntax.all._
 import ciris._
 
-final case class AdditionalMetricsDimensions(
-    dimensions: List[AdditionalMetricsDimension]
-)
-
-object AdditionalMetricsDimensions {
-  implicit val additionalMetricsDimensionsConfigDecoder
-      : ConfigDecoder[String, AdditionalMetricsDimensions] =
-    ConfigDecoder[String].mapEither { case (configKey, value) =>
-      value
-        .split(",")
-        .toList
-        .traverse { x =>
-          ConfigDecoder[String, AdditionalMetricsDimension]
-            .decode(configKey, x)
-        }
-        .map(AdditionalMetricsDimensions.apply)
-    }
-}
-
 final case class AdditionalMetricsDimension(
     key: String,
     value: String,

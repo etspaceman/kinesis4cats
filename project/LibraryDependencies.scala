@@ -8,6 +8,10 @@ object LibraryDependencies {
   val JavaXMLBind = "javax.xml.bind" % "jaxb-api" % "2.3.1"
   val Scalacheck = "org.scalacheck" %% "scalacheck" % "1.17.0"
 
+  object Scala {
+    val java8Compat = "org.scala-lang.modules" %% "scala-java8-compat" % "1.0.2"
+  }
+
   object FS2 {
     val fs2Version = "3.5.0"
     val core = "co.fs2" %% "fs2-core" % fs2Version

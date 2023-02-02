@@ -14,11 +14,7 @@
  * limitations under the License.
  */
 
-package kinesis4cats.localstack
-
-import cats.Eq
-import cats.syntax.all._
-import ciris.{ConfigDecoder, ConfigError}
+package kinesis4cats.models
 
 /** AWS Region enum. Can be used for both the v1 and v2 test kits
   *
@@ -92,14 +88,4 @@ object AwsRegion {
     US_ISOB_EAST_1,
     US_ISO_WEST_1
   )
-
-  implicit val awsRegionConfigDecoder: ConfigDecoder[String, AwsRegion] =
-    ConfigDecoder[String, String].mapEither { case (_, x) =>
-      Either.fromOption(
-        AwsRegion.values.find(r => x === r.name),
-        ConfigError(s"$x is not a known region")
-      )
-    }
-
-  implicit val awsRegionEq: Eq[AwsRegion] = Eq.fromUniversalEquals
 }

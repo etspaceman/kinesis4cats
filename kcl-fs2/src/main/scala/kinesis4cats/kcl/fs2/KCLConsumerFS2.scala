@@ -42,7 +42,8 @@ import software.amazon.kinesis.metrics.MetricsConfig
 import software.amazon.kinesis.retrieval.RetrievalConfig
 
 import kinesis4cats.kcl.WorkerListeners._
-import kinesis4cats.kcl.{CommittableRecord, RecordProcessor}
+import kinesis4cats.kcl.multistream.MultiStreamTracker
+import kinesis4cats.kcl.{CommittableRecord, KCLConsumer, RecordProcessor}
 
 /** Wrapper offering for the
   * [[https://docs.aws.amazon.com/streams/latest/dev/shared-throughput-kcl-consumers.html KCL]]
@@ -143,6 +144,11 @@ class KCLConsumerFS2[F[_]] private[kinesis4cats] (
 
 object KCLConsumerFS2 {
 
+  private[kinesis4cats] val defaultProcessConfig: KCLConsumer.ProcessConfig =
+    KCLConsumer.ProcessConfig.default.copy(recordProcessorConfig =
+      RecordProcessor.Config.default.copy(autoCommit = false)
+    )
+
   /** Helper class that holds both an [[fs2.Stream fs2.Stream]] and a
     * [[cats.effect.Deferred Deferred]]
     *
@@ -216,17 +222,8 @@ object KCLConsumerFS2 {
     * @param commitMaxWait
     *   Max duration to wait in commitRecords [[fs2.Pipe Pipe]] before a commit
     *   is run. Default is 10 seconds
-    * @param raiseOnError
-    *   Whether the [[kinesis4cats.kcl.RecordProcessor RecordProcessor]] should
-    *   raise exceptions or simply log them. It is recommended to set this to
-    *   true. See this
-    *   [[https://github.com/awslabs/amazon-kinesis-client/issues/10 issue]] for
-    *   more information.
-    * @param recordProcessorConfig
-    *   [[kinesis4cats.kcl.RecordProcessor.Config RecordProcessor.Config]]
-    * @param callProcessRecordsEvenForEmptyRecordList
-    *   Determines if processRecords() should run on the record processor for
-    *   empty record lists.
+    * @param processConfig
+    *   [[kinesis4cats.kcl.KCLConsumer.ProcessConfig KCLConsumer.ProcessConfig]]
     * @param F
     *   [[cats.effect.Async Async]] instance
     * @param encoders
@@ -247,11 +244,8 @@ object KCLConsumerFS2 {
       commitMaxChunk: Int = 1000,
       commitMaxWait: FiniteDuration = 10.seconds,
       commitMaxRetries: Int = 5,
-      commitRetryDuration: FiniteDuration = 0.seconds,
-      raiseOnError: Boolean = true,
-      recordProcessorConfig: RecordProcessor.Config =
-        RecordProcessor.Config.default.copy(autoCommit = false),
-      callProcessRecordsEvenForEmptyRecordList: Boolean = false
+      commitRetryInterval: FiniteDuration = 0.seconds,
+      processConfig: KCLConsumer.ProcessConfig = defaultProcessConfig
   )(implicit
       F: Async[F],
       P: Parallel[F],
@@ -268,10 +262,8 @@ object KCLConsumerFS2 {
       commitMaxChunk,
       commitMaxWait,
       commitMaxRetries,
-      commitRetryDuration,
-      raiseOnError,
-      recordProcessorConfig,
-      callProcessRecordsEvenForEmptyRecordList
+      commitRetryInterval,
+      processConfig
     )
     .map(new KCLConsumerFS2[F](_))
 
@@ -302,17 +294,11 @@ object KCLConsumerFS2 {
     * @param commitMaxWait
     *   Max duration to wait in commitRecords [[fs2.Pipe Pipe]] before a commit
     *   is run. Default is 10 seconds
-    * @param raiseOnError
-    *   Whether the [[kinesis4cats.kcl.RecordProcessor RecordProcessor]] should
-    *   raise exceptions or simply log them. It is recommended to set this to
-    *   true. See this
-    *   [[https://github.com/awslabs/amazon-kinesis-client/issues/10 issue]] for
-    *   more information.
     * @param workerId
     *   Unique identifier for a single instance of this consumer. Default is a
     *   random UUID.
-    * @param recordProcessorConfig
-    *   [[kinesis4cats.kcl.RecordProcessor.Config RecordProcessor.Config]]
+    * @param processConfig
+    *   [[kinesis4cats.kcl.KCLConsumer.ProcessConfig KCLConsumer.ProcessConfig]]
     * @param tfn
     *   Function to update the
     *   [[kinesis4cats.kcl.KCLConsumer.Config KCLConsumer.Config]]. Useful for
@@ -336,11 +322,9 @@ object KCLConsumerFS2 {
       commitMaxChunk: Int = 1000,
       commitMaxWait: FiniteDuration = 10.seconds,
       commitMaxRetries: Int = 5,
-      commitRetryDuration: FiniteDuration = 0.seconds,
-      raiseOnError: Boolean = true,
+      commitRetryInterval: FiniteDuration = 0.seconds,
       workerId: String = UUID.randomUUID.toString,
-      recordProcessorConfig: RecordProcessor.Config =
-        RecordProcessor.Config.default.copy(autoCommit = false)
+      processConfig: KCLConsumer.ProcessConfig = defaultProcessConfig
   )(
       tfn: kinesis4cats.kcl.KCLConsumer.Config[
         F
@@ -361,10 +345,96 @@ object KCLConsumerFS2 {
       commitMaxChunk,
       commitMaxWait,
       commitMaxRetries,
-      commitRetryDuration,
-      raiseOnError,
+      commitRetryInterval,
       workerId,
-      recordProcessorConfig
+      processConfig
+    )(tfn)
+    .map(new KCLConsumerFS2[F](_))
+
+  /** Constructor for the [[kinesis4cats.kcl.fs2.KCLConsumerFS2 KCLConsumerFS2]]
+    * that leverages the
+    * [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/common/ConfigsBuilder.java ConfigsBuilder]]
+    * from the KCL. This is a simpler entry-point for creating the
+    * configuration, and provides a transform function to add any custom
+    * configuration that was not covered by the default. This constructor
+    * specifically leverages the
+    * [[kinesis4cats.kcl.multistream.MultiStreamTracker MultiStreamTracker]] to
+    * allow for consumption from multiple streams.
+    *
+    * @param kinesisClient
+    *   [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/kinesis/KinesisAsyncClient.html KinesisAsyncClient]]
+    * @param dynamoClient
+    *   [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/dynamodb/DynamoDbAsyncClient.html DynamoDbAsyncClient]]
+    * @param cloudWatchClient
+    *   [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/cloudwatch/CloudWatchClient.html CloudWatchClient]]
+    * @param tracker
+    *   [[kinesis4cats.kcl.multistream.MultiStreamTracker MultiStreamTracker]]
+    * @param appName
+    *   Name of the application. Usually also the dynamo table name for
+    *   checkpoints
+    * @param queueSize
+    *   Size of the underlying queue for the FS2 stream. If the queue fills up,
+    *   backpressure on the processors will occur. Default 100
+    * @param commitMaxChunk
+    *   Max records to be received in the commitRecords [[fs2.Pipe Pipe]] before
+    *   a commit is run. Default is 1000
+    * @param commitMaxWait
+    *   Max duration to wait in commitRecords [[fs2.Pipe Pipe]] before a commit
+    *   is run. Default is 10 seconds
+    * @param workerId
+    *   Unique identifier for a single instance of this consumer. Default is a
+    *   random UUID.
+    * @param processConfig
+    *   [[kinesis4cats.kcl.KCLConsumer.ProcessConfig KCLConsumer.ProcessConfig]]
+    * @param tfn
+    *   Function to update the
+    *   [[kinesis4cats.kcl.KCLConsumer.Config KCLConsumer.Config]]. Useful for
+    *   overriding defaults.
+    * @param F
+    *   [[cats.effect.Async Async]] instance
+    * @param encoders
+    *   [[kinesis4cats.kcl.RecordProcessor.LogEncoders RecordProcessor.LogEncoders]]
+    *   for encoding structured logs
+    * @return
+    *   [[cats.effect.Resource Resource]] containing the
+    *   [[kinesis4cats.kcl.fs2.KCLConsumerFS2.Config KCLConsumerFS2.Config]]
+    */
+  def configsBuilderMultiStream[F[_]](
+      kinesisClient: KinesisAsyncClient,
+      dynamoClient: DynamoDbAsyncClient,
+      cloudWatchClient: CloudWatchAsyncClient,
+      tracker: MultiStreamTracker,
+      appName: String,
+      queueSize: Int = 100,
+      commitMaxChunk: Int = 1000,
+      commitMaxWait: FiniteDuration = 10.seconds,
+      commitMaxRetries: Int = 5,
+      commitRetryInterval: FiniteDuration = 0.seconds,
+      workerId: String = UUID.randomUUID.toString,
+      processConfig: KCLConsumer.ProcessConfig = defaultProcessConfig
+  )(
+      tfn: kinesis4cats.kcl.KCLConsumer.Config[
+        F
+      ] => kinesis4cats.kcl.KCLConsumer.Config[F] =
+        (x: kinesis4cats.kcl.KCLConsumer.Config[F]) => x
+  )(implicit
+      F: Async[F],
+      P: Parallel[F],
+      encoders: RecordProcessor.LogEncoders
+  ): Resource[F, KCLConsumerFS2[F]] = Config
+    .configsBuilderMultiStream(
+      kinesisClient,
+      dynamoClient,
+      cloudWatchClient,
+      tracker,
+      appName,
+      queueSize,
+      commitMaxChunk,
+      commitMaxWait,
+      commitMaxRetries,
+      commitRetryInterval,
+      workerId,
+      processConfig
     )(tfn)
     .map(new KCLConsumerFS2[F](_))
 
@@ -424,19 +494,10 @@ object KCLConsumerFS2 {
       *   commit is run. Default is 10 seconds
       * @param commitMaxRetries
       *   Max number of retries for a commit operation
-      * @param commitMaxRetryDuration
+      * @param commitRetryInterval
       *   Delay between retries of commits
-      * @param raiseOnError
-      *   Whether the [[kinesis4cats.kcl.RecordProcessor RecordProcessor]]
-      *   should raise exceptions or simply log them. It is recommended to set
-      *   this to true. See this
-      *   [[https://github.com/awslabs/amazon-kinesis-client/issues/10 issue]]
-      *   for more information.
-      * @param recordProcessorConfig
-      *   [[kinesis4cats.kcl.RecordProcessor.Config RecordProcessor.Config]]
-      * @param callProcessRecordsEvenForEmptyRecordList
-      *   Determines if processRecords() should run on the record processor for
-      *   empty record lists.
+      * @param processConfig
+      *   [[kinesis4cats.kcl.KCLConsumer.ProcessConfig KCLConsumer.ProcessConfig]]
       * @param F
       *   [[cats.effect.Async Async]] instance
       * @param encoders
@@ -457,11 +518,8 @@ object KCLConsumerFS2 {
         commitMaxChunk: Int = 1000,
         commitMaxWait: FiniteDuration = 10.seconds,
         commitMaxRetries: Int = 5,
-        commitRetryDuration: FiniteDuration = 0.seconds,
-        raiseOnError: Boolean = true,
-        recordProcessorConfig: RecordProcessor.Config =
-          RecordProcessor.Config.default.copy(autoCommit = false),
-        callProcessRecordsEvenForEmptyRecordList: Boolean = false
+        commitRetryInterval: FiniteDuration = 0.seconds,
+        processConfig: KCLConsumer.ProcessConfig = defaultProcessConfig
     )(implicit
         F: Async[F],
         encoders: RecordProcessor.LogEncoders
@@ -475,9 +533,7 @@ object KCLConsumerFS2 {
           lifecycleConfig,
           metricsConfig,
           retrievalConfig,
-          raiseOnError,
-          recordProcessorConfig,
-          callProcessRecordsEvenForEmptyRecordList
+          processConfig
         )(callback(queue))
     } yield Config(
       underlying,
@@ -485,7 +541,7 @@ object KCLConsumerFS2 {
       commitMaxChunk,
       commitMaxWait,
       commitMaxRetries,
-      commitRetryDuration
+      commitRetryInterval
     )
 
     /** Constructor for the
@@ -518,18 +574,12 @@ object KCLConsumerFS2 {
       *   commit is run. Default is 10 seconds
       * @param commitMaxRetries
       *   Max number of retries for a commit operation
-      * @param commitMaxRetryDuration
-      * @param raiseOnError
-      *   Whether the [[kinesis4cats.kcl.RecordProcessor RecordProcessor]]
-      *   should raise exceptions or simply log them. It is recommended to set
-      *   this to true. See this
-      *   [[https://github.com/awslabs/amazon-kinesis-client/issues/10 issue]]
-      *   for more information.
+      * @param commitRetryInterval
       * @param workerId
       *   Unique identifier for a single instance of this consumer. Default is a
       *   random UUID.
-      * @param recordProcessorConfig
-      *   [[kinesis4cats.kcl.RecordProcessor.Config RecordProcessor.Config]]
+      * @param processConfig
+      *   [[kinesis4cats.kcl.KCLConsumer.ProcessConfig KCLConsumer.ProcessConfig]]
       * @param tfn
       *   Function to update the
       *   [[kinesis4cats.kcl.KCLConsumer.Config KCLConsumer.Config]]. Useful for
@@ -553,11 +603,9 @@ object KCLConsumerFS2 {
         commitMaxChunk: Int = 1000,
         commitMaxWait: FiniteDuration = 10.seconds,
         commitMaxRetries: Int = 5,
-        commitRetryDuration: FiniteDuration = 0.seconds,
-        raiseOnError: Boolean = true,
+        commitRetryInterval: FiniteDuration = 0.seconds,
         workerId: String = UUID.randomUUID.toString,
-        recordProcessorConfig: RecordProcessor.Config =
-          RecordProcessor.Config.default.copy(autoCommit = false)
+        processConfig: KCLConsumer.ProcessConfig = defaultProcessConfig
     )(
         tfn: kinesis4cats.kcl.KCLConsumer.Config[
           F
@@ -575,9 +623,8 @@ object KCLConsumerFS2 {
           cloudWatchClient,
           streamName,
           appName,
-          raiseOnError,
           workerId,
-          recordProcessorConfig
+          processConfig
         )(callback(queue))(tfn)
     } yield Config(
       underlying,
@@ -585,7 +632,101 @@ object KCLConsumerFS2 {
       commitMaxChunk,
       commitMaxWait,
       commitMaxRetries,
-      commitRetryDuration
+      commitRetryInterval
+    )
+
+    /** Constructor for the
+      * [[kinesis4cats.kcl.fs2.KCLConsumerFS2.Config KCLConsumerFS2.Config]]
+      * that leverages the
+      * [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/common/ConfigsBuilder.java ConfigsBuilder]]
+      * from the KCL. This is a simpler entry-point for creating the
+      * configuration, and provides a transform function to add any custom
+      * configuration that was not covered by the default. This constructor
+      * specifically leverages the
+      * [[kinesis4cats.kcl.multistream.MultiStreamTracker MultiStreamTracker]]
+      * to allow for consumption from multiple streams.
+      *
+      * @param kinesisClient
+      *   [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/kinesis/KinesisAsyncClient.html KinesisAsyncClient]]
+      * @param dynamoClient
+      *   [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/dynamodb/DynamoDbAsyncClient.html DynamoDbAsyncClient]]
+      * @param cloudWatchClient
+      *   [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/cloudwatch/CloudWatchClient.html CloudWatchClient]]
+      * @param tracker
+      *   [[kinesis4cats.kcl.multistream.MultiStreamTracker MultiStreamTracker]]
+      * @param appName
+      *   Name of the application. Usually also the dynamo table name for
+      *   checkpoints
+      * @param queueSize
+      *   Size of the underlying queue for the FS2 stream. If the queue fills
+      *   up, backpressure on the processors will occur. Default 100
+      * @param commitMaxChunk
+      *   Max records to be received in the commitRecords [[fs2.Pipe Pipe]]
+      *   before a commit is run. Default is 1000
+      * @param commitMaxWait
+      *   Max duration to wait in commitRecords [[fs2.Pipe Pipe]] before a
+      *   commit is run. Default is 10 seconds
+      * @param commitMaxRetries
+      *   Max number of retries for a commit operation
+      * @param commitRetryInterval
+      * @param workerId
+      *   Unique identifier for a single instance of this consumer. Default is a
+      *   random UUID.
+      * @param processConfig
+      *   [[kinesis4cats.kcl.KCLConsumer.ProcessConfig KCLConsumer.ProcessConfig]]
+      * @param tfn
+      *   Function to update the
+      *   [[kinesis4cats.kcl.KCLConsumer.Config KCLConsumer.Config]]. Useful for
+      *   overriding defaults.
+      * @param F
+      *   [[cats.effect.Async Async]] instance
+      * @param encoders
+      *   [[kinesis4cats.kcl.RecordProcessor.LogEncoders RecordProcessor.LogEncoders]]
+      *   for encoding structured logs
+      * @return
+      *   [[cats.effect.Resource Resource]] containing the
+      *   [[kinesis4cats.kcl.fs2.KCLConsumerFS2.Config KCLConsumerFS2.Config]]
+      */
+    def configsBuilderMultiStream[F[_]](
+        kinesisClient: KinesisAsyncClient,
+        dynamoClient: DynamoDbAsyncClient,
+        cloudWatchClient: CloudWatchAsyncClient,
+        tracker: MultiStreamTracker,
+        appName: String,
+        queueSize: Int = 100,
+        commitMaxChunk: Int = 1000,
+        commitMaxWait: FiniteDuration = 10.seconds,
+        commitMaxRetries: Int = 5,
+        commitRetryInterval: FiniteDuration = 0.seconds,
+        workerId: String = UUID.randomUUID.toString,
+        processConfig: KCLConsumer.ProcessConfig = defaultProcessConfig
+    )(
+        tfn: kinesis4cats.kcl.KCLConsumer.Config[
+          F
+        ] => kinesis4cats.kcl.KCLConsumer.Config[F] =
+          (x: kinesis4cats.kcl.KCLConsumer.Config[F]) => x
+    )(implicit
+        F: Async[F],
+        encoders: RecordProcessor.LogEncoders
+    ): Resource[F, Config[F]] = for {
+      queue <- Queue.bounded[F, CommittableRecord[F]](queueSize).toResource
+      underlying <- kinesis4cats.kcl.KCLConsumer.Config
+        .configsBuilderMultiStream(
+          kinesisClient,
+          dynamoClient,
+          cloudWatchClient,
+          tracker,
+          appName,
+          workerId,
+          processConfig
+        )(callback(queue))(tfn)
+    } yield Config(
+      underlying,
+      queue,
+      commitMaxChunk,
+      commitMaxWait,
+      commitMaxRetries,
+      commitRetryInterval
     )
   }
 

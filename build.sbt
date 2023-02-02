@@ -75,7 +75,7 @@ lazy val kcl = project
     )
   )
   .enableIntegrationTests
-  .dependsOn(shared)
+  .dependsOn(shared, `kinesis-client`)
 
 lazy val `kcl-fs2` = project
   .settings(
@@ -97,6 +97,20 @@ lazy val `kcl-http4s` = project
     )
   )
   .dependsOn(kcl)
+
+lazy val `kcl-ciris` = project
+  .settings(
+    description := "Ciris tooling for the Kinesis Client Library (KCL)"
+  )
+  .enableIntegrationTests
+  .dependsOn(kcl, `shared-ciris`)
+
+lazy val `kcl-fs2-ciris` = project
+  .settings(
+    description := "Ciris tooling for the Kinesis Client Library (KCL) via FS2"
+  )
+  .enableIntegrationTests
+  .dependsOn(`kcl-fs2`, `kcl-ciris`, `shared-ciris`)
 
 lazy val `kcl-logging-circe` = project
   .settings(
@@ -285,18 +299,17 @@ lazy val docs = project
     kcl,
     `kcl-fs2`,
     `kcl-http4s`,
+    `kcl-ciris`,
+    `kcl-fs2-ciris`,
     `kcl-logging-circe`,
     `kcl-localstack`,
-    `kcl-tests`,
     kpl,
     `kpl-ciris`,
     `kpl-logging-circe`,
     `kpl-localstack`,
-    `kpl-tests`,
     `kinesis-client`,
     `kinesis-client-logging-circe`,
-    `kinesis-client-localstack`,
-    `kinesis-client-tests`
+    `kinesis-client-localstack`
   )
 
 lazy val unidocs = project
@@ -315,18 +328,17 @@ lazy val unidocs = project
       kcl,
       `kcl-fs2`,
       `kcl-http4s`,
+      `kcl-ciris`,
+      `kcl-fs2-ciris`,
       `kcl-logging-circe`,
       `kcl-localstack`,
-      `kcl-tests`,
       kpl,
       `kpl-ciris`,
       `kpl-logging-circe`,
       `kpl-localstack`,
-      `kpl-tests`,
       `kinesis-client`,
       `kinesis-client-logging-circe`,
-      `kinesis-client-localstack`,
-      `kinesis-client-tests`
+      `kinesis-client-localstack`
     )
   )
 
@@ -352,6 +364,8 @@ lazy val root =
       kcl,
       `kcl-fs2`,
       `kcl-http4s`,
+      `kcl-ciris`,
+      `kcl-fs2-ciris`,
       `kcl-logging-circe`,
       `kcl-localstack`,
       `kcl-tests`,

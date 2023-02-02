@@ -21,6 +21,8 @@ KPLCiris.kpl[IO]()
 
 ## Configuration
 
+All of the configuration below is optional.
+
 | Environment Variable | System Property | Default | Description |
 | - | - | - | - |
 | `KPL_ADDITIONAL_METRICS_DIMENSIONS` | `kpl.additional.metrics.dimensions` | | Add additional, custom dimensions to the KPL metrics |
