@@ -403,7 +403,14 @@ object KCLCiris {
           .map(_.map(_.toMillis))
         schedulerInitializationBackoffTime <- CirisReader
           .readOptional[Duration](
-            List("scheduler", "initialization", "backoff", "time")
+            List(
+              "kcl",
+              "coordinator",
+              "scheduler",
+              "initialization",
+              "backoff",
+              "time"
+            )
           )
           .map(_.map(_.toMillis))
       } yield new CoordinatorConfig(appName)
@@ -1038,7 +1045,15 @@ object KCLCiris {
         .map(_.map(_.toMillis))
       retryGetRecords <- CirisReader
         .readOptional[Duration](
-          List("kcl", "retrieval", "polling", "retry", "get", "records"),
+          List(
+            "kcl",
+            "retrieval",
+            "polling",
+            "retry",
+            "get",
+            "records",
+            "interval"
+          ),
           prefix
         )
         .map(_.map(x => Integer.valueOf(x.toSeconds.toInt)).asJava)
@@ -1130,7 +1145,7 @@ object KCLCiris {
       )
       retryBackoff <- CirisReader
         .readOptional[Duration](
-          List("kcl", "retrieval", "fanout", "retry", "backoff", "millis"),
+          List("kcl", "retrieval", "fanout", "retry", "backoff"),
           prefix
         )
         .map(_.map(_.toMillis))
@@ -1174,7 +1189,7 @@ object KCLCiris {
       position <- Common.readInitialPosition(prefix)
       retrievalType <- CirisReader.readDefaulted[RetrievalType](
         List("kcl", "retrieval", "type"),
-        RetrievalType.Polling,
+        RetrievalType.FanOut,
         prefix
       )
       retrievalConfig <- retrievalType match {
