@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="Laika 0.18.1 + Helium Theme" />
+    <title>Ciris</title>
+    
+      <meta name="author" content="Eric Meisel"/>
+    
+    
+      <meta name="description" content="docs"/>
+    
+    
+      <link rel="icon" sizes="32x32" type="image/png" href="https://typelevel.org/img/favicon.png"/>
+    
+    
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato:400,700">
+    
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/tonsky/FiraCode@1.207/distr/fira_code.css">
+    
+    <link rel="stylesheet" type="text/css" href="../helium/icofont.min.css" />
+    <link rel="stylesheet" type="text/css" href="../helium/laika-helium.css" />
+    <link rel="stylesheet" type="text/css" href="../site/styles.css" />
+    <script src="../helium/laika-helium.js"></script>
+    
+    
+    <script> /* for avoiding page load transitions */ </script>
+  </head>
+
+  <body>
+
+    <header id="top-bar">
+
+      <div class="row">
+        <a id="nav-icon">
+          <i class="icofont-laika" title="Navigation">&#xefa2;</i>
+        </a>
+        
+      </div>
+
+      <a class="image-link" href="https://typelevel.org"><img src="https://typelevel.org/img/logo.svg"></a>
+
+      <span class="row links"><a class="icon-link svg-link" href="https://oss.sonatype.org/service/local/repositories/snapshots/archive/io/github/etspaceman/kinesis4cats-docs_2.13/0.0-47b7c52-SNAPSHOT/kinesis4cats-docs_2.13-0.0-47b7c52-SNAPSHOT-javadoc.jar/!/index.html"><span title="API"><svg class="svg-icon" width="100%" height="100%" viewBox="0 0 100 100" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
+  <g class="svg-shape">
+    <path d="M75,47.5c13.246,0 24,10.754 24,24c0,13.246 -10.754,24 -24,24c-13.246,0 -24,-10.754 -24,-24c0,-13.246 10.754,-24 24,-24Zm-50,-0c13.246,-0 24,10.754 24,24c0,13.246 -10.754,24 -24,24c-13.246,-0 -24,-10.754 -24,-24c0,-13.246 10.754,-24 24,-24Zm2.705,16.735l7.239,0l0.622,-4.904l-21.833,0l-0,4.904l7.589,0l0,22.067l6.383,0l-0,-22.067Zm58.076,7.265c-0,-8.757 -3.698,-14.166 -10.781,-14.166c-7.083,-0 -10.781,5.604 -10.781,14.166c0,8.757 3.698,14.166 10.781,14.166c7.083,0 10.781,-5.604 10.781,-14.166Zm-6.539,0c0,6.538 -1.128,9.496 -4.242,9.496c-2.997,0 -4.242,-2.88 -4.242,-9.496c-0,-6.616 1.206,-9.496 4.242,-9.496c3.036,-0 4.242,2.88 4.242,9.496Zm-29.242,-67c13.246,0 24,10.754 24,24c0,13.246 -10.754,24 -24,24c-13.246,0 -24,-10.754 -24,-24c0,-13.246 10.754,-24 24,-24Zm0.512,9.834c-7.122,-0 -12.609,5.098 -12.609,14.127c-0,9.263 5.215,14.205 12.532,14.205c4.164,0 7.083,-1.634 9.068,-3.658l-2.88,-3.697c-1.518,1.206 -3.153,2.413 -5.838,2.413c-3.697,-0 -6.266,-2.763 -6.266,-9.263c-0,-6.616 2.724,-9.379 6.149,-9.379c2.102,-0 3.892,0.778 5.371,1.984l3.113,-3.775c-2.257,-1.868 -4.748,-2.957 -8.64,-2.957Z"/>
+  </g>
+</svg></span></a><a class="icon-link svg-link" href="https://github.com/etspaceman/kinesis4cats"><span title="Source Code"><svg class="svg-icon" width="100%" height="100%" viewBox="0 0 100 100" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
+  <g class="svg-shape">
+    <path d="M49.995,1c-27.609,-0 -49.995,22.386 -49.995,50.002c-0,22.09 14.325,40.83 34.194,47.444c2.501,0.458 3.413,-1.086 3.413,-2.412c0,-1.185 -0.043,-4.331 -0.067,-8.503c-13.908,3.021 -16.843,-6.704 -16.843,-6.704c-2.274,-5.773 -5.552,-7.311 -5.552,-7.311c-4.54,-3.103 0.344,-3.042 0.344,-3.042c5.018,0.356 7.658,5.154 7.658,5.154c4.46,7.64 11.704,5.433 14.552,4.156c0.454,-3.232 1.744,-5.436 3.174,-6.685c-11.102,-1.262 -22.775,-5.553 -22.775,-24.713c-0,-5.457 1.949,-9.92 5.147,-13.416c-0.516,-1.265 -2.231,-6.348 0.488,-13.233c0,0 4.199,-1.344 13.751,5.126c3.988,-1.108 8.266,-1.663 12.518,-1.682c4.245,0.019 8.523,0.574 12.517,1.682c9.546,-6.47 13.736,-5.126 13.736,-5.126c2.728,6.885 1.013,11.968 0.497,13.233c3.204,3.496 5.141,7.959 5.141,13.416c0,19.209 -11.691,23.436 -22.83,24.673c1.795,1.544 3.394,4.595 3.394,9.26c0,6.682 -0.061,12.076 -0.061,13.715c0,1.338 0.899,2.894 3.438,2.406c19.853,-6.627 34.166,-25.354 34.166,-47.438c-0,-27.616 -22.389,-50.002 -50.005,-50.002"/>
+  </g>
+</svg></span></a><a class="icon-link" href="https://discord.gg/XF3CXcMzqD"><i class="icofont-laika" title="Chat">&#xeed5;</i></a><a class="icon-link" href="https://twitter.com/typelevel"><i class="icofont-laika" title="Twitter">&#xed7a;</i></a></span>
+
+    </header>
+
+    <nav id="sidebar">
+
+      <div class="row">
+        <a class="icon-link svg-link" href="https://oss.sonatype.org/service/local/repositories/snapshots/archive/io/github/etspaceman/kinesis4cats-docs_2.13/0.0-47b7c52-SNAPSHOT/kinesis4cats-docs_2.13-0.0-47b7c52-SNAPSHOT-javadoc.jar/!/index.html"><span title="API"><svg class="svg-icon" width="100%" height="100%" viewBox="0 0 100 100" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
+  <g class="svg-shape">
+    <path d="M75,47.5c13.246,0 24,10.754 24,24c0,13.246 -10.754,24 -24,24c-13.246,0 -24,-10.754 -24,-24c0,-13.246 10.754,-24 24,-24Zm-50,-0c13.246,-0 24,10.754 24,24c0,13.246 -10.754,24 -24,24c-13.246,-0 -24,-10.754 -24,-24c0,-13.246 10.754,-24 24,-24Zm2.705,16.735l7.239,0l0.622,-4.904l-21.833,0l-0,4.904l7.589,0l0,22.067l6.383,0l-0,-22.067Zm58.076,7.265c-0,-8.757 -3.698,-14.166 -10.781,-14.166c-7.083,-0 -10.781,5.604 -10.781,14.166c0,8.757 3.698,14.166 10.781,14.166c7.083,0 10.781,-5.604 10.781,-14.166Zm-6.539,0c0,6.538 -1.128,9.496 -4.242,9.496c-2.997,0 -4.242,-2.88 -4.242,-9.496c-0,-6.616 1.206,-9.496 4.242,-9.496c3.036,-0 4.242,2.88 4.242,9.496Zm-29.242,-67c13.246,0 24,10.754 24,24c0,13.246 -10.754,24 -24,24c-13.246,0 -24,-10.754 -24,-24c0,-13.246 10.754,-24 24,-24Zm0.512,9.834c-7.122,-0 -12.609,5.098 -12.609,14.127c-0,9.263 5.215,14.205 12.532,14.205c4.164,0 7.083,-1.634 9.068,-3.658l-2.88,-3.697c-1.518,1.206 -3.153,2.413 -5.838,2.413c-3.697,-0 -6.266,-2.763 -6.266,-9.263c-0,-6.616 2.724,-9.379 6.149,-9.379c2.102,-0 3.892,0.778 5.371,1.984l3.113,-3.775c-2.257,-1.868 -4.748,-2.957 -8.64,-2.957Z"/>
+  </g>
+</svg></span></a><a class="icon-link svg-link" href="https://github.com/etspaceman/kinesis4cats"><span title="Source Code"><svg class="svg-icon" width="100%" height="100%" viewBox="0 0 100 100" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
+  <g class="svg-shape">
+    <path d="M49.995,1c-27.609,-0 -49.995,22.386 -49.995,50.002c-0,22.09 14.325,40.83 34.194,47.444c2.501,0.458 3.413,-1.086 3.413,-2.412c0,-1.185 -0.043,-4.331 -0.067,-8.503c-13.908,3.021 -16.843,-6.704 -16.843,-6.704c-2.274,-5.773 -5.552,-7.311 -5.552,-7.311c-4.54,-3.103 0.344,-3.042 0.344,-3.042c5.018,0.356 7.658,5.154 7.658,5.154c4.46,7.64 11.704,5.433 14.552,4.156c0.454,-3.232 1.744,-5.436 3.174,-6.685c-11.102,-1.262 -22.775,-5.553 -22.775,-24.713c-0,-5.457 1.949,-9.92 5.147,-13.416c-0.516,-1.265 -2.231,-6.348 0.488,-13.233c0,0 4.199,-1.344 13.751,5.126c3.988,-1.108 8.266,-1.663 12.518,-1.682c4.245,0.019 8.523,0.574 12.517,1.682c9.546,-6.47 13.736,-5.126 13.736,-5.126c2.728,6.885 1.013,11.968 0.497,13.233c3.204,3.496 5.141,7.959 5.141,13.416c0,19.209 -11.691,23.436 -22.83,24.673c1.795,1.544 3.394,4.595 3.394,9.26c0,6.682 -0.061,12.076 -0.061,13.715c0,1.338 0.899,2.894 3.438,2.406c19.853,-6.627 34.166,-25.354 34.166,-47.438c-0,-27.616 -22.389,-50.002 -50.005,-50.002"/>
+  </g>
+</svg></span></a><a class="icon-link" href="https://discord.gg/XF3CXcMzqD"><i class="icofont-laika" title="Chat">&#xeed5;</i></a><a class="icon-link" href="https://twitter.com/typelevel"><i class="icofont-laika" title="Twitter">&#xed7a;</i></a>
+      </div>
+
+      <ul class="nav-list">
+        <li class="level1"><a href="../index.html">Overview</a></li>
+        <li class="level1 nav-header">Kinesis Producer Library (KPL)</li>
+        <li class="level2"><a href="../kpl/getting-started.html">Getting Started</a></li>
+        <li class="level2"><a href="../kpl/ciris.html">Ciris</a></li>
+        <li class="level2"><a href="../kpl/circe.html">Circe Logging</a></li>
+        <li class="level2"><a href="../kpl/localstack.html">Localstack</a></li>
+        <li class="level1 nav-header">Kinesis Client Library (KCL)</li>
+        <li class="level2"><a href="getting-started.html">Getting Started</a></li>
+        <li class="level2"><a href="fs2.html">FS2</a></li>
+        <li class="level2"><a href="http4s.html">Http4s</a></li>
+        <li class="level2 active"><a href="#">Ciris</a></li>
+        <li class="level2"><a href="ciris-fs2.html">Ciris</a></li>
+        <li class="level2"><a href="circe.html">Circe Logging</a></li>
+        <li class="level2"><a href="localstack.html">Localstack</a></li>
+        <li class="level1 nav-header">Kinesis Client</li>
+        <li class="level2"><a href="../client/getting-started.html">Getting Started</a></li>
+        <li class="level2"><a href="../client/circe.html">Circe Logging</a></li>
+        <li class="level2"><a href="../client/localstack.html">Localstack</a></li>
+        <li class="level1 nav-header">Localstack</li>
+        <li class="level2"><a href="../localstack/getting-started.html">Localstack</a></li>
+        <li class="level2"><a href="../localstack/aws-v1.html">AWS V1</a></li>
+        <li class="level2"><a href="../localstack/aws-v2.html">AWS V2</a></li>
+      </ul>
+
+      <ul class="nav-list">
+        <li class="level1 nav-header">Related Projects</li>
+        
+          <li class="level2"><a href="https://typelevel.org/cats/">cats</a></li>
+        
+          <li class="level2"><a href="https://typelevel.org/cats-effect/">cats-effect</a></li>
+        
+          <li class="level2"><a href="https://fs2.io/">fs2</a></li>
+        
+          <li class="level2"><a href="https://http4s.org/">http4s</a></li>
+        
+          <li class="level2"><a href="https://docs.aws.amazon.com/streams/latest/dev/shared-throughput-kcl-consumers.html">kcl</a></li>
+        
+          <li class="level2"><a href="https://docs.aws.amazon.com/streams/latest/dev/developing-producers-with-kpl.html">kpl</a></li>
+        
+          <li class="level2"><a href="https://docs.aws.amazon.com/sdk-for-java/v1/developer-guide/welcome.html">aws-java-sdk-v1</a></li>
+        
+          <li class="level2"><a href="https://docs.aws.amazon.com/sdk-for-java/latest/developer-guide/home.html">aws-java-sdk-v2</a></li>
+        
+          <li class="level2"><a href="https://circe.github.io/circe/">circe</a></li>
+        
+          <li class="level2"><a href="https://cir.is/">ciris</a></li>
+        
+          <li class="level2"><a href="https://localstack.cloud/">localstack</a></li>
+        
+      </ul>
+
+    </nav>
+
+    <div id="container">
+
+      <nav id="page-nav">
+        <p class="header"><a href="#">Ciris</a></p>
+
+        <ul class="nav-list">
+          <li class="level1"><a href="#installation">Installation</a></li>
+          <li class="level1"><a href="#usage">Usage</a></li>
+          <li class="level1"><a href="#configuration">Configuration</a></li>
+          <li class="level2"><a href="#common">Common</a></li>
+          <li class="level2"><a href="#checkpoint">Checkpoint</a></li>
+          <li class="level2"><a href="#coordinator">Coordinator</a></li>
+          <li class="level2"><a href="#lease">Lease</a></li>
+          <li class="level2"><a href="#lifecycle">Lifecycle</a></li>
+          <li class="level2"><a href="#metrics">Metrics</a></li>
+          <li class="level2"><a href="#retrieval">Retrieval</a></li>
+          <li class="level2"><a href="#processor">Processor</a></li>
+          <li class="level2"><a href="#duration">Duration</a></li>
+        </ul>
+
+        <p class="footer"></p>
+      </nav>
+
+      <main class="content">
+
+        <h1 id="ciris" class="title">Ciris</h1>
+        <p>Standard environment variables and system properties for configuring a <a href="https://github.com/etspaceman/kinesis4cats/blob/main/kcl/src/main/scala/kinesis4cats/kcl/KCLConsumer.scala">KCLConsumer</a>, via <a href="https://cir.is/">Ciris</a></p>
+        
+        <h2 id="installation" class="section">Installation<a class="anchor-link right" href="#installation"><i class="icofont-laika">&#xef71;</i></a></h2>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">libraryDependencies</span><span> += </span><span class="string-literal">&quot;io.github.etspaceman&quot;</span><span> %% </span><span class="string-literal">&quot;kinesis4cats-kcl-ciris&quot;</span><span> % </span><span class="string-literal">&quot;0.0-47b7c52-SNAPSHOT&quot;</span></code></pre>
+        
+        <h2 id="usage" class="section">Usage<a class="anchor-link right" href="#usage"><i class="icofont-laika">&#xef71;</i></a></h2>
+        <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">effect</span><span>.</span><span class="identifier">_</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">syntax</span><span>.</span><span class="identifier">all</span><span>.</span><span class="identifier">_</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">software</span><span>.</span><span class="identifier">amazon</span><span>.</span><span class="identifier">awssdk</span><span>.</span><span class="identifier">services</span><span>.</span><span class="identifier">cloudwatch</span><span>.</span><span class="type-name">CloudWatchAsyncClient</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">software</span><span>.</span><span class="identifier">amazon</span><span>.</span><span class="identifier">awssdk</span><span>.</span><span class="identifier">services</span><span>.</span><span class="identifier">dynamodb</span><span>.</span><span class="type-name">DynamoDbAsyncClient</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">software</span><span>.</span><span class="identifier">amazon</span><span>.</span><span class="identifier">awssdk</span><span>.</span><span class="identifier">services</span><span>.</span><span class="identifier">kinesis</span><span>.</span><span class="type-name">KinesisAsyncClient</span><span>
+
+</span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">kcl</span><span>.</span><span class="identifier">_</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">kcl</span><span>.</span><span class="identifier">ciris</span><span>.</span><span class="type-name">KCLCiris</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">kcl</span><span>.</span><span class="identifier">logging</span><span>.</span><span class="identifier">instances</span><span>.</span><span class="identifier">show</span><span>.</span><span class="identifier">_</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">syntax</span><span>.</span><span class="identifier">bytebuffer</span><span>.</span><span class="identifier">_</span><span>
+
+</span><span class="keyword">object</span><span> </span><span class="type-name">MyApp</span><span> </span><span class="keyword">extends</span><span> </span><span class="type-name">ResourceApp</span><span>.</span><span class="type-name">Forever</span><span> {
+    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">run</span><span>(</span><span class="identifier">args</span><span>: </span><span class="type-name">List</span><span>[</span><span class="type-name">String</span><span>]) = </span><span class="keyword">for</span><span> {
+        </span><span class="identifier">kinesisClient</span><span> &lt;- </span><span class="type-name">Resource</span><span>.</span><span class="identifier">fromAutoCloseable</span><span>(</span><span class="type-name">IO</span><span>(</span><span class="type-name">KinesisAsyncClient</span><span>.</span><span class="identifier">builder</span><span>().</span><span class="identifier">build</span><span>()))
+        </span><span class="identifier">dynamoClient</span><span> &lt;- </span><span class="type-name">Resource</span><span>.</span><span class="identifier">fromAutoCloseable</span><span>(</span><span class="type-name">IO</span><span>(</span><span class="type-name">DynamoDbAsyncClient</span><span>.</span><span class="identifier">builder</span><span>().</span><span class="identifier">build</span><span>()))
+        </span><span class="identifier">cloudWatchClient</span><span> &lt;- </span><span class="type-name">Resource</span><span>.</span><span class="identifier">fromAutoCloseable</span><span>(</span><span class="type-name">IO</span><span>(</span><span class="type-name">CloudWatchAsyncClient</span><span>.</span><span class="identifier">builder</span><span>().</span><span class="identifier">build</span><span>()))
+        </span><span class="identifier">consumer</span><span> &lt;- </span><span class="type-name">KCLCiris</span><span>.</span><span class="identifier">consumer</span><span>[</span><span class="type-name">IO</span><span>](</span><span class="identifier">kinesisClient</span><span>, </span><span class="identifier">dynamoClient</span><span>, </span><span class="identifier">cloudWatchClient</span><span>){ 
+            </span><span class="keyword">case</span><span> </span><span class="identifier">records</span><span>: </span><span class="type-name">List</span><span>[</span><span class="type-name">CommittableRecord</span><span>[</span><span class="type-name">IO</span><span>]] =&gt; </span><span class="identifier">records</span><span>.</span><span class="identifier">traverse_</span><span>(</span><span class="identifier">r</span><span> =&gt; </span><span class="type-name">IO</span><span>.</span><span class="identifier">println</span><span>(</span><span class="identifier">r</span><span>.</span><span class="identifier">data</span><span>.</span><span class="identifier">asString</span><span>)) 
+        }
+        </span><span class="identifier">_</span><span> &lt;- </span><span class="identifier">consumer</span><span>.</span><span class="identifier">run</span><span>()
+    } </span><span class="keyword">yield</span><span> ()
+}</span></code></pre>
+        
+        <h2 id="configuration" class="section">Configuration<a class="anchor-link right" href="#configuration"><i class="icofont-laika">&#xef71;</i></a></h2>
+        <p>The configuration below is intended to only work with single-stream consumers at this time.</p>
+        
+        <h3 id="common" class="section">Common<a class="anchor-link right" href="#common"><i class="icofont-laika">&#xef71;</i></a></h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Environment Variable</th>
+              <th>System Property</th>
+              <th>Required</th>
+              <th>Default</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>KCL_APP_NAME</code></td>
+              <td><code>kcl.app.name</code></td>
+              <td>Yes</td>
+              <td></td>
+              <td>A unique name to give your consumer application.</td>
+            </tr>
+            <tr>
+              <td><code>KCL_STREAM_NAME</code></td>
+              <td><code>kcl.stream.name</code></td>
+              <td>Yes</td>
+              <td></td>
+              <td>The name of the stream to consume</td>
+            </tr>
+            <tr>
+              <td><code>KPL_INITIAL_POSITION</code></td>
+              <td><code>kcl.initial.position</code></td>
+              <td>No</td>
+              <td><code>LATEST</code></td>
+              <td>The position to start stream consumption. Valid values are <code>TRIM_HORIZON</code>, <code>LATEST</code> and <code>AT_TIMESTAMP:mytimestamp</code> (timestamp must be parsable by <code>java.time.Instant.parse</code>)</td>
+            </tr>
+          </tbody>
+        </table>
+        
+        <h3 id="checkpoint" class="section">Checkpoint<a class="anchor-link right" href="#checkpoint"><i class="icofont-laika">&#xef71;</i></a></h3>
+        <p>Currently the <a href="https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/checkpoint/CheckpointConfig.java">CheckpointConfig</a> does not have any configuration, but this section is here in case it is provided at a later date.</p>
+        <table>
+          <thead>
+            <tr>
+              <th>Environment Variable</th>
+              <th>System Property</th>
+              <th>Required</th>
+              <th>Default</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+        </table>
+        
+        <h3 id="coordinator" class="section">Coordinator<a class="anchor-link right" href="#coordinator"><i class="icofont-laika">&#xef71;</i></a></h3>
+        <p><a href="https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/coordinator/CoordinatorConfig.java">CoordinatorConfig</a> values.</p>
+        <table>
+          <thead>
+            <tr>
+              <th>Environment Variable</th>
+              <th>System Property</th>
+              <th>Required</th>
+              <th>Default</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>KCL_COORDINATOR_MAX_INITIALIZATION_ATTEMPTS</code></td>
+              <td><code>kcl.coordinator.max.initialization.attempts</code></td>
+              <td>No</td>
+              <td>20</td>
+              <td>The maximum number of attempts to initialize the Scheduler</td>
+            </tr>
+            <tr>
+              <td><code>KCL_COORDINATOR_PARENT_SHARD_POLL_INTERVAL</code></td>
+              <td><code>kcl.coordinator.parent.shard.poll.interval</code></td>
+              <td>No</td>
+              <td>10 seconds</td>
+              <td>Interval between polling to check for parent shard completion</td>
+            </tr>
+            <tr>
+              <td><code>KCL_COORDINATOR_SKIP_SHARD_SYNC_AT_INITIALIZATION_IF_LEASES_EXIST</code></td>
+              <td><code>kcl.coordinator.skip.shard.sync.at.initialization.if.leases.exist</code></td>
+              <td>No</td>
+              <td>false</td>
+              <td>If true, the Scheduler will skip shard sync during initialization if there are one or more leases in the lease table.</td>
+            </tr>
+            <tr>
+              <td><code>KCL_COORDINATOR_SHARD_CONSUMER_DISPATCH_POLL_INTERVAL</code></td>
+              <td><code>kcl.coordinator.shard.consumer.dispatch.poll.interval</code></td>
+              <td>No</td>
+              <td>1 second</td>
+              <td>The duration between polling of the shard consumer for triggering state changes, and health checks.</td>
+            </tr>
+            <tr>
+              <td><code>KCL_COORDINATOR_SCHEDULER_INITIALIZATION_BACKOFF_TIME</code></td>
+              <td><code>kcl.coordinator.scheduler.initialization.backoff.time</code></td>
+              <td>No</td>
+              <td>1 second</td>
+              <td>Interval between retrying the scheduler initialization.</td>
+            </tr>
+          </tbody>
+        </table>
+        
+        <h3 id="lease" class="section">Lease<a class="anchor-link right" href="#lease"><i class="icofont-laika">&#xef71;</i></a></h3>
+        <p><a href="https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/leases/LeaseManagementConfig.java">LeaseManagementConfig</a> values.</p>
+        <table>
+          <thead>
+            <tr>
+              <th>Environment Variable</th>
+              <th>System Property</th>
+              <th>Required</th>
+              <th>Default</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>KCL_LEASE_TABLE_NAME</code></td>
+              <td><code>kcl.lease.table.name</code></td>
+              <td>No</td>
+              <td><code>KCL_APP_NAME</code>/<code>kcl.app.name</code></td>
+              <td>Name of the table to use in DynamoDB</td>
+            </tr>
+            <tr>
+              <td><code>KCL_LEASE_WORKER_ID</code></td>
+              <td><code>kcl.lease.worker.id</code></td>
+              <td>No</td>
+              <td><code>UUID.randomUUID().toString</code></td>
+              <td>Used to distinguish different workers/processes of a KCL application.</td>
+            </tr>
+            <tr>
+              <td><code>KCL_LEASE_FAILOVER_TIME</code></td>
+              <td><code>kcl.lease.failover.time</code></td>
+              <td>No</td>
+              <td><code>10 seconds</code></td>
+              <td>A worker which does not renew it&#39;s lease within this time interval will be regarded as having problems and it&#39;s shards will be assigned to other workers.</td>
+            </tr>
+            <tr>
+              <td><code>KCL_LEASE_SHARD_SYNC_INTERVAL</code></td>
+              <td><code>kcl.lease.shard.sync.interval</code></td>
+              <td>No</td>
+              <td><code>60 seconds</code></td>
+              <td>Shard sync interval</td>
+            </tr>
+            <tr>
+              <td><code>KCL_LEASE_CLEANUP_LEASES_UPON_SHARD_COMPLETION</code></td>
+              <td><code>kcl.lease.cleanup.leases.upon.shard.completion</code></td>
+              <td>No</td>
+              <td>true</td>
+              <td>Cleanup leases upon shards completion.</td>
+            </tr>
+            <tr>
+              <td><code>KCL_LEASE_MAX_LEASES_FOR_WORKER</code></td>
+              <td><code>kcl.lease.max.leases.for.worker</code></td>
+              <td>No</td>
+              <td><code>Integer.MAX_VALUE</code></td>
+              <td>The max number of leases (shards) this worker should process.</td>
+            </tr>
+            <tr>
+              <td><code>KCL_LEASE_MAX_LEASES_TO_STEAL_AT_ONE_TIME</code></td>
+              <td><code>kcl.lease.max.leases.to.steal.at.one.time</code></td>
+              <td>No</td>
+              <td><code>1</code></td>
+              <td>Max leases to steal from another worker at one time (for load balancing).</td>
+            </tr>
+            <tr>
+              <td><code>KCL_LEASE_INITIAL_LEASE_TABLE_READ_CAPACITY</code></td>
+              <td><code>kcl.lease.initial.lease.table.read.capacity</code></td>
+              <td>No</td>
+              <td><code>10</code></td>
+              <td>The Amazon DynamoDB table used for tracking leases will be provisioned with this read capacity if the billing mode is set to <code>PROVISIONED</code></td>
+            </tr>
+            <tr>
+              <td><code>KCL_LEASE_INITIAL_LEASE_TABLE_WRITE_CAPACITY</code></td>
+              <td><code>kcl.lease.initial.lease.table.write.capacity</code></td>
+              <td>No</td>
+              <td><code>10</code></td>
+              <td>The Amazon DynamoDB table used for tracking leases will be provisioned with this write capacity if the billing mode is set to <code>PROVISIONED</code></td>
+            </tr>
+            <tr>
+              <td><code>KCL_LEASE_MAX_LEASE_RENEWAL_THREADS</code></td>
+              <td><code>kcl.lease.max.lease.renewal.threads</code></td>
+              <td>No</td>
+              <td><code>20</code></td>
+              <td>The size of the thread pool to create for the lease renewer to use.</td>
+            </tr>
+            <tr>
+              <td><code>KCL_LEASE_IGNORE_UNEXPECTED_CHILD_SHARDS</code></td>
+              <td><code>kcl.lease.ignore.unexpected.child.shards</code></td>
+              <td>No</td>
+              <td><code>false</code></td>
+              <td>If true, ignores child shards that are received unexpectedly.</td>
+            </tr>
+            <tr>
+              <td><code>KCL_LEASE_CONSISTENT_READS</code></td>
+              <td><code>kcl.lease.consistent.reads</code></td>
+              <td>No</td>
+              <td><code>false</code></td>
+              <td>If true, ensures that reads from dynamo are consistent.</td>
+            </tr>
+            <tr>
+              <td><code>KCL_LEASE_LIST_SHARDS_BACKOFF_TIME</code></td>
+              <td><code>kcl.lease.list.shards.backoff.time</code></td>
+              <td>No</td>
+              <td><code>1.5 seconds</code></td>
+              <td>Duration to wait between list-shards calls.</td>
+            </tr>
+            <tr>
+              <td><code>KCL_LEASE_MAX_LIST_SHARDS_RETRY_ATTEMPTS</code></td>
+              <td><code>kcl.lease.max.list.shards.retry.attempts</code></td>
+              <td>No</td>
+              <td><code>50</code></td>
+              <td>Amount of retries possible for list-shards calls.</td>
+            </tr>
+            <tr>
+              <td><code>KCL_LEASE_EPSILON</code></td>
+              <td><code>kcl.lease.epsilon</code></td>
+              <td>No</td>
+              <td><code>25 ms</code></td>
+              <td>Applies variance when calculating lease expirations</td>
+            </tr>
+            <tr>
+              <td><code>KCL_LEASE_DYNAMO_REQUEST_TIMEOUT</code></td>
+              <td><code>kcl.lease.dynamo.request.timeout</code></td>
+              <td>No</td>
+              <td><code>1 minute</code></td>
+              <td>Timeout for requests to dynamo</td>
+            </tr>
+            <tr>
+              <td><code>KCL_LEASE_BILLING_MODE</code></td>
+              <td><code>kcl.lease.billing.mode</code></td>
+              <td>No</td>
+              <td><code>PAY_PER_REQUEST</code></td>
+              <td>Billing mode to use for the dynamo table upon its creation. Valid values are <code>PAY_PER_REQUEST</code> and <code>PROVISIONED</code></td>
+            </tr>
+            <tr>
+              <td><code>KCL_LEASE_LEASES_RECOVERY_AUDITOR_EXECUTION_FREQUENCY</code></td>
+              <td><code>kcl.lease.leases.auditor.execution.frequency</code></td>
+              <td>No</td>
+              <td><code>2 minutes</code></td>
+              <td>Frequency of the auditor job to scan for partial leases in the lease table.</td>
+            </tr>
+            <tr>
+              <td><code>KCL_LEASE_LEASES_RECOVERY_AUDITOR_INCONSISTENCY_CONFIDENCE_THRESHOLD</code></td>
+              <td><code>kcl.lease.leases.auditor.inconsistency.confidence.threshold</code></td>
+              <td>No</td>
+              <td><code>3</code></td>
+              <td>Confidence threshold for the periodic auditor job to determine if leases for a stream in the lease table is inconsistent.</td>
+            </tr>
+            <tr>
+              <td><code>KCL_LEASE_MAX_CACHE_MISSES_BEFORE_RELOAD</code></td>
+              <td><code>kcl.lease.max.cache.misses.before.reload</code></td>
+              <td>No</td>
+              <td><code>1000</code></td>
+              <td>Amount of cache misses before reloading the lease cache.</td>
+            </tr>
+            <tr>
+              <td><code>KCL_LEASE_LIST_SHARDS_CACHE_ALLOWED_AGE</code></td>
+              <td><code>kcl.lease.list.shards.cache.allowed.age</code></td>
+              <td>No</td>
+              <td><code>30 seconds</code></td>
+              <td>Duration that the list shards cache is valid.</td>
+            </tr>
+            <tr>
+              <td><code>KCL_LEASE_CACHE_MISS_WARNING_MODULUS</code></td>
+              <td><code>kcl.lease.cache.miss.warning.modulus</code></td>
+              <td>No</td>
+              <td><code>250</code></td>
+              <td>Modulus to use against the number of cache misses before a warning is logged.</td>
+            </tr>
+          </tbody>
+        </table>
+        
+        <h3 id="lifecycle" class="section">Lifecycle<a class="anchor-link right" href="#lifecycle"><i class="icofont-laika">&#xef71;</i></a></h3>
+        <p><a href="https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/lifecycle/LifecycleConfig.java">LifecycleConfig</a> values.</p>
+        <table>
+          <thead>
+            <tr>
+              <th>Environment Variable</th>
+              <th>System Property</th>
+              <th>Required</th>
+              <th>Default</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>KCL_LIFECYCLE_LOG_WARNING_FOR_TASK_AFTER</code></td>
+              <td><code>kcl.lifecycle.log.warning.for.task.after</code></td>
+              <td>No</td>
+              <td>None</td>
+              <td>Logs warn message if as task is held in a task for more than the set time.</td>
+            </tr>
+            <tr>
+              <td><code>KCL_LIFECYCLE_TASK_BACKOFF_TIME</code></td>
+              <td><code>kcl.lifecycle.task.backoff.time</code></td>
+              <td>No</td>
+              <td><code>500 ms</code></td>
+              <td>Backoff time for Amazon Kinesis Client Library tasks (in the event of failures).</td>
+            </tr>
+            <tr>
+              <td><code>KCL_LIFECYCLE_READ_TIMEOUTS_TO_IGNORE_BEFORE_WARNING</code></td>
+              <td><code>kcl.lifecycle.read.timeouts.to.ignore.before.warning</code></td>
+              <td>No</td>
+              <td><code>0</code></td>
+              <td>Number of consecutive ReadTimeouts to ignore before logging warning messages.</td>
+            </tr>
+          </tbody>
+        </table>
+        
+        <h3 id="metrics" class="section">Metrics<a class="anchor-link right" href="#metrics"><i class="icofont-laika">&#xef71;</i></a></h3>
+        <p><a href="https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/metrics/MetricsConfig.java">MetricsConfig</a> values.</p>
+        <table>
+          <thead>
+            <tr>
+              <th>Environment Variable</th>
+              <th>System Property</th>
+              <th>Required</th>
+              <th>Default</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>KCL_METRICS_NAMESPACE</code></td>
+              <td><code>kcl.metrics.namespace</code></td>
+              <td>No</td>
+              <td><code>KCL_APP_NAME</code>/<code>kcl.app.name</code></td>
+              <td>Namespace for KCL metrics.</td>
+            </tr>
+            <tr>
+              <td><code>KCL_METRICS_BUFFER_TIME</code></td>
+              <td><code>kcl.metrics.buffer.time</code></td>
+              <td>No</td>
+              <td><code>10 seconds</code></td>
+              <td>Buffer metrics for at most this long before publishing to CloudWatch.</td>
+            </tr>
+            <tr>
+              <td><code>KCL_METRICS_MAX_QUEUE_SIZE</code></td>
+              <td><code>kcl.metrics.max.queue.size</code></td>
+              <td>No</td>
+              <td><code>10000</code></td>
+              <td>Buffer at most this many metrics before publishing to CloudWatch.</td>
+            </tr>
+            <tr>
+              <td><code>KCL_METRICS_LEVEL</code></td>
+              <td><code>kcl.metrics.level</code></td>
+              <td>No</td>
+              <td><code>DETAILED</code></td>
+              <td>Metrics level for which to enable CloudWatch metrics. Valid values are <code>DETAILED</code>, <code>SUMMARY</code> and <code>NONE</code></td>
+            </tr>
+            <tr>
+              <td><code>KCL_METRICS_ENABLED_DIMENSIONS</code></td>
+              <td><code>kcl.metrics.enabled.dimensions</code></td>
+              <td>No</td>
+              <td><code>Set(&quot;ALL&quot;)</code></td>
+              <td>Allowed dimensions for CloudWatchMetrics.</td>
+            </tr>
+            <tr>
+              <td><code>KCL_METRICS_PUBLISHER_FLUSH_BUFFER</code></td>
+              <td><code>kcl.metrics.publisher.flush.buffer</code></td>
+              <td>No</td>
+              <td><code>200</code></td>
+              <td>Buffer size for MetricDatums before publishing.</td>
+            </tr>
+          </tbody>
+        </table>
+        
+        <h3 id="retrieval" class="section">Retrieval<a class="anchor-link right" href="#retrieval"><i class="icofont-laika">&#xef71;</i></a></h3>
+        <p><a href="https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/retrieval/RetrievalConfig.java">RetrievalConfig</a> values.</p>
+        <table>
+          <thead>
+            <tr>
+              <th>Environment Variable</th>
+              <th>System Property</th>
+              <th>Required</th>
+              <th>Default</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>KCL_RETRIEVAL_TYPE</code></td>
+              <td><code>kcl.retrieval.type</code></td>
+              <td>Yes</td>
+              <td><code>fanout</code></td>
+              <td>Type of retrieval for the KCL to use. Valid values are <code>fanout</code> and <code>polling</code></td>
+            </tr>
+            <tr>
+              <td><code>KCL_RETRIEVAL_LIST_SHARDS_BACKOFF_TIME</code></td>
+              <td><code>kcl.retrieval.list.shards.backoff.time</code></td>
+              <td>No</td>
+              <td><code>1.5 seconds</code></td>
+              <td>Backoff time between consecutive ListShards calls.</td>
+            </tr>
+            <tr>
+              <td><code>KCL_RETRIEVAL_MAX_LIST_SHARDS_RETRY_ATTEMPTS</code></td>
+              <td><code>kcl.retrieval.max.list.shards.retry.attempts</code></td>
+              <td>No</td>
+              <td><code>50</code></td>
+              <td>Max number of retries for ListShards when throttled/exception is thrown.</td>
+            </tr>
+          </tbody>
+        </table>
+        
+        <h4 id="fanout" class="section">FanOut<a class="anchor-link right" href="#fanout"><i class="icofont-laika">&#xef71;</i></a></h4>
+        <p>Configuration values if <code>KCL_RETRIEVAL_TYPE</code>/<code>kcl.retrieval.type</code> is <code>fanout</code>. Used for constructing the <a href="https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/retrieval/fanout/FanOutConfig.java">FanOutConfig</a></p>
+        <table>
+          <thead>
+            <tr>
+              <th>Environment Variable</th>
+              <th>System Property</th>
+              <th>Required</th>
+              <th>Default</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>KCL_RETRIEVAL_FANOUT_CONSUMER_ARN</code></td>
+              <td><code>kcl.retrieval.fanout.consumer.arn</code></td>
+              <td>No</td>
+              <td></td>
+              <td>The ARN of an already created consumer, if this is set no automatic consumer creation will be attempted.</td>
+            </tr>
+            <tr>
+              <td><code>KCL_RETRIEVAL_FANOUT_CONSUMER_NAME</code></td>
+              <td><code>kcl.retrieval.fanout.consumer.name</code></td>
+              <td>No</td>
+              <td><code>KCL_APP_NAME</code>/<code>kcl.app.name</code></td>
+              <td>The name of the consumer to create.</td>
+            </tr>
+            <tr>
+              <td><code>KCL_RETRIEVAL_FANOUT_MAX_DESCRIBE_STREAM_SUMMARY_RETRIES</code></td>
+              <td><code>kcl.retrieval.fanout.max.describe.stream.summary.retries</code></td>
+              <td>No</td>
+              <td><code>10</code></td>
+              <td>The maximum number of retries for calling describe stream summary.</td>
+            </tr>
+            <tr>
+              <td><code>KCL_RETRIEVAL_FANOUT_MAX_DESCRIBE_STREAM_CONSUMER_RETRIES</code></td>
+              <td><code>kcl.retrieval.fanout.max.describe.stream.consumer.retries</code></td>
+              <td>No</td>
+              <td><code>10</code></td>
+              <td>The maximum number of retries for calling DescribeStreamConsumer.</td>
+            </tr>
+            <tr>
+              <td><code>KCL_RETRIEVAL_FANOUT_REGISTER_STREAM_CONSUMER_RETRIES</code></td>
+              <td><code>kcl.retrieval.fanout.register.stream.consumer.retries</code></td>
+              <td>No</td>
+              <td><code>10</code></td>
+              <td>The maximum number of retries for calling DescribeStreamConsumer.</td>
+            </tr>
+            <tr>
+              <td><code>KCL_RETRIEVAL_FANOUT_RETRY_BACKOFF</code></td>
+              <td><code>kcl.retrieval.fanout.retry.backoff</code></td>
+              <td>No</td>
+              <td><code>1 second</code></td>
+              <td>The maximum amount of time that will be made between failed calls.</td>
+            </tr>
+          </tbody>
+        </table>
+        
+        <h4 id="polling" class="section">Polling<a class="anchor-link right" href="#polling"><i class="icofont-laika">&#xef71;</i></a></h4>
+        <p>Configuration values if <code>KCL_RETRIEVAL_TYPE</code>/<code>kcl.retrieval.type</code> is <code>polling</code>. Used for constructing the <a href="https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/retrieval/polling/PollingConfig.java">PollingConfig</a></p>
+        <table>
+          <thead>
+            <tr>
+              <th>Environment Variable</th>
+              <th>System Property</th>
+              <th>Required</th>
+              <th>Default</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>KCL_RETRIEVAL_POLLING_MAX_RECORDS</code></td>
+              <td><code>kcl.retrieval.polling.max.records</code></td>
+              <td>No</td>
+              <td><code>10000</code></td>
+              <td>Max records to fetch from Kinesis in a single GetRecords call.</td>
+            </tr>
+            <tr>
+              <td><code>KCL_RETRIEVAL_POLLING_IDLE_TIME_BETWEEN_READS</code></td>
+              <td><code>kcl.retrieval.polling.idle.time.between.reads</code></td>
+              <td>No</td>
+              <td><code>1 second</code></td>
+              <td>The value for how long the ShardConsumer should sleep in between calls to GetRecords</td>
+            </tr>
+            <tr>
+              <td><code>KCL_RETRIEVAL_POLLING_RETRY_GET_RECORDS_INTERVAL</code></td>
+              <td><code>kcl.retrieval.polling.retry.get.records.interval</code></td>
+              <td>No</td>
+              <td><code>None</code></td>
+              <td>Time to wait in seconds before the worker retries to get a record. If None, retries immediately</td>
+            </tr>
+            <tr>
+              <td><code>KCL_RETRIEVAL_POLLING_MAX_GET_RECORDS_THREAD_POOL</code></td>
+              <td><code>kcl.retrieval.polling.max.get.records.thread.pool</code></td>
+              <td>No</td>
+              <td><code>None</code></td>
+              <td>The max number of threads in the records thread pool. If None, there is no limit.</td>
+            </tr>
+          </tbody>
+        </table>
+        
+        <h3 id="processor" class="section">Processor<a class="anchor-link right" href="#processor"><i class="icofont-laika">&#xef71;</i></a></h3>
+        <p><a href="https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/processor/ProcessorConfig.java">ProcessorConfig</a> values.</p>
+        <table>
+          <thead>
+            <tr>
+              <th>Environment Variable</th>
+              <th>System Property</th>
+              <th>Required</th>
+              <th>Default</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>KCL_PROCESSOR_CALL_PROCESS_RECORDS_EVEN_FOR_EMPTY_LIST</code></td>
+              <td><code>kcl.processor.call.process.records.even.for.empty.list</code></td>
+              <td>No</td>
+              <td><code>false</code></td>
+              <td>If true, process records will be invoked on empty batches.</td>
+            </tr>
+            <tr>
+              <td><code>KCL_PROCESSOR_RAISE_ON_ERROR</code></td>
+              <td><code>kcl.processor.raise.on.error</code></td>
+              <td>No</td>
+              <td><code>true</code></td>
+              <td>If true, the application will raise an error and be killed if processRecords also throws an error. Otherwise, the error will be logged but the consumer will receive a new batch of records.</td>
+            </tr>
+            <tr>
+              <td><code>KCL_PROCESSOR_CHECKPOINT_RETRIES</code></td>
+              <td><code>kcl.processor.checkpoint.retries</code></td>
+              <td>No</td>
+              <td><code>5</code></td>
+              <td>Max retries for retrying commits if autoCommit is <code>true</code></td>
+            </tr>
+            <tr>
+              <td><code>KCL_PROCESSOR_CHECKPOINT_RETRY_INTERVAL</code></td>
+              <td><code>kcl.processor.checkpoint.retry.interval</code></td>
+              <td>No</td>
+              <td><code>0 seconds</code></td>
+              <td>Checkpoint retry interval for retrying commits if autoCommit is <code>true</code></td>
+            </tr>
+            <tr>
+              <td><code>KCL_PROCESSOR_AUTO_COMMIT</code></td>
+              <td><code>kcl.processor.auto.commit</code></td>
+              <td>No</td>
+              <td><code>0 seconds</code></td>
+              <td>If true, the record processor will automatically commit records after the user defined callback is complete.</td>
+            </tr>
+          </tbody>
+        </table>
+        
+        <h3 id="duration" class="section">Duration<a class="anchor-link right" href="#duration"><i class="icofont-laika">&#xef71;</i></a></h3>
+        <p>Some of these environment variables are loaded as a <a href="https://www.scala-lang.org/api/2.13.10/scala/concurrent/duration/Duration$.html">Scala Duration</a>, and are parsed through its apply method.</p>
+        <p>For example, if you wanted to set the duration to a day, you could use:
+        - <code>1d</code>
+        - <code>1 day</code>
+        - <code>24 hours</code>
+        - <code>24h</code></p>
+
+        <hr style="margin-top: 30px"/>
+        <footer style="font-size: 90%; text-align: center">
+          kinesis4cats is a <a href="https://typelevel.org/">Typelevel</a> project distributed under the <a href="https://www.apache.org/licenses/LICENSE-2.0.txt">Apache-2.0</a> license.
+        </footer>
+
+      </main>
+
+    </div>
+
+  </body>
+</html>
