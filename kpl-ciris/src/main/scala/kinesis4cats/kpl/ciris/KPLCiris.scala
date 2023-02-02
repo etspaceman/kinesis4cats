@@ -113,7 +113,7 @@ object KPLCiris {
         List("kpl", "glue", "user", "agent", "app"),
         prefix
       )
-    } yield new GlueSchemaRegistryConfiguration(region.name)
+    } yield new GlueSchemaRegistryConfiguration(region.getName())
       .maybeRunUnsafe(compressionType)(_.setCompressionType(_))
       .maybeRunUnsafe(endpoint)(_.setEndPoint(_))
       .maybeRunUnsafe(ttl)(_.setTimeToLiveMillis(_))
