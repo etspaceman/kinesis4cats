@@ -1,4 +1,4 @@
-# Ciris
+# Ciris FS2
 
 Standard environment variables and system properties for configuring a @:source(kcl.src.main.scala.kinesis4cats.kcl.fs2.KCLConsumerFS2), via [Ciris](https://cir.is/)
 
