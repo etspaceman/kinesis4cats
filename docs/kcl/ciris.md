@@ -169,7 +169,7 @@ Configuration values if `KCL_RETRIEVAL_TYPE`/`kcl.retrieval.type` is `polling`. 
 Some of these environment variables are loaded as a [Scala Duration](https://www.scala-lang.org/api/2.13.10/scala/concurrent/duration/Duration$.html), and are parsed through its apply method.
 
 For example, if you wanted to set the duration to a day, you could use:
-- `1d`
-- `1 day`
-- `24 hours`
-- `24h`
+    - `1d`
+    - `1 day`
+    - `24 hours`
+    - `24h`

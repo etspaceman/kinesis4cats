@@ -44,7 +44,7 @@ import kinesis4cats.logging.{LogContext, LogEncoder}
   *   [[kinesis4cats.client.KinesisClientLogEncoders KinesisClientLogEncoders]]
   */
 class KinesisClient[F[_]] private[kinesis4cats] (
-    client: KinesisAsyncClient,
+    val client: KinesisAsyncClient,
     logger: StructuredLogger[F]
 )(implicit
     F: Async[F],
