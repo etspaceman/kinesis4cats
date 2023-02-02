@@ -160,7 +160,7 @@ object KPLCirisSpecVars {
     s"-Dprop.kpl.threading.model=$threadingModel",
     s"-Dprop.kpl.thread.pool.size=$threadPoolSize",
     s"-Dprop.kpl.user.record.timeout=$userRecordTimeout",
-    s"-Dprop.kpl.native.executable=$nativeExecutable",
+    s"-Dprop.kpl.native.executable=$nativeExecutable"
   )
 
   val buildInfoKeys: Seq[BuildInfoKey] = Seq(

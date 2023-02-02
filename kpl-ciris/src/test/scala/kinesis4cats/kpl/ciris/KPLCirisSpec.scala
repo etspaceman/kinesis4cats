@@ -36,6 +36,7 @@ class KPLCirisSpec extends munit.CatsEffectSuite {
   test(
     "It should load the environment variables the same as system properties"
   ) {
+    // format: off
     val expected = new KinesisProducerConfiguration()
       .setGlueSchemaRegistryConfiguration(
         new GlueSchemaRegistryConfiguration("us-east-1")
@@ -130,13 +131,19 @@ class KPLCirisSpec extends munit.CatsEffectSuite {
       .safeTransform(Duration(BuildInfo.userRecordTimeout).toMillis)(
         _.setUserRecordTimeoutInMillis(_)
       )
-
+    // format: on
     for {
       kplConfigEnv <- KPLCiris.loadKplConfig[IO](prefix = Some("env"))
       kplConfigProp <- KPLCiris.loadKplConfig[IO](prefix = Some("prop"))
     } yield {
-      assert(kplConfigEnv === kplConfigProp, s"envi: ${kplConfigEnv.show}\nprop: ${kplConfigProp.show}")
-      assert(kplConfigEnv === expected, s"read: ${kplConfigEnv.show}\nexpe: ${expected.show}")
+      assert(
+        kplConfigEnv === kplConfigProp,
+        s"envi: ${kplConfigEnv.show}\nprop: ${kplConfigProp.show}"
+      )
+      assert(
+        kplConfigEnv === expected,
+        s"read: ${kplConfigEnv.show}\nexpe: ${expected.show}"
+      )
     }
   }
 }
