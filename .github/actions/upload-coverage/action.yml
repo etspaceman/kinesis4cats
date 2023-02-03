@@ -4,6 +4,10 @@ description: |
   for these issues
     - https://github.com/codecov/codecov-action/issues/598
     - https://github.com/codecov/codecov-action/issues/837
+inputs:
+  token: 
+     description: "secrets.CODECOV_TOKEN"
+     required: true
 runs:
   using: composite
   steps:
@@ -12,7 +16,7 @@ runs:
       uses: codecov/codecov-action@v3
       continue-on-error: true
       with:
-        token: ${{ secrets.CODECOV_TOKEN }}
+        token: ${{ inputs.token }}
         fail_ci_if_error: true
         verbose: true
     - name: "Upload to Codecov (attempt #2)"
@@ -21,7 +25,7 @@ runs:
       uses: codecov/codecov-action@v3
       continue-on-error: true
       with:
-        token: ${{ secrets.CODECOV_TOKEN }}
+        token: ${{ inputs.token }}
         fail_ci_if_error: true
         verbose: true
     - name: "Upload to Codecov (attempt #3)"
@@ -30,6 +34,6 @@ runs:
       uses: codecov/codecov-action@v3
       continue-on-error: true
       with:
-        token: ${{ secrets.CODECOV_TOKEN }}
+        token: ${{ inputs.token }}
         fail_ci_if_error: true
         verbose: true

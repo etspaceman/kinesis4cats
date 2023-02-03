@@ -155,7 +155,8 @@ object Kinesis4CatsPlugin extends AutoPlugin {
         List(
           WorkflowStep.Use(
             UseRef.Local("./.github/actions/upload-coverage"),
-            name = Some("Upload coverage")
+            name = Some("Upload coverage"),
+            params = Map("token" -> "${{ secrets.CODECOV_TOKEN }}")
           )
         )
 
