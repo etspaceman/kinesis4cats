@@ -99,11 +99,18 @@ lazy val `kcl-http4s` = project
   .dependsOn(kcl)
 
 lazy val `kcl-ciris` = project
+  .settings(BuildInfoPlugin.buildInfoDefaultSettings)
+  .settings(BuildInfoPlugin.buildInfoScopedSettings(Test))
   .settings(
-    description := "Ciris tooling for the Kinesis Client Library (KCL)"
+    description := "Ciris tooling for the Kinesis Client Library (KCL)",
+    Test / envVars ++= KCLCirisSpecVars.env,
+    Test / javaOptions ++= KCLCirisSpecVars.prop,
+    Test / buildInfoKeys := KCLCirisSpecVars.buildInfoKeys,
+    Test / buildInfoPackage := "kinesis4cats.kcl.ciris",
+    Test / buildInfoOptions += BuildInfoOption.ConstantValue
   )
   .enableIntegrationTests
-  .dependsOn(kcl, `shared-ciris`)
+  .dependsOn(kcl, `shared-ciris`, `kcl-localstack` % Test)
 
 lazy val `kcl-fs2-ciris` = project
   .settings(

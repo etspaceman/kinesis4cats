@@ -16,7 +16,8 @@
 
 package kinesis4cats.syntax
 
-import scala.concurrent.duration.Duration
+import scala.compat.java8.DurationConverters._
+import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.util.Try
 
 import cats.syntax.all._
@@ -52,8 +53,10 @@ object StringSyntax {
 
     def asList: List[String] = str.split(",").toList
 
+    def asDuration: Either[Throwable, Duration] = Try(Duration(str)).toEither
+
     def asMillis: Either[Throwable, Long] =
-      Try(Duration(str)).toEither.map(_.toMillis)
+      asDuration.map(_.toMillis)
 
     def asMillisUnsafe: Long =
       asMillis.fold(e => throw e, identity)
@@ -63,5 +66,17 @@ object StringSyntax {
 
     def asSecondsUnsafe: Long =
       asSeconds.fold(e => throw e, identity)
+
+    def asFiniteDuration: Either[Throwable, FiniteDuration] =
+      asDuration.map(x => FiniteDuration(x.length, x.unit))
+
+    def asFiniteDurationUnsafe: FiniteDuration =
+      asFiniteDuration.fold(e => throw e, identity)
+
+    def asJavaDuration: Either[Throwable, java.time.Duration] =
+      asFiniteDuration.map(_.toJava)
+
+    def asJavaDurationUnsafe: java.time.Duration =
+      asJavaDuration.fold(e => throw e, identity)
   }
 }
