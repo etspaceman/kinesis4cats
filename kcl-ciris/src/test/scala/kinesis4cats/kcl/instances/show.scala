@@ -28,9 +28,9 @@ import software.amazon.kinesis.leases.LeaseManagementConfig
 import software.amazon.kinesis.lifecycle.LifecycleConfig
 import software.amazon.kinesis.metrics.MetricsConfig
 import software.amazon.kinesis.processor.MultiStreamTracker
+import software.amazon.kinesis.retrieval._
 import software.amazon.kinesis.retrieval.fanout.FanOutConfig
 import software.amazon.kinesis.retrieval.polling.PollingConfig
-import software.amazon.kinesis.retrieval.{RetrievalConfig, RetrievalSpecificConfig}
 
 import kinesis4cats.kcl.{KCLConsumer, RecordProcessor}
 import kinesis4cats.logging.instances.show._
