@@ -18,15 +18,12 @@ package kinesis4cats.kcl
 package fs2
 package localstack
 
-import scala.concurrent.duration._
-
 import java.util.UUID
 
 import cats.Parallel
 import cats.effect.std.Queue
 import cats.effect.syntax.all._
 import cats.effect.{Async, Resource}
-import cats.syntax.all._
 import software.amazon.kinesis.common._
 
 import kinesis4cats.kcl.localstack.LocalstackKCLConsumer
@@ -81,7 +78,8 @@ object LocalstackKCLConsumerFS2 {
       position,
       processConfig
     )(KCLConsumerFS2.callback(queue))
-  } yield KCLConsumerFS2.Config[F](underlying, queue, 5, 1.second, 5, 0.seconds)
+  } yield KCLConsumerFS2
+    .Config[F](underlying, queue, KCLConsumerFS2.FS2Config.default)
 
   /** Creates a
     * [[kinesis4cats.kcl.fs2.KCLConsumerFS2.Config KCLConsumerFS2.Config]] that
@@ -123,7 +121,8 @@ object LocalstackKCLConsumerFS2 {
       workerId,
       processConfig
     )(KCLConsumerFS2.callback(queue))
-  } yield KCLConsumerFS2.Config[F](underlying, queue, 5, 1.second, 5, 0.seconds)
+  } yield KCLConsumerFS2
+    .Config[F](underlying, queue, KCLConsumerFS2.FS2Config.default)
 
   /** Creates a
     * [[kinesis4cats.kcl.fs2.KCLConsumerFS2.Config KCLConsumerFS2.Config]] that
