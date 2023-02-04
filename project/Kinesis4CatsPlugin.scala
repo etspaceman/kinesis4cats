@@ -154,8 +154,9 @@ object Kinesis4CatsPlugin extends AutoPlugin {
       val cov =
         List(
           WorkflowStep.Use(
-            UseRef.Public("codecov", "codecov-action", "v2"),
-            name = Some("Upload coverage")
+            UseRef.Local("./.github/actions/upload-coverage"),
+            name = Some("Upload coverage"),
+            params = Map("token" -> "${{ secrets.CODECOV_TOKEN }}")
           )
         )
 
@@ -174,7 +175,6 @@ object Kinesis4CatsPlugin extends AutoPlugin {
         "cpl",
         "+headerCreateAll",
         "pretty",
-        "pretty", // Run pretty twice, as sometimes the formats don't take
         "set ThisBuild / tlFatalWarnings := tlFatalWarningsInCi.value",
         "doc",
         "session clear"

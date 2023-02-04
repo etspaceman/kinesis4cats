@@ -355,7 +355,7 @@ object KCLCiris {
       *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/coordinator/CoordinatorConfig.java CoordinatorConfig]]
       */
     def read(
-        prefix: Option[String],
+        prefix: Option[String] = None,
         shardPrioritization: Option[ShardPrioritization] = None,
         workerStateChangeListener: Option[WorkerStateChangeListener] = None,
         coordinatorFactory: Option[CoordinatorFactory] = None
@@ -363,7 +363,8 @@ object KCLCiris {
       for {
         appName <- Common.readAppName(prefix)
         maxInitializationAttempts <- CirisReader.readOptional[Int](
-          List("kcl", "coordinator", "max", "initialization", "attempts")
+          List("kcl", "coordinator", "max", "initialization", "attempts"),
+          prefix
         )
         parentShardPollInterval <- CirisReader
           .readOptional[Duration](
@@ -410,15 +411,13 @@ object KCLCiris {
               "initialization",
               "backoff",
               "time"
-            )
+            ),
+            prefix
           )
           .map(_.map(_.toMillis))
       } yield new CoordinatorConfig(appName)
         .maybeTransform(maxInitializationAttempts)(
           _.maxInitializationAttempts(_)
-        )
-        .maybeTransform(parentShardPollInterval)(
-          _.parentShardPollIntervalMillis(_)
         )
         .maybeTransform(parentShardPollInterval)(
           _.parentShardPollIntervalMillis(_)
@@ -457,7 +456,7 @@ object KCLCiris {
       *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/coordinator/CoordinatorConfig.java CoordinatorConfig]]
       */
     def load[F[_]](
-        prefix: Option[String],
+        prefix: Option[String] = None,
         shardPrioritization: Option[ShardPrioritization] = None,
         workerStateChangeListener: Option[WorkerStateChangeListener] = None,
         coordinatorFactory: Option[CoordinatorFactory] = None
@@ -487,7 +486,7 @@ object KCLCiris {
       *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/coordinator/CoordinatorConfig.java CoordinatorConfig]]
       */
     def resource[F[_]](
-        prefix: Option[String],
+        prefix: Option[String] = None,
         shardPrioritization: Option[ShardPrioritization] = None,
         workerStateChangeListener: Option[WorkerStateChangeListener] = None,
         coordinatorFactory: Option[CoordinatorFactory] = None
@@ -539,25 +538,40 @@ object KCLCiris {
         executorService: Option[ExecutorService] = None
     ): ConfigValue[Effect, LeaseManagementConfig] = for {
       tableName <- CirisReader
-        .read[String](List("kcl", "lease", "table", "name"))
+        .read[String](List("kcl", "lease", "table", "name"), prefix)
         .or(Common.readAppName(prefix))
       workerId <- CirisReader.readDefaulted(
         List("kcl", "lease", "worker", "id"),
-        UUID.randomUUID().toString()
+        UUID.randomUUID().toString(),
+        prefix
       )
       failoverTime <- CirisReader
-        .readOptional[Duration](List("kcl", "lease", "failover", "time"))
+        .readOptional[Duration](
+          List("kcl", "lease", "failover", "time"),
+          prefix
+        )
         .map(_.map(_.toMillis))
       shardSyncInterval <- CirisReader
         .readOptional[Duration](
-          List("kcl", "lease", "shard", "sync", "interval")
+          List("kcl", "lease", "shard", "sync", "interval"),
+          prefix
         )
         .map(_.map(_.toMillis))
       cleanupLeasesUponShardCompletion <- CirisReader.readOptional[Boolean](
-        List("kcl", "lease", "cleanup", "leases", "upon", "shard", "completion")
+        List(
+          "kcl",
+          "lease",
+          "cleanup",
+          "leases",
+          "upon",
+          "shard",
+          "completion"
+        ),
+        prefix
       )
       maxLeasesForWorker <- CirisReader.readOptional[Int](
-        List("kcl", "lease", "max", "leases", "for", "worker")
+        List("kcl", "lease", "max", "leases", "for", "worker"),
+        prefix
       )
       maxLeasesToStealAtOneTime <- CirisReader.readOptional[Int](
         List(
@@ -570,41 +584,52 @@ object KCLCiris {
           "at",
           "one",
           "time"
-        )
+        ),
+        prefix
       )
       initialLeaseTableReadCapacity <- CirisReader.readOptional[Int](
-        List("kcl", "lease", "initial", "lease", "table", "read", "capacity")
+        List("kcl", "lease", "initial", "lease", "table", "read", "capacity"),
+        prefix
       )
       initialLeaseTableWriteCapacity <- CirisReader.readOptional[Int](
-        List("kcl", "lease", "initial", "lease", "table", "write", "capacity")
+        List("kcl", "lease", "initial", "lease", "table", "write", "capacity"),
+        prefix
       )
       maxLeaseRenewalThreads <- CirisReader.readOptional[Int](
-        List("kcl", "lease", "max", "lease", "renewal", "threads")
+        List("kcl", "lease", "max", "lease", "renewal", "threads"),
+        prefix
       )
       ignoreUnexpectedChildShards <- CirisReader.readOptional[Boolean](
-        List("kcl", "lease", "ignore", "unexpected", "child", "shards")
+        List("kcl", "lease", "ignore", "unexpected", "child", "shards"),
+        prefix
       )
       consistentReads <- CirisReader.readOptional[Boolean](
-        List("kcl", "lease", "consistent", "reads")
+        List("kcl", "lease", "consistent", "reads"),
+        prefix
       )
       listShardsBackoffTime <- CirisReader
         .readOptional[Duration](
-          List("kcl", "lease", "list", "shards", "backoff", "time")
+          List("kcl", "lease", "list", "shards", "backoff", "time"),
+          prefix
         )
         .map(_.map(_.toMillis))
       maxListShardsRetryAttempts <- CirisReader.readOptional[Int](
-        List("kcl", "lease", "max", "list", "shards", "retry", "attempts")
+        List("kcl", "lease", "max", "list", "shards", "retry", "attempts"),
+        prefix
       )
       epsilon <- CirisReader
         .readOptional[Duration](
-          List("kcl", "lease", "epsilon")
+          List("kcl", "lease", "epsilon"),
+          prefix
         )
         .map(_.map(_.toMillis))
       dynamoDbRequestTimeout <- CirisReader.readOptional[java.time.Duration](
-        List("kcl", "lease", "dynamo", "request", "timeout")
+        List("kcl", "lease", "dynamo", "request", "timeout"),
+        prefix
       )
       billingMode <- CirisReader.readOptional[BillingMode](
-        List("kcl", "lease", "billing", "mode")
+        List("kcl", "lease", "billing", "mode"),
+        prefix
       )
       leasesRecoveryAuditorExecutionFrequency <- CirisReader
         .readOptional[Duration](
@@ -616,7 +641,8 @@ object KCLCiris {
             "auditor",
             "execution",
             "frequency"
-          )
+          ),
+          prefix
         )
         .map(_.map(_.toMillis))
       leasesRecoveryAuditorInconsistencyConfidenceThreshold <- CirisReader
@@ -630,19 +656,23 @@ object KCLCiris {
             "inconsistency",
             "confidence",
             "threshold"
-          )
+          ),
+          prefix
         )
       initialPositionInStream <- Common.readInitialPosition(prefix)
       maxCacheMissesBeforeReload <- CirisReader.readOptional[Int](
-        List("kcl", "lease", "max", "cache", "misses", "before", "reload")
+        List("kcl", "lease", "max", "cache", "misses", "before", "reload"),
+        prefix
       )
       listShardsCacheAllowedAge <- CirisReader
         .readOptional[Duration](
-          List("kcl", "lease", "list", "shards", "cache", "allowed", "age")
+          List("kcl", "lease", "list", "shards", "cache", "allowed", "age"),
+          prefix
         )
         .map(_.map(_.toSeconds))
       cacheMissWarningModulus <- CirisReader.readOptional[Int](
-        List("kcl", "lease", "cache", "miss", "warning", "modulus")
+        List("kcl", "lease", "cache", "miss", "warning", "modulus"),
+        prefix
       )
     } yield new LeaseManagementConfig(
       tableName,
@@ -1072,9 +1102,26 @@ object KCLCiris {
           prefix
         )
         .map(_.asJava)
+      usePollingConfigIdleTimeValue <- CirisReader.readOptional[Boolean](
+        List(
+          "kcl",
+          "retrieval",
+          "polling",
+          "use",
+          "polling",
+          "config",
+          "idle",
+          "time",
+          "value"
+        ),
+        prefix
+      )
     } yield new PollingConfig(streamName, kinesisClient)
       .maybeTransform(maxRecords)(_.maxRecords(_))
       .maybeTransform(idleTimeBetweenReads)(_.idleTimeBetweenReadsInMillis(_))
+      .maybeTransform(usePollingConfigIdleTimeValue)(
+        _.usePollingConfigIdleTimeValue(_)
+      )
       .retryGetRecordsInSeconds(retryGetRecords)
       .maxGetRecordsThreadPool(maxGetRecordsThreadPool)
 
