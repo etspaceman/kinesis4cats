@@ -37,13 +37,25 @@ abstract class KPLProducerSpec(implicit LE: KPLProducer.LogEncoders)
     LocalstackKPLProducer.producerWithStream(streamName, shardCount)
   )
 
-  fixture("test1", 1).test("It should produce successfully") { producer =>
+  fixture("test1", 1).test("It should run commands successfully") { producer =>
     val testData = Arbitrary.arbitrary[TestData].one
     val testDataBB = ByteBuffer.wrap(testData.asJson.noSpaces.getBytes())
 
-    producer.put(new UserRecord("test1", "partitionKey", testDataBB)).map {
-      result =>
-        assert(result.isSuccessful())
-    }
+    for {
+      _ <- producer
+        .put(new UserRecord("test1", "partitionKey", testDataBB))
+        .map { result =>
+          assert(result.isSuccessful())
+        }
+      _ <- producer.put("test1", "partitionKey", None, testDataBB)
+      _ <- producer.getOutstandingRecordsCount()
+      _ <- producer.getOldestRecordTimeInMillis()
+      _ <- producer.getMetrics()
+      _ <- producer.getMetrics(1)
+      _ <- producer.getMetrics("foo")
+      _ <- producer.getMetrics("foo", 1)
+      _ <- producer.flush("test1")
+      _ <- producer.flush()
+    } yield ()
   }
 }

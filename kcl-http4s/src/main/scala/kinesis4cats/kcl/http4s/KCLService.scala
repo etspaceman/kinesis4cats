@@ -30,6 +30,8 @@ import software.amazon.kinesis.coordinator.WorkerStateChangeListener.WorkerState
 
 import kinesis4cats.kcl.http4s.generated.{Response, ServiceNotReadyError}
 
+// $COVERAGE-OFF$
+
 /** A simple [[https://http4s.org/ Http4s]] service for KCL users. Often times
   * users need to deploy their consumers as a part of an orchestration service,
   * such as Kubernetes. Those orchestration services typically depend on some
@@ -129,3 +131,4 @@ object KCLService {
         .build
     }
 }
+// $COVERAGE-ON$

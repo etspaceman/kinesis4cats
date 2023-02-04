@@ -189,7 +189,8 @@ class KPLProducer[F[_]] private (
             stream,
             partitionKey,
             explicitHashKey.orNull,
-            data
+            data,
+            schema
           )
         )
       )
