@@ -26,6 +26,7 @@ import kinesis4cats.ciris.CirisReader
 import kinesis4cats.kcl.localstack.LocalstackKCLConsumer
 import kinesis4cats.kcl.logging.instances.show._
 
+// $COVERAGE-OFF$
 object TestKCLService extends ResourceApp.Forever {
   override def run(args: List[String]): Resource[IO, Unit] = for {
     streamName <- CirisReader.read[String](List("test", "stream")).resource[IO]
@@ -38,3 +39,4 @@ object TestKCLService extends ResourceApp.Forever {
   } yield ()
 
 }
+// $COVERAGE-ON$
