@@ -137,7 +137,7 @@ class KPLProducer[F[_]] private (
       )
     } yield result
   }
-  // $COVERAGE-OFF$
+
   /** Put data onto a Kinesis stream
     *
     * @param stream
@@ -200,7 +200,6 @@ class KPLProducer[F[_]] private (
       )
     } yield result
   }
-  // $COVERAGE-ON$
 
   /** Get the number or records pending production.
     *
