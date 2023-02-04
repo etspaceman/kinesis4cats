@@ -240,11 +240,7 @@ object KCLConsumerFS2 {
       lifecycleConfig: LifecycleConfig,
       metricsConfig: MetricsConfig,
       retrievalConfig: RetrievalConfig,
-      queueSize: Int = 100,
-      commitMaxChunk: Int = 1000,
-      commitMaxWait: FiniteDuration = 10.seconds,
-      commitMaxRetries: Int = 5,
-      commitRetryInterval: FiniteDuration = 0.seconds,
+      fs2Config: FS2Config = FS2Config.default,
       processConfig: KCLConsumer.ProcessConfig = defaultProcessConfig
   )(implicit
       F: Async[F],
@@ -258,11 +254,7 @@ object KCLConsumerFS2 {
       lifecycleConfig,
       metricsConfig,
       retrievalConfig,
-      queueSize,
-      commitMaxChunk,
-      commitMaxWait,
-      commitMaxRetries,
-      commitRetryInterval,
+      fs2Config,
       processConfig
     )
     .map(new KCLConsumerFS2[F](_))
@@ -318,11 +310,7 @@ object KCLConsumerFS2 {
       cloudWatchClient: CloudWatchAsyncClient,
       streamName: String,
       appName: String,
-      queueSize: Int = 100,
-      commitMaxChunk: Int = 1000,
-      commitMaxWait: FiniteDuration = 10.seconds,
-      commitMaxRetries: Int = 5,
-      commitRetryInterval: FiniteDuration = 0.seconds,
+      fs2Config: FS2Config = FS2Config.default,
       workerId: String = UUID.randomUUID.toString,
       processConfig: KCLConsumer.ProcessConfig = defaultProcessConfig
   )(
@@ -341,11 +329,7 @@ object KCLConsumerFS2 {
       cloudWatchClient,
       streamName,
       appName,
-      queueSize,
-      commitMaxChunk,
-      commitMaxWait,
-      commitMaxRetries,
-      commitRetryInterval,
+      fs2Config,
       workerId,
       processConfig
     )(tfn)
@@ -405,11 +389,7 @@ object KCLConsumerFS2 {
       cloudWatchClient: CloudWatchAsyncClient,
       tracker: MultiStreamTracker,
       appName: String,
-      queueSize: Int = 100,
-      commitMaxChunk: Int = 1000,
-      commitMaxWait: FiniteDuration = 10.seconds,
-      commitMaxRetries: Int = 5,
-      commitRetryInterval: FiniteDuration = 0.seconds,
+      fs2Config: FS2Config = FS2Config.default,
       workerId: String = UUID.randomUUID.toString,
       processConfig: KCLConsumer.ProcessConfig = defaultProcessConfig
   )(
@@ -428,11 +408,7 @@ object KCLConsumerFS2 {
       cloudWatchClient,
       tracker,
       appName,
-      queueSize,
-      commitMaxChunk,
-      commitMaxWait,
-      commitMaxRetries,
-      commitRetryInterval,
+      fs2Config,
       workerId,
       processConfig
     )(tfn)
@@ -460,10 +436,7 @@ object KCLConsumerFS2 {
   final case class Config[F[_]](
       underlying: kinesis4cats.kcl.KCLConsumer.Config[F],
       queue: Queue[F, CommittableRecord[F]],
-      maxCommitChunk: Int,
-      maxCommitWait: FiniteDuration,
-      maxCommitRetries: Int,
-      maxCommitRetryDuration: FiniteDuration
+      fs2Config: FS2Config
   )
 
   object Config {
@@ -514,17 +487,15 @@ object KCLConsumerFS2 {
         lifecycleConfig: LifecycleConfig,
         metricsConfig: MetricsConfig,
         retrievalConfig: RetrievalConfig,
-        queueSize: Int = 100,
-        commitMaxChunk: Int = 1000,
-        commitMaxWait: FiniteDuration = 10.seconds,
-        commitMaxRetries: Int = 5,
-        commitRetryInterval: FiniteDuration = 0.seconds,
+        fs2Config: FS2Config,
         processConfig: KCLConsumer.ProcessConfig = defaultProcessConfig
     )(implicit
         F: Async[F],
         encoders: RecordProcessor.LogEncoders
     ): Resource[F, Config[F]] = for {
-      queue <- Queue.bounded[F, CommittableRecord[F]](queueSize).toResource
+      queue <- Queue
+        .bounded[F, CommittableRecord[F]](fs2Config.queueSize)
+        .toResource
       underlying <- kinesis4cats.kcl.KCLConsumer.Config
         .create(
           checkpointConfig,
@@ -535,14 +506,7 @@ object KCLConsumerFS2 {
           retrievalConfig,
           processConfig
         )(callback(queue))
-    } yield Config(
-      underlying,
-      queue,
-      commitMaxChunk,
-      commitMaxWait,
-      commitMaxRetries,
-      commitRetryInterval
-    )
+    } yield Config(underlying, queue, fs2Config)
 
     /** Constructor for the
       * [[kinesis4cats.kcl.fs2.KCLConsumerFS2.Config KCLConsumerFS2.Config]]
@@ -563,18 +527,6 @@ object KCLConsumerFS2 {
       * @param appName
       *   Name of the application. Usually also the dynamo table name for
       *   checkpoints
-      * @param queueSize
-      *   Size of the underlying queue for the FS2 stream. If the queue fills
-      *   up, backpressure on the processors will occur. Default 100
-      * @param commitMaxChunk
-      *   Max records to be received in the commitRecords [[fs2.Pipe Pipe]]
-      *   before a commit is run. Default is 1000
-      * @param commitMaxWait
-      *   Max duration to wait in commitRecords [[fs2.Pipe Pipe]] before a
-      *   commit is run. Default is 10 seconds
-      * @param commitMaxRetries
-      *   Max number of retries for a commit operation
-      * @param commitRetryInterval
       * @param workerId
       *   Unique identifier for a single instance of this consumer. Default is a
       *   random UUID.
@@ -599,11 +551,7 @@ object KCLConsumerFS2 {
         cloudWatchClient: CloudWatchAsyncClient,
         streamName: String,
         appName: String,
-        queueSize: Int = 100,
-        commitMaxChunk: Int = 1000,
-        commitMaxWait: FiniteDuration = 10.seconds,
-        commitMaxRetries: Int = 5,
-        commitRetryInterval: FiniteDuration = 0.seconds,
+        fs2Config: KCLConsumerFS2.FS2Config = KCLConsumerFS2.FS2Config.default,
         workerId: String = UUID.randomUUID.toString,
         processConfig: KCLConsumer.ProcessConfig = defaultProcessConfig
     )(
@@ -615,7 +563,9 @@ object KCLConsumerFS2 {
         F: Async[F],
         encoders: RecordProcessor.LogEncoders
     ): Resource[F, Config[F]] = for {
-      queue <- Queue.bounded[F, CommittableRecord[F]](queueSize).toResource
+      queue <- Queue
+        .bounded[F, CommittableRecord[F]](fs2Config.queueSize)
+        .toResource
       underlying <- kinesis4cats.kcl.KCLConsumer.Config
         .configsBuilder(
           kinesisClient,
@@ -626,14 +576,7 @@ object KCLConsumerFS2 {
           workerId,
           processConfig
         )(callback(queue))(tfn)
-    } yield Config(
-      underlying,
-      queue,
-      commitMaxChunk,
-      commitMaxWait,
-      commitMaxRetries,
-      commitRetryInterval
-    )
+    } yield Config(underlying, queue, fs2Config)
 
     /** Constructor for the
       * [[kinesis4cats.kcl.fs2.KCLConsumerFS2.Config KCLConsumerFS2.Config]]
@@ -693,11 +636,7 @@ object KCLConsumerFS2 {
         cloudWatchClient: CloudWatchAsyncClient,
         tracker: MultiStreamTracker,
         appName: String,
-        queueSize: Int = 100,
-        commitMaxChunk: Int = 1000,
-        commitMaxWait: FiniteDuration = 10.seconds,
-        commitMaxRetries: Int = 5,
-        commitRetryInterval: FiniteDuration = 0.seconds,
+        fs2Config: FS2Config,
         workerId: String = UUID.randomUUID.toString,
         processConfig: KCLConsumer.ProcessConfig = defaultProcessConfig
     )(
@@ -709,7 +648,9 @@ object KCLConsumerFS2 {
         F: Async[F],
         encoders: RecordProcessor.LogEncoders
     ): Resource[F, Config[F]] = for {
-      queue <- Queue.bounded[F, CommittableRecord[F]](queueSize).toResource
+      queue <- Queue
+        .bounded[F, CommittableRecord[F]](fs2Config.queueSize)
+        .toResource
       underlying <- kinesis4cats.kcl.KCLConsumer.Config
         .configsBuilderMultiStream(
           kinesisClient,
@@ -720,13 +661,40 @@ object KCLConsumerFS2 {
           workerId,
           processConfig
         )(callback(queue))(tfn)
-    } yield Config(
-      underlying,
-      queue,
-      commitMaxChunk,
-      commitMaxWait,
-      commitMaxRetries,
-      commitRetryInterval
+    } yield Config(underlying, queue, fs2Config)
+  }
+
+  /** Configuration for the FS2 implementation
+    *
+    * @param queueSize
+    *   Size of the underlying queue for the FS2 stream. If the queue fills up,
+    *   backpressure on the processors will occur. Default 100
+    * @param commitMaxChunk
+    *   Max records to be received in the commitRecords [[fs2.Pipe Pipe]] before
+    *   a commit is run. Default is 1000
+    * @param commitMaxWait
+    *   Max duration to wait in commitRecords [[fs2.Pipe Pipe]] before a commit
+    *   is run. Default is 10 seconds
+    * @param commitMaxRetries
+    *   Max number of retries for a commit operation
+    * @param commitRetryInterval
+    *   Interval to wait between commit retries
+    */
+  final case class FS2Config(
+      queueSize: Int,
+      commitMaxChunk: Int,
+      commitMaxWait: FiniteDuration,
+      commitMaxRetries: Int,
+      commitRetryInterval: FiniteDuration
+  )
+
+  object FS2Config {
+    val default = FS2Config(
+      100,
+      1000,
+      10.seconds,
+      5,
+      0.seconds
     )
   }
 
@@ -769,15 +737,18 @@ object KCLConsumerFS2 {
       F: Async[F],
       P: Parallel[F]
   ): Pipe[F, CommittableRecord[F], CommittableRecord[F]] =
-    _.groupWithin(config.maxCommitChunk, config.maxCommitWait)
+    _.groupWithin(
+      config.fs2Config.commitMaxChunk,
+      config.fs2Config.commitMaxWait
+    )
       .evalTap(chunk =>
         chunk.toList.groupBy(_.shardId).toList.parTraverse_ {
           case (_, records) =>
             val max = records.max
             max.canCheckpoint.ifM(
               retryingOnAllErrors(
-                limitRetries(config.maxCommitRetries)
-                  .join(constantDelay(config.maxCommitRetryDuration)),
+                limitRetries(config.fs2Config.commitMaxRetries)
+                  .join(constantDelay(config.fs2Config.commitRetryInterval)),
                 noop[F, Throwable]
               )(max.checkpoint),
               F.unit

@@ -21,6 +21,7 @@ import scala.concurrent.duration._
 
 import java.util.concurrent.ExecutorService
 
+import _root_.ciris._
 import cats.Parallel
 import cats.effect.{Async, Resource}
 import com.amazonaws.services.schemaregistry.deserializers.GlueSchemaRegistryDeserializer
@@ -213,37 +214,6 @@ object KCLCirisFS2 {
       F: Async[F],
       LE: RecordProcessor.LogEncoders
   ): Resource[F, KCLConsumerFS2.Config[F]] = for {
-    queueSize <- CirisReader
-      .readDefaulted[Int](List("kcl", "fs2", "queue", "size"), 100, prefix)
-      .resource[F]
-    commitMaxChunk <- CirisReader
-      .readDefaulted[Int](
-        List("kcl", "fs2", "commit", "max", "chunk"),
-        1000,
-        prefix
-      )
-      .resource[F]
-    commitMaxWait <- CirisReader
-      .readDefaulted[FiniteDuration](
-        List("kcl", "fs2", "commit", "max", "wait"),
-        10.seconds,
-        prefix
-      )
-      .resource[F]
-    commitMaxRetries <- CirisReader
-      .readDefaulted[Int](
-        List("kcl", "fs2", "commit", "max", "retries"),
-        5,
-        prefix
-      )
-      .resource[F]
-    commitRetryInterval <- CirisReader
-      .readDefaulted[FiniteDuration](
-        List("kcl", "fs2", "commit", "retry", "interval"),
-        0.seconds,
-        prefix
-      )
-      .resource[F]
     autoCommit <- CirisReader
       .readDefaulted[Boolean](
         List("kcl", "processor", "auto", "commit"),
@@ -251,6 +221,7 @@ object KCLCirisFS2 {
         prefix
       )
       .resource[F]
+    fs2Config <- readFS2Config(prefix).resource[F]
     checkpointConfig <- KCLCiris.Checkpoint.resource[F]
     coordinatorConfig <- KCLCiris.Coordinator.resource[F](
       prefix,
@@ -282,15 +253,48 @@ object KCLCirisFS2 {
       lifecycleConfig,
       metricsConfig,
       retrievalConfig,
-      queueSize,
-      commitMaxChunk,
-      commitMaxWait,
-      commitMaxRetries,
-      commitRetryInterval,
+      fs2Config,
       processConfig.copy(recordProcessorConfig =
         processConfig.recordProcessorConfig.copy(autoCommit = autoCommit)
       )
     )
 
   } yield config
+
+  def readFS2Config(
+      prefix: Option[String] = None
+  ): ConfigValue[Effect, KCLConsumerFS2.FS2Config] = for {
+    queueSize <- CirisReader
+      .readDefaulted[Int](List("kcl", "fs2", "queue", "size"), 100, prefix)
+    commitMaxChunk <- CirisReader
+      .readDefaulted[Int](
+        List("kcl", "fs2", "commit", "max", "chunk"),
+        1000,
+        prefix
+      )
+    commitMaxWait <- CirisReader
+      .readDefaulted[FiniteDuration](
+        List("kcl", "fs2", "commit", "max", "wait"),
+        10.seconds,
+        prefix
+      )
+    commitMaxRetries <- CirisReader
+      .readDefaulted[Int](
+        List("kcl", "fs2", "commit", "max", "retries"),
+        5,
+        prefix
+      )
+    commitRetryInterval <- CirisReader
+      .readDefaulted[FiniteDuration](
+        List("kcl", "fs2", "commit", "retry", "interval"),
+        0.seconds,
+        prefix
+      )
+  } yield KCLConsumerFS2.FS2Config(
+    queueSize,
+    commitMaxChunk,
+    commitMaxWait,
+    commitMaxRetries,
+    commitRetryInterval
+  )
 }
