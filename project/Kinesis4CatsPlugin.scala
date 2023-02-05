@@ -53,6 +53,7 @@ object Kinesis4CatsPlugin extends AutoPlugin {
     licenses := Seq(License.Apache2),
     developers := List(tlGitHubDev("etspaceman", "Eric Meisel")),
     coverageScalacPluginVersion := "2.0.7",
+    crossScalaVersions := Seq(Scala213, Scala212, Scala3),
     githubWorkflowBuild := {
       val style = (tlCiHeaderCheck.value, tlCiScalafmtCheck.value) match {
         case (true, true) => // headers + formatting
