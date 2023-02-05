@@ -185,6 +185,17 @@ object Kinesis4CatsPlugin extends AutoPlugin {
     Test / testOptions ++= {
       List(Tests.Argument(MUnitFramework, "+l"))
     },
+    scalacOptions ++= {
+      if (tlIsScala3.value)
+        Seq(
+          "-language:implicitConversions",
+          "-Ykind-projector",
+          "-source:3.0-migration"
+        )
+      else
+        Seq("-language:_")
+    },
+    scalacOptions -= "-Ykind-projector:underscores",
     ThisBuild / scalafixDependencies += OrganizeImports,
     ThisBuild / semanticdbEnabled := true,
     semanticdbVersion := scalafixSemanticdb.revision,
