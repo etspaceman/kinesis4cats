@@ -77,6 +77,12 @@ object LibraryDependencies {
     val http4sVersion = "0.23.18"
     val emberServer = "org.http4s" %% "http4s-ember-server" % http4sVersion
     val emberClient = "org.http4s" %% "http4s-ember-client" % http4sVersion
+    val circe = "org.http4s" %% "http4s-circe" % http4sVersion
+  }
+
+  object Smithy {
+    val smithyVersion = "1.27.2"
+    val rulesEngine = "software.amazon.smithy" % "smithy-rules-engine" % smithyVersion
   }
 
   object Smithy4s {
@@ -86,5 +92,7 @@ object LibraryDependencies {
       "com.disneystreaming.smithy4s" %% "smithy4s-http4s" % version
     def http4sSwagger(version: String) =
       "com.disneystreaming.smithy4s" %% "smithy4s-http4s-swagger" % version
+    def http4sAws(version: String) = 
+      "com.disneystreaming.smithy4s"  %% "smithy4s-aws-http4s" % version
   }
 }

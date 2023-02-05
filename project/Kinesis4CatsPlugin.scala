@@ -5,6 +5,7 @@ import org.typelevel.sbt._
 import org.typelevel.sbt.gha._
 import LibraryDependencies._
 import org.scalafmt.sbt.ScalafmtPlugin
+import sbt.internal.ProjectMatrix
 
 object Kinesis4CatsPlugin extends AutoPlugin {
   override def trigger = allRequirements
@@ -48,9 +49,6 @@ object Kinesis4CatsPlugin extends AutoPlugin {
     tlBaseVersion := "0.0",
     organization := "io.github.etspaceman",
     organizationName := "etspaceman",
-    scalaVersion := Scala213,
-    crossScalaVersions := Seq(Scala213, Scala212, Scala3),
-    githubWorkflowScalaVersions := crossScalaVersions.value,
     startYear := Some(2023),
     licenses := Seq(License.Apache2),
     developers := List(tlGitHubDev("etspaceman", "Eric Meisel")),
@@ -255,6 +253,9 @@ object Kinesis4CatsPluginKeys {
   val Scala213 = "2.13.10"
   val Scala3 = "3.2.2"
 
+  val allScalaVersions = List(Scala213, Scala3, Scala212)
+  val last2ScalaVersions = List(Scala213, Scala3)
+
   val MUnitFramework = new TestFramework("munit.Framework")
 
   import scalafix.sbt.ScalafixPlugin.autoImport._
@@ -262,6 +263,37 @@ object Kinesis4CatsPluginKeys {
 
   val IT = config("it").extend(Test)
   val FunctionalTest = config("fun").extend(Test)
+
+  final implicit class Kinesi4catsProjectMatrixOps(private val p: ProjectMatrix)
+      extends AnyVal {
+    def enableIntegrationTests = p
+      .configs(IT)
+      .settings(inConfig(IT) {
+        ScalafmtPlugin.scalafmtConfigSettings ++
+          scalafixConfigSettings(IT) ++
+          BloopSettings.default ++
+          Defaults.testSettings ++
+          headerSettings(IT) ++
+          Seq(
+            parallelExecution := false,
+            javaOptions += "-Dcom.amazonaws.sdk.disableCertChecking=true"
+          )
+      })
+
+    def enableFunctionalTests = p
+      .configs(FunctionalTest)
+      .settings(inConfig(FunctionalTest) {
+        ScalafmtPlugin.scalafmtConfigSettings ++
+          scalafixConfigSettings(FunctionalTest) ++
+          BloopSettings.default ++
+          Defaults.testSettings ++
+          headerSettings(FunctionalTest) ++
+          Seq(
+            parallelExecution := false,
+            javaOptions += "-Dcom.amazonaws.sdk.disableCertChecking=true"
+          )
+      })
+  }
 
   final implicit class Kinesi4catsProjectOps(private val p: Project)
       extends AnyVal {
