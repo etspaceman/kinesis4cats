@@ -301,7 +301,6 @@ lazy val `smithy4s-client` = projectMatrix
   .enablePlugins(Smithy4sCodegenPlugin)
   .settings(
     description := "Cats tooling for the Smithy4s Kinesis Client",
-    crossScalaVersions := Seq(Scala213, Scala3),
     libraryDependencies ++= Seq(
       S4S.http4sAws(smithy4sVersion.value),
       Log4Cats.slf4j,
@@ -314,70 +313,36 @@ lazy val `smithy4s-client` = projectMatrix
   )
   .jvmPlatform(last2ScalaVersions)
   .enableIntegrationTests
-
-lazy val `smithy4s-client-2-13` =
-  `smithy4s-client`.jvm(Scala213).dependsOn(shared.jvm(Scala213))
-
-lazy val `smithy4s-client-3` =
-  `smithy4s-client`.jvm(Scala3).dependsOn(shared.jvm(Scala3))
+  .dependsOn(shared)
 
 lazy val `smithy4s-client-logging-circe` = projectMatrix
   .enablePlugins(Smithy4sCodegenPlugin)
   .settings(
     description := "JSON structured logging instances for the Smithy4s Kinesis Client, via Circe",
-    crossScalaVersions := Seq(Scala213, Scala3),
     libraryDependencies ++= Seq(Http4s.circe)
   )
   .jvmPlatform(last2ScalaVersions)
   .enableIntegrationTests
-
-lazy val `smithy4s-client-logging-circe-2-13` = `smithy4s-client-logging-circe`
-  .jvm(Scala213)
-  .dependsOn(`shared-circe`.jvm(Scala213), `smithy4s-client-2-13`)
-
-lazy val `smithy4s-client-logging-circe-3` = `smithy4s-client-logging-circe`
-  .jvm(Scala3)
-  .dependsOn(`shared-circe`.jvm(Scala3), `smithy4s-client-3`)
+  .dependsOn(`shared-circe`, `smithy4s-client`)
 
 lazy val `smithy4s-client-localstack` = projectMatrix
   .settings(
-    description := "A test-kit for working with Kinesis and Localstack, via the Smithy4s Client project",
-    crossScalaVersions := Seq(Scala213, Scala3)
+    description := "A test-kit for working with Kinesis and Localstack, via the Smithy4s Client project"
   )
   .jvmPlatform(last2ScalaVersions)
-
-lazy val `smithy4s-client-localstack-2-13` =
-  `smithy4s-client-localstack`
-    .jvm(Scala213)
-    .dependsOn(`shared-localstack`.jvm(Scala213), `smithy4s-client-2-13`)
-
-lazy val `smithy4s-client-localstack-3` =
-  `smithy4s-client-localstack`
-    .jvm(Scala3)
-    .dependsOn(`shared-localstack`.jvm(Scala3), `smithy4s-client-3`)
+  .dependsOn(`shared-localstack`, `smithy4s-client`)
 
 lazy val `smithy4s-client-tests` = projectMatrix
   .enablePlugins(NoPublishPlugin)
   .settings(
     description := "Integration Tests for the Smithy4s Kinesis Client",
-    crossScalaVersions := Seq(Scala213, Scala3),
     libraryDependencies ++= Seq(Http4s.emberClient % IT)
   )
   .jvmPlatform(last2ScalaVersions)
   .enableIntegrationTests
-
-lazy val `smithy4s-client-tests-2-13` = `smithy4s-client-tests`
-  .jvm(Scala213)
   .dependsOn(
-    `smithy4s-client-localstack-2-13` % IT,
-    `smithy4s-client-logging-circe-2-13` % IT
-  )
-
-lazy val `smithy4s-client-tests-3` = `smithy4s-client-tests`
-  .jvm(Scala3)
-  .dependsOn(
-    `smithy4s-client-localstack-3` % IT,
-    `smithy4s-client-logging-circe-3` % IT
+    `smithy4s-client-localstack` % IT,
+    `smithy4s-client-logging-circe` % IT
   )
 
 lazy val docs = projectMatrix

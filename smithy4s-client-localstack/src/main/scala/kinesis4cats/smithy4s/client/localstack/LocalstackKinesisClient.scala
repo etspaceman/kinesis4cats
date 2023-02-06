@@ -30,10 +30,7 @@ import smithy4s.aws.kernel.AwsRegion
 
 import kinesis4cats.localstack.LocalstackConfig
 import kinesis4cats.smithy4s.client.KinesisClient
-import kinesis4cats.smithy4s.client.middleware.{
-  LocalstackProxy,
-  RequestResponseLogger
-}
+import kinesis4cats.smithy4s.client.middleware._
 
 object LocalstackKinesisClient {
   private def localstackEnv[F[_]](client: Client[F], region: AwsRegion)(implicit
