@@ -186,6 +186,7 @@ object Kinesis4CatsPlugin extends AutoPlugin {
     Test / testOptions ++= {
       List(Tests.Argument(MUnitFramework, "+l"))
     },
+    // Workaround for https://github.com/typelevel/sbt-typelevel/issues/464
     scalacOptions ++= {
       if (tlIsScala3.value)
         Seq(
