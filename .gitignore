@@ -9,3 +9,4 @@ docker/image/lib/*.jar
 **/metals.sbt
 .smithy.lsp.log
 !/**/.gitkeep
+.sbt/
