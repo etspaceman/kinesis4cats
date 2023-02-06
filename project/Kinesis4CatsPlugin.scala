@@ -277,7 +277,7 @@ object Kinesis4CatsPluginKeys {
   val IT = config("it").extend(Test)
   val FunctionalTest = config("fun").extend(Test)
 
-  final implicit class Kinesi4catsProjectMatrixOps(private val p: ProjectMatrix)
+  final implicit class Kinesi4CatsProjectMatrixOps(private val p: ProjectMatrix)
       extends AnyVal {
     def enableIntegrationTests = p
       .configs(IT)
@@ -308,7 +308,7 @@ object Kinesis4CatsPluginKeys {
       })
   }
 
-  final implicit class Kinesi4catsProjectOps(private val p: Project)
+  final implicit class Kinesis4CatsProjectOps(private val p: Project)
       extends AnyVal {
     def enableIntegrationTests = p
       .configs(IT)
