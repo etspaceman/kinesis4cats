@@ -28,6 +28,7 @@ import com.amazonaws.kinesis._
 import kinesis4cats.smithy4s.client.localstack.LocalstackKinesisClient
 import kinesis4cats.localstack._
 import kinesis4cats.localstack.syntax.scalacheck._
+import kinesis4cats.logging.instances.show._
 import kinesis4cats.models.StreamArn
 import org.http4s.ember.client.EmberClientBuilder
 import smithy4s.aws.AwsRegion
@@ -40,7 +41,10 @@ abstract class KinesisClientSpec(implicit LE: KinesisClient.LogEncoders[IO])
   def fixture: SyncIO[FunFixture[KinesisClient[IO]]] =
     ResourceFixture(
       for {
-        underlying <- EmberClientBuilder.default[IO].build
+        underlying <- EmberClientBuilder
+          .default[IO]
+          .withoutCheckEndpointAuthentication
+          .build
         client <- LocalstackKinesisClient.clientResource(
           underlying,
           region

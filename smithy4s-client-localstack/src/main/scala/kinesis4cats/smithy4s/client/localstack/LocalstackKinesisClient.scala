@@ -29,6 +29,7 @@ import smithy4s.aws.http4s._
 import smithy4s.aws.kernel.AwsRegion
 
 import kinesis4cats.localstack.LocalstackConfig
+import kinesis4cats.logging.LogEncoder
 import kinesis4cats.smithy4s.client.KinesisClient
 import kinesis4cats.smithy4s.client.middleware._
 
@@ -48,11 +49,12 @@ object LocalstackKinesisClient {
       config: LocalstackConfig
   )(implicit
       F: Async[F],
-      LE: KinesisClient.LogEncoders[F]
+      LE: KinesisClient.LogEncoders[F],
+      LELC: LogEncoder[LocalstackConfig]
   ): Resource[F, KinesisClient[F]] = for {
     logger <- Slf4jLogger.create[F].toResource
-    clnt = RequestResponseLogger(logger)(
-      LocalstackProxy(config)(RequestResponseLogger(logger)(client))
+    clnt = LocalstackProxy[F](config, logger)(
+      RequestResponseLogger(logger)(client)
     )
     env = localstackEnv(clnt, region)
     awsClient <- AwsClient(Kinesis.service, env)
@@ -64,11 +66,12 @@ object LocalstackKinesisClient {
       prefix: Option[String] = None
   )(implicit
       F: Async[F],
-      LE: KinesisClient.LogEncoders[F]
+      LE: KinesisClient.LogEncoders[F],
+      LELC: LogEncoder[LocalstackConfig]
   ): Resource[F, KinesisClient[F]] = for {
     logger <- Slf4jLogger.create[F].toResource
-    clnt = RequestResponseLogger(logger)(
-      LocalstackProxy(prefix)(RequestResponseLogger(logger)(client))
+    clnt = LocalstackProxy[F](logger, prefix)(
+      RequestResponseLogger(logger)(client)
     )
     env = localstackEnv(clnt, region)
     awsClient <- AwsClient(Kinesis.service, env)

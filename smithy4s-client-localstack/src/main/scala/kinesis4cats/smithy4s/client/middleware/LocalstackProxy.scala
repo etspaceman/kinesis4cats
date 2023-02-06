@@ -18,40 +18,72 @@ package kinesis4cats.smithy4s.client
 package middleware
 
 import cats.effect.Async
+import cats.effect.syntax.all._
 import cats.syntax.all._
 import org.http4s.client.Client
-import org.http4s.{Request, Uri}
+import org.http4s.{Header, Request, Uri}
+import org.typelevel.ci._
+import org.typelevel.log4cats.StructuredLogger
 
 import kinesis4cats.localstack.LocalstackConfig
+import kinesis4cats.logging.{LogContext, LogEncoder}
 
 object LocalstackProxy {
+
   private def proxyUri[F[_]](
       config: LocalstackConfig,
-      req: Request[F]
-  ): Request[F] =
-    req.withUri(
-      req.uri.copy(authority =
-        req.uri.authority.map(x =>
-          x.copy(
-            host = Uri.RegName(config.host),
-            port = config.servicePort.some
+      req: Request[F],
+      logger: StructuredLogger[F]
+  )(implicit
+      F: Async[F],
+      LE: KinesisClient.LogEncoders[F],
+      LELC: LogEncoder[LocalstackConfig]
+  ): F[Request[F]] = {
+    import LE._
+    val newReq = req
+      .withUri(
+        req.uri.copy(authority =
+          req.uri.authority.map(x =>
+            x.copy(
+              host = Uri.RegName(config.host),
+              port = config.servicePort.some
+            )
           )
         )
       )
-    )
+      .putHeaders(Header.Raw(ci"host", config.host))
+    val ctx = LogContext()
+      .addEncoded("localstackConfig", config)
+      .addEncoded("originalRequest", req)
+      .addEncoded("newRequest", newReq)
 
-  def apply[F[_]](config: LocalstackConfig)(client: Client[F])(implicit
-      F: Async[F]
-  ): Client[F] = Client { req =>
-    client.run(proxyUri(config, req))
+    logger.debug(ctx.context)("Proxying request").as(newReq)
   }
 
-  def apply[F[_]](prefix: Option[String] = None)(client: Client[F])(implicit
-      F: Async[F]
+  def apply[F[_]](config: LocalstackConfig, logger: StructuredLogger[F])(
+      client: Client[F]
+  )(implicit
+      F: Async[F],
+      LE: KinesisClient.LogEncoders[F],
+      LELC: LogEncoder[LocalstackConfig]
+  ): Client[F] = Client { req =>
+    for {
+      proxied <- proxyUri(config, req, logger).toResource
+      res <- client.run(proxied)
+    } yield res
+  }
+
+  def apply[F[_]](logger: StructuredLogger[F], prefix: Option[String] = None)(
+      client: Client[F]
+  )(implicit
+      F: Async[F],
+      LE: KinesisClient.LogEncoders[F],
+      LELC: LogEncoder[LocalstackConfig]
   ): Client[F] = Client { req =>
     for {
       config <- LocalstackConfig.resource[F](prefix)
-      res <- client.run(proxyUri(config, req))
+      proxied <- proxyUri(config, req, logger).toResource
+      res <- client.run(proxied)
     } yield res
   }
 }

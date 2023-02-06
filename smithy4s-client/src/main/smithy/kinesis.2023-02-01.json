@@ -5069,7 +5069,7 @@
         },
         "traits": {
           "smithy.api#length": {
-            "min": 1,
+            "min": 0,
             "max": 7
           }
         }
@@ -5123,6 +5123,14 @@
         "traits": {
           "smithy.api#range": {
             "min": 1
+          }
+        }
+      },
+      "com.amazonaws.kinesis#FailedRecordCount": {
+        "type": "integer",
+        "traits": {
+          "smithy.api#range": {
+            "min": 0
           }
         }
       },
@@ -5353,7 +5361,7 @@
         "type": "structure",
         "members": {
           "FailedRecordCount": {
-            "target": "com.amazonaws.kinesis#PositiveIntegerObject",
+            "target": "com.amazonaws.kinesis#FailedRecordCount",
             "traits": {
               "smithy.api#documentation": "<p>The number of unsuccessfully processed records in a <code>PutRecords</code>\n            request.</p>"
             }

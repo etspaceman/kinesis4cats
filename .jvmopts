@@ -1,3 +1,4 @@
 -Xmx4G
 -Xss4M
 -XX:+UseG1GC
+-XX:+UseStringDeduplication

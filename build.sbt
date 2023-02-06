@@ -470,7 +470,7 @@ lazy val allProjects = Seq(
   `smithy4s-client-localstack`
 )
 
-lazy val functionalTestProjects = Seq(`kcl-tests`).flatMap(_.jvm.get).toList
+lazy val functionalTestProjects = List(`kcl-tests`).map(_.jvm(Scala213))
 
 lazy val root =
   tlCrossRootProject
