@@ -314,7 +314,12 @@ lazy val `smithy4s-client` = projectMatrix
   )
   .jvmPlatform(last2ScalaVersions)
   .enableIntegrationTests
-  .dependsOn(shared)
+
+lazy val `smithy4s-client-2-13` =
+  `smithy4s-client`.jvm(Scala213).dependsOn(shared.jvm(Scala213))
+
+lazy val `smithy4s-client-3` =
+  `smithy4s-client`.jvm(Scala3).dependsOn(shared.jvm(Scala3))
 
 lazy val `smithy4s-client-logging-circe` = projectMatrix
   .enablePlugins(Smithy4sCodegenPlugin)
@@ -325,7 +330,14 @@ lazy val `smithy4s-client-logging-circe` = projectMatrix
   )
   .jvmPlatform(last2ScalaVersions)
   .enableIntegrationTests
-  .dependsOn(`shared-circe`, `smithy4s-client`)
+
+lazy val `smithy4s-client-logging-circe-2-13` = `smithy4s-client-logging-circe`
+  .jvm(Scala213)
+  .dependsOn(`shared-circe`.jvm(Scala213), `smithy4s-client-2-13`)
+
+lazy val `smithy4s-client-logging-circe-3` = `smithy4s-client-logging-circe`
+  .jvm(Scala3)
+  .dependsOn(`shared-circe`.jvm(Scala3), `smithy4s-client-3`)
 
 lazy val `smithy4s-client-localstack` = projectMatrix
   .settings(
@@ -333,7 +345,16 @@ lazy val `smithy4s-client-localstack` = projectMatrix
     crossScalaVersions := Seq(Scala213, Scala3)
   )
   .jvmPlatform(last2ScalaVersions)
-  .dependsOn(`smithy4s-client`, `shared-localstack`)
+
+lazy val `smithy4s-client-localstack-2-13` =
+  `smithy4s-client-localstack`
+    .jvm(Scala213)
+    .dependsOn(`shared-localstack`.jvm(Scala213), `smithy4s-client-2-13`)
+
+lazy val `smithy4s-client-localstack-3` =
+  `smithy4s-client-localstack`
+    .jvm(Scala3)
+    .dependsOn(`shared-localstack`.jvm(Scala3), `smithy4s-client-3`)
 
 lazy val `smithy4s-client-tests` = projectMatrix
   .enablePlugins(NoPublishPlugin)
@@ -344,37 +365,20 @@ lazy val `smithy4s-client-tests` = projectMatrix
   )
   .jvmPlatform(last2ScalaVersions)
   .enableIntegrationTests
+
+lazy val `smithy4s-client-tests-2-13` = `smithy4s-client-tests`
+  .jvm(Scala213)
   .dependsOn(
-    `smithy4s-client-localstack` % IT,
-    `smithy4s-client-logging-circe` % IT
+    `smithy4s-client-localstack-2-13` % IT,
+    `smithy4s-client-logging-circe-2-13` % IT
   )
 
-lazy val docsProjects = List(
-  compat,
-  shared,
-  `shared-circe`,
-  `shared-ciris`,
-  `shared-localstack`,
-  `aws-v1-localstack`,
-  `aws-v2-localstack`,
-  kcl,
-  `kcl-fs2`,
-  `kcl-http4s`,
-  `kcl-ciris`,
-  `kcl-fs2-ciris`,
-  `kcl-logging-circe`,
-  `kcl-localstack`,
-  kpl,
-  `kpl-ciris`,
-  `kpl-logging-circe`,
-  `kpl-localstack`,
-  `kinesis-client`,
-  `kinesis-client-logging-circe`,
-  `kinesis-client-localstack`,
-  `smithy4s-client`,
-  `smithy4s-client-logging-circe`,
-  `smithy4s-client-localstack`
-).flatMap(_.projectRefs)
+lazy val `smithy4s-client-tests-3` = `smithy4s-client-tests`
+  .jvm(Scala3)
+  .dependsOn(
+    `smithy4s-client-localstack-3` % IT,
+    `smithy4s-client-logging-circe-3` % IT
+  )
 
 lazy val docs = projectMatrix
   .in(file("site"))
@@ -435,10 +439,7 @@ lazy val docs = projectMatrix
     `kpl-localstack`,
     `kinesis-client`,
     `kinesis-client-logging-circe`,
-    `kinesis-client-localstack`,
-    `smithy4s-client`,
-    `smithy4s-client-logging-circe`,
-    `smithy4s-client-localstack`
+    `kinesis-client-localstack`
   )
 
 lazy val unidocs = projectMatrix
@@ -448,7 +449,29 @@ lazy val unidocs = projectMatrix
     name := "kinesis4cats-docs",
     moduleName := name.value,
     ScalaUnidoc / unidoc / unidocProjectFilter := inProjects(
-      docsProjects: _*
+      List(
+        compat,
+        shared,
+        `shared-circe`,
+        `shared-ciris`,
+        `shared-localstack`,
+        `aws-v1-localstack`,
+        `aws-v2-localstack`,
+        kcl,
+        `kcl-fs2`,
+        `kcl-http4s`,
+        `kcl-ciris`,
+        `kcl-fs2-ciris`,
+        `kcl-logging-circe`,
+        `kcl-localstack`,
+        kpl,
+        `kpl-ciris`,
+        `kpl-logging-circe`,
+        `kpl-localstack`,
+        `kinesis-client`,
+        `kinesis-client-logging-circe`,
+        `kinesis-client-localstack`
+      ).flatMap(_.projectRefs): _*
     )
   )
 

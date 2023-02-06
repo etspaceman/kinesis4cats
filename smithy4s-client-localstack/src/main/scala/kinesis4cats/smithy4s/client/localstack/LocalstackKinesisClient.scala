@@ -1,20 +1,39 @@
+/*
+ * Copyright 2023-2023 etspaceman
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package kinesis4cats.smithy4s.client
 package localstack
 
-import org.http4s.client.Client
-import smithy4s.aws.kernel.AwsRegion
 import cats.effect.Async
-import kinesis4cats.smithy4s.client.KinesisClient
 import cats.effect.kernel.Resource
 import cats.effect.syntax.all._
-import org.typelevel.log4cats.slf4j.Slf4jLogger
-import smithy4s.aws.http4s._
-import com.amazonaws.kinesis._
-import kinesis4cats.smithy4s.client.middleware.RequestResponseLogger
-import kinesis4cats.smithy4s.client.middleware.LocalstackProxy
-import kinesis4cats.localstack.LocalstackConfig
-import smithy4s.aws._
 import cats.syntax.all._
+import com.amazonaws.kinesis._
+import org.http4s.client.Client
+import org.typelevel.log4cats.slf4j.Slf4jLogger
+import smithy4s.aws._
+import smithy4s.aws.http4s._
+import smithy4s.aws.kernel.AwsRegion
+
+import kinesis4cats.localstack.LocalstackConfig
+import kinesis4cats.smithy4s.client.KinesisClient
+import kinesis4cats.smithy4s.client.middleware.{
+  LocalstackProxy,
+  RequestResponseLogger
+}
 
 object LocalstackKinesisClient {
   private def localstackEnv[F[_]](client: Client[F], region: AwsRegion)(implicit

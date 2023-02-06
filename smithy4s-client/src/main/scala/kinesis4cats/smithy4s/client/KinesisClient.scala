@@ -16,9 +16,9 @@
 
 package kinesis4cats.smithy4s.client
 
-import cats.syntax.all._
 import cats.effect.syntax.all._
 import cats.effect.{Async, Resource}
+import cats.syntax.all._
 import com.amazonaws.kinesis._
 import org.http4s.client.Client
 import org.http4s.{Request, Response}
