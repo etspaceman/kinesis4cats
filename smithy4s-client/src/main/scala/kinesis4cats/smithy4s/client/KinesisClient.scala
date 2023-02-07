@@ -22,7 +22,8 @@ import cats.syntax.all._
 import com.amazonaws.kinesis._
 import org.http4s.client.Client
 import org.http4s.{Request, Response}
-import org.typelevel.log4cats.slf4j.Slf4jLogger
+import org.typelevel.log4cats.StructuredLogger
+import org.typelevel.log4cats.noop.NoOpLogger
 import smithy4s.aws._
 import smithy4s.aws.http4s._
 
@@ -39,10 +40,6 @@ import kinesis4cats.smithy4s.client.middleware.RequestResponseLogger
   *
   * Updates to the smithy file(s) in this module are not intended to be
   * backwards compatible.
-  *
-  * The only APIs that are supported today are ones that support the
-  * [[https://awslabs.github.io/smithy/1.0/spec/aws/index.html?highlight=aws%20protocols#aws-protocols aws-json]]
-  * 1.0 and 1.1 protocols.
   *
   * [[https://docs.aws.amazon.com/kinesis/latest/APIReference/API_SubscribeToShard.html SubscribeToShard]]
   * is not a currently supported operation.
@@ -66,8 +63,15 @@ object KinesisClient {
     * @param region
     *   [[https://github.com/disneystreaming/smithy4s/blob/series/0.17/modules/aws-kernel/src/smithy4s/aws/AwsRegion.scala AwsRegion]]
     *   in use
-    * @param creds
-    *   F provider of [[smithy4s.aws.AwsCredentials AwsCredentials]]
+    * @param loggerF
+    *   [[cats.effect.Async Async]] => [[cats.effect.Async Async]] of
+    *   [[https://github.com/typelevel/log4cats/blob/main/core/shared/src/main/scala/org/typelevel/log4cats/StructuredLogger.scala StructuredLogger]].
+    *   Default is
+    *   [[https://github.com/typelevel/log4cats/blob/main/noop/shared/src/main/scala/org/typelevel/log4cats/noop/NoOpLogger.scala NoOpLogger]]
+    * @param credsF
+    *   [[https://github.com/disneystreaming/smithy4s/blob/series/0.17/modules/aws/src/smithy4s/aws/SimpleHttpClient.scala SimpleHttpClient]]
+    *   \=> [[smithy4s.aws.AwsCredentials AwsCredentials]]. Default to
+    *   [[https://github.com/disneystreaming/smithy4s/blob/series/0.17/modules/aws/src/smithy4s/aws/AwsCredentialsProvider.scala AwsCredentialsProvider.default]]
     * @param F
     *   [[cats.effect.Async Async]]
     * @param LE
@@ -78,20 +82,28 @@ object KinesisClient {
   def apply[F[_]](
       client: Client[F],
       region: AwsRegion,
-      creds: F[AwsCredentials]
+      loggerF: Async[F] => F[StructuredLogger[F]] = (f: Async[F]) =>
+        f.pure(NoOpLogger[F](f)),
+      credsF: (
+          SimpleHttpClient[F],
+          Async[F]
+      ) => Resource[F, F[AwsCredentials]] =
+        (x: SimpleHttpClient[F], f: Async[F]) =>
+          AwsCredentialsProvider.default[F](x)(f)
   )(implicit
       F: Async[F],
       LE: LogEncoders[F]
   ): Resource[F, KinesisClient[F]] = for {
-    logger <- Slf4jLogger.create[F].toResource
+    logger <- loggerF(F).toResource
+    awsBackend = AwsHttp4sBackend(RequestResponseLogger(logger)(client))
+    creds <- credsF(awsBackend, F)
     env = AwsEnvironment
-      .make(
-        AwsHttp4sBackend(RequestResponseLogger(logger)(client)),
+      .make[F](
+        awsBackend,
         F.pure(region),
         creds,
         F.realTime.map(_.toSeconds).map(Timestamp(_, 0))
       )
     awsClient <- AwsClient(Kinesis.service, env)
   } yield awsClient
-
 }

@@ -18,7 +18,7 @@ package kinesis4cats.smithy4s.client
 
 import java.util.UUID
 
-import cats.effect.{IO, SyncIO}
+import cats.effect._
 import cats.syntax.all._
 import io.circe.parser._
 import io.circe.syntax._
@@ -33,6 +33,7 @@ import kinesis4cats.models.StreamArn
 import org.http4s.ember.client.EmberClientBuilder
 import smithy4s.aws.AwsRegion
 import smithy4s.ByteArray
+import org.typelevel.log4cats.slf4j.Slf4jLogger
 
 abstract class KinesisClientSpec(implicit LE: KinesisClient.LogEncoders[IO])
     extends munit.CatsEffectSuite {
@@ -45,9 +46,10 @@ abstract class KinesisClientSpec(implicit LE: KinesisClient.LogEncoders[IO])
           .default[IO]
           .withoutCheckEndpointAuthentication
           .build
-        client <- LocalstackKinesisClient.clientResource(
+        client <- LocalstackKinesisClient.clientResource[IO](
           underlying,
-          region
+          region,
+          loggerF = (_: Async[IO]) => Slf4jLogger.create[IO]
         )
       } yield client
     )

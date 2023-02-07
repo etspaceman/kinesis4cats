@@ -303,7 +303,7 @@ lazy val `smithy4s-client` = projectMatrix
     description := "Cats tooling for the Smithy4s Kinesis Client",
     libraryDependencies ++= Seq(
       S4S.http4sAws(smithy4sVersion.value),
-      Log4Cats.slf4j,
+      Log4Cats.noop,
       Smithy.rulesEngine % Smithy4s
     ),
     Compile / smithy4sAllowedNamespaces := List(
@@ -336,7 +336,7 @@ lazy val `smithy4s-client-tests` = projectMatrix
   .enablePlugins(NoPublishPlugin)
   .settings(
     description := "Integration Tests for the Smithy4s Kinesis Client",
-    libraryDependencies ++= Seq(Http4s.emberClient % IT)
+    libraryDependencies ++= Seq(Http4s.emberClient % IT, Log4Cats.slf4j % IT)
   )
   .jvmPlatform(last2ScalaVersions)
   .enableIntegrationTests
@@ -349,6 +349,7 @@ lazy val docs = projectMatrix
   .in(file("site"))
   .enablePlugins(TypelevelSitePlugin)
   .settings(
+    libraryDependencies ++= Seq(Log4Cats.slf4j, Http4s.emberClient),
     tlFatalWarningsInCi := false,
     tlSiteApiPackage := Some("kinesis4cats"),
     tlSiteRelatedProjects ++= Seq(
@@ -404,7 +405,10 @@ lazy val docs = projectMatrix
     `kpl-localstack`,
     `kinesis-client`,
     `kinesis-client-logging-circe`,
-    `kinesis-client-localstack`
+    `kinesis-client-localstack`,
+    `smithy4s-client`,
+    `smithy4s-client-logging-circe`,
+    `smithy4s-client-localstack`
   )
 
 lazy val unidocs = projectMatrix
@@ -435,7 +439,10 @@ lazy val unidocs = projectMatrix
         `kpl-localstack`,
         `kinesis-client`,
         `kinesis-client-logging-circe`,
-        `kinesis-client-localstack`
+        `kinesis-client-localstack`,
+        `smithy4s-client`,
+        `smithy4s-client-logging-circe`,
+        `smithy4s-client-localstack`
       ).flatMap(_.projectRefs): _*
     )
   )

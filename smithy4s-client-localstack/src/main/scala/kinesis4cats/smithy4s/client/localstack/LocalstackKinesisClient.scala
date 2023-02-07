@@ -23,7 +23,8 @@ import cats.effect.syntax.all._
 import cats.syntax.all._
 import com.amazonaws.kinesis._
 import org.http4s.client.Client
-import org.typelevel.log4cats.slf4j.Slf4jLogger
+import org.typelevel.log4cats.StructuredLogger
+import org.typelevel.log4cats.noop.NoOpLogger
 import smithy4s.aws._
 import smithy4s.aws.http4s._
 import smithy4s.aws.kernel.AwsRegion
@@ -68,6 +69,9 @@ object LocalstackKinesisClient {
     *   [[https://github.com/disneystreaming/smithy4s/blob/series/0.17/modules/aws-kernel/src/smithy4s/aws/AwsRegion.scala AwsRegion]]
     * @param config
     *   [[kinesis4cats.localstack.LocalstackConfig LocalstackConfig]]
+    * @param loggerF
+    *   [[cats.effect.Async Async]] => [[cats.effect.Async Async]] of
+    *   [[https://github.com/typelevel/log4cats/blob/main/core/shared/src/main/scala/org/typelevel/log4cats/StructuredLogger.scala StructuredLogger]].
     * @param F
     *   [[cats.effect.Async Async]]
     * @return
@@ -76,13 +80,14 @@ object LocalstackKinesisClient {
   def clientResource[F[_]](
       client: Client[F],
       region: AwsRegion,
-      config: LocalstackConfig
+      config: LocalstackConfig,
+      loggerF: Async[F] => F[StructuredLogger[F]]
   )(implicit
       F: Async[F],
       LE: KinesisClient.LogEncoders[F],
       LELC: LogEncoder[LocalstackConfig]
   ): Resource[F, KinesisClient[F]] = for {
-    logger <- Slf4jLogger.create[F].toResource
+    logger <- loggerF(F).toResource
     clnt = LocalstackProxy[F](config, logger)(
       RequestResponseLogger(logger)(client)
     )
@@ -100,6 +105,11 @@ object LocalstackKinesisClient {
     * @param prefix
     *   Optional string prefix to apply when loading configuration. Default to
     *   None
+    * @param loggerF
+    *   [[cats.effect.Async Async]] => [[cats.effect.Async Async]] of
+    *   [[https://github.com/typelevel/log4cats/blob/main/core/shared/src/main/scala/org/typelevel/log4cats/StructuredLogger.scala StructuredLogger]].
+    *   Default is
+    *   [[https://github.com/typelevel/log4cats/blob/main/noop/shared/src/main/scala/org/typelevel/log4cats/noop/NoOpLogger.scala NoOpLogger]]
     * @param F
     *   [[cats.effect.Async Async]]
     * @return
@@ -108,17 +118,14 @@ object LocalstackKinesisClient {
   def clientResource[F[_]](
       client: Client[F],
       region: AwsRegion,
-      prefix: Option[String] = None
+      prefix: Option[String] = None,
+      loggerF: Async[F] => F[StructuredLogger[F]] = (f: Async[F]) =>
+        f.pure(NoOpLogger[F](f))
   )(implicit
       F: Async[F],
       LE: KinesisClient.LogEncoders[F],
       LELC: LogEncoder[LocalstackConfig]
-  ): Resource[F, KinesisClient[F]] = for {
-    logger <- Slf4jLogger.create[F].toResource
-    clnt = LocalstackProxy[F](logger, prefix)(
-      RequestResponseLogger(logger)(client)
-    )
-    env = localstackEnv(clnt, region)
-    awsClient <- AwsClient(Kinesis.service, env)
-  } yield awsClient
+  ): Resource[F, KinesisClient[F]] = LocalstackConfig
+    .resource(prefix)
+    .flatMap(clientResource(client, region, _, loggerF))
 }
