@@ -27,7 +27,29 @@ import org.typelevel.log4cats.StructuredLogger
 
 import kinesis4cats.logging.LogContext
 
+/** Mostly copied from the Http4s
+  * [[https://github.com/http4s/http4s/blob/series/0.23/client/shared/src/main/scala/org/http4s/client/middleware/RequestLogger.scala RequestLogger]].
+  * Main difference is that this logs information to the context rather than the
+  * message body. Also uses debug/trace instead of info.
+  */
 object RequestLogger {
+
+  /** Apply
+    * [[kinesis4cats.smithy4s.client.middleware.RequestLogger RequestLogger]]
+    * middleware to a [[https://http4s.org/v0.23/docs/client.html Client]]
+    *
+    * @param logger
+    *   [[org.typelevel.log4cats.StructuredLogger StructuredLogger]]
+    * @param client
+    *   [[https://http4s.org/v0.23/docs/client.html Client]]
+    * @param F
+    *   [[cats.effect.Async Async]]
+    * @param LE
+    *   [[kinesis4cats.smithy4s.client.KinesisClient.LogEncoders KinesisClient.LogEncoders]]
+    * @return
+    *   [[https://http4s.org/v0.23/docs/client.html Client]] that logs its
+    *   requests in debug and trace levels
+    */
   def apply[F[_]](logger: StructuredLogger[F])(client: Client[F])(implicit
       F: Async[F],
       LE: KinesisClient.LogEncoders[F]

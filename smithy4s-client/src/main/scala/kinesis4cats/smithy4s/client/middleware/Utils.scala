@@ -22,9 +22,20 @@ import org.http4s.{Charset, MediaType, Message}
 import scodec.bits.ByteVector
 
 object Utils {
-  def logBody[F[_]: Concurrent](
+
+  /** Copied from Http4s's internal
+    * [[https://github.com/http4s/http4s/blob/34fbd95ce53f86d009df11622a8ec4037854533a/core/shared/src/main/scala/org/http4s/internal/Logger.scala Logger]]
+    *
+    * @param message
+    *   [[org.http4s.Message Message]] to log
+    * @param F
+    *   [[cats.effect.Concurrent Concurent]]
+    * @return
+    *   F of String with the body
+    */
+  def logBody[F[_]](
       message: Message[F]
-  ): F[String] = {
+  )(implicit F: Concurrent[F]): F[String] = {
     val isBinary = message.contentType.exists(_.mediaType.binary)
     val isJson = message.contentType.exists(mT =>
       mT.mediaType == MediaType.application.json || mT.mediaType.subType

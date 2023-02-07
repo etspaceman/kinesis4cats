@@ -22,7 +22,29 @@ import org.typelevel.log4cats.StructuredLogger
 
 import kinesis4cats.smithy4s.client.KinesisClient
 
+/** Combines
+  * [[kinesis4cats.smithy4s.client.middleware.RequestLogger RequestLogger]] and
+  * [[kinesis4cats.smithy4s.client.middleware.ResponseLogger ResponseLogger]]
+  * middleware
+  */
 object RequestResponseLogger {
+
+  /** Apply
+    * [[kinesis4cats.smithy4s.client.middleware.RequestResponseLogger RequestResponseLogger]]
+    * middleware to a [[https://http4s.org/v0.23/docs/client.html Client]]
+    *
+    * @param logger
+    *   [[org.typelevel.log4cats.StructuredLogger StructuredLogger]]
+    * @param client
+    *   [[https://http4s.org/v0.23/docs/client.html Client]]
+    * @param F
+    *   [[cats.effect.Async Async]]
+    * @param LE
+    *   [[kinesis4cats.smithy4s.client.KinesisClient.LogEncoders KinesisClient.LogEncoders]]
+    * @return
+    *   [[https://http4s.org/v0.23/docs/client.html Client]] that logs its
+    *   requests in debug and trace levels
+    */
   def apply[F[_]](logger: StructuredLogger[F])(client: Client[F])(implicit
       F: Async[F],
       LE: KinesisClient.LogEncoders[F]

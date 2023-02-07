@@ -33,16 +33,46 @@ import kinesis4cats.logging.LogEncoder
 import kinesis4cats.smithy4s.client.KinesisClient
 import kinesis4cats.smithy4s.client.middleware._
 
+/** Like KinesisClient, but also includes the
+  * [[kinesis4cats.smithy4s.client.middleware.LocalstackProxy LocalstackProxy]]
+  * middleware, and leverages mock AWS credentials
+  */
 object LocalstackKinesisClient {
+
+  /** Creates the [[smithy4s.aws.AwsEnvironment AwsEnvironment]] to use
+    *
+    * @param client
+    *   [[https://http4s.org/v0.23/docs/client.html Client]]
+    * @param region
+    *   [[smithy4s.aws.AwsRegion AwsRegion]]
+    * @param F
+    *   [[cats.effect.Async Async]]
+    * @return
+    *   [[smithy4s.aws.AwsEnvironment AwsEnvironment]]
+    */
   private def localstackEnv[F[_]](client: Client[F], region: AwsRegion)(implicit
       F: Async[F]
-  ) = AwsEnvironment.make[F](
+  ): AwsEnvironment[F] = AwsEnvironment.make[F](
     AwsHttp4sBackend(client),
     F.pure(region),
     F.pure(AwsCredentials.Default("mock-key-id", "mock-secret-key", None)),
     F.realTime.map(_.toSeconds).map(Timestamp(_, 0))
   )
 
+  /** Creates a [[cats.effect.Resource Resource]] of a KinesisClient that is
+    * compatible with Localstack
+    *
+    * @param client
+    *   [[https://http4s.org/v0.23/docs/client.html Client]]
+    * @param region
+    *   [[https://github.com/disneystreaming/smithy4s/blob/series/0.17/modules/aws-kernel/src/smithy4s/aws/AwsRegion.scala AwsRegion]]
+    * @param config
+    *   [[kinesis4cats.localstack.LocalstackConfig LocalstackConfig]]
+    * @param F
+    *   [[cats.effect.Async Async]]
+    * @return
+    *   [[https://github.com/disneystreaming/smithy4s/blob/series/0.17/modules/aws-kernel/src/smithy4s/aws/AwsEnvironment.scala AwsEnvironment]]
+    */
   def clientResource[F[_]](
       client: Client[F],
       region: AwsRegion,
@@ -60,6 +90,21 @@ object LocalstackKinesisClient {
     awsClient <- AwsClient(Kinesis.service, env)
   } yield awsClient
 
+  /** Creates a [[cats.effect.Resource Resource]] of a KinesisClient that is
+    * compatible with Localstack
+    *
+    * @param client
+    *   [[https://http4s.org/v0.23/docs/client.html Client]]
+    * @param region
+    *   [[https://github.com/disneystreaming/smithy4s/blob/series/0.17/modules/aws-kernel/src/smithy4s/aws/AwsRegion.scala AwsRegion]]
+    * @param prefix
+    *   Optional string prefix to apply when loading configuration. Default to
+    *   None
+    * @param F
+    *   [[cats.effect.Async Async]]
+    * @return
+    *   [[https://github.com/disneystreaming/smithy4s/blob/series/0.17/modules/aws-kernel/src/smithy4s/aws/AwsEnvironment.scala AwsEnvironment]]
+    */
   def clientResource[F[_]](
       client: Client[F],
       region: AwsRegion,

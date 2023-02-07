@@ -29,6 +29,24 @@ import smithy4s.aws.http4s._
 import kinesis4cats.logging._
 import kinesis4cats.smithy4s.client.middleware.RequestResponseLogger
 
+/** A thin wrapper around
+  * [[https://disneystreaming.github.io/smithy4s/docs/overview/intro/ Smithy4s's]]
+  * [[https://disneystreaming.github.io/smithy4s/docs/protocols/aws/aws AWS]]
+  * protocol.
+  *
+  * Per Smithy4s's documentation, this is an experimental module that is not
+  * expected to be production ready.
+  *
+  * Updates to the smithy file(s) in this module are not intended to be
+  * backwards compatible.
+  *
+  * The only APIs that are supported today are ones that support the
+  * [[https://awslabs.github.io/smithy/1.0/spec/aws/index.html?highlight=aws%20protocols#aws-protocols aws-json]]
+  * 1.0 and 1.1 protocols.
+  *
+  * [[https://docs.aws.amazon.com/kinesis/latest/APIReference/API_SubscribeToShard.html SubscribeToShard]]
+  * is not a currently supported operation.
+  */
 object KinesisClient {
 
   /** Helper class containing required
@@ -40,6 +58,23 @@ object KinesisClient {
       val http4sResponseLogEncoder: LogEncoder[Response[F]]
   )
 
+  /** Create a KinesisClient [[cats.effect.Resource Resource]]
+    *
+    * @param client
+    *   [[https://http4s.org/v0.23/docs/client.html Client]] implementation for
+    *   the api calls
+    * @param region
+    *   [[https://github.com/disneystreaming/smithy4s/blob/series/0.17/modules/aws-kernel/src/smithy4s/aws/AwsRegion.scala AwsRegion]]
+    *   in use
+    * @param creds
+    *   F provider of [[smithy4s.aws.AwsCredentials AwsCredentials]]
+    * @param F
+    *   [[cats.effect.Async Async]]
+    * @param LE
+    *   [[kinesis4cats.smithy4s.client.KinesisClient.LogEncoders KinesisClient.LogEncoders]]
+    * @return
+    *   [[cats.effect.Resource Resource]] of a Kinesis Client.
+    */
   def apply[F[_]](
       client: Client[F],
       region: AwsRegion,

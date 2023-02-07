@@ -28,8 +28,30 @@ import org.typelevel.log4cats.StructuredLogger
 import kinesis4cats.localstack.LocalstackConfig
 import kinesis4cats.logging.{LogContext, LogEncoder}
 
+/** Middleware for [[https://http4s.org/v0.23/docs/client.html Clients]] that
+  * proxies request against the configured Localstack environment
+  */
 object LocalstackProxy {
 
+  /** Updates the uri of a [[org.http4s.Request Request]] to use the configured
+    * Localstack environment. Also logs the before/after shape of the request.
+    *
+    * @param config
+    *   [[kinesis4cats.localstack.LocalstackConfig LocalstackConfig]]
+    * @param req
+    *   [[org.http4s.Request Request]] to proxy
+    * @param logger
+    *   [[org.typelevel.log4cats.StructuredLogger StructuredLogger]]
+    * @param F
+    *   [[cats.effect.Async Async]]
+    * @param LE
+    *   [[kinesis4cats.smithy4s.client.KinesisClient.LogEncoders KinesisClient.LogEncoders]]
+    * @param LELC
+    *   [[kinesis4cats.logging.LogEncoder]] for
+    *   [[kinesis4cats.localstack.LocalstackConfig]]
+    * @return
+    *   [[cats.effect.Async Async]] of a proxied [[org.http4s.Request Request]]
+    */
   private def proxyUri[F[_]](
       config: LocalstackConfig,
       req: Request[F],
@@ -60,6 +82,25 @@ object LocalstackProxy {
     logger.debug(ctx.context)("Proxying request").as(newReq)
   }
 
+  /** Applies middleware to a
+    * [[https://http4s.org/v0.23/docs/client.html Client]] that updates the uri
+    * of a [[org.http4s.Request Request]] to use the configured Localstack
+    * environment. Also logs the before/after shape of the request.
+    *
+    * @param config
+    *   [[kinesis4cats.localstack.LocalstackConfig LocalstackConfig]]
+    * @param logger
+    *   [[org.typelevel.log4cats.StructuredLogger StructuredLogger]]
+    * @param F
+    *   [[cats.effect.Async Async]]
+    * @param LE
+    *   [[kinesis4cats.smithy4s.client.KinesisClient.LogEncoders KinesisClient.LogEncoders]]
+    * @param LELC
+    *   [[kinesis4cats.logging.LogEncoder]] for
+    *   [[kinesis4cats.localstack.LocalstackConfig]]
+    * @return
+    *   [[cats.effect.Async Async]] of a proxied [[org.http4s.Request Request]]
+    */
   def apply[F[_]](config: LocalstackConfig, logger: StructuredLogger[F])(
       client: Client[F]
   )(implicit
@@ -73,6 +114,26 @@ object LocalstackProxy {
     } yield res
   }
 
+  /** Applies middleware to a
+    * [[https://http4s.org/v0.23/docs/client.html Client]] that updates the uri
+    * of a [[org.http4s.Request Request]] to use the configured Localstack
+    * environment. Also logs the before/after shape of the request.
+    *
+    * @param logger
+    *   [[org.typelevel.log4cats.StructuredLogger StructuredLogger]]
+    * @param prefix
+    *   Optional string prefix to apply when loading configuration. Default to
+    *   None
+    * @param F
+    *   [[cats.effect.Async Async]]
+    * @param LE
+    *   [[kinesis4cats.smithy4s.client.KinesisClient.LogEncoders KinesisClient.LogEncoders]]
+    * @param LELC
+    *   [[kinesis4cats.logging.LogEncoder]] for
+    *   [[kinesis4cats.localstack.LocalstackConfig]]
+    * @return
+    *   [[cats.effect.Async Async]] of a proxied [[org.http4s.Request Request]]
+    */
   def apply[F[_]](logger: StructuredLogger[F], prefix: Option[String] = None)(
       client: Client[F]
   )(implicit

@@ -23,6 +23,9 @@ import org.http4s.{Headers, HttpVersion, Method, Request, Response, Status}
 
 import kinesis4cats.logging.instances.circe._
 
+/** Smithy4s Client [[kinesis4cats.logging.LogEncoder LogEncoder]] instances for
+  * string encoding of log structures using [[io.circe.Encoder Encoder]]
+  */
 object circe {
   implicit val headersCirceEncoder: Encoder[Headers] =
     Encoder[List[(String, String)]]
