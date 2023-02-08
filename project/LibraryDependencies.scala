@@ -20,6 +20,7 @@ object LibraryDependencies {
 
   object Log4Cats {
     val log4CatsVersion = "2.5.0"
+    val core = "org.typelevel" %% "log4cats-core" % log4CatsVersion
     val slf4j = "org.typelevel" %% "log4cats-slf4j" % log4CatsVersion
   }
 

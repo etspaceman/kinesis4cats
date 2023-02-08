@@ -9,6 +9,7 @@ lazy val compat = project
   .enableIntegrationTests
 
 lazy val shared = project
+  .enablePlugins(ProtobufPlugin)
   .settings(
     description := "Common shared utilities"
   )

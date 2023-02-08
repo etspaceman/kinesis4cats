@@ -194,6 +194,7 @@ object Kinesis4CatsPlugin extends AutoPlugin {
       Cats.effect,
       CatsRetry,
       Scala.java8Compat,
+      Log4Cats.core,
       Munit.core % Test,
       Munit.catsEffect % Test,
       Munit.scalacheck % Test,
