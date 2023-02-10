@@ -2,60 +2,47 @@ package kinesis4cats.producer
 
 import cats.syntax.all._
 import cats.effect.syntax.all._
-import kinesis4cats.models.StreamArn
 import kinesis4cats.producer.batching.Batcher
 import org.typelevel.log4cats.StructuredLogger
 import cats.effect.Async
 import cats.data.NonEmptyList
 import cats.data.Ior
-import cats.data.Ior.Both
 import cats.kernel.Semigroup
 import java.security.MessageDigest
 import kinesis4cats.logging.LogContext
+import kinesis4cats.logging.LogEncoder
 
-// format: off
-abstract class Producer[F[_], PutRequest, PutResponse, PutNRequest, PutNResponse](implicit F: Async[F]) {
-// format: on
+abstract class Producer[F[_], PutReq, PutRes, PutNReq, PutNRes](implicit
+    F: Async[F],
+    LE: Producer.LogEncoders
+) {
+
+  import LE._
   def logger: StructuredLogger[F]
   def shardMapCache: ShardMapCache[F]
   def config: Producer.Config
 
-  def putImpl(req: PutRequest): F[PutResponse]
+  protected def putImpl(req: PutReq): F[PutRes]
+  protected def putNImpl(req: PutNReq): F[PutNRes]
 
-  def putNImpl(req: PutNRequest): F[PutNResponse]
+  protected def asPutRequest(req: PutRequest): PutReq
+  protected def asPutNRequest(req: PutNRequest): PutNReq
 
-  def asPutRequest(streamName: String, record: Record): PutRequest
+  protected def failedRecords(
+      req: PutNReq,
+      resp: PutNRes
+  ): Option[NonEmptyList[Producer.FailedRecord]]
 
-  def asPutRequest(streamArn: StreamArn, record: Record): PutRequest
+  def put(req: PutRequest): F[PutRes] =
+    putImpl(asPutRequest(req))
 
-  def asPutNRequest(
-      streamName: String,
-      records: NonEmptyList[Record]
-  ): PutNRequest
-
-  def asPutNRequest(
-      streamArn: StreamArn,
-      records: NonEmptyList[Record]
-  ): PutNRequest
-
-  def put(streamName: String, record: Record): F[PutResponse] =
-    putImpl(asPutRequest(streamName, record))
-
-  def put(streamArn: StreamArn, record: Record): F[PutResponse] =
-    putImpl(asPutRequest(streamArn, record))
-
-  def putN(
-      streamName: String,
-      records: NonEmptyList[Record]
-  ): F[Ior[Producer.Error, NonEmptyList[PutNResponse]]] = {
-    val ctx = LogContext()
-      .addEncoded("streamName", streamName)
-      .addEncoded("recordsCount", records.length)
+  def putN(req: PutNRequest): F[Ior[Producer.Error, NonEmptyList[PutNRes]]] = {
+    val ctx = LogContext().addEncoded("request", req)
 
     val digest = Producer.md5Digest
 
     for {
-      withShards <- records.traverse(rec =>
+      withShards <- req.records.traverse(rec =>
         for {
           shardRes <- shardMapCache
             .shardForPartitionKey(digest, rec.partitionKey)
@@ -70,37 +57,54 @@ abstract class Producer[F[_], PutRequest, PutResponse, PutNRequest, PutNResponse
         } yield Record.WithShard.fromOption(rec, shardRes.toOption)
       )
       batched = Batcher.batch(withShards)
-      res <- batched.traverse(batches =>
-        batches.traverse(batch =>
-          batch.shardBatches
-            .map(_.records)
-            .toList
-            .parTraverseN(config.shardParallelism) { shardBatch =>
-              putNImpl(asPutNRequest(streamName, shardBatch))
-            }
+      res <- batched
+        .traverse(batches =>
+          batches.flatTraverse(batch =>
+            batch.shardBatches
+              .map(_.records)
+              .parTraverseN(config.shardParallelism) { shardBatch =>
+                val request: PutNReq =
+                  asPutNRequest(req.withRecords(shardBatch))
+                putNImpl(request).map { resp: PutNRes =>
+                  failedRecords(request, resp)
+                    .map(Producer.Error.putFailures)
+                    .fold(
+                      Ior.right[Producer.Error, PutNRes](resp)
+                    )(e => Ior.both[Producer.Error, PutNRes](e, resp))
+                }
+              }
+          )
         )
-      )
-    } yield Ior.left(Producer.Error(None))
+        .map(_.flatMap(_.sequence))
+      _ <- res.leftTraverse { e =>
+        if (config.raiseOnFailures) F.raiseError[Unit](e)
+        else if (config.warnOnBatchFailures)
+          logger.warn(ctx.context, e)(
+            "Some records had errors when processing batch(es)"
+          )
+        else F.unit
+      }
+    } yield res
   }
-  /*
-  def putN[A](
-      streamArn: StreamArn,
-      records: NonEmptyList[Record]
-  ): F[Ior[Producer.Error, NonEmptyList[PutNResponse]]] =
-    putNImpl(streamArn, records)*/
 }
 
 object Producer {
+  final class LogEncoders(implicit
+      val putReqeustLogEncoder: LogEncoder[PutRequest],
+      val putNRequestLogEncoder: LogEncoder[PutNRequest]
+  )
+
   def md5Digest = MessageDigest.getInstance("MD5")
 
   final case class Config(
-      aggregate: Boolean,
       warnOnShardCacheMisses: Boolean,
-      shardParallelism: Int
+      warnOnBatchFailures: Boolean,
+      shardParallelism: Int,
+      raiseOnFailures: Boolean
   )
 
   object Config {
-    val default = Config(true, true, 8)
+    val default = Config(true, true, 8, false)
   }
 
   final case class Error(
@@ -108,7 +112,7 @@ object Producer {
   ) extends Exception {
     def add(that: Error): Error = Error(errors.combine(that.errors))
     override def getMessage(): String = errors match {
-      case Some(Both(a, b)) =>
+      case Some(Ior.Both(a, b)) =>
         Error.tooLargeMessage(a) + "\n\nAND\n\n" + Error.putFailuresMessage(b)
       case Some(Ior.Left(a))  => Error.tooLargeMessage(a)
       case Some(Ior.Right(b)) => Error.putFailuresMessage(b)
