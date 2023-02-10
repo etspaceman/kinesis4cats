@@ -21,28 +21,21 @@ import scala.jdk.CollectionConverters._
 import java.util.function
 import java.util.function.BiFunction
 
-import software.amazon.smithy.build.ProjectionTransformer
-import software.amazon.smithy.build.TransformContext
+import software.amazon.smithy.build._
 import software.amazon.smithy.model.Model
-import software.amazon.smithy.model.shapes.IntegerShape
-import software.amazon.smithy.model.shapes.MemberShape
-import software.amazon.smithy.model.shapes.Shape
-import software.amazon.smithy.model.shapes.ShapeId
-import software.amazon.smithy.model.shapes.StructureShape
-import software.amazon.smithy.model.traits.LengthTrait
-import software.amazon.smithy.model.traits.RangeTrait
-import software.amazon.smithy.model.traits.Trait
+import software.amazon.smithy.model.shapes._
+import software.amazon.smithy.model.traits._
 
 final class KinesisSpecTransformer extends ProjectionTransformer {
   def getName() = "KinesisSpecTransformer"
 
-  private val metricsNameListShapeId =
+  val metricsNameListShapeId =
     ShapeId.fromParts("com.amazonaws.kinesis", "MetricsNameList")
 
-  private val putRecordsOutputShapeId =
+  val putRecordsOutputShapeId =
     ShapeId.fromParts("com.amazonaws.kinesis", "PutRecordsOutput")
 
-  private val nonNegativeIntegerObjectShape =
+  val nonNegativeIntegerObjectShape =
     IntegerShape
       .builder()
       .id(
