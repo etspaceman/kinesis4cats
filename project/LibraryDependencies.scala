@@ -13,7 +13,7 @@ object LibraryDependencies {
   }
 
   object FS2 {
-    val fs2Version = "3.6.0"
+    val fs2Version = "3.6.1"
     val core = "co.fs2" %% "fs2-core" % fs2Version
     val reactiveStreams = "co.fs2" %% "fs2-reactive-streams" % fs2Version
   }
@@ -69,7 +69,7 @@ object LibraryDependencies {
   }
 
   object Ciris {
-    val cirisVersion = "3.0.0"
+    val cirisVersion = "3.1.0"
     val core = "is.cir" %% "ciris" % cirisVersion
   }
 
