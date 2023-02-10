@@ -28,7 +28,7 @@ import software.amazon.awssdk.services.kinesis.model._
 import kinesis4cats.producer.{Record => Rec, _}
 import kinesis4cats.syntax.id._
 
-final class KinesisProducer[F[_]](
+final class KinesisProducer[F[_]] private (
     override val logger: StructuredLogger[F],
     override val shardMapCache: ShardMapCache[F],
     override val config: Producer.Config,
@@ -112,5 +112,4 @@ final class KinesisProducer[F[_]](
       }
     )
   }
-
 }
