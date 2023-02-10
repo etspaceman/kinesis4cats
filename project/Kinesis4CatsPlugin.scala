@@ -1,10 +1,9 @@
-import sbt._
-import sbt.Keys._
-
-import org.typelevel.sbt._
-import org.typelevel.sbt.gha._
 import LibraryDependencies._
 import org.scalafmt.sbt.ScalafmtPlugin
+import org.typelevel.sbt._
+import org.typelevel.sbt.gha._
+import sbt.Keys._
+import sbt._
 import sbt.internal.ProjectMatrix
 
 object Kinesis4CatsPlugin extends AutoPlugin {
@@ -15,21 +14,20 @@ object Kinesis4CatsPlugin extends AutoPlugin {
     commands.mkString("; ", "; ", "")
 
   val autoImport: Kinesis4CatsPluginKeys.type = Kinesis4CatsPluginKeys
-  import autoImport._
-
-  import TypelevelVersioningPlugin.autoImport._
-  import TypelevelGitHubPlugin.autoImport._
-  import TypelevelKernelPlugin.autoImport._
-  import TypelevelCiPlugin.autoImport._
-  import GenerativePlugin.autoImport._
-  import TypelevelSitePlugin.autoImport._
-  import scalafix.sbt.ScalafixPlugin.autoImport._
-  import de.heikoseeberger.sbtheader.HeaderPlugin.autoImport._
-  import scoverage.ScoverageSbtPlugin.autoImport._
-  import org.scalafmt.sbt.ScalafmtPlugin.autoImport._
   import DockerComposePlugin.autoImport._
   import DockerImagePlugin.autoImport._
+  import GenerativePlugin.autoImport._
+  import TypelevelCiPlugin.autoImport._
+  import TypelevelGitHubPlugin.autoImport._
+  import TypelevelKernelPlugin.autoImport._
+  import TypelevelSitePlugin.autoImport._
+  import TypelevelVersioningPlugin.autoImport._
+  import autoImport._
+  import de.heikoseeberger.sbtheader.HeaderPlugin.autoImport._
+  import org.scalafmt.sbt.ScalafmtPlugin.autoImport._
   import sbtassembly.AssemblyPlugin.autoImport._
+  import scalafix.sbt.ScalafixPlugin.autoImport._
+  import scoverage.ScoverageSbtPlugin.autoImport._
 
   private val primaryJavaOSCond = Def.setting {
     val java = githubWorkflowJavaVersions.value.head
@@ -271,8 +269,8 @@ object Kinesis4CatsPluginKeys {
 
   val MUnitFramework = new TestFramework("munit.Framework")
 
-  import scalafix.sbt.ScalafixPlugin.autoImport._
   import de.heikoseeberger.sbtheader.HeaderPlugin.autoImport._
+  import scalafix.sbt.ScalafixPlugin.autoImport._
 
   val IT = config("it").extend(Test)
   val FunctionalTest = config("fun").extend(Test)

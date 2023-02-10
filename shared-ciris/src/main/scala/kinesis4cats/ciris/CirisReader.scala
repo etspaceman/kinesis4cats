@@ -37,12 +37,10 @@ object CirisReader {
   def readEnvString(
       parts: List[String],
       prefix: Option[String] = None
-  ): ConfigValue[Effect, String] = {
+  ): ConfigValue[Effect, String] =
     env(
       (prefix.toList ++ parts).map(_.toUpperCase()).mkString("_")
     )
-
-  }
 
   /** Constructs a system property string reader given parts and an optional
     * prefix.

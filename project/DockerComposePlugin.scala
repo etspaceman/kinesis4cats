@@ -8,8 +8,8 @@ object DockerComposePlugin extends AutoPlugin {
   override def requires: Plugins = DockerImagePlugin
 
   val autoImport: DockerComposePluginKeys.type = DockerComposePluginKeys
-  import autoImport._
   import DockerImagePlugin.autoImport._
+  import autoImport._
 
   val createNetworkTask: Def.Initialize[Task[Unit]] = Def.task {
     val log = sbt.Keys.streams.value.log
