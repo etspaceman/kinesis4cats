@@ -198,7 +198,6 @@ object Kinesis4CatsPlugin extends AutoPlugin {
         Seq("-language:_")
     },
     scalacOptions -= "-Ykind-projector:underscores",
-    ThisBuild / scalafixDependencies += OrganizeImports,
     ThisBuild / semanticdbEnabled := true,
     semanticdbVersion := scalafixSemanticdb.revision,
     libraryDependencies ++= Seq(

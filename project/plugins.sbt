@@ -6,7 +6,7 @@ addSbtPlugin("org.scoverage" % "sbt-scoverage" % "2.0.6")
 addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "2.1.0")
 addSbtPlugin("org.portable-scala" % "sbt-crossproject" % "1.2.0")
 addSbtPlugin(
-  "com.disneystreaming.smithy4s" % "smithy4s-sbt-codegen" % "dev-SNAPSHOT"
+  "com.disneystreaming.smithy4s" % "smithy4s-sbt-codegen" % "0.17.3"
 )
 addSbtPlugin("com.eed3si9n" % "sbt-buildinfo" % "0.11.0")
 addSbtPlugin("com.eed3si9n" % "sbt-projectmatrix" % "0.9.0")

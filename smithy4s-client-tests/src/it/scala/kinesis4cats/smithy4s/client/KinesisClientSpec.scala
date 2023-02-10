@@ -68,49 +68,42 @@ abstract class KinesisClientSpec(implicit LE: KinesisClient.LogEncoders[IO])
     ).streamArn
 
     for {
-      _ <- client.createStream(StreamName(streamName), Some(1)).run
+      _ <- client.createStream(StreamName(streamName), Some(1))
       _ <- client
         .addTagsToStream(
           Map(TagKey("foo") -> TagValue("bar")),
           Some(StreamName(streamName))
         )
-        .run
       _ <- client
         .increaseStreamRetentionPeriod(
           RetentionPeriodHours(48),
           Some(StreamName(streamName))
         )
-        .run
       _ <- client
         .decreaseStreamRetentionPeriod(
           RetentionPeriodHours(24),
           Some(StreamName(streamName))
         )
-        .run
       _ <- client
         .registerStreamConsumer(StreamARN(streamArn), ConsumerName("foo"))
-        .run
-      _ <- client.describeLimits().run
-      _ <- client.describeStream(Some(StreamName(streamName))).run
+      _ <- client.describeLimits()
+      _ <- client.describeStream(Some(StreamName(streamName)))
       _ <- client
         .describeStreamConsumer(
           Some(StreamARN(streamArn)),
           Some(ConsumerName("foo"))
         )
-        .run
-      _ <- client.describeStreamSummary(Some(StreamName(streamName))).run
+      _ <- client.describeStreamSummary(Some(StreamName(streamName)))
       _ <- client
         .enableEnhancedMonitoring(
           List(MetricsName.ALL),
           Some(StreamName(streamName))
         )
-        .run
       _ <- client
         .disableEnhancedMonitoring(
           List(MetricsName.ALL),
           Some(StreamName(streamName))
         )
-        .run
       record1 <- IO(Arbitrary.arbitrary[TestData].one)
       _ <- client
         .putRecord(
@@ -118,7 +111,6 @@ abstract class KinesisClientSpec(implicit LE: KinesisClient.LogEncoders[IO])
           PartitionKey("foo"),
           Some(StreamName(streamName))
         )
-        .run
       record2 <- IO(Arbitrary.arbitrary[TestData].one)
       record3 <- IO(Arbitrary.arbitrary[TestData].one)
       _ <- client
@@ -135,8 +127,7 @@ abstract class KinesisClientSpec(implicit LE: KinesisClient.LogEncoders[IO])
           ),
           Some(StreamName(streamName))
         )
-        .run
-      shards <- client.listShards(Some(StreamName(streamName))).run
+      shards <- client.listShards(Some(StreamName(streamName)))
       shard = shards.shards.map(_.head).getOrElse(fail("No shards returned"))
       shardIterator <- client
         .getShardIterator(
@@ -144,52 +135,45 @@ abstract class KinesisClientSpec(implicit LE: KinesisClient.LogEncoders[IO])
           ShardIteratorType.TRIM_HORIZON,
           Some(StreamName(streamName))
         )
-        .run
       records <- client
         .getRecords(
           shardIterator.shardIterator
             .getOrElse(fail("No shard iterator returned")),
           streamARN = Some(StreamARN(streamArn))
         )
-        .run
       recordBytes = records.records
         .map(x => new String(x.data.value.array))
       recordsParsed <- recordBytes.traverse(bytes =>
         IO.fromEither(decode[TestData](bytes))
       )
-      consumers <- client.listStreamConsumers(StreamARN(streamArn)).run
+      consumers <- client.listStreamConsumers(StreamARN(streamArn))
       _ <- client
         .deregisterStreamConsumer(
           Some(StreamARN(streamArn)),
           Some(ConsumerName("foo"))
         )
-        .run
-      tags <- client.listTagsForStream(Some(StreamName(streamName))).run
+      tags <- client.listTagsForStream(Some(StreamName(streamName)))
       _ <- client
         .removeTagsFromStream(List(TagKey("foo")), Some(StreamName(streamName)))
-        .run
       _ <- client
         .startStreamEncryption(
           EncryptionType.KMS,
           KeyId("12345678-1234-1234-1234-123456789012"),
           Some(StreamName(streamName))
         )
-        .run
       _ <- client
         .stopStreamEncryption(
           EncryptionType.KMS,
           KeyId("12345678-1234-1234-1234-123456789012"),
           Some(StreamName(streamName))
         )
-        .run
       _ <- client
         .updateShardCount(
           PositiveIntegerObject(2),
           ScalingType.UNIFORM_SCALING,
           Some(StreamName(streamName))
         )
-        .run
-      shards2response <- client.listShards(Some(StreamName(streamName))).run
+      shards2response <- client.listShards(Some(StreamName(streamName)))
       shards2 = shards2response.shards.getOrElse(fail("No shards returned"))
       newShards = shards2.takeRight(2)
       shard2 :: shard3 :: Nil = newShards
@@ -199,13 +183,11 @@ abstract class KinesisClientSpec(implicit LE: KinesisClient.LogEncoders[IO])
           shard3.shardId,
           Some(StreamName(streamName))
         )
-        .run
       _ <- client
         .updateStreamMode(
           StreamARN(streamArn),
           StreamModeDetails(StreamMode.ON_DEMAND)
         )
-        .run
     } yield {
       assertEquals(List(record1, record2, record3), recordsParsed)
       assert(consumers.consumers.size === 1)

@@ -92,7 +92,7 @@ object LocalstackKinesisClient {
       RequestResponseLogger(logger)(client)
     )
     env = localstackEnv(clnt, region)
-    awsClient <- AwsClient(Kinesis.service, env)
+    awsClient <- AwsClient.simple(Kinesis.service, env)
   } yield awsClient
 
   /** Creates a [[cats.effect.Resource Resource]] of a KinesisClient that is

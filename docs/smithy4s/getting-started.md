@@ -40,12 +40,12 @@ object MyApp extends IOApp {
         )
     } yield client).use(client =>
         for {
-            _ <- client.createStream(StreamName("my-stream"), Some(1)).run
+            _ <- client.createStream(StreamName("my-stream"), Some(1))
             _ <- client.putRecord(
                 Data(ByteArray("my-data".getBytes())),
                 PartitionKey("some-partitionk-key"),
                 Some(StreamName("my-stream"))
-            ).run
+            )
         } yield ExitCode.Success
     )
 }

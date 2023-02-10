@@ -104,6 +104,6 @@ object KinesisClient {
         creds,
         F.realTime.map(_.toSeconds).map(Timestamp(_, 0))
       )
-    awsClient <- AwsClient(Kinesis.service, env)
+    awsClient <- AwsClient.simple(Kinesis.service, env)
   } yield awsClient
 }

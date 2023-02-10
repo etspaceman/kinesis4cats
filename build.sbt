@@ -1,5 +1,6 @@
-import org.eclipse.jgit.api.MergeCommand.FastForwardMode.Merge
 import laika.rewrite.link._
+import org.eclipse.jgit.api.MergeCommand.FastForwardMode.Merge
+
 import LibraryDependencies.{Smithy4s => S4S, _}
 
 lazy val compat = projectMatrix
