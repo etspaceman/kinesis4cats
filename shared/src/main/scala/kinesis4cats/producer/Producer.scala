@@ -1,16 +1,32 @@
+/*
+ * Copyright 2023-2023 etspaceman
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package kinesis4cats.producer
 
-import cats.syntax.all._
-import cats.effect.syntax.all._
-import kinesis4cats.producer.batching.Batcher
-import org.typelevel.log4cats.StructuredLogger
-import cats.effect.Async
-import cats.data.NonEmptyList
-import cats.data.Ior
-import cats.kernel.Semigroup
 import java.security.MessageDigest
-import kinesis4cats.logging.LogContext
-import kinesis4cats.logging.LogEncoder
+
+import cats.data.{Ior, NonEmptyList}
+import cats.effect.Async
+import cats.effect.syntax.all._
+import cats.kernel.Semigroup
+import cats.syntax.all._
+import org.typelevel.log4cats.StructuredLogger
+
+import kinesis4cats.logging.{LogContext, LogEncoder}
+import kinesis4cats.producer.batching.Batcher
 
 abstract class Producer[F[_], PutReq, PutRes, PutNReq, PutNRes](implicit
     F: Async[F],
@@ -29,7 +45,7 @@ abstract class Producer[F[_], PutReq, PutRes, PutNReq, PutNRes](implicit
   protected def asPutNRequest(req: PutNRequest): PutNReq
 
   protected def failedRecords(
-      req: PutNReq,
+      req: PutNRequest,
       resp: PutNRes
   ): Option[NonEmptyList[Producer.FailedRecord]]
 
@@ -63,27 +79,27 @@ abstract class Producer[F[_], PutReq, PutRes, PutNReq, PutNRes](implicit
             batch.shardBatches
               .map(_.records)
               .parTraverseN(config.shardParallelism) { shardBatch =>
-                val request: PutNReq =
-                  asPutNRequest(req.withRecords(shardBatch))
-                putNImpl(request).map { resp: PutNRes =>
-                  failedRecords(request, resp)
+                val request = req.withRecords(shardBatch)
+                for {
+                  resp <- putNImpl(asPutNRequest(request))
+                  res = failedRecords(request, resp)
                     .map(Producer.Error.putFailures)
                     .fold(
                       Ior.right[Producer.Error, PutNRes](resp)
                     )(e => Ior.both[Producer.Error, PutNRes](e, resp))
-                }
+                  _ <- res.leftTraverse { e =>
+                    if (config.raiseOnFailures) F.raiseError[Unit](e)
+                    else if (config.warnOnBatchFailures)
+                      logger.warn(ctx.context, e)(
+                        "Some records had errors when processing a batch"
+                      )
+                    else F.unit
+                  }
+                } yield res
               }
           )
         )
         .map(_.flatMap(_.sequence))
-      _ <- res.leftTraverse { e =>
-        if (config.raiseOnFailures) F.raiseError[Unit](e)
-        else if (config.warnOnBatchFailures)
-          logger.warn(ctx.context, e)(
-            "Some records had errors when processing batch(es)"
-          )
-        else F.unit
-      }
     } yield res
   }
 }

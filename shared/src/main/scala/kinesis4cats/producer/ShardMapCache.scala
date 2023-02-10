@@ -1,18 +1,34 @@
+/*
+ * Copyright 2023-2023 etspaceman
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package kinesis4cats.producer
 
-import kinesis4cats.models._
-
-import cats.effect.Ref
-import cats.effect.Async
-import cats.syntax.all._
-import cats.effect.syntax.all._
-import java.security.MessageDigest
-import java.nio.charset.StandardCharsets
-import java.time.Instant
-import org.typelevel.log4cats.StructuredLogger
-import kinesis4cats.logging.LogContext
-import kinesis4cats.logging.LogEncoder
 import scala.concurrent.duration.FiniteDuration
+
+import java.nio.charset.StandardCharsets
+import java.security.MessageDigest
+import java.time.Instant
+
+import cats.effect.syntax.all._
+import cats.effect.{Async, Ref}
+import cats.syntax.all._
+import org.typelevel.log4cats.StructuredLogger
+
+import kinesis4cats.logging.{LogContext, LogEncoder}
+import kinesis4cats.models._
 
 class ShardMapCache[F[_]] private (
     config: ShardMapCache.Config,
@@ -110,7 +126,6 @@ object ShardMap {
   }
 
   def empty = ShardMap(List.empty, Instant.now())
-
 
 }
 
