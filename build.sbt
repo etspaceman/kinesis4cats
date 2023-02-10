@@ -297,6 +297,17 @@ lazy val `kinesis-client-tests` = projectMatrix
     `kinesis-client-logging-circe` % IT
   )
 
+lazy val preprocessors = projectMatrix
+  .settings(
+    description := "Preprocessing of modules for the smithy4s project",
+    libraryDependencies ++= Seq(
+      Smithy.build(smithy4s.codegen.BuildInfo.smithyVersion)
+    )
+  )
+  .jvmPlatform(List(Scala212))
+  .enableIntegrationTests
+  .dependsOn(compat)
+
 lazy val `smithy4s-client` = projectMatrix
   .enablePlugins(Smithy4sCodegenPlugin)
   .settings(
@@ -304,12 +315,16 @@ lazy val `smithy4s-client` = projectMatrix
     libraryDependencies ++= Seq(
       S4S.http4sAws(smithy4sVersion.value),
       Log4Cats.noop,
-      Smithy.rulesEngine % Smithy4s
+      Smithy.rulesEngine(smithy4s.codegen.BuildInfo.smithyVersion) % Smithy4s,
+      S4S.kinesis % Smithy4s
     ),
     Compile / smithy4sAllowedNamespaces := List(
       "smithy.rules",
       "com.amazonaws.kinesis"
-    )
+    ),
+    Compile / smithy4sModelTransformers += "KinesisSpecTransformer",
+    Compile / smithy4sAllDependenciesAsJars +=
+      (preprocessors.jvm(Scala212) / Compile / packageBin).value
   )
   .jvmPlatform(last2ScalaVersions)
   .enableIntegrationTests
@@ -472,6 +487,7 @@ lazy val allProjects = Seq(
   `kinesis-client-logging-circe`,
   `kinesis-client-localstack`,
   `kinesis-client-tests`,
+  preprocessors,
   `smithy4s-client`,
   `smithy4s-client-logging-circe`,
   `smithy4s-client-localstack`

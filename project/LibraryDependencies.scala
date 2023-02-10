@@ -80,9 +80,10 @@ object LibraryDependencies {
   }
 
   object Smithy {
-    val smithyVersion = "1.27.2"
-    val rulesEngine =
-      "software.amazon.smithy" % "smithy-rules-engine" % smithyVersion
+    def rulesEngine(version: String) =
+      "software.amazon.smithy" % "smithy-rules-engine" % version
+    def build(version: String) =
+      "software.amazon.smithy" % "smithy-build" % version
   }
 
   object Smithy4s {
@@ -94,5 +95,7 @@ object LibraryDependencies {
       "com.disneystreaming.smithy4s" %% "smithy4s-http4s-swagger" % version
     def http4sAws(version: String) =
       "com.disneystreaming.smithy4s" %% "smithy4s-aws-http4s" % version
+    val kinesis =
+      "com.disneystreaming.smithy" % "aws-kinesis-spec" % "2023.02.10"
   }
 }
