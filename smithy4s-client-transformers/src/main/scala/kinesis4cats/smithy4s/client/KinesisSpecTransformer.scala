@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package preprocessors
+package kinesis4cats.smithy4s.client
 
 import scala.jdk.CollectionConverters._
 
@@ -35,6 +35,20 @@ final class KinesisSpecTransformer extends ProjectionTransformer {
   val putRecordsOutputShapeId =
     ShapeId.fromParts("com.amazonaws.kinesis", "PutRecordsOutput")
 
+  val listStreamConsumersOutputNextTokenShapeId =
+    ShapeId.fromParts(
+      "com.amazonaws.kinesis",
+      "ListStreamConsumersOutput",
+      "NextToken"
+    )
+
+  val listShardsOutputNextTokenShapeId =
+    ShapeId.fromParts(
+      "com.amazonaws.kinesis",
+      "ListShardsOutput",
+      "NextToken"
+    )
+
   val nonNegativeIntegerObjectShape =
     IntegerShape
       .builder()
@@ -51,6 +65,28 @@ final class KinesisSpecTransformer extends ProjectionTransformer {
         shape.toShapeId() == metricsNameListShapeId
       ) {
         LengthTrait.builder().min(0).max(7).build()
+      } else if (
+        shape
+          .toShapeId() == listStreamConsumersOutputNextTokenShapeId && `trait`
+          .toShapeId() == DocumentationTrait.ID
+      ) {
+        new DocumentationTrait(
+          `trait`
+            .asInstanceOf[DocumentationTrait]
+            .getValue()
+            .replace("ListStreamConsumersInput$NextToken", "NextToken")
+        )
+      } else if (
+        shape
+          .toShapeId() == listShardsOutputNextTokenShapeId && `trait`
+          .toShapeId() == DocumentationTrait.ID
+      ) {
+        new DocumentationTrait(
+          `trait`
+            .asInstanceOf[DocumentationTrait]
+            .getValue()
+            .replace("ListShardsInput$NextToken", "NextToken")
+        )
       } else `trait`
 
   val shapeTransform: function.Function[Shape, Shape] = (shape: Shape) =>
@@ -66,11 +102,11 @@ final class KinesisSpecTransformer extends ProjectionTransformer {
           else member
         }
 
-      StructureShape
-        .builder()
+      shape
+        .asStructureShape()
+        .get()
+        .toBuilder()
         .members(members.asJavaCollection)
-        .id(putRecordsOutputShapeId)
-        .traits(shape.getAllTraits().values())
         .build()
     } else shape
 
