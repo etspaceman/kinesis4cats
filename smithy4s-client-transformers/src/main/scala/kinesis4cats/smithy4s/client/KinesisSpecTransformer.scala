@@ -16,7 +16,7 @@
 
 package kinesis4cats.smithy4s.client
 
-import scala.jdk.CollectionConverters._
+import scala.collection.JavaConverters._
 
 import java.util.function
 import java.util.function.BiFunction
@@ -72,7 +72,7 @@ final class KinesisSpecTransformer extends ProjectionTransformer {
       ) {
         new DocumentationTrait(
           `trait`
-            .asInstanceOf[DocumentationTrait]
+            .asInstanceOf[DocumentationTrait] // scalafix:ok
             .getValue()
             .replace("ListStreamConsumersInput$NextToken", "NextToken")
         )
@@ -83,7 +83,7 @@ final class KinesisSpecTransformer extends ProjectionTransformer {
       ) {
         new DocumentationTrait(
           `trait`
-            .asInstanceOf[DocumentationTrait]
+            .asInstanceOf[DocumentationTrait] // scalafix:ok
             .getValue()
             .replace("ListShardsInput$NextToken", "NextToken")
         )

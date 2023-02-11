@@ -4,7 +4,6 @@ import org.typelevel.sbt._
 import org.typelevel.sbt.gha._
 import sbt.Keys._
 import sbt._
-import sbt.internal.ProjectMatrix
 
 object Kinesis4CatsPlugin extends AutoPlugin {
   override def trigger = allRequirements
@@ -51,7 +50,7 @@ object Kinesis4CatsPlugin extends AutoPlugin {
     licenses := Seq(License.Apache2),
     developers := List(tlGitHubDev("etspaceman", "Eric Meisel")),
     coverageScalacPluginVersion := "2.0.7",
-    crossScalaVersions := Seq(Scala212, Scala3, Scala213),
+    crossScalaVersions := Seq(Scala213, Scala3),
     scalaVersion := Scala213,
     githubWorkflowBuild := {
       val style = (tlCiHeaderCheck.value, tlCiScalafmtCheck.value) match {
@@ -184,18 +183,6 @@ object Kinesis4CatsPlugin extends AutoPlugin {
     Test / testOptions ++= {
       List(Tests.Argument(MUnitFramework, "+l"))
     },
-    // Workaround for https://github.com/typelevel/sbt-typelevel/issues/464
-    scalacOptions ++= {
-      if (tlIsScala3.value)
-        Seq(
-          "-language:implicitConversions",
-          "-Ykind-projector",
-          "-source:3.0-migration"
-        )
-      else
-        Seq("-language:_")
-    },
-    scalacOptions -= "-Ykind-projector:underscores",
     ThisBuild / semanticdbEnabled := true,
     semanticdbVersion := scalafixSemanticdb.revision,
     libraryDependencies ++= Seq(
@@ -264,9 +251,6 @@ object Kinesis4CatsPluginKeys {
   val Scala213 = "2.13.10"
   val Scala3 = "3.2.2"
 
-  val allScalaVersions = List(Scala213, Scala3, Scala212)
-  val last2ScalaVersions = List(Scala213, Scala3)
-
   val MUnitFramework = new TestFramework("munit.Framework")
 
   import de.heikoseeberger.sbtheader.HeaderPlugin.autoImport._
@@ -274,37 +258,6 @@ object Kinesis4CatsPluginKeys {
 
   val IT = config("it").extend(Test)
   val FunctionalTest = config("fun").extend(Test)
-
-  final implicit class Kinesi4CatsProjectMatrixOps(private val p: ProjectMatrix)
-      extends AnyVal {
-    def enableIntegrationTests = p
-      .configs(IT)
-      .settings(inConfig(IT) {
-        ScalafmtPlugin.scalafmtConfigSettings ++
-          scalafixConfigSettings(IT) ++
-          BloopSettings.default ++
-          Defaults.testSettings ++
-          headerSettings(IT) ++
-          Seq(
-            parallelExecution := false,
-            javaOptions += "-Dcom.amazonaws.sdk.disableCertChecking=true"
-          )
-      })
-
-    def enableFunctionalTests = p
-      .configs(FunctionalTest)
-      .settings(inConfig(FunctionalTest) {
-        ScalafmtPlugin.scalafmtConfigSettings ++
-          scalafixConfigSettings(FunctionalTest) ++
-          BloopSettings.default ++
-          Defaults.testSettings ++
-          headerSettings(FunctionalTest) ++
-          Seq(
-            parallelExecution := false,
-            javaOptions += "-Dcom.amazonaws.sdk.disableCertChecking=true"
-          )
-      })
-  }
 
   final implicit class Kinesis4CatsProjectOps(private val p: Project)
       extends AnyVal {

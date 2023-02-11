@@ -9,7 +9,6 @@ addSbtPlugin(
   "com.disneystreaming.smithy4s" % "smithy4s-sbt-codegen" % "0.17.3"
 )
 addSbtPlugin("com.eed3si9n" % "sbt-buildinfo" % "0.11.0")
-addSbtPlugin("com.eed3si9n" % "sbt-projectmatrix" % "0.9.0")
 
 libraryDependencies += "org.slf4j" % "slf4j-nop" % "2.0.6"
 libraryDependencySchemes += "org.scala-lang.modules" %% "scala-xml" % VersionScheme.Always
