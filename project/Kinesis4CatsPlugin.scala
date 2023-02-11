@@ -2,6 +2,7 @@ import LibraryDependencies._
 import org.scalafmt.sbt.ScalafmtPlugin
 import org.typelevel.sbt._
 import org.typelevel.sbt.gha._
+import org.typelevel.sbt.mergify._
 import sbt.Keys._
 import sbt._
 
@@ -21,6 +22,7 @@ object Kinesis4CatsPlugin extends AutoPlugin {
   import TypelevelKernelPlugin.autoImport._
   import TypelevelSitePlugin.autoImport._
   import TypelevelVersioningPlugin.autoImport._
+  import MergifyPlugin.autoImport._
   import autoImport._
   import de.heikoseeberger.sbtheader.HeaderPlugin.autoImport._
   import org.scalafmt.sbt.ScalafmtPlugin.autoImport._
