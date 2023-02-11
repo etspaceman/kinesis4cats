@@ -325,32 +325,6 @@ lazy val `smithy4s-client-tests` = project
     `smithy4s-client-logging-circe` % IT
   )
 
-lazy val docProjects = Seq(
-  shared,
-  `shared-circe`,
-  `shared-ciris`,
-  `shared-localstack`,
-  `aws-v1-localstack`,
-  `aws-v2-localstack`,
-  kcl,
-  `kcl-fs2`,
-  `kcl-http4s`,
-  `kcl-ciris`,
-  `kcl-fs2-ciris`,
-  `kcl-logging-circe`,
-  `kcl-localstack`,
-  kpl,
-  `kpl-ciris`,
-  `kpl-logging-circe`,
-  `kpl-localstack`,
-  `kinesis-client`,
-  `kinesis-client-logging-circe`,
-  `kinesis-client-localstack`,
-  `smithy4s-client`,
-  `smithy4s-client-logging-circe`,
-  `smithy4s-client-localstack`
-)
-
 lazy val docs = project
   .in(file("site"))
   .enablePlugins(TypelevelSitePlugin)
@@ -390,7 +364,31 @@ lazy val docs = project
     )
   )
   .settings(crossScalaVersions := List(Scala213))
-  .dependsOn(docProjects.flatMap(_.dependencies): _*)
+  .dependsOn(
+    shared,
+    `shared-circe`,
+    `shared-ciris`,
+    `shared-localstack`,
+    `aws-v1-localstack`,
+    `aws-v2-localstack`,
+    kcl,
+    `kcl-fs2`,
+    `kcl-http4s`,
+    `kcl-ciris`,
+    `kcl-fs2-ciris`,
+    `kcl-logging-circe`,
+    `kcl-localstack`,
+    kpl,
+    `kpl-ciris`,
+    `kpl-logging-circe`,
+    `kpl-localstack`,
+    `kinesis-client`,
+    `kinesis-client-logging-circe`,
+    `kinesis-client-localstack`,
+    `smithy4s-client`,
+    `smithy4s-client-logging-circe`,
+    `smithy4s-client-localstack`
+  )
 
 lazy val unidocs = project
   .enablePlugins(TypelevelUnidocPlugin)
@@ -398,7 +396,29 @@ lazy val unidocs = project
     name := "kinesis4cats-docs",
     moduleName := name.value,
     ScalaUnidoc / unidoc / unidocProjectFilter := inProjects(
-      docProjects.flatMap(_.referenced): _*
+      shared,
+      `shared-circe`,
+      `shared-ciris`,
+      `shared-localstack`,
+      `aws-v1-localstack`,
+      `aws-v2-localstack`,
+      kcl,
+      `kcl-fs2`,
+      `kcl-http4s`,
+      `kcl-ciris`,
+      `kcl-fs2-ciris`,
+      `kcl-logging-circe`,
+      `kcl-localstack`,
+      kpl,
+      `kpl-ciris`,
+      `kpl-logging-circe`,
+      `kpl-localstack`,
+      `kinesis-client`,
+      `kinesis-client-logging-circe`,
+      `kinesis-client-localstack`,
+      `smithy4s-client`,
+      `smithy4s-client-logging-circe`,
+      `smithy4s-client-localstack`
     )
   )
 
