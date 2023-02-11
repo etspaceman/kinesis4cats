@@ -19,12 +19,20 @@ package producer
 
 import scala.jdk.CollectionConverters._
 
+import java.time.Instant
+
 import cats.data.NonEmptyList
-import cats.effect.kernel.Async
+import cats.effect.Async
+import cats.effect.kernel.Resource
+import cats.effect.syntax.all._
+import cats.syntax.all._
 import org.typelevel.log4cats.StructuredLogger
+import org.typelevel.log4cats.slf4j.Slf4jLogger
 import software.amazon.awssdk.core.SdkBytes
+import software.amazon.awssdk.services.kinesis.KinesisAsyncClient
 import software.amazon.awssdk.services.kinesis.model._
 
+import kinesis4cats.models
 import kinesis4cats.producer.{Record => Rec, _}
 import kinesis4cats.syntax.id._
 
@@ -112,4 +120,61 @@ final class KinesisProducer[F[_]] private (
       }
     )
   }
+}
+
+object KinesisProducer {
+
+  private def getShardMap[F[_]](client: KinesisClient[F])(implicit
+      F: Async[F]
+  ): F[Either[ShardMapCache.Error, ShardMap]] = client
+    .listShards(
+      ListShardsRequest
+        .builder()
+        .shardFilter(
+          ShardFilter.builder().`type`(ShardFilterType.AT_LATEST).build()
+        )
+        .build()
+    )
+    .attempt
+    .map(
+      _.bimap(
+        ShardMapCache.ListShardsError(_),
+        resp =>
+          ShardMap(
+            resp
+              .shards()
+              .asScala
+              .toList
+              .map(x =>
+                ShardMapRecord(
+                  models.ShardId(
+                    x.shardId()
+                  ),
+                  models.HashKeyRange(
+                    BigInt(x.hashKeyRange().endingHashKey()),
+                    BigInt(x.hashKeyRange().startingHashKey())
+                  )
+                )
+              ),
+            Instant.now()
+          )
+      )
+    )
+
+  def apply[F[_]](config: Producer.Config, _underlying: KinesisAsyncClient)(
+      implicit
+      F: Async[F],
+      LE: Producer.LogEncoders,
+      KLE: KinesisClient.LogEncoders,
+      SLE: ShardMapCache.LogEncoders
+  ): Resource[F, KinesisProducer[F]] = for {
+    logger <- Slf4jLogger.create[F].toResource
+    underlying <- KinesisClient[F](_underlying)
+    shardMapCache <- ShardMapCache[F](
+      config.shardMapCacheConfig,
+      getShardMap(underlying),
+      Slf4jLogger.create[F].widen
+    )
+    producer = new KinesisProducer[F](logger, shardMapCache, config, underlying)
+  } yield producer
 }

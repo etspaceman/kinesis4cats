@@ -24,13 +24,13 @@ import kinesis4cats.models.ShardId
 // The records in a specific shard
 final case class ShardBatch private (
     shardId: ShardId,
-    _records: NonEmptyList[Record],
+    records: NonEmptyList[Record],
     count: Int,
     batchSize: Long
 ) {
   def add(record: Record): ShardBatch =
     copy(
-      _records = _records.prepend(record),
+      records = records.prepend(record),
       count = count + 1,
       batchSize = batchSize + record.payloadSize
     )
@@ -39,7 +39,7 @@ final case class ShardBatch private (
     count + 1 <= Constants.MaxRecordsPerShardPerSecond &&
       batchSize + record.payloadSize <= Constants.MaxIngestionPerShardPerSecond
 
-  def records = _records.reverse
+  def finalizeBatch: ShardBatch = copy(records = records.reverse)
 }
 
 object ShardBatch {

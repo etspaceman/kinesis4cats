@@ -16,7 +16,7 @@
 
 package kinesis4cats.producer
 
-import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.duration._
 
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
@@ -95,9 +95,14 @@ object ShardMapCache {
 
   final case class Config(refreshInterval: FiniteDuration)
 
+  object Config {
+    val default = Config(1.hour)
+  }
+
   sealed abstract class Error(msg: String) extends Exception(msg)
   final case class ShardForPartitionKeyNotFound(partitionKey: String)
       extends Error(s"Could not find shard for partition key ${partitionKey}")
+  final case class ListShardsError(e: Throwable) extends Error(e.getMessage())
 
 }
 

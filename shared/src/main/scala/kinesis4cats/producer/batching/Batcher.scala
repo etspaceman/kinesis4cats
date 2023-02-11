@@ -58,10 +58,13 @@ object Batcher {
 
     NonEmptyList.fromList(records.tail) match {
       case None =>
-        res.fold(
+        newRes.fold(
           Ior.left[Producer.Error, NonEmptyList[Batch]](Producer.Error(None))
         )(r =>
-          r.bimap(x => Producer.Error.recordsTooLarge(x.reverse), _.reverse)
+          r.bimap(
+            x => Producer.Error.recordsTooLarge(x.reverse),
+            _.map(_.finalizeBatch).reverse
+          )
         )
       case Some(recs) => batch(recs, newRes)
     }

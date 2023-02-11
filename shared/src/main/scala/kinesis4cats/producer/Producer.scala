@@ -76,7 +76,7 @@ abstract class Producer[F[_], PutReq, PutRes, PutNReq, PutNRes](implicit
       res <- batched
         .traverse(batches =>
           batches.flatTraverse(batch =>
-            batch.shardBatches
+            batch.shardBatches.toNonEmptyList
               .map(_.records)
               .parTraverseN(config.shardParallelism) { shardBatch =>
                 val request = req.withRecords(shardBatch)
@@ -116,11 +116,12 @@ object Producer {
       warnOnShardCacheMisses: Boolean,
       warnOnBatchFailures: Boolean,
       shardParallelism: Int,
-      raiseOnFailures: Boolean
+      raiseOnFailures: Boolean,
+      shardMapCacheConfig: ShardMapCache.Config
   )
 
   object Config {
-    val default = Config(true, true, 8, false)
+    val default = Config(true, true, 8, false, ShardMapCache.Config.default)
   }
 
   final case class Error(

@@ -17,24 +17,21 @@
 package kinesis4cats.producer
 package batching
 
-import cats.data.{NonEmptyList, NonEmptyMap}
+import cats.data.NonEmptyMap
 
 import kinesis4cats.models.ShardId
 
 final case class Batch(
-    _shardBatches: NonEmptyMap[ShardId, ShardBatch],
+    shardBatches: NonEmptyMap[ShardId, ShardBatch],
     count: Int,
     batchSize: Long
 ) {
-  private def getOrCreateShardBatch(record: Record.WithShard): ShardBatch =
-    _shardBatches(record.predictedShard)
-      .getOrElse(ShardBatch.create(record))
 
   def add(record: Record.WithShard): Batch =
     copy(
-      _shardBatches = _shardBatches.add(
+      shardBatches = shardBatches.add(
         (record.predictedShard ->
-          _shardBatches(record.predictedShard)
+          shardBatches(record.predictedShard)
             .fold(ShardBatch.create(record))(x => x.add(record.record)))
       ),
       count = count + 1,
@@ -43,11 +40,13 @@ final case class Batch(
 
   def canAdd(record: Record.WithShard): Boolean =
     count + 1 <= Constants.MaxRecordsPerRequest &&
-      batchSize + record.payloadSize <= Constants.MaxPayloadSizePerRecord &&
-      getOrCreateShardBatch(record).canAdd(record.record)
+      batchSize + record.payloadSize <= Constants.MaxPayloadSizePerRequest &&
+      shardBatches(record.predictedShard)
+        .map(_.canAdd(record.record))
+        .getOrElse(true)
 
-  def shardBatches: NonEmptyList[ShardBatch] =
-    _shardBatches.toNel.map(_._2)
+  def finalizeBatch: Batch =
+    copy(shardBatches = shardBatches.map(_.finalizeBatch))
 }
 
 object Batch {
