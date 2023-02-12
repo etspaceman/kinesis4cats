@@ -302,7 +302,8 @@ lazy val `smithy4s-client-transformers` = projectMatrix
     description := "Transformers for the smithy4s-client project",
     libraryDependencies ++= Seq(
       Smithy.build(smithy4s.codegen.BuildInfo.smithyVersion)
-    )
+    ),
+    tlVersionIntroduced := Map("2.12" -> "0.0.2")
   )
   .jvmPlatform(List(Scala212))
   .enableIntegrationTests
@@ -311,6 +312,7 @@ lazy val `smithy4s-client` = projectMatrix
   .enablePlugins(Smithy4sCodegenPlugin)
   .settings(
     description := "Cats tooling for the Smithy4s Kinesis Client",
+    tlVersionIntroduced := Map("2.13" -> "0.0.2", "3" -> "0.0.2"),
     libraryDependencies ++= Seq(
       S4S.http4sAws(smithy4sVersion.value),
       Log4Cats.noop,
@@ -335,6 +337,7 @@ lazy val `smithy4s-client-logging-circe` = projectMatrix
   .enablePlugins(Smithy4sCodegenPlugin)
   .settings(
     description := "JSON structured logging instances for the Smithy4s Kinesis Client, via Circe",
+    tlVersionIntroduced := Map("2.13" -> "0.0.2", "3" -> "0.0.2"),
     libraryDependencies ++= Seq(Http4s.circe)
   )
   .jvmPlatform(last2ScalaVersions)
@@ -343,7 +346,8 @@ lazy val `smithy4s-client-logging-circe` = projectMatrix
 
 lazy val `smithy4s-client-localstack` = projectMatrix
   .settings(
-    description := "A test-kit for working with Kinesis and Localstack, via the Smithy4s Client project"
+    description := "A test-kit for working with Kinesis and Localstack, via the Smithy4s Client project",
+    tlVersionIntroduced := Map("2.13" -> "0.0.2", "3" -> "0.0.2")
   )
   .jvmPlatform(last2ScalaVersions)
   .dependsOn(`shared-localstack`, `smithy4s-client`)
@@ -352,6 +356,7 @@ lazy val `smithy4s-client-tests` = projectMatrix
   .enablePlugins(NoPublishPlugin)
   .settings(
     description := "Integration Tests for the Smithy4s Kinesis Client",
+    tlVersionIntroduced := Map("2.13" -> "0.0.2", "3" -> "0.0.2"),
     libraryDependencies ++= Seq(Http4s.emberClient % IT, Log4Cats.slf4j % IT)
   )
   .jvmPlatform(last2ScalaVersions)
