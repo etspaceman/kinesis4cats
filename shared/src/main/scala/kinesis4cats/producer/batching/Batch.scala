@@ -30,9 +30,9 @@ final case class Batch(
   def add(record: Record.WithShard): Batch =
     copy(
       shardBatches = shardBatches.add(
-        (record.predictedShard ->
+        record.predictedShard ->
           shardBatches(record.predictedShard)
-            .fold(ShardBatch.create(record))(x => x.add(record.record)))
+            .fold(ShardBatch.create(record))(x => x.add(record.record))
       ),
       count = count + 1,
       batchSize = batchSize + record.payloadSize

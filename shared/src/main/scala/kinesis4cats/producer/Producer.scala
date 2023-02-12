@@ -64,11 +64,13 @@ abstract class Producer[F[_], PutReq, PutRes, PutNReq, PutNRes](implicit
             .shardForPartitionKey(digest, rec.partitionKey)
           _ <-
             if (config.warnOnShardCacheMisses)
-              shardRes.leftTraverse(e =>
-                logger.warn(ctx.context, e)(
-                  s"Did not find a shard for Partition Key ${rec.partitionKey}"
+              shardRes
+                .leftTraverse(e =>
+                  logger.warn(ctx.context, e)(
+                    s"Did not find a shard for Partition Key ${rec.partitionKey}"
+                  )
                 )
-              )
+                .void
             else F.unit
         } yield Record.WithShard.fromOption(rec, shardRes.toOption)
       )

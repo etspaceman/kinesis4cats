@@ -108,7 +108,7 @@ final class KinesisProducer[F[_]] private (
   override protected def failedRecords(
       req: PutNRequest,
       resp: PutRecordsResponse
-  ): Option[NonEmptyList[Producer.FailedRecord]] = {
+  ): Option[NonEmptyList[Producer.FailedRecord]] =
     NonEmptyList.fromList(
       resp.records().asScala.toList.zip(req.records.toList).collect {
         case (respEntry, record) if Option(respEntry.errorCode()).nonEmpty =>
@@ -119,7 +119,6 @@ final class KinesisProducer[F[_]] private (
           )
       }
     )
-  }
 }
 
 object KinesisProducer {

@@ -40,7 +40,7 @@ final case class StreamArn(
 }
 
 object StreamArn {
-  def fromArn(streamArn: String): Either[String, StreamArn] = {
+  def fromArn(streamArn: String): Either[String, StreamArn] =
     for {
       streamName <- Try(streamArn.split("/")(1)).toEither.leftMap(e =>
         s"Could not get stream name from ARN: ${e.getMessage}"
@@ -59,5 +59,4 @@ object StreamArn {
         s"Could not get awsAccountId from ARN: ${e.getMessage}"
       )
     } yield StreamArn(awsRegion, streamName, awsAccountId)
-  }
 }

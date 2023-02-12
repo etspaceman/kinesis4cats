@@ -141,9 +141,7 @@ class RecordProcessorSpec extends munit.CatsEffectSuite {
           } yield ()
         }
       result <- deferredException.get
-    } yield {
-      assertEquals(result, expected)
-    }
+    } yield assertEquals(result, expected)
   }
 
 }

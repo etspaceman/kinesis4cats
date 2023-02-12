@@ -18,9 +18,12 @@ package kinesis4cats.localstack
 
 import java.net.URI
 
+import cats.Show
 import cats.effect.{Async, Resource}
 import ciris._
+import io.circe.Encoder
 
+import kinesis4cats.ShowBuilder
 import kinesis4cats.ciris.CirisReader
 import kinesis4cats.instances.ciris._
 import kinesis4cats.models.AwsRegion
@@ -48,6 +51,24 @@ final case class LocalstackConfig(
 }
 
 object LocalstackConfig {
+  implicit val localstackConfigShow: Show[LocalstackConfig] = x =>
+    ShowBuilder("LocalstackConfig")
+      .add("servicePort", x.servicePort)
+      .add("protocol", x.protocol.name)
+      .add("host", x.host)
+      .add("region", x.region.name)
+      .add("endpoint", x.endpoint)
+      .build
+
+  implicit val localstackCirceEncoder: Encoder[LocalstackConfig] =
+    Encoder.forProduct5(
+      "servicePort",
+      "protocol",
+      "host",
+      "region",
+      "endpoint"
+    )(x => (x.servicePort, x.protocol.name, x.host, x.region.name, x.endpoint))
+
   def read(
       prefix: Option[String] = None
   ): ConfigValue[Effect, LocalstackConfig] = for {
