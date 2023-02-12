@@ -174,7 +174,7 @@ class RecordProcessor[F[_]] private[kinesis4cats] (
             else F.unit
         } yield ()
       ).flatMap {
-        case Left(error) if (raiseOnError) =>
+        case Left(error) if raiseOnError =>
           logger.error(ctx.context, error)(
             "Exception raised in processRecords. Error will be raised and the consumer will be shutdown."
           ) >>

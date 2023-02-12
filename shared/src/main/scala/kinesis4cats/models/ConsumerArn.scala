@@ -33,7 +33,7 @@ final case class ConsumerArn(
 }
 
 object ConsumerArn {
-  def fromArn(consumerArn: String): Either[String, ConsumerArn] = {
+  def fromArn(consumerArn: String): Either[String, ConsumerArn] =
     for {
       streamArn <- Try(consumerArn.split("/consumer")(0)).toEither
         .leftMap(e =>
@@ -63,5 +63,4 @@ object ConsumerArn {
             )
         )
     } yield ConsumerArn(streamArn, consumerName, creationTimestamp)
-  }
 }

@@ -8,8 +8,8 @@ object DockerComposePlugin extends AutoPlugin {
   override def requires: Plugins = DockerImagePlugin
 
   val autoImport: DockerComposePluginKeys.type = DockerComposePluginKeys
-  import autoImport._
   import DockerImagePlugin.autoImport._
+  import autoImport._
 
   val createNetworkTask: Def.Initialize[Task[Unit]] = Def.task {
     val log = sbt.Keys.streams.value.log
@@ -140,7 +140,7 @@ object DockerComposePlugin extends AutoPlugin {
       configuration: Configuration,
       build: Boolean,
       projects: List[Project]
-  ): Seq[Setting[_]] =
+  ): Seq[Setting[_]] = inConfig(configuration)(
     Seq(
       createNetwork := createNetworkTask.value,
       removeNetwork := removeNetworkTask.value,
@@ -158,7 +158,7 @@ object DockerComposePlugin extends AutoPlugin {
       buildImage := build,
       projectsToBuild := projects
     )
-
+  )
 }
 
 object DockerComposePluginKeys {

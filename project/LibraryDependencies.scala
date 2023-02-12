@@ -1,8 +1,6 @@
 import sbt._
 
 object LibraryDependencies {
-  val OrganizeImports =
-    "com.github.liancheng" %% "organize-imports" % "0.6.0"
   val Logback = "ch.qos.logback" % "logback-classic" % "1.4.5"
   val CatsRetry = "com.github.cb372" %% "cats-retry" % "3.1.0"
   val JavaXMLBind = "javax.xml.bind" % "jaxb-api" % "2.3.1"
@@ -21,6 +19,7 @@ object LibraryDependencies {
   object Log4Cats {
     val log4CatsVersion = "2.5.0"
     val slf4j = "org.typelevel" %% "log4cats-slf4j" % log4CatsVersion
+    val noop = "org.typelevel" %% "log4cats-noop" % log4CatsVersion
   }
 
   object Munit {
@@ -77,6 +76,14 @@ object LibraryDependencies {
     val http4sVersion = "0.23.18"
     val emberServer = "org.http4s" %% "http4s-ember-server" % http4sVersion
     val emberClient = "org.http4s" %% "http4s-ember-client" % http4sVersion
+    val circe = "org.http4s" %% "http4s-circe" % http4sVersion
+  }
+
+  object Smithy {
+    def rulesEngine(version: String) =
+      "software.amazon.smithy" % "smithy-rules-engine" % version
+    def build(version: String) =
+      "software.amazon.smithy" % "smithy-build" % version
   }
 
   object Smithy4s {
@@ -86,5 +93,9 @@ object LibraryDependencies {
       "com.disneystreaming.smithy4s" %% "smithy4s-http4s" % version
     def http4sSwagger(version: String) =
       "com.disneystreaming.smithy4s" %% "smithy4s-http4s-swagger" % version
+    def http4sAws(version: String) =
+      "com.disneystreaming.smithy4s" %% "smithy4s-aws-http4s" % version
+    val kinesis =
+      "com.disneystreaming.smithy" % "aws-kinesis-spec" % "2023.02.10"
   }
 }
