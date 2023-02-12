@@ -51,13 +51,27 @@ object LocalstackKinesisClient {
     * @return
     *   [[smithy4s.aws.AwsEnvironment AwsEnvironment]]
     */
-  private def localstackEnv[F[_]](client: Client[F], region: AwsRegion)(implicit
+  def localstackEnv[F[_]](client: Client[F], region: AwsRegion)(implicit
       F: Async[F]
   ): AwsEnvironment[F] = AwsEnvironment.make[F](
     AwsHttp4sBackend(client),
     F.pure(region),
     F.pure(AwsCredentials.Default("mock-key-id", "mock-secret-key", None)),
     F.realTime.map(_.toSeconds).map(Timestamp(_, 0))
+  )
+
+  def localstackHttp4sClient[F[_]](
+      client: Client[F],
+      config: LocalstackConfig,
+      loggerF: Async[F] => F[StructuredLogger[F]]
+  )(implicit
+      F: Async[F],
+      LE: KinesisClient.LogEncoders[F],
+      LELC: LogEncoder[LocalstackConfig]
+  ): F[Client[F]] = loggerF(F).map(logger =>
+    LocalstackProxy[F](config, logger)(
+      RequestResponseLogger(logger)(client)
+    )
   )
 
   /** Creates a [[cats.effect.Resource Resource]] of a KinesisClient that is
@@ -87,10 +101,7 @@ object LocalstackKinesisClient {
       LE: KinesisClient.LogEncoders[F],
       LELC: LogEncoder[LocalstackConfig]
   ): Resource[F, KinesisClient[F]] = for {
-    logger <- loggerF(F).toResource
-    clnt = LocalstackProxy[F](config, logger)(
-      RequestResponseLogger(logger)(client)
-    )
+    clnt <- localstackHttp4sClient(client, config, loggerF).toResource
     env = localstackEnv(clnt, region)
     awsClient <- AwsClient.simple(Kinesis.service, env)
   } yield awsClient
@@ -101,7 +112,8 @@ object LocalstackKinesisClient {
     * @param client
     *   [[https://http4s.org/v0.23/docs/client.html Client]]
     * @param region
-    *   [[https://github.com/disneystreaming/smithy4s/blob/series/0.17/modules/aws-kernel/src/smithy4s/aws/AwsRegion.scala AwsRegion]]
+    *   [[https://github.com/disneystreaming/smithy4s/blob/series/0.17/modules/aws-kernel/src/smithy4s/aws/AwsRegion.scala AwsRegion]].
+    *   Defualt is US_EAST_1
     * @param prefix
     *   Optional string prefix to apply when loading configuration. Default to
     *   None
@@ -117,7 +129,7 @@ object LocalstackKinesisClient {
     */
   def clientResource[F[_]](
       client: Client[F],
-      region: AwsRegion,
+      region: AwsRegion = AwsRegion.US_EAST_1,
       prefix: Option[String] = None,
       loggerF: Async[F] => F[StructuredLogger[F]] = (f: Async[F]) =>
         f.pure(NoOpLogger[F](f))

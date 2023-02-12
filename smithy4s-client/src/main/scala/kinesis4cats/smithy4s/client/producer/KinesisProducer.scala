@@ -37,7 +37,7 @@ import smithy4s.aws.kernel.AwsRegion
 import kinesis4cats.models
 import kinesis4cats.producer.{Record => Rec, _}
 
-final class KinesisProducer[F[_]] private (
+final class KinesisProducer[F[_]] private[kinesis4cats] (
     override val logger: StructuredLogger[F],
     override val shardMapCache: ShardMapCache[F],
     override val config: Producer.Config,
@@ -95,7 +95,7 @@ object KinesisProducer {
       shardFilter = Some(ShardFilter(ShardFilterType.AT_LATEST))
     )
 
-  private def getShardMap[F[_]](
+  private[kinesis4cats] def getShardMap[F[_]](
       client: KinesisClient[F],
       streamNameOrArn: models.StreamNameOrArn
   )(implicit

@@ -35,6 +35,7 @@ abstract class Producer[F[_], PutReq, PutRes](implicit
 ) {
 
   import LE._
+
   def logger: StructuredLogger[F]
   def shardMapCache: ShardMapCache[F]
   def config: Producer.Config
@@ -48,7 +49,7 @@ abstract class Producer[F[_], PutReq, PutRes](implicit
   ): Option[NonEmptyList[Producer.FailedRecord]]
 
   def put(req: PutRequest): F[Ior[Producer.Error, NonEmptyList[PutRes]]] = {
-    val ctx = LogContext().addEncoded("request", req)
+    val ctx = LogContext()
 
     val digest = Producer.md5Digest
 
@@ -61,9 +62,14 @@ abstract class Producer[F[_], PutReq, PutRes](implicit
             if (config.warnOnShardCacheMisses)
               shardRes
                 .leftTraverse(e =>
-                  logger.warn(ctx.context, e)(
-                    s"Did not find a shard for Partition Key ${rec.partitionKey}"
-                  )
+                  for {
+                    _ <- logger.warn(ctx.context, e)(
+                      s"Did not find a shard for Partition Key ${rec.partitionKey}"
+                    )
+                    _ <- logger.trace(ctx.addEncoded("request", req).context)(
+                      "Logging records"
+                    )
+                  } yield ()
                 )
                 .void
             else F.unit

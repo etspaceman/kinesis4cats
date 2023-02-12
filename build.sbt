@@ -169,7 +169,8 @@ lazy val `kcl-tests` = projectMatrix
     description := "Integration Tests for the KCL",
     libraryDependencies ++= Seq(
       Logback,
-      Http4s.emberClient % FunctionalTest
+      Http4s.emberClient % FunctionalTest,
+      Http4s.emberClient % IT
     ),
     assembly / assemblyMergeStrategy := {
       case "module-info.class"                        => MergeStrategy.discard
@@ -189,13 +190,15 @@ lazy val `kcl-tests` = projectMatrix
     },
     assembly / mainClass := Some("kinesis4cats.kcl.http4s.TestKCLService")
   )
-  .jvmPlatform(allScalaVersions)
+  .jvmPlatform(last2ScalaVersions)
   .dependsOn(
     `kcl-http4s`,
     `kcl-localstack`,
     `kcl-logging-circe` % IT,
     `kinesis-client-localstack` % IT,
-    `kinesis-client-logging-circe` % IT
+    `kinesis-client-logging-circe` % IT,
+    `smithy4s-client-localstack` % IT,
+    `smithy4s-client-logging-circe` % IT
   )
 
 lazy val kpl = projectMatrix
