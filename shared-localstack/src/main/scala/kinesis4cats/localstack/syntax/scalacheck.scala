@@ -18,6 +18,8 @@ package kinesis4cats.localstack.syntax
 
 import org.scalacheck.Gen
 
+import kinesis4cats.compat.LazyListCompat
+
 object scalacheck extends ScalacheckSyntax
 
 trait ScalacheckSyntax {
@@ -27,7 +29,7 @@ trait ScalacheckSyntax {
     new ScalacheckSyntax.ScalacheckGenOps(gen)
 }
 
-object ScalacheckSyntax {
+object ScalacheckSyntax extends LazyListCompat {
   final class ScalacheckGenOps[A](private val gen: Gen[A]) extends AnyVal {
     def lazyList: LazyList[A] = LazyList.continually(gen.sample.toList).flatten
     def one: A = lazyList.head

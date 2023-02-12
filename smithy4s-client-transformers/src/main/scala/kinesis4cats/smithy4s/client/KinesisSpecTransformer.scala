@@ -16,8 +16,8 @@
 
 package kinesis4cats.smithy4s.client
 
-import scala.collection.JavaConverters._
-
+import java.util.ArrayList
+import java.util.Collections
 import java.util.function
 import java.util.function.BiFunction
 
@@ -92,21 +92,27 @@ final class KinesisSpecTransformer extends ProjectionTransformer {
   val shapeTransform: function.Function[Shape, Shape] = (shape: Shape) =>
     if (shape.toShapeId() == putRecordsOutputShapeId) {
       val members =
-        shape.getAllMembers().asScala.toList.map { case (memberName, member) =>
-          if (memberName == "FailedRecordCount")
-            MemberShape
-              .builder()
-              .target(nonNegativeIntegerObjectShape.getId())
-              .id(member.getId())
-              .build()
-          else member
-        }
+        shape
+          .getAllMembers()
+          .entrySet()
+          .stream()
+          .map[MemberShape] { x =>
+            val (memberName, member) = (x.getKey(), x.getValue())
+            if (memberName == "FailedRecordCount")
+              MemberShape
+                .builder()
+                .target(nonNegativeIntegerObjectShape.getId())
+                .id(member.getId())
+                .build()
+            else member
+          }
+          .toList()
 
       shape
         .asStructureShape()
         .get()
         .toBuilder()
-        .members(members.asJavaCollection)
+        .members(members)
         .build()
     } else shape
 
@@ -115,15 +121,13 @@ final class KinesisSpecTransformer extends ProjectionTransformer {
 
     val withMappedTraits =
       transformer.mapTraits(context.getModel(), traitTransform)
+    val newShapesAl = new ArrayList[Shape](withMappedTraits.shapes().toList())
+    newShapesAl.add(nonNegativeIntegerObjectShape)
 
-    val newShapes = withMappedTraits
-      .shapes()
-      .toList()
-      .asScala
-      .toList :+ nonNegativeIntegerObjectShape
+    val newShapes = Collections.unmodifiableList(newShapesAl)
 
     transformer.mapShapes(
-      transformer.replaceShapes(withMappedTraits, newShapes.asJava),
+      transformer.replaceShapes(withMappedTraits, newShapes),
       shapeTransform
     )
   }

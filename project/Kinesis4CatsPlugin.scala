@@ -5,6 +5,7 @@ import org.typelevel.sbt.gha._
 import org.typelevel.sbt.mergify._
 import sbt.Keys._
 import sbt._
+import sbt.internal.ProjectMatrix
 
 object Kinesis4CatsPlugin extends AutoPlugin {
   override def trigger = allRequirements
@@ -17,18 +18,17 @@ object Kinesis4CatsPlugin extends AutoPlugin {
   import DockerComposePlugin.autoImport._
   import DockerImagePlugin.autoImport._
   import GenerativePlugin.autoImport._
+  import MergifyPlugin.autoImport._
   import TypelevelCiPlugin.autoImport._
   import TypelevelGitHubPlugin.autoImport._
   import TypelevelKernelPlugin.autoImport._
   import TypelevelSitePlugin.autoImport._
   import TypelevelVersioningPlugin.autoImport._
-  import MergifyPlugin.autoImport._
   import autoImport._
   import de.heikoseeberger.sbtheader.HeaderPlugin.autoImport._
   import org.scalafmt.sbt.ScalafmtPlugin.autoImport._
   import sbtassembly.AssemblyPlugin.autoImport._
   import scalafix.sbt.ScalafixPlugin.autoImport._
-  import scoverage.ScoverageSbtPlugin.autoImport._
 
   private val primaryJavaOSCond = Def.setting {
     val java = githubWorkflowJavaVersions.value.head
@@ -51,8 +51,7 @@ object Kinesis4CatsPlugin extends AutoPlugin {
     startYear := Some(2023),
     licenses := Seq(License.Apache2),
     developers := List(tlGitHubDev("etspaceman", "Eric Meisel")),
-    coverageScalacPluginVersion := "2.0.7",
-    crossScalaVersions := Seq(Scala213, Scala3),
+    crossScalaVersions := Seq(Scala212, Scala3, Scala213),
     scalaVersion := Scala213,
     githubWorkflowBuild := {
       val style = (tlCiHeaderCheck.value, tlCiScalafmtCheck.value) match {
@@ -86,21 +85,6 @@ object Kinesis4CatsPlugin extends AutoPlugin {
         case (false, false) => Nil // nada
       }
 
-      val testWithCoverage = List(
-        WorkflowStep.Sbt(
-          List(
-            "IT / dockerComposeUp",
-            "cov",
-            "IT / dockerComposeDown",
-            "FunctionalTest / dockerComposeUp",
-            "FunctionalTest / test",
-            "FunctionalTest / dockerComposeDown"
-          ),
-          name = Some("Test with coverage"),
-          cond = Some(noScala3Cond.value)
-        )
-      )
-
       val test = List(
         WorkflowStep.Sbt(
           List(
@@ -112,8 +96,7 @@ object Kinesis4CatsPlugin extends AutoPlugin {
             "FunctionalTest / test",
             "FunctionalTest / dockerComposeDown"
           ),
-          name = Some("Test"),
-          cond = Some(onlyScala3Cond.value)
+          name = Some("Test")
         )
       )
 
@@ -150,16 +133,7 @@ object Kinesis4CatsPlugin extends AutoPlugin {
           )
         else Nil
 
-      val cov =
-        List(
-          WorkflowStep.Use(
-            UseRef.Local("./.github/actions/upload-coverage"),
-            name = Some("Upload coverage"),
-            params = Map("token" -> "${{ secrets.CODECOV_TOKEN }}")
-          )
-        )
-
-      style ++ testWithCoverage ++ test ++ scalafix ++ mima ++ doc ++ cov
+      style ++ test ++ scalafix ++ mima ++ doc
     },
     githubWorkflowJavaVersions := Seq(JavaSpec.temurin("17")),
     tlCiScalafixCheck := true
@@ -172,7 +146,7 @@ object Kinesis4CatsPlugin extends AutoPlugin {
         "clean",
         "githubWorkflowGenerate",
         "cpl",
-        "+headerCreateAll",
+        "headerCreateAll",
         "pretty",
         "set ThisBuild / tlFatalWarnings := tlFatalWarningsInCi.value",
         "doc",
@@ -185,6 +159,18 @@ object Kinesis4CatsPlugin extends AutoPlugin {
     Test / testOptions ++= {
       List(Tests.Argument(MUnitFramework, "+l"))
     },
+    // Workaround for https://github.com/typelevel/sbt-typelevel/issues/464
+    scalacOptions ++= {
+      if (tlIsScala3.value)
+        Seq(
+          "-language:implicitConversions",
+          "-Ykind-projector",
+          "-source:3.0-migration"
+        )
+      else
+        Seq("-language:_")
+    },
+    scalacOptions -= "-Ykind-projector:underscores",
     ThisBuild / semanticdbEnabled := true,
     semanticdbVersion := scalafixSemanticdb.revision,
     libraryDependencies ++= Seq(
@@ -215,7 +201,7 @@ object Kinesis4CatsPlugin extends AutoPlugin {
   ) ++ Seq(
     addCommandAlias(
       "cpl",
-      ";+Test / compile;+IT / compile;+FunctionalTest / compile"
+      ";Test / compile;IT / compile;FunctionalTest / compile"
     ),
     addCommandAlias(
       "fixCheck",
@@ -253,6 +239,9 @@ object Kinesis4CatsPluginKeys {
   val Scala213 = "2.13.10"
   val Scala3 = "3.2.2"
 
+  val allScalaVersions = List(Scala213, Scala3, Scala212)
+  val last2ScalaVersions = List(Scala213, Scala3)
+
   val MUnitFramework = new TestFramework("munit.Framework")
 
   import de.heikoseeberger.sbtheader.HeaderPlugin.autoImport._
@@ -260,6 +249,37 @@ object Kinesis4CatsPluginKeys {
 
   val IT = config("it").extend(Test)
   val FunctionalTest = config("fun").extend(Test)
+
+  final implicit class Kinesi4CatsProjectMatrixOps(private val p: ProjectMatrix)
+      extends AnyVal {
+    def enableIntegrationTests = p
+      .configs(IT)
+      .settings(inConfig(IT) {
+        ScalafmtPlugin.scalafmtConfigSettings ++
+          scalafixConfigSettings(IT) ++
+          BloopSettings.default ++
+          Defaults.testSettings ++
+          headerSettings(IT) ++
+          Seq(
+            parallelExecution := false,
+            javaOptions += "-Dcom.amazonaws.sdk.disableCertChecking=true"
+          )
+      })
+
+    def enableFunctionalTests = p
+      .configs(FunctionalTest)
+      .settings(inConfig(FunctionalTest) {
+        ScalafmtPlugin.scalafmtConfigSettings ++
+          scalafixConfigSettings(FunctionalTest) ++
+          BloopSettings.default ++
+          Defaults.testSettings ++
+          headerSettings(FunctionalTest) ++
+          Seq(
+            parallelExecution := false,
+            javaOptions += "-Dcom.amazonaws.sdk.disableCertChecking=true"
+          )
+      })
+  }
 
   final implicit class Kinesis4CatsProjectOps(private val p: Project)
       extends AnyVal {
