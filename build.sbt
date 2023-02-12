@@ -507,6 +507,9 @@ lazy val root =
       DockerComposePlugin.settings(IT, false, Nil),
       DockerComposePlugin
         .settings(FunctionalTest, true, functionalTestProjects),
-      name := "kinesis4cats"
+      name := "kinesis4cats",
+      ThisBuild / mergifyLabelPaths ++= allProjects.map { x =>
+        x.id -> x.base
+      }.toMap
     )
     .aggregate(allProjects: _*)
