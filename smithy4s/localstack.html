@@ -5,7 +5,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="Laika 0.18.1 + Helium Theme" />
-    <title>Circe Logging</title>
+    <title>Localstack</title>
     
       <meta name="author" content="Eric Meisel"/>
     
@@ -71,10 +71,10 @@
       <ul class="nav-list">
         <li class="level1"><a href="../index.html">Overview</a></li>
         <li class="level1 nav-header">Kinesis Producer Library (KPL)</li>
-        <li class="level2"><a href="getting-started.html">Getting Started</a></li>
-        <li class="level2"><a href="ciris.html">Ciris</a></li>
-        <li class="level2 active"><a href="#">Circe Logging</a></li>
-        <li class="level2"><a href="localstack.html">Localstack</a></li>
+        <li class="level2"><a href="../kpl/getting-started.html">Getting Started</a></li>
+        <li class="level2"><a href="../kpl/ciris.html">Ciris</a></li>
+        <li class="level2"><a href="../kpl/circe.html">Circe Logging</a></li>
+        <li class="level2"><a href="../kpl/localstack.html">Localstack</a></li>
         <li class="level1 nav-header">Kinesis Client Library (KCL)</li>
         <li class="level2"><a href="../kcl/getting-started.html">Getting Started</a></li>
         <li class="level2"><a href="../kcl/fs2.html">FS2</a></li>
@@ -84,9 +84,9 @@
         <li class="level2"><a href="../kcl/circe.html">Circe Logging</a></li>
         <li class="level2"><a href="../kcl/localstack.html">Localstack</a></li>
         <li class="level1 nav-header">Smithy4s</li>
-        <li class="level2"><a href="../smithy4s/getting-started.html">Getting Started</a></li>
-        <li class="level2"><a href="../smithy4s/circe.html">Circe Logging</a></li>
-        <li class="level2"><a href="../smithy4s/localstack.html">Localstack</a></li>
+        <li class="level2"><a href="getting-started.html">Getting Started</a></li>
+        <li class="level2"><a href="circe.html">Circe Logging</a></li>
+        <li class="level2 active"><a href="#">Localstack</a></li>
         <li class="level1 nav-header">Kinesis Client</li>
         <li class="level2"><a href="../client/getting-started.html">Getting Started</a></li>
         <li class="level2"><a href="../client/circe.html">Circe Logging</a></li>
@@ -129,7 +129,7 @@
     <div id="container">
 
       <nav id="page-nav">
-        <p class="header"><a href="#">Circe Logging</a></p>
+        <p class="header"><a href="#">Localstack</a></p>
 
         <ul class="nav-list">
           <li class="level1"><a href="#installation">Installation</a></li>
@@ -141,14 +141,33 @@
 
       <main class="content">
 
-        <h1 id="circe-logging" class="title">Circe Logging</h1>
-        <p>Circe instances for the KPL LogEncoders. Offers a richer experience with log ingestors that can work with JSON data easily.</p>
+        <h1 id="localstack" class="title">Localstack</h1>
+        <p>The ability to provide a <a href="https://github.com/etspaceman/kinesis4cats/blob/main/smithy4s-client/src/main/scala/kinesis4cats/smithy4s/client/KinesisClient.scala">KinesisClient</a> that is compliant with Localstack</p>
         
         <h2 id="installation" class="section">Installation<a class="anchor-link right" href="#installation"><i class="icofont-laika">&#xef71;</i></a></h2>
-        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">libraryDependencies</span><span> += </span><span class="string-literal">&quot;io.github.etspaceman&quot;</span><span> %% </span><span class="string-literal">&quot;kinesis4cats-kpl-logging-circe&quot;</span><span> % </span><span class="string-literal">&quot;0.0.1&quot;</span></code></pre>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">libraryDependencies</span><span> += </span><span class="string-literal">&quot;io.github.etspaceman&quot;</span><span> %% </span><span class="string-literal">&quot;kinesis4cats-smithy4s-client-localstack&quot;</span><span> % </span><span class="string-literal">&quot;0.0.1&quot;</span></code></pre>
         
         <h2 id="usage" class="section">Usage<a class="anchor-link right" href="#usage"><i class="icofont-laika">&#xef71;</i></a></h2>
-        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">kpl</span><span>.</span><span class="identifier">logging</span><span>.</span><span class="identifier">instances</span><span>.</span><span class="identifier">circe</span><span>.</span><span class="identifier">_</span></code></pre>
+        <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">effect</span><span>.</span><span class="identifier">_</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">org</span><span>.</span><span class="identifier">http4s</span><span>.</span><span class="identifier">ember</span><span>.</span><span class="identifier">client</span><span>.</span><span class="type-name">EmberClientBuilder</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">org</span><span>.</span><span class="identifier">typelevel</span><span>.</span><span class="identifier">log4cats</span><span>.</span><span class="identifier">slf4j</span><span>.</span><span class="type-name">Slf4jLogger</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">smithy4s</span><span>.</span><span class="identifier">aws</span><span>.</span><span class="identifier">_</span><span>
+
+</span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">logging</span><span>.</span><span class="identifier">instances</span><span>.</span><span class="identifier">show</span><span>.</span><span class="identifier">_</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">smithy4s</span><span>.</span><span class="identifier">client</span><span>.</span><span class="identifier">localstack</span><span>.</span><span class="type-name">LocalstackKinesisClient</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">smithy4s</span><span>.</span><span class="identifier">client</span><span>.</span><span class="identifier">logging</span><span>.</span><span class="identifier">instances</span><span>.</span><span class="identifier">show</span><span>.</span><span class="identifier">_</span><span>
+</span><span class="comment">// Load a KinesisClient as a Resource
+</span><span class="keyword">val</span><span> </span><span class="identifier">kinesisClientResource</span><span> = </span><span class="keyword">for</span><span> {
+    </span><span class="identifier">underlying</span><span> &lt;- </span><span class="type-name">EmberClientBuilder</span><span>
+        .</span><span class="keyword">default</span><span>[</span><span class="type-name">IO</span><span>]
+        .</span><span class="identifier">withoutCheckEndpointAuthentication</span><span>
+        .</span><span class="identifier">build</span><span>
+    </span><span class="identifier">client</span><span> &lt;- </span><span class="type-name">LocalstackKinesisClient</span><span>.</span><span class="identifier">clientResource</span><span>[</span><span class="type-name">IO</span><span>](
+        </span><span class="identifier">underlying</span><span>,
+        </span><span class="type-name">AwsRegion</span><span>.</span><span class="type-name">US_EAST_1</span><span>,
+        </span><span class="identifier">loggerF</span><span> = (</span><span class="identifier">_</span><span>: </span><span class="type-name">Async</span><span>[</span><span class="type-name">IO</span><span>]) =&gt; </span><span class="type-name">Slf4jLogger</span><span>.</span><span class="identifier">create</span><span>[</span><span class="type-name">IO</span><span>]
+    )
+} </span><span class="keyword">yield</span><span> </span><span class="identifier">client</span></code></pre>
 
         <hr style="margin-top: 30px"/>
         <footer style="font-size: 90%; text-align: center">
