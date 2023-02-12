@@ -19,6 +19,7 @@ package producer
 package logging.instances
 
 import cats.Show
+import cats.syntax.all._
 
 import kinesis4cats.logging.instances.show._
 import kinesis4cats.models._
@@ -51,6 +52,19 @@ object show {
       .add("shards", x.shards)
       .build
 
+  implicit val streamNameOrArnShow: Show[StreamNameOrArn] = {
+    case StreamNameOrArn.Name(streamName) => streamName.show
+    case StreamNameOrArn.Arn(arn)         => arn.streamArn.show
+  }
+
+  implicit val putRequestShow: Show[PutRequest] = x =>
+    ShowBuilder("PutRequest")
+      .add("records", x.records)
+      .build
+
   implicit val shardMapCacheLogEncoders: ShardMapCache.LogEncoders =
     new ShardMapCache.LogEncoders()
+
+  implicit val producerLogEncoders: Producer.LogEncoders =
+    new Producer.LogEncoders()
 }

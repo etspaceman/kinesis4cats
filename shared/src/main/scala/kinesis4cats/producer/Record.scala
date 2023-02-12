@@ -23,7 +23,8 @@ import kinesis4cats.models.ShardId
 final case class Record(
     data: Array[Byte],
     partitionKey: String,
-    explicitHashKey: Option[String]
+    explicitHashKey: Option[String],
+    sequenceNumberForOrdering: Option[String]
 ) {
   val payloadSize: Long =
     (partitionKey.getBytes(StandardCharsets.UTF_8).length + data.length).toLong

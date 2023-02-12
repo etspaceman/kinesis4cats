@@ -31,7 +31,7 @@ class BatcherSpec extends munit.CatsEffectSuite {
     val shardId = ShardId("1")
     val records = NonEmptyList.fromListUnsafe(
       List.tabulate(7)(index =>
-        Record.WithShard(Record(oneThird, s"$index", None), shardId)
+        Record.WithShard(Record(oneThird, s"$index", None, None), shardId)
       )
     )
 
@@ -63,7 +63,10 @@ class BatcherSpec extends munit.CatsEffectSuite {
     val records = NonEmptyList.fromListUnsafe(
       List.tabulate(14) { index =>
         val shardId = ShardId(index.toString)
-        shardId -> Record.WithShard(Record(oneSixth, s"$index", None), shardId)
+        shardId -> Record.WithShard(
+          Record(oneSixth, s"$index", None, None),
+          shardId
+        )
       }
     )
 
@@ -98,7 +101,7 @@ class BatcherSpec extends munit.CatsEffectSuite {
     val shardId = ShardId("1")
     val records = NonEmptyList.fromListUnsafe(
       List.tabulate((Constants.MaxRecordsPerRequest * 2) + 5) { index =>
-        Record.WithShard(Record(Array[Byte](1), s"$index", None), shardId)
+        Record.WithShard(Record(Array[Byte](1), s"$index", None, None), shardId)
       }
     )
 
@@ -133,7 +136,7 @@ class BatcherSpec extends munit.CatsEffectSuite {
       List.tabulate((Constants.MaxRecordsPerRequest * 2) + 5) { index =>
         val shardId = ShardId(index.toString)
         shardId -> Record.WithShard(
-          Record(Array[Byte](1), s"$index", None),
+          Record(Array[Byte](1), s"$index", None, None),
           shardId
         )
       }
@@ -172,7 +175,7 @@ class BatcherSpec extends munit.CatsEffectSuite {
     val shardId = ShardId("1")
     val records = NonEmptyList.fromListUnsafe(
       List.tabulate(3) { index =>
-        Record.WithShard(Record(tooBig, s"$index", None), shardId)
+        Record.WithShard(Record(tooBig, s"$index", None, None), shardId)
       }
     )
     val expected = Producer.Error.recordsTooLarge(records.map(_.record))
@@ -187,13 +190,13 @@ class BatcherSpec extends munit.CatsEffectSuite {
     val shardId = ShardId("1")
     val badRecords = NonEmptyList.fromListUnsafe(
       List.tabulate(3) { index =>
-        Record.WithShard(Record(tooBig, s"$index", None), shardId)
+        Record.WithShard(Record(tooBig, s"$index", None, None), shardId)
       }
     )
     val goodRecords = NonEmptyList.fromListUnsafe(
       List.tabulate(3) { index =>
         shardId -> Record.WithShard(
-          Record(Array[Byte](1), s"$index", None),
+          Record(Array[Byte](1), s"$index", None, None),
           shardId
         )
       }

@@ -26,9 +26,10 @@ import cats.syntax.all._
 import org.typelevel.log4cats.StructuredLogger
 
 import kinesis4cats.logging.{LogContext, LogEncoder}
+import kinesis4cats.models.StreamNameOrArn
 import kinesis4cats.producer.batching.Batcher
 
-abstract class Producer[F[_], PutReq, PutRes, PutNReq, PutNRes](implicit
+abstract class Producer[F[_], PutReq, PutRes](implicit
     F: Async[F],
     LE: Producer.LogEncoders
 ) {
@@ -39,20 +40,14 @@ abstract class Producer[F[_], PutReq, PutRes, PutNReq, PutNRes](implicit
   def config: Producer.Config
 
   protected def putImpl(req: PutReq): F[PutRes]
-  protected def putNImpl(req: PutNReq): F[PutNRes]
-
   protected def asPutRequest(req: PutRequest): PutReq
-  protected def asPutNRequest(req: PutNRequest): PutNReq
 
   protected def failedRecords(
-      req: PutNRequest,
-      resp: PutNRes
+      req: PutRequest,
+      resp: PutRes
   ): Option[NonEmptyList[Producer.FailedRecord]]
 
-  def put(req: PutRequest): F[PutRes] =
-    putImpl(asPutRequest(req))
-
-  def putN(req: PutNRequest): F[Ior[Producer.Error, NonEmptyList[PutNRes]]] = {
+  def put(req: PutRequest): F[Ior[Producer.Error, NonEmptyList[PutRes]]] = {
     val ctx = LogContext().addEncoded("request", req)
 
     val digest = Producer.md5Digest
@@ -81,14 +76,14 @@ abstract class Producer[F[_], PutReq, PutRes, PutNReq, PutNRes](implicit
             batch.shardBatches.toNonEmptyList
               .map(_.records)
               .parTraverseN(config.shardParallelism) { shardBatch =>
-                val request = req.withRecords(shardBatch)
+                val request = req.copy(records = shardBatch)
                 for {
-                  resp <- putNImpl(asPutNRequest(request))
+                  resp <- putImpl(asPutRequest(request))
                   res = failedRecords(request, resp)
                     .map(Producer.Error.putFailures)
                     .fold(
-                      Ior.right[Producer.Error, PutNRes](resp)
-                    )(e => Ior.both[Producer.Error, PutNRes](e, resp))
+                      Ior.right[Producer.Error, PutRes](resp)
+                    )(e => Ior.both[Producer.Error, PutRes](e, resp))
                   _ <- res.leftTraverse { e =>
                     if (config.raiseOnFailures) F.raiseError[Unit](e)
                     else if (config.warnOnBatchFailures)
@@ -108,8 +103,7 @@ abstract class Producer[F[_], PutReq, PutRes, PutNReq, PutNRes](implicit
 
 object Producer {
   final class LogEncoders(implicit
-      val putReqeustLogEncoder: LogEncoder[PutRequest],
-      val putNRequestLogEncoder: LogEncoder[PutNRequest]
+      val putReqeustLogEncoder: LogEncoder[PutRequest]
   )
 
   def md5Digest = MessageDigest.getInstance("MD5")
@@ -119,11 +113,19 @@ object Producer {
       warnOnBatchFailures: Boolean,
       shardParallelism: Int,
       raiseOnFailures: Boolean,
-      shardMapCacheConfig: ShardMapCache.Config
+      shardMapCacheConfig: ShardMapCache.Config,
+      streamNameOrArn: StreamNameOrArn
   )
 
   object Config {
-    val default = Config(true, true, 8, false, ShardMapCache.Config.default)
+    def default(streamNameOrArn: StreamNameOrArn) = Config(
+      true,
+      true,
+      8,
+      false,
+      ShardMapCache.Config.default,
+      streamNameOrArn
+    )
   }
 
   final case class Error(

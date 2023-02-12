@@ -44,41 +44,11 @@ final class KinesisProducer[F[_]] private (
 )(implicit
     F: Async[F],
     LE: Producer.LogEncoders
-) extends Producer[
-      F,
-      PutRecordRequest,
-      PutRecordResponse,
-      PutRecordsRequest,
-      PutRecordsResponse
-    ] {
+) extends Producer[F, PutRecordsRequest, PutRecordsResponse] {
 
-  override protected def putImpl(req: PutRecordRequest): F[PutRecordResponse] =
-    underlying.putRecord(req)
-
-  override protected def putNImpl(
+  override protected def putImpl(
       req: PutRecordsRequest
   ): F[PutRecordsResponse] = underlying.putRecords(req)
-
-  override protected def asPutRequest(req: PutRequest): PutRecordRequest =
-    req match {
-      case PutRequest.Arn(streamArn, record) =>
-        PutRecordRequest
-          .builder()
-          .streamARN(streamArn.streamArn)
-          .data(SdkBytes.fromByteArray(record.data))
-          .partitionKey(req.record.partitionKey)
-          .maybeTransform(req.record.explicitHashKey)(_.explicitHashKey(_))
-          .build()
-
-      case PutRequest.Name(streamName, record) =>
-        PutRecordRequest
-          .builder()
-          .streamName(streamName)
-          .data(SdkBytes.fromByteArray(record.data))
-          .partitionKey(req.record.partitionKey)
-          .maybeTransform(req.record.explicitHashKey)(_.explicitHashKey(_))
-          .build()
-    }
 
   def toEntry(record: Rec): PutRecordsRequestEntry =
     PutRecordsRequestEntry
@@ -88,25 +58,18 @@ final class KinesisProducer[F[_]] private (
       .maybeTransform(record.explicitHashKey)(_.explicitHashKey(_))
       .build()
 
-  override protected def asPutNRequest(req: PutNRequest): PutRecordsRequest =
-    req match {
-      case PutNRequest.Arn(streamArn, records) =>
-        PutRecordsRequest
-          .builder()
-          .streamARN(streamArn.streamArn)
-          .records(records.toList.map(toEntry).asJava)
-          .build()
-
-      case PutNRequest.Name(streamName, records) =>
-        PutRecordsRequest
-          .builder()
-          .streamName(streamName)
-          .records(records.toList.map(toEntry).asJava)
-          .build()
-    }
+  override protected def asPutRequest(req: PutRequest): PutRecordsRequest =
+    PutRecordsRequest
+      .builder()
+      .records(req.records.toList.map(toEntry).asJava)
+      .maybeTransform(config.streamNameOrArn.streamName)(_.streamName(_))
+      .maybeTransform(config.streamNameOrArn.streamArn.map(_.streamArn))(
+        _.streamARN(_)
+      )
+      .build()
 
   override protected def failedRecords(
-      req: PutNRequest,
+      req: PutRequest,
       resp: PutRecordsResponse
   ): Option[NonEmptyList[Producer.FailedRecord]] =
     NonEmptyList.fromList(
@@ -123,7 +86,10 @@ final class KinesisProducer[F[_]] private (
 
 object KinesisProducer {
 
-  private def getShardMap[F[_]](client: KinesisClient[F])(implicit
+  private def getShardMap[F[_]](
+      client: KinesisClient[F],
+      streamNameOrArn: models.StreamNameOrArn
+  )(implicit
       F: Async[F]
   ): F[Either[ShardMapCache.Error, ShardMap]] = client
     .listShards(
@@ -131,6 +97,10 @@ object KinesisProducer {
         .builder()
         .shardFilter(
           ShardFilter.builder().`type`(ShardFilterType.AT_LATEST).build()
+        )
+        .maybeTransform(streamNameOrArn.streamName)(_.streamName(_))
+        .maybeTransform(streamNameOrArn.streamArn.map(_.streamArn))(
+          _.streamARN(_)
         )
         .build()
     )
@@ -171,7 +141,7 @@ object KinesisProducer {
     underlying <- KinesisClient[F](_underlying)
     shardMapCache <- ShardMapCache[F](
       config.shardMapCacheConfig,
-      getShardMap(underlying),
+      getShardMap(underlying, config.streamNameOrArn),
       Slf4jLogger.create[F].widen
     )
     producer = new KinesisProducer[F](logger, shardMapCache, config, underlying)

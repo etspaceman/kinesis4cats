@@ -14,8 +14,21 @@
  * limitations under the License.
  */
 
-package kinesis4cats.producer
+package kinesis4cats.models
 
-import cats.data.NonEmptyList
+sealed trait StreamNameOrArn { self =>
+  def streamName: Option[String] = self match {
+    case StreamNameOrArn.Name(streamName) => Some(streamName)
+    case _                                => None
+  }
 
-final case class PutRequest(records: NonEmptyList[Record])
+  def streamArn: Option[StreamArn] = self match {
+    case StreamNameOrArn.Arn(streamArn) => Some(streamArn)
+    case _                              => None
+  }
+}
+
+object StreamNameOrArn {
+  final case class Name(_streamName: String) extends StreamNameOrArn
+  final case class Arn(_streamArn: StreamArn) extends StreamNameOrArn
+}
