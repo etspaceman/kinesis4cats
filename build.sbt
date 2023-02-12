@@ -306,7 +306,6 @@ lazy val `smithy4s-client-transformers` = projectMatrix
   )
   .jvmPlatform(List(Scala212))
   .enableIntegrationTests
-  .dependsOn(compat)
 
 lazy val `smithy4s-client` = projectMatrix
   .enablePlugins(Smithy4sCodegenPlugin)
