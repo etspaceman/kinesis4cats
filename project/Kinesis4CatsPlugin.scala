@@ -96,7 +96,8 @@ object Kinesis4CatsPlugin extends AutoPlugin {
             "FunctionalTest / test",
             "FunctionalTest / dockerComposeDown"
           ),
-          name = Some("Test")
+          name = Some("Test"),
+          cond = Some(primaryJavaOSCond.value)
         )
       )
 

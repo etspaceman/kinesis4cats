@@ -74,9 +74,11 @@ jobs:
         run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' headerCheckAll fmtCheck
 
       - name: Test
+        if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-latest'
         run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' 'IT / dockerComposeUp' test 'IT / test' 'IT / dockerComposeDown' 'FunctionalTest / dockerComposeUp' 'FunctionalTest / test' 'FunctionalTest / dockerComposeDown'
 
       - name: Check scalafix lints
+        if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-latest' && matrix.scala != '3.2.2'
         run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' fixCheck
 
       - name: Check binary compatibility
