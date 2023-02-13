@@ -205,9 +205,7 @@ lazy val `kcl-tests` = projectMatrix
     `kcl-localstack`,
     `kcl-logging-circe` % IT,
     `kinesis-client-localstack` % IT,
-    `kinesis-client-logging-circe` % IT,
-    `smithy4s-client-localstack` % IT,
-    `smithy4s-client-logging-circe` % IT
+    `kinesis-client-logging-circe` % IT
   )
 
 lazy val kpl = projectMatrix
