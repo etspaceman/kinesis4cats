@@ -53,6 +53,12 @@ abstract class KinesisClientSpec(implicit LE: KinesisClient.LogEncoders)
           .builder()
           .streamName(streamName)
           .shardCount(1)
+          .streamModeDetails(
+            StreamModeDetails
+              .builder()
+              .streamMode(StreamMode.PROVISIONED)
+              .build()
+          )
           .build()
       )
       _ <- client.addTagsToStream(
