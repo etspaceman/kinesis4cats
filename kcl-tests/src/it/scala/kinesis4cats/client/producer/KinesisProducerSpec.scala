@@ -25,9 +25,8 @@ import software.amazon.awssdk.services.kinesis.model.PutRecordsRequest
 import software.amazon.awssdk.services.kinesis.model.PutRecordsResponse
 
 import kinesis4cats.client.logging.instances.show._
+import kinesis4cats.client.producer.localstack.LocalstackKinesisProducer
 import kinesis4cats.kcl.logging.instances.show._
-import kinesis4cats.localstack.aws.v2.AwsClients
-import kinesis4cats.models.StreamNameOrArn
 import kinesis4cats.producer.Producer
 import kinesis4cats.producer.ProducerSpec
 import kinesis4cats.producer.logging.instances.show._
@@ -38,14 +37,7 @@ class KinesisProducerSpec
     s"kinesis-client-producer-spec-${UUID.randomUUID().toString()}"
   override def producerResource
       : Resource[IO, Producer[IO, PutRecordsRequest, PutRecordsResponse]] =
-    AwsClients
-      .kinesisClientResource[IO]()
-      .flatMap(underlying =>
-        KinesisProducer[IO](
-          Producer.Config
-            .default(StreamNameOrArn.Name(streamName)),
-          underlying
-        )(Async[IO], implicitly, CLE, implicitly)
-      )
+    LocalstackKinesisProducer
+      .resource[IO](streamName)(Async[IO], CLE, implicitly, implicitly)
 
 }
