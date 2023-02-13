@@ -159,7 +159,16 @@ object AwsClients {
     )
     result <- Resource.make(
       for {
-        _ <- F.interruptibleMany(client.createStream(streamName, shardCount))
+        _ <- F.interruptibleMany(
+          client.createStream(
+            new CreateStreamRequest()
+              .withStreamName(streamName)
+              .withShardCount(shardCount)
+              .withStreamModeDetails(
+                new StreamModeDetails().withStreamMode(StreamMode.PROVISIONED)
+              )
+          )
+        )
         _ <- retryingOnFailuresAndAllErrors(
           retryPolicy,
           (x: DescribeStreamSummaryResult) =>

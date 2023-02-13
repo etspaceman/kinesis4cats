@@ -194,6 +194,12 @@ object AwsClients {
                 .builder()
                 .streamName(streamName)
                 .shardCount(shardCount)
+                .streamModeDetails(
+                  StreamModeDetails
+                    .builder()
+                    .streamMode(StreamMode.PROVISIONED)
+                    .build()
+                )
                 .build()
             )
           )

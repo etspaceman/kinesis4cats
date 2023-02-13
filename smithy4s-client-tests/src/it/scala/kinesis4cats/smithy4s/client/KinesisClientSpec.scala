@@ -70,7 +70,8 @@ abstract class KinesisClientSpec(implicit LE: KinesisClient.LogEncoders[IO])
     for {
       _ <- client.createStream(
         StreamName(streamName),
-        Some(PositiveIntegerObject(1))
+        Some(PositiveIntegerObject(1)),
+        Some(StreamModeDetails(StreamMode.PROVISIONED))
       )
       _ <- client
         .addTagsToStream(
