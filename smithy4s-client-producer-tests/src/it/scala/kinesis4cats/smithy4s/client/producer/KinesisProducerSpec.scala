@@ -22,7 +22,7 @@ import cats.effect._
 import cats.effect.syntax.all._
 import com.amazonaws.kinesis.PutRecordsInput
 import com.amazonaws.kinesis.PutRecordsOutput
-import org.http4s.ember.client.EmberClientBuilder
+import org.http4s.blaze.client.BlazeClientBuilder
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 import smithy4s.aws.kernel.AwsRegion
 
@@ -47,17 +47,15 @@ class KinesisProducerSpec
   override lazy val streamName: String =
     s"kinesis-client-producer-spec-${UUID.randomUUID().toString()}"
 
-  def emberClientResource = EmberClientBuilder
-    .default[IO]
-    .withoutCheckEndpointAuthentication
-    .build
+  def http4sClientResource =
+    BlazeClientBuilder[IO].withCheckEndpointAuthentication(false).resource
 
   lazy val region = IO.pure(AwsRegion.US_EAST_1)
 
   override def producerResource
       : Resource[IO, Producer[IO, PutRecordsInput, PutRecordsOutput]] =
     for {
-      http4sClient <- emberClientResource
+      http4sClient <- http4sClientResource
       producer <- LocalstackKinesisProducer
         .resource[IO](
           http4sClient,
@@ -79,9 +77,15 @@ class KinesisProducerSpec
     CommittableRecord[IO]
   ]]] = ResourceFixture(
     for {
-      http4sClient <- emberClientResource
+      http4sClient <- http4sClientResource
       _ <- LocalstackKinesisClient
-        .streamResource[IO](http4sClient, region, streamName, shardCount)
+        .streamResource[IO](
+          http4sClient,
+          region,
+          streamName,
+          shardCount,
+          loggerF = (f: Async[IO]) => Slf4jLogger.create[IO](f, implicitly)
+        )
       deferredWithResults <- LocalstackKCLConsumer.kclConsumerWithResults(
         streamName,
         appName

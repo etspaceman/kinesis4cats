@@ -205,9 +205,7 @@ lazy val `kcl-tests` = projectMatrix
     `kcl-localstack`,
     `kcl-logging-circe` % IT,
     `kinesis-client-localstack` % IT,
-    `kinesis-client-logging-circe` % IT,
-    `smithy4s-client-localstack` % IT,
-    `smithy4s-client-logging-circe` % IT
+    `kinesis-client-logging-circe` % IT
   )
 
 lazy val kpl = projectMatrix
@@ -402,7 +400,7 @@ lazy val `smithy4s-client-producer-tests` = projectMatrix
   .settings(
     description := "Integration Tests for the Smithy4s Kinesis Producer",
     tlVersionIntroduced := Map("2.13" -> "0.0.2", "3" -> "0.0.2"),
-    libraryDependencies ++= Seq(Http4s.emberClient % IT, Log4Cats.slf4j % IT)
+    libraryDependencies ++= Seq(Http4s.blazeClient % IT, Log4Cats.slf4j % IT)
   )
   .jvmPlatform(last2ScalaVersions)
   .enableIntegrationTests
