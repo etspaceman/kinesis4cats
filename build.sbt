@@ -199,7 +199,7 @@ lazy val `kcl-tests` = projectMatrix
     },
     assembly / mainClass := Some("kinesis4cats.kcl.http4s.TestKCLService")
   )
-  .jvmPlatform(last2ScalaVersions)
+  .jvmPlatform(allScalaVersions)
   .dependsOn(
     `kcl-http4s`,
     `kcl-localstack`,

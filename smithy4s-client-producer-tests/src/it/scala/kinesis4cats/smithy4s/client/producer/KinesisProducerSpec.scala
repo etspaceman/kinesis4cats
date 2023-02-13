@@ -47,12 +47,12 @@ class KinesisProducerSpec
   override lazy val streamName: String =
     s"kinesis-client-producer-spec-${UUID.randomUUID().toString()}"
 
-  val emberClientResource = EmberClientBuilder
+  def emberClientResource = EmberClientBuilder
     .default[IO]
     .withoutCheckEndpointAuthentication
     .build
 
-  val region = IO.pure(AwsRegion.US_EAST_1)
+  lazy val region = IO.pure(AwsRegion.US_EAST_1)
 
   override def producerResource
       : Resource[IO, Producer[IO, PutRecordsInput, PutRecordsOutput]] =
