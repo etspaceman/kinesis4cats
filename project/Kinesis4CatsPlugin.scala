@@ -179,16 +179,8 @@ object Kinesis4CatsPlugin extends AutoPlugin {
       Cats.effect,
       CatsRetry,
       Scala.java8Compat,
-      Log4Cats.core,
-      Munit.core % Test,
-      Munit.catsEffect % Test,
-      Munit.scalacheck % Test,
-      Munit.scalacheckEffect % Test,
-      Logback % Test,
-      Scalacheck % Test,
-      FS2.core % Test,
-      FS2.reactiveStreams % Test
-    ),
+      Log4Cats.core
+    ) ++ testDependencies.map(_ % Test),
     libraryDependencySchemes += "org.scala-lang.modules" %% "scala-xml" % VersionScheme.Always,
     moduleName := "kinesis4cats-" + name.value,
     headerLicense := Some(
@@ -251,6 +243,17 @@ object Kinesis4CatsPluginKeys {
 
   val IT = config("it").extend(Test)
   val FunctionalTest = config("fun").extend(Test)
+
+  val testDependencies = List(
+    Munit.core,
+    Munit.catsEffect,
+    Munit.scalacheck,
+    Munit.scalacheckEffect,
+    Logback,
+    Scalacheck,
+    FS2.core,
+    FS2.reactiveStreams
+  )
 
   final implicit class Kinesi4CatsProjectMatrixOps(private val p: ProjectMatrix)
       extends AnyVal {

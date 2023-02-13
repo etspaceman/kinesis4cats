@@ -20,20 +20,20 @@ import java.util.UUID
 
 import cats.effect._
 import cats.syntax.all._
+import com.amazonaws.kinesis._
 import io.circe.parser._
 import io.circe.syntax._
+import org.http4s.ember.client.EmberClientBuilder
 import org.scalacheck.Arbitrary
-import com.amazonaws.kinesis._
+import org.typelevel.log4cats.slf4j.Slf4jLogger
+import smithy4s.ByteArray
+import smithy4s.aws.AwsRegion
 
-import kinesis4cats.smithy4s.client.localstack.LocalstackKinesisClient
 import kinesis4cats.localstack._
 import kinesis4cats.localstack.syntax.scalacheck._
 import kinesis4cats.logging.instances.show._
 import kinesis4cats.models.StreamArn
-import org.http4s.ember.client.EmberClientBuilder
-import smithy4s.aws.AwsRegion
-import smithy4s.ByteArray
-import org.typelevel.log4cats.slf4j.Slf4jLogger
+import kinesis4cats.smithy4s.client.localstack.LocalstackKinesisClient
 
 abstract class KinesisClientSpec(implicit LE: KinesisClient.LogEncoders[IO])
     extends munit.CatsEffectSuite {
@@ -48,7 +48,7 @@ abstract class KinesisClientSpec(implicit LE: KinesisClient.LogEncoders[IO])
           .build
         client <- LocalstackKinesisClient.clientResource[IO](
           underlying,
-          region,
+          IO.pure(region),
           loggerF = (_: Async[IO]) => Slf4jLogger.create[IO]
         )
       } yield client
@@ -68,7 +68,10 @@ abstract class KinesisClientSpec(implicit LE: KinesisClient.LogEncoders[IO])
     ).streamArn
 
     for {
-      _ <- client.createStream(StreamName(streamName), Some(1))
+      _ <- client.createStream(
+        StreamName(streamName),
+        Some(PositiveIntegerObject(1))
+      )
       _ <- client
         .addTagsToStream(
           Map(TagKey("foo") -> TagValue("bar")),

@@ -17,13 +17,18 @@
 package kinesis4cats.smithy4s.client
 package localstack
 
+import scala.concurrent.duration._
+
 import cats.effect.Async
 import cats.effect.kernel.Resource
 import cats.effect.syntax.all._
 import cats.syntax.all._
+import com.amazonaws.kinesis._
 import org.http4s.client.Client
 import org.typelevel.log4cats.StructuredLogger
 import org.typelevel.log4cats.noop.NoOpLogger
+import retry.RetryPolicies._
+import retry._
 import smithy4s.aws._
 import smithy4s.aws.kernel.AwsRegion
 
@@ -121,4 +126,158 @@ object LocalstackKinesisClient {
   ): Resource[F, KinesisClient[F]] = LocalstackConfig
     .resource(prefix)
     .flatMap(clientResource(client, region, _, loggerF))
+
+  /** A resources that does the following:
+    *
+    *   - Builds a [[kinesis4cats.smithy4s.client.KinesisClient KinesisClient]]
+    *     that is compliant for Localstack usage.
+    *   - Creates a stream with the desired name and shard count, and waits
+    *     until the stream is active.
+    *   - Destroys the stream when the [[cats.effect.Resource Resource]] is
+    *     closed
+    *
+    * @param config
+    *   [[kinesis4cats.localstack.LocalstackConfig LocalstackConfig]]
+    * @param streamName
+    *   Stream name
+    * @param shardCount
+    *   Shard count for stream
+    * @param describeRetries
+    *   How many times to retry DescribeStreamSummary when checking the stream
+    *   status
+    * @param describeRetryDuration
+    *   How long to delay between retries of the DescribeStreamSummary call
+    * @param F
+    *   F with an [[cats.effect.Async Async]] instance
+    * @param LE
+    *   [[kinesis4cats.smithy4s.client.KinesisClient.LogEncoders LogEncoders]]
+    * @return
+    *   [[cats.effect.Resource Resource]] of
+    *   [[kinesis4cats.smithy4s.client.KinesisClient KinesisClient]]
+    */
+  def streamResource[F[_]](
+      http4sClient: Client[F],
+      region: F[AwsRegion],
+      config: LocalstackConfig,
+      streamName: String,
+      shardCount: Int,
+      describeRetries: Int,
+      describeRetryDuration: FiniteDuration,
+      loggerF: Async[F] => F[StructuredLogger[F]]
+  )(implicit
+      F: Async[F],
+      LE: KinesisClient.LogEncoders[F],
+      LELC: LogEncoder[LocalstackConfig]
+  ): Resource[F, KinesisClient[F]] = {
+    val retryPolicy = constantDelay(describeRetryDuration).join(
+      limitRetries(describeRetries)
+    )
+
+    clientResource[F](http4sClient, region, config, loggerF).flatMap {
+      case client: KinesisClient[F] =>
+        Resource.make[F, KinesisClient[F]](
+          for {
+            _ <- client.createStream(
+              StreamName(streamName),
+              Some(PositiveIntegerObject(shardCount))
+            )
+            _ <- retryingOnFailuresAndAllErrors(
+              retryPolicy,
+              (x: DescribeStreamSummaryOutput) =>
+                F.pure(
+                  x.streamDescriptionSummary.streamStatus == StreamStatus.ACTIVE
+                ),
+              noop[F, DescribeStreamSummaryOutput],
+              noop[F, Throwable]
+            )(
+              client.describeStreamSummary(Some(StreamName(streamName)))
+            )
+          } yield client
+        )(client =>
+          for {
+            _ <- client.deleteStream(
+              Some(StreamName(streamName))
+            )
+            _ <- retryingOnFailuresAndSomeErrors(
+              retryPolicy,
+              (x: Either[Throwable, DescribeStreamSummaryOutput]) =>
+                F.pure(
+                  x.swap.exists {
+                    case _: ResourceNotFoundException => true
+                    case _                            => false
+                  }
+                ),
+              (e: Throwable) =>
+                e match {
+                  case _: ResourceNotFoundException => F.pure(false)
+                  case _                            => F.pure(true)
+                },
+              noop[F, Either[Throwable, DescribeStreamSummaryOutput]],
+              noop[F, Throwable]
+            )(
+              client
+                .describeStreamSummary(Some(StreamName(streamName)))
+                .attempt
+            )
+          } yield ()
+        )
+    }
+  }
+
+  /** A resources that does the following:
+    *
+    *   - Builds a [[kinesis4cats.smithy4s.client.KinesisClient KinesisClient]]
+    *     that is compliant for Localstack usage.
+    *   - Creates a stream with the desired name and shard count, and waits
+    *     until the stream is active.
+    *   - Destroys the stream when the [[cats.effect.Resource Resource]] is
+    *     closed
+    *
+    * @param streamName
+    *   Stream name
+    * @param shardCount
+    *   Shard count for stream
+    * @param prefix
+    *   Optional prefix for parsing configuration. Default to None
+    * @param describeRetries
+    *   How many times to retry DescribeStreamSummary when checking the stream
+    *   status. Default to 5
+    * @param describeRetryDuration
+    *   How long to delay between retries of the DescribeStreamSummary call.
+    *   Default to 500 ms
+    * @param F
+    *   F with an [[cats.effect.Async Async]] instance
+    * @param LE
+    *   [[kinesis4cats.smithy4s.client.KinesisClient.LogEncoders LogEncoders]]
+    * @return
+    *   [[cats.effect.Resource Resource]] of
+    *   [[kinesis4cats.smithy4s.client.KinesisClient KinesisClient]]
+    */
+  def streamResource[F[_]](
+      http4sClient: Client[F],
+      region: F[AwsRegion],
+      streamName: String,
+      shardCount: Int,
+      prefix: Option[String] = None,
+      describeRetries: Int = 5,
+      describeRetryDuration: FiniteDuration = 500.millis,
+      loggerF: Async[F] => F[StructuredLogger[F]] = (f: Async[F]) =>
+        f.pure(NoOpLogger(f))
+  )(implicit
+      F: Async[F],
+      LE: KinesisClient.LogEncoders[F],
+      LELC: LogEncoder[LocalstackConfig]
+  ): Resource[F, KinesisClient[F]] = for {
+    config <- LocalstackConfig.resource(prefix)
+    result <- streamResource(
+      http4sClient,
+      region,
+      config,
+      streamName,
+      shardCount,
+      describeRetries,
+      describeRetryDuration,
+      loggerF
+    )
+  } yield result
 }

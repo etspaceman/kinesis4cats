@@ -127,6 +127,14 @@ pull_request_rules:
       add:
       - kinesis-client-logging-circe
       remove: []
+- name: Label kinesis-client-producer-tests PRs
+  conditions:
+  - files~=^kinesis-client-producer-tests/
+  actions:
+    label:
+      add:
+      - kinesis-client-producer-tests
+      remove: []
 - name: Label kinesis-client-tests PRs
   conditions:
   - files~=^kinesis-client-tests/
@@ -207,6 +215,14 @@ pull_request_rules:
       add:
       - shared-localstack
       remove: []
+- name: Label shared-tests PRs
+  conditions:
+  - files~=^shared-tests/
+  actions:
+    label:
+      add:
+      - shared-tests
+      remove: []
 - name: Label smithy4s-client PRs
   conditions:
   - files~=^smithy4s-client/
@@ -230,6 +246,22 @@ pull_request_rules:
     label:
       add:
       - smithy4s-client-logging-circe
+      remove: []
+- name: Label smithy4s-client-producer-tests PRs
+  conditions:
+  - files~=^smithy4s-client-producer-tests/
+  actions:
+    label:
+      add:
+      - smithy4s-client-producer-tests
+      remove: []
+- name: Label smithy4s-client-tests PRs
+  conditions:
+  - files~=^smithy4s-client-tests/
+  actions:
+    label:
+      add:
+      - smithy4s-client-tests
       remove: []
 - name: Label smithy4s-client-transformers PRs
   conditions:

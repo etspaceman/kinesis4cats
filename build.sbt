@@ -48,6 +48,15 @@ lazy val `shared-localstack` = projectMatrix
   .enableIntegrationTests
   .dependsOn(shared, `shared-ciris`, `shared-circe`)
 
+lazy val `shared-tests` = projectMatrix
+  .settings(
+    description := "Common test interfaces",
+    libraryDependencies ++= testDependencies
+  )
+  .jvmPlatform(allScalaVersions)
+  .enableIntegrationTests
+  .dependsOn(`shared-localstack`)
+
 lazy val `aws-v2-localstack` = projectMatrix
   .settings(
     description := "A test-kit for working with Kinesis and Localstack, via the V2 AWS SDK",
@@ -298,7 +307,25 @@ lazy val `kinesis-client-tests` = projectMatrix
   .enableIntegrationTests
   .dependsOn(
     `kinesis-client-localstack` % IT,
-    `kinesis-client-logging-circe` % IT
+    `kinesis-client-logging-circe` % IT,
+    `shared-tests` % IT
+  )
+
+lazy val `kinesis-client-producer-tests` = projectMatrix
+  .enablePlugins(NoPublishPlugin)
+  .settings(
+    description := "Integration Tests for the Client Kinesis Producer",
+    tlVersionIntroduced := Map("2.13" -> "0.0.2", "3" -> "0.0.2"),
+    libraryDependencies ++= Seq(Http4s.emberClient % IT, Log4Cats.slf4j % IT)
+  )
+  .jvmPlatform(allScalaVersions)
+  .enableIntegrationTests
+  .dependsOn(
+    `kcl-localstack` % IT,
+    `kcl-logging-circe` % IT,
+    `kinesis-client-localstack` % IT,
+    `kinesis-client-logging-circe` % IT,
+    `shared-tests` % IT
   )
 
 lazy val `smithy4s-client-transformers` = projectMatrix
@@ -370,6 +397,23 @@ lazy val `smithy4s-client-tests` = projectMatrix
     `smithy4s-client-logging-circe` % IT
   )
 
+lazy val `smithy4s-client-producer-tests` = projectMatrix
+  .enablePlugins(NoPublishPlugin)
+  .settings(
+    description := "Integration Tests for the Smithy4s Kinesis Producer",
+    tlVersionIntroduced := Map("2.13" -> "0.0.2", "3" -> "0.0.2"),
+    libraryDependencies ++= Seq(Http4s.emberClient % IT, Log4Cats.slf4j % IT)
+  )
+  .jvmPlatform(last2ScalaVersions)
+  .enableIntegrationTests
+  .dependsOn(
+    `kcl-localstack` % IT,
+    `kcl-logging-circe` % IT,
+    `smithy4s-client-localstack` % IT,
+    `smithy4s-client-logging-circe` % IT,
+    `shared-tests` % IT
+  )
+
 lazy val docs = projectMatrix
   .in(file("site"))
   .enablePlugins(TypelevelSitePlugin)
@@ -415,6 +459,7 @@ lazy val docs = projectMatrix
     `shared-circe`,
     `shared-ciris`,
     `shared-localstack`,
+    `shared-tests`,
     `aws-v1-localstack`,
     `aws-v2-localstack`,
     kcl,
@@ -449,6 +494,7 @@ lazy val unidocs = projectMatrix
         `shared-circe`,
         `shared-ciris`,
         `shared-localstack`,
+        `shared-tests`,
         `aws-v1-localstack`,
         `aws-v2-localstack`,
         kcl,
@@ -478,6 +524,7 @@ lazy val allProjects = Seq(
   `shared-circe`,
   `shared-ciris`,
   `shared-localstack`,
+  `shared-tests`,
   `aws-v1-localstack`,
   `aws-v2-localstack`,
   kcl,
@@ -497,10 +544,13 @@ lazy val allProjects = Seq(
   `kinesis-client-logging-circe`,
   `kinesis-client-localstack`,
   `kinesis-client-tests`,
+  `kinesis-client-producer-tests`,
   `smithy4s-client-transformers`,
   `smithy4s-client`,
   `smithy4s-client-logging-circe`,
-  `smithy4s-client-localstack`
+  `smithy4s-client-localstack`,
+  `smithy4s-client-tests`,
+  `smithy4s-client-producer-tests`
 )
 
 lazy val functionalTestProjects = List(`kcl-tests`).map(_.jvm(Scala213))

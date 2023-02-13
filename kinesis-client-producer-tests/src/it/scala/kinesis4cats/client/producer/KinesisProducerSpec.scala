@@ -18,26 +18,54 @@ package kinesis4cats.client.producer
 
 import java.util.UUID
 
-import cats.effect.IO
-import cats.effect.Resource
-import cats.effect.kernel.Async
+import cats.effect._
+import cats.effect.syntax.all._
 import software.amazon.awssdk.services.kinesis.model.PutRecordsRequest
 import software.amazon.awssdk.services.kinesis.model.PutRecordsResponse
 
+import kinesis4cats.client.localstack.LocalstackKinesisClient
 import kinesis4cats.client.logging.instances.show._
 import kinesis4cats.client.producer.localstack.LocalstackKinesisProducer
+import kinesis4cats.kcl.CommittableRecord
+import kinesis4cats.kcl.localstack.LocalstackKCLConsumer
 import kinesis4cats.kcl.logging.instances.show._
 import kinesis4cats.producer.Producer
 import kinesis4cats.producer.ProducerSpec
 import kinesis4cats.producer.logging.instances.show._
+import kinesis4cats.syntax.bytebuffer._
 
 class KinesisProducerSpec
-    extends ProducerSpec[PutRecordsRequest, PutRecordsResponse]() {
+    extends ProducerSpec[
+      PutRecordsRequest,
+      PutRecordsResponse,
+      CommittableRecord[IO]
+    ]() {
   override lazy val streamName: String =
     s"kinesis-client-producer-spec-${UUID.randomUUID().toString()}"
   override def producerResource
       : Resource[IO, Producer[IO, PutRecordsRequest, PutRecordsResponse]] =
-    LocalstackKinesisProducer
-      .resource[IO](streamName)(Async[IO], CLE, implicitly, implicitly)
+    LocalstackKinesisProducer.resource[IO](streamName)
+
+  override def aAsBytes(a: CommittableRecord[IO]): Array[Byte] = a.data.asArray
+
+  override def fixture(
+      shardCount: Int,
+      appName: String
+  ): SyncIO[FunFixture[ProducerSpec.Resources[
+    IO,
+    PutRecordsRequest,
+    PutRecordsResponse,
+    CommittableRecord[IO]
+  ]]] = ResourceFixture(
+    for {
+      _ <- LocalstackKinesisClient.streamResource[IO](streamName, shardCount)
+      deferredWithResults <- LocalstackKCLConsumer.kclConsumerWithResults(
+        streamName,
+        appName
+      )((_: List[CommittableRecord[IO]]) => IO.unit)
+      _ <- deferredWithResults.deferred.get.toResource
+      producer <- producerResource
+    } yield ProducerSpec.Resources(deferredWithResults.resultsQueue, producer)
+  )
 
 }
