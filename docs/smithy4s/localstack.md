@@ -27,7 +27,7 @@ val kinesisClientResource = for {
         .build
     client <- LocalstackKinesisClient.clientResource[IO](
         underlying,
-        AwsRegion.US_EAST_1,
+        IO.pure(AwsRegion.US_EAST_1),
         loggerF = (_: Async[IO]) => Slf4jLogger.create[IO]
     )
 } yield client

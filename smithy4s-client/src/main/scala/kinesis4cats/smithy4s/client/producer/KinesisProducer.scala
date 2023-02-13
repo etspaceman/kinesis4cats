@@ -130,7 +130,7 @@ object KinesisProducer {
   def apply[F[_]](
       config: Producer.Config,
       client: Client[F],
-      region: AwsRegion,
+      region: F[AwsRegion],
       loggerF: Async[F] => F[StructuredLogger[F]] = (f: Async[F]) =>
         f.pure(NoOpLogger[F](f)),
       credsF: (

@@ -35,7 +35,7 @@ import kinesis4cats.smithy4s.client.producer.KinesisProducer
 object LocalstackKinesisProducer {
   def resource[F[_]](
       client: Client[F],
-      region: AwsRegion,
+      region: F[AwsRegion],
       producerConfig: Producer.Config,
       config: LocalstackConfig,
       loggerF: Async[F] => F[StructuredLogger[F]]
@@ -65,8 +65,8 @@ object LocalstackKinesisProducer {
   def resource[F[_]](
       client: Client[F],
       streamName: String,
+      region: F[AwsRegion],
       prefix: Option[String] = None,
-      region: AwsRegion = AwsRegion.US_EAST_1,
       producerConfig: String => Producer.Config = streamName =>
         Producer.Config
           .default(StreamNameOrArn.Name(streamName)),

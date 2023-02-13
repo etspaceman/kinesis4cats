@@ -21,12 +21,10 @@ import cats.effect.Async
 import cats.effect.kernel.Resource
 import cats.effect.syntax.all._
 import cats.syntax.all._
-import com.amazonaws.kinesis._
 import org.http4s.client.Client
 import org.typelevel.log4cats.StructuredLogger
 import org.typelevel.log4cats.noop.NoOpLogger
 import smithy4s.aws._
-import smithy4s.aws.http4s._
 import smithy4s.aws.kernel.AwsRegion
 
 import kinesis4cats.localstack.LocalstackConfig
@@ -40,26 +38,6 @@ import kinesis4cats.smithy4s.client.middleware._
   */
 object LocalstackKinesisClient {
 
-  /** Creates the [[smithy4s.aws.AwsEnvironment AwsEnvironment]] to use
-    *
-    * @param client
-    *   [[https://http4s.org/v0.23/docs/client.html Client]]
-    * @param region
-    *   [[smithy4s.aws.AwsRegion AwsRegion]]
-    * @param F
-    *   [[cats.effect.Async Async]]
-    * @return
-    *   [[smithy4s.aws.AwsEnvironment AwsEnvironment]]
-    */
-  def localstackEnv[F[_]](client: Client[F], region: AwsRegion)(implicit
-      F: Async[F]
-  ): AwsEnvironment[F] = AwsEnvironment.make[F](
-    AwsHttp4sBackend(client),
-    F.pure(region),
-    F.pure(AwsCredentials.Default("mock-key-id", "mock-secret-key", None)),
-    F.realTime.map(_.toSeconds).map(Timestamp(_, 0))
-  )
-
   def localstackHttp4sClient[F[_]](
       client: Client[F],
       config: LocalstackConfig,
@@ -68,11 +46,8 @@ object LocalstackKinesisClient {
       F: Async[F],
       LE: KinesisClient.LogEncoders[F],
       LELC: LogEncoder[LocalstackConfig]
-  ): F[Client[F]] = loggerF(F).map(logger =>
-    LocalstackProxy[F](config, logger)(
-      RequestResponseLogger(logger)(client)
-    )
-  )
+  ): F[Client[F]] =
+    loggerF(F).map(logger => LocalstackProxy[F](config, logger)(client))
 
   /** Creates a [[cats.effect.Resource Resource]] of a KinesisClient that is
     * compatible with Localstack
@@ -93,7 +68,7 @@ object LocalstackKinesisClient {
     */
   def clientResource[F[_]](
       client: Client[F],
-      region: AwsRegion,
+      region: F[AwsRegion],
       config: LocalstackConfig,
       loggerF: Async[F] => F[StructuredLogger[F]]
   )(implicit
@@ -101,9 +76,16 @@ object LocalstackKinesisClient {
       LE: KinesisClient.LogEncoders[F],
       LELC: LogEncoder[LocalstackConfig]
   ): Resource[F, KinesisClient[F]] = for {
-    clnt <- localstackHttp4sClient(client, config, loggerF).toResource
-    env = localstackEnv(clnt, region)
-    awsClient <- AwsClient.simple(Kinesis.service, env)
+    http4sClient <- localstackHttp4sClient(client, config, loggerF).toResource
+    awsClient <- KinesisClient[F](
+      http4sClient,
+      region,
+      loggerF,
+      (_: SimpleHttpClient[F], f: Async[F]) =>
+        Resource.pure(
+          f.pure(AwsCredentials.Default("mock-key-id", "mock-secret-key", None))
+        )
+    )
   } yield awsClient
 
   /** Creates a [[cats.effect.Resource Resource]] of a KinesisClient that is
@@ -113,7 +95,6 @@ object LocalstackKinesisClient {
     *   [[https://http4s.org/v0.23/docs/client.html Client]]
     * @param region
     *   [[https://github.com/disneystreaming/smithy4s/blob/series/0.17/modules/aws-kernel/src/smithy4s/aws/AwsRegion.scala AwsRegion]].
-    *   Defualt is US_EAST_1
     * @param prefix
     *   Optional string prefix to apply when loading configuration. Default to
     *   None
@@ -129,7 +110,7 @@ object LocalstackKinesisClient {
     */
   def clientResource[F[_]](
       client: Client[F],
-      region: AwsRegion = AwsRegion.US_EAST_1,
+      region: F[AwsRegion],
       prefix: Option[String] = None,
       loggerF: Async[F] => F[StructuredLogger[F]] = (f: Async[F]) =>
         f.pure(NoOpLogger[F](f))

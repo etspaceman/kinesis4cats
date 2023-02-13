@@ -23,6 +23,7 @@ import cats.effect.Resource
 import com.amazonaws.kinesis.PutRecordsInput
 import com.amazonaws.kinesis.PutRecordsOutput
 import org.http4s.ember.client.EmberClientBuilder
+import smithy4s.aws.kernel.AwsRegion
 
 import kinesis4cats.client.logging.instances.show._
 import kinesis4cats.kcl.logging.instances.show._
@@ -46,7 +47,8 @@ class KinesisProducerSpec
         .build
       producer <- LocalstackKinesisProducer.resource[IO](
         underlying,
-        streamName
+        streamName,
+        IO.pure(AwsRegion.US_EAST_1)
       )
     } yield producer
 
