@@ -38,7 +38,8 @@ import kinesis4cats.smithy4s.client.localstack.LocalstackKinesisClient
 abstract class KinesisClientSpec(implicit LE: KinesisClient.LogEncoders[IO])
     extends munit.CatsEffectSuite {
 
-  override val munitFlakyOK: Boolean = true
+  // allow flaky tests on ci
+  override def munitFlakyOK: Boolean = sys.env.contains("CI")
 
   val region = AwsRegion.US_EAST_1
   def fixture: SyncIO[FunFixture[KinesisClient[IO]]] =
