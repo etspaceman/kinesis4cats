@@ -28,14 +28,15 @@ final case class Record(
 ) {
   val payloadSize: Long =
     (partitionKey.getBytes(StandardCharsets.UTF_8).length + data.length).toLong
-  val isWithinLimits =
-    payloadSize <= Constants.MaxPayloadSizePerRecord
+  def isWithinLimits(payloadSizeLimit: Int) =
+    payloadSize <= payloadSizeLimit
 }
 
 object Record {
   final case class WithShard(record: Record, predictedShard: ShardId) {
     val payloadSize: Long = record.payloadSize
-    val isWithinLimits = record.isWithinLimits
+    def isWithinLimits(payloadSizeLimit: Int) =
+      record.isWithinLimits(payloadSizeLimit)
   }
 
   object WithShard {

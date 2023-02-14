@@ -26,7 +26,8 @@ final case class ShardBatch private (
     shardId: ShardId,
     records: NonEmptyList[Record],
     count: Int,
-    batchSize: Long
+    batchSize: Long,
+    config: Batcher.Config
 ) {
   def add(record: Record): ShardBatch =
     copy(
@@ -36,18 +37,19 @@ final case class ShardBatch private (
     )
 
   def canAdd(record: Record): Boolean =
-    count + 1 <= Constants.MaxRecordsPerShardPerSecond &&
-      batchSize + record.payloadSize <= Constants.MaxIngestionPerShardPerSecond
+    count + 1 <= config.maxRecordsPerShardPerSecond &&
+      batchSize + record.payloadSize <= config.maxPayloadSizePerShardPerSecond
 
   def finalizeBatch: ShardBatch = copy(records = records.reverse)
 }
 
 object ShardBatch {
-  def create(record: Record.WithShard) =
+  def create(record: Record.WithShard, config: Batcher.Config) =
     ShardBatch(
       record.predictedShard,
       NonEmptyList.one(record.record),
       1,
-      record.payloadSize
+      record.payloadSize,
+      config
     )
 }

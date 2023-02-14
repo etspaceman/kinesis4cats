@@ -29,6 +29,24 @@ import kinesis4cats.logging.{LogContext, LogEncoder}
 import kinesis4cats.models.StreamNameOrArn
 import kinesis4cats.producer.batching.Batcher
 
+/** An interface that gives users the ability to efficiently batch and produce
+  * records. A producer has a
+  * [[kinesis4cats.producer.ShardMapCache ShardMapCache]], and uses it to
+  * predict the shard that a record will be produced to. Knowing this, we can
+  * batch records against both shard and stream-level limits for requests. There
+  * should be 1 instance of a [[kinesis4cats.producer.Producer Producer]] per
+  * Kinesis stream (as a [[kinesis4cats.producer.ShardMapCache ShardMapCache]]
+  * will only consider a single stream)
+  *
+  * @param F
+  *   [[cats.effect.Async Async]]
+  * @param LE
+  *   [[kinesis4cats.producer.Producer.LogEncoders Producer.LogEncoders]]
+  * @tparam PutReq
+  *   The class that represents a batch put request for the underlying client
+  * @tparam PutRes
+  *   The class that represents a batch put response for the underlying client
+  */
 abstract class Producer[F[_], PutReq, PutRes](implicit
     F: Async[F],
     LE: Producer.LogEncoders
@@ -39,15 +57,59 @@ abstract class Producer[F[_], PutReq, PutRes](implicit
   def logger: StructuredLogger[F]
   def shardMapCache: ShardMapCache[F]
   def config: Producer.Config
+  lazy val batcher: Batcher = new Batcher(config.batcherConfig)
 
+  /** Underlying implementation for putting a batch request to Kinesis
+    *
+    * @param req
+    *   the underlying put request
+    * @return
+    *   the underlying put response
+    */
   protected def putImpl(req: PutReq): F[PutRes]
+
+  /** Transforms a [[kinesis4cats.producer.PutRequest PutRequest]] into the
+    * underlying put request
+    *
+    * @param req
+    *   [[kinesis4cats.producer.PutRequest PutRequest]]
+    * @return
+    *   the underlying put request
+    */
   protected def asPutRequest(req: PutRequest): PutReq
 
+  /** Matches the [[kinesis4cats.producer.PutRequest PutRequest]] with the
+    * underlying response records and returns any errored records. Useful for
+    * retrying any records that failed
+    *
+    * @param req
+    *   [[kinesis4cats.producer.PutRequest PutRequest]]
+    * @param resp
+    *   the underlying put response
+    * @return
+    *   A list of
+    *   [[kinesis4cats.producer.Producer.FailedRecord Producer.FailedRecord]]
+    */
   protected def failedRecords(
       req: PutRequest,
       resp: PutRes
   ): Option[NonEmptyList[Producer.FailedRecord]]
 
+  /** This function is responsible for:
+    *   - Predicting the shard that a record will land on
+    *   - Batching records against Kinesis limits for shards / streams
+    *   - Putting batches to Kinesis
+    *
+    * @param req
+    *   [[kinesis4cats.producer.PutRequest PutRequest]]
+    * @return
+    *   [[cats.data.Ior Ior]] with the following:
+    *   - left: a [[kinesis4cats.producer.Producer.Error Producer.Error]], which
+    *     represents records that were too large to be put on kinesis as well as
+    *     records that were not produced successfully in the batch request.
+    *   - right: a [[cats.data.NonEmptyList NonEmptyList]] of the underlying put
+    *     responses
+    */
   def put(req: PutRequest): F[Ior[Producer.Error, NonEmptyList[PutRes]]] = {
     val ctx = LogContext()
 
@@ -75,7 +137,7 @@ abstract class Producer[F[_], PutReq, PutRes](implicit
             else F.unit
         } yield Record.WithShard.fromOption(rec, shardRes.toOption)
       )
-      batched = Batcher.batch(withShards)
+      batched = batcher.batch(withShards)
       res <- batched
         .traverse(batches =>
           batches.flatTraverse(batch =>
@@ -108,32 +170,82 @@ abstract class Producer[F[_], PutReq, PutRes](implicit
 }
 
 object Producer {
+
+  /** [[kinesis4cats.logging.LogEncoder LogEncoder]] instances for the
+    * [[kinesis4cats.producer.Producer]]
+    *
+    * @param putReqeustLogEncoder
+    */
   final class LogEncoders(implicit
       val putReqeustLogEncoder: LogEncoder[PutRequest]
   )
 
   def md5Digest = MessageDigest.getInstance("MD5")
 
+  /** Configuration for the [[kinesis4cats.producer.Producer Producer]]
+    *
+    * @param warnOnShardCacheMisses
+    *   If true, a warning message will appear if a record was not matched with
+    *   a shard in the cache
+    * @param warnOnBatchFailures
+    *   If true, a warning message will appear if the producer failed to produce
+    *   some records in a batch
+    * @param shardParallelism
+    *   Determines how many shards to concurrently put batches of data to
+    * @param raiseOnFailures
+    *   If true, an exception will be raised if a
+    *   [[kinesis4cats.producer.Producer.Error Producer.Error]] is detected in
+    *   one fo the batches
+    * @param shardMapCacheConfig
+    *   [[kinesis4cats.producer.ShardMapCache.Config ShardMapCache.Config]]
+    * @param streamNameOrArn
+    *   [[kinesis4cats.models.StreamNameOrArn StreamNameOrArn]] either a stream
+    *   name or a stream ARN for the producer.
+    */
   final case class Config(
       warnOnShardCacheMisses: Boolean,
       warnOnBatchFailures: Boolean,
       shardParallelism: Int,
       raiseOnFailures: Boolean,
       shardMapCacheConfig: ShardMapCache.Config,
+      batcherConfig: Batcher.Config,
       streamNameOrArn: StreamNameOrArn
   )
 
   object Config {
+
+    /** Default configuration for the
+      * [[kinesis4cats.producer.Producer.Config Producer.Config]]
+      *
+      * @param streamNameOrArn
+      *   [[kinesis4cats.models.StreamNameOrArn StreamNameOrArn]] either a
+      *   stream name or a stream ARN for the producer.
+      * @return
+      *   [[kinesis4cats.producer.Producer.Config Producer.Config]]
+      */
     def default(streamNameOrArn: StreamNameOrArn) = Config(
       true,
       true,
       8,
       false,
       ShardMapCache.Config.default,
+      Batcher.Config.default,
       streamNameOrArn
     )
   }
 
+  /** Represents errors encountered when processing records for Kinesis
+    *
+    * @param errors
+    *   [[cats.data.Ior Ior]] with the following:
+    *   - left: a [[cats.data.NonEmptyList NonEmptyList]] of
+    *     [[kinesis.producer.Record Records]] that were too large to fit into a
+    *     single Kinesis request
+    *   - right: a [[cats.data.NonEmptyList NonEmptyList]] of
+    *     [[kinesis.producer.Producer.FailedRecord Producer.FailedRecords]],
+    *     which represent records that failed to produce to Kinesis within a
+    *     given batch
+    */
   final case class Error(
       errors: Option[Ior[NonEmptyList[Record], NonEmptyList[FailedRecord]]]
   ) extends Exception {
@@ -164,18 +276,46 @@ object Producer {
           )
           .mkString("\n\t")
 
-    final case class RecordsTooLarge(records: NonEmptyList[Record])
-    final case class PutFailures(failures: NonEmptyList[FailedRecord])
-
+    /** Create a [[kinesis4cats.producer.Producer.Error Producer.Error]] with
+      * records that were too large to fit into Kinesis
+      *
+      * @param records
+      *   a [[cats.data.NonEmptyList NonEmptyList]] of
+      *   [[kinesis.producer.Record Records]] that were too large to fit into a
+      *   single Kinesis request
+      * @return
+      *   [[kinesis4cats.producer.Producer.Error Producer.Error]]
+      */
     def recordsTooLarge(records: NonEmptyList[Record]): Error = Error(
       Some(Ior.left(records))
     )
 
+    /** Create a [[kinesis4cats.producer.Producer.Error Producer.Error]] with
+      * records that failed during a batch put to Kinesis.
+      *
+      * @param records
+      *   a [[cats.data.NonEmptyList NonEmptyList]] of
+      *   [[kinesis.producer.Producer.FailedRecord Producer.FailedRecords]],
+      *   which represent records that failed to produce to Kinesis within a
+      *   given batch
+      * @return
+      *   [[kinesis4cats.producer.Producer.Error Producer.Error]]
+      */
     def putFailures(records: NonEmptyList[FailedRecord]): Error = Error(
       Some(Ior.right(records))
     )
   }
 
+  /** Represents a record that failed to produce to Kinesis in a batch, with the
+    * error code and message for the failure
+    *
+    * @param record
+    *   [[kinesis4cats.producer.Record Record]] in the request that failed
+    * @param errorCode
+    *   The error code of the failure
+    * @param erorrMessage
+    *   The error message of the failure
+    */
   final case class FailedRecord(
       record: Record,
       errorCode: String,

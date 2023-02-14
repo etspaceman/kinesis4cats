@@ -24,6 +24,10 @@ import cats.syntax.all._
 import kinesis4cats.logging.instances.show._
 import kinesis4cats.models._
 
+/** [[kinesis4cats.producer.Producer]]
+  * [[kinesis4cats.logging.LogEncoder LogEncoder]] instances for string encoding
+  * of log structures using [[cats.Show Show]]
+  */
 object show {
   implicit val shardIdShow: Show[ShardId] = _.shardId
 

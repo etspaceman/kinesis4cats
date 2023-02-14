@@ -24,7 +24,8 @@ import kinesis4cats.models.ShardId
 final case class Batch(
     shardBatches: NonEmptyMap[ShardId, ShardBatch],
     count: Int,
-    batchSize: Long
+    batchSize: Long,
+    config: Batcher.Config
 ) {
 
   def add(record: Record.WithShard): Batch =
@@ -32,15 +33,15 @@ final case class Batch(
       shardBatches = shardBatches.add(
         record.predictedShard ->
           shardBatches(record.predictedShard)
-            .fold(ShardBatch.create(record))(x => x.add(record.record))
+            .fold(ShardBatch.create(record, config))(x => x.add(record.record))
       ),
       count = count + 1,
       batchSize = batchSize + record.payloadSize
     )
 
   def canAdd(record: Record.WithShard): Boolean =
-    count + 1 <= Constants.MaxRecordsPerRequest &&
-      batchSize + record.payloadSize <= Constants.MaxPayloadSizePerRequest &&
+    count + 1 <= config.maxRecordsPerRequest &&
+      batchSize + record.payloadSize <= config.maxPayloadSizePerRequest &&
       shardBatches(record.predictedShard)
         .map(_.canAdd(record.record))
         .getOrElse(true)
@@ -50,9 +51,10 @@ final case class Batch(
 }
 
 object Batch {
-  def create(record: Record.WithShard): Batch = Batch(
-    NonEmptyMap.of(record.predictedShard -> ShardBatch.create(record)),
+  def create(record: Record.WithShard, config: Batcher.Config): Batch = Batch(
+    NonEmptyMap.of(record.predictedShard -> ShardBatch.create(record, config)),
     1,
-    record.payloadSize
+    record.payloadSize,
+    config
   )
 }
