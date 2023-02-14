@@ -239,10 +239,10 @@ object Producer {
     * @param errors
     *   [[cats.data.Ior Ior]] with the following:
     *   - left: a [[cats.data.NonEmptyList NonEmptyList]] of
-    *     [[kinesis.producer.Record Records]] that were too large to fit into a
-    *     single Kinesis request
+    *     [[kinesis4cats.producer.Record Records]] that were too large to fit
+    *     into a single Kinesis request
     *   - right: a [[cats.data.NonEmptyList NonEmptyList]] of
-    *     [[kinesis.producer.Producer.FailedRecord Producer.FailedRecords]],
+    *     [[kinesis4cats.producer.Producer.FailedRecord Producer.FailedRecords]],
     *     which represent records that failed to produce to Kinesis within a
     *     given batch
     */
@@ -281,8 +281,8 @@ object Producer {
       *
       * @param records
       *   a [[cats.data.NonEmptyList NonEmptyList]] of
-      *   [[kinesis.producer.Record Records]] that were too large to fit into a
-      *   single Kinesis request
+      *   [[kinesis4cats.producer.Record Records]] that were too large to fit
+      *   into a single Kinesis request
       * @return
       *   [[kinesis4cats.producer.Producer.Error Producer.Error]]
       */
@@ -295,7 +295,7 @@ object Producer {
       *
       * @param records
       *   a [[cats.data.NonEmptyList NonEmptyList]] of
-      *   [[kinesis.producer.Producer.FailedRecord Producer.FailedRecords]],
+      *   [[kinesis4cats.producer.Producer.FailedRecord Producer.FailedRecords]],
       *   which represent records that failed to produce to Kinesis within a
       *   given batch
       * @return

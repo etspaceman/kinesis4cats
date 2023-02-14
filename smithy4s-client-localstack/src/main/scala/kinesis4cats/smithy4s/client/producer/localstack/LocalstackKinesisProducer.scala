@@ -32,7 +32,32 @@ import kinesis4cats.smithy4s.client.KinesisClient
 import kinesis4cats.smithy4s.client.localstack.LocalstackKinesisClient
 import kinesis4cats.smithy4s.client.producer.KinesisProducer
 
+/** Like KinesisProducer, but also includes the
+  * [[kinesis4cats.smithy4s.client.middleware.LocalstackProxy LocalstackProxy]]
+  * middleware, and leverages mock AWS credentials
+  */
 object LocalstackKinesisProducer {
+
+  /** Creates a [[cats.effect.Resource Resource]] of a
+    * [[kinesis4cats.smithy4s.client.producer.KinesisProducer KinesisProducer]]
+    * that is compatible with Localstack
+    *
+    * @param client
+    *   [[https://http4s.org/v0.23/docs/client.html Client]]
+    * @param region
+    *   [[https://github.com/disneystreaming/smithy4s/blob/series/0.17/modules/aws-kernel/src/smithy4s/aws/AwsRegion.scala AwsRegion]]
+    * @param producerConfig
+    *   [[kinesis4cats.producer.Producer.Config Producer.Config]]
+    * @param config
+    *   [[kinesis4cats.localstack.LocalstackConfig LocalstackConfig]]
+    * @param loggerF
+    *   [[cats.effect.Async Async]] => [[cats.effect.Async Async]] of
+    *   [[https://github.com/typelevel/log4cats/blob/main/core/shared/src/main/scala/org/typelevel/log4cats/StructuredLogger.scala StructuredLogger]].
+    * @param F
+    *   [[cats.effect.Async Async]]
+    * @return
+    *   [[https://github.com/disneystreaming/smithy4s/blob/series/0.17/modules/aws-kernel/src/smithy4s/aws/AwsEnvironment.scala AwsEnvironment]]
+    */
   def resource[F[_]](
       client: Client[F],
       region: F[AwsRegion],
@@ -62,6 +87,33 @@ object LocalstackKinesisProducer {
     )
   } yield producer
 
+  /** Creates a [[cats.effect.Resource Resource]] of a
+    * [[kinesis4cats.smithy4s.client.producer.KinesisProducer KinesisProducer]]
+    * that is compatible with Localstack
+    *
+    * @param client
+    *   [[https://http4s.org/v0.23/docs/client.html Client]]
+    * @param streamName
+    *   Name of stream that this producer will produce to
+    * @param region
+    *   [[https://github.com/disneystreaming/smithy4s/blob/series/0.17/modules/aws-kernel/src/smithy4s/aws/AwsRegion.scala AwsRegion]].
+    * @param prefix
+    *   Optional string prefix to apply when loading configuration. Default to
+    *   None
+    * @param producerConfig
+    *   String => [[kinesis4cats.producer.Producer.Config Producer.Config]]
+    *   function that creates configuration given a stream name. Defaults to
+    *   Producer.Config.default
+    * @param loggerF
+    *   [[cats.effect.Async Async]] => [[cats.effect.Async Async]] of
+    *   [[https://github.com/typelevel/log4cats/blob/main/core/shared/src/main/scala/org/typelevel/log4cats/StructuredLogger.scala StructuredLogger]].
+    *   Default is
+    *   [[https://github.com/typelevel/log4cats/blob/main/noop/shared/src/main/scala/org/typelevel/log4cats/noop/NoOpLogger.scala NoOpLogger]]
+    * @param F
+    *   [[cats.effect.Async Async]]
+    * @return
+    *   [[https://github.com/disneystreaming/smithy4s/blob/series/0.17/modules/aws-kernel/src/smithy4s/aws/AwsEnvironment.scala AwsEnvironment]]
+    */
   def resource[F[_]](
       client: Client[F],
       streamName: String,

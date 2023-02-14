@@ -37,6 +37,23 @@ import smithy4s.aws.kernel.AwsRegion
 import kinesis4cats.models
 import kinesis4cats.producer.{Record => Rec, _}
 
+/** A [[kinesis4cats.producer.Producer Producer]] implementation that leverages
+  * the [[kinesis4cats.smithy4s.client.KinesisClient KinesisClient]]
+  *
+  * @param logger
+  *   [[org.typelevel.log4cats.StructuredLogger StructuredLogger]] instance, for
+  *   logging
+  * @param shardMapCache
+  *   [[kinesis.producer.ShardMapCache ShardMapCache]]
+  * @param config
+  *   [[kinesis.producer.Producer.Config Producer.Config]]
+  * @param underlying
+  *   [[kinesis4cats.smithy4s.client.KinesisClient KinesisClient]]
+  * @param F
+  *   [[cats.effect.Async Async]]
+  * @param LE
+  *   [[kinesis4cats.producer.Producer.LogEncoders Producer.LogEncoders]]
+  */
 final class KinesisProducer[F[_]] private[kinesis4cats] (
     override val logger: StructuredLogger[F],
     override val shardMapCache: ShardMapCache[F],
@@ -127,6 +144,38 @@ object KinesisProducer {
         )
       )
 
+  /** Basic constructor for the
+    * [[kinesis4cats.smithy4s.client.producer.KinesisProducer KinesisProducer]]
+    *
+    * @param config
+    *   [[kinesis4cats.producer.Producer.Config Producer.Config]]
+    * @param client
+    *   [[org.http4s.client.Client Client]] instance
+    * @param region
+    *   [[https://github.com/disneystreaming/smithy4s/blob/series/0.17/modules/aws-kernel/src/smithy4s/aws/AwsRegion.scala AwsRegion]]
+    * @param loggerF
+    *   [[cats.effect.Async Async]] => F of
+    *   [[org.typelevel.log4cats.StructuredLogger StructuredLogger]]. Default
+    *   uses [[org.typelevel.log4cats.noop.NoOpLogger NoOpLogger]]
+    * @param credsF
+    *   (
+    *   [[https://github.com/disneystreaming/smithy4s/blob/series/0.17/modules/aws/src/smithy4s/aws/SimpleHttpClient.scala SimpleHttpClient]],
+    *   [[cats.effect.Async Async]]) => F of
+    *   [[https://github.com/disneystreaming/smithy4s/blob/series/0.17/modules/aws-kernel/src/smithy4s/aws/AwsCredentials.scala AwsCredentials]]
+    *   Default uses
+    *   [[https://github.com/disneystreaming/smithy4s/blob/series/0.17/modules/aws/src/smithy4s/aws/AwsCredentialsProvider.scala AwsCredentialsProvider.default]]
+    * @param F
+    *   [[cats.effect.Async Async]]
+    * @param LE
+    *   [[kinesis4cats.producer.Producer.LogEncoders Producer.LogEncoders]]
+    * @param KLE
+    *   [[kinesis4cats.smithy4s.client.KinesisClient.LogEncoders KinesisClient.LogEncoders]]
+    * @param SLE
+    *   [[kinesis4cats.producer.ShardMapCache.LogEncoders ShardMapCache.LogEncoders]]
+    * @return
+    *   [[cats.effect.Resource Resource]] of
+    *   [[kinesis4cats.smithy4s.client.producer.KinesisProducer KinesisProducer]]
+    */
   def apply[F[_]](
       config: Producer.Config,
       client: Client[F],

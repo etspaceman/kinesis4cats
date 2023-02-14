@@ -27,6 +27,27 @@ import kinesis4cats.producer.Producer
 import kinesis4cats.producer.ShardMapCache
 
 object LocalstackKinesisProducer {
+
+  /** Builds a [[kinesis4cats.client.producer.KinesisProducer KinesisProducer]]
+    * that is compliant for Localstack usage. Lifecycle is managed as a
+    * [[cats.effect.Resource Resource]].
+    *
+    * @param producerConfig
+    *   [[kinesis4cats.producer.Producer.Config Producer.Config]]
+    * @param config
+    *   [[kinesis4cats.localstack.LocalstackConfig LocalstackConfig]]
+    * @param F
+    *   F with an [[cats.effect.Async Async]] instance
+    * @param LE
+    *   [[kinesis4cats.client.KinesisClient.LogEncoders LogEncoders]]
+    * @param SLE
+    *   [[kinesis4cats.producer.ShardMapCache.LogEncoders ShardMapCache.LogEncoders]]
+    * @param PLE
+    *   [[kinesis4cats.producer.Producer.LogEncoders Producer.LogEncoders]]
+    * @return
+    *   [[cats.effect.Resource Resource]] of
+    *   [[kinesis4cats.client.producer.KinesisProducer KinesisProducer]]
+    */
   def resource[F[_]](
       producerConfig: Producer.Config,
       config: LocalstackConfig
@@ -44,6 +65,30 @@ object LocalstackKinesisProducer {
       )
     )
 
+  /** Builds a [[kinesis4cats.client.producer.KinesisProducer KinesisProducer]]
+    * that is compliant for Localstack usage. Lifecycle is managed as a
+    * [[cats.effect.Resource Resource]].
+    *
+    * @param streamName
+    *   Name of stream for the producer to produce to
+    * @param prefix
+    *   Optional prefix for parsing configuration. Default to None
+    * @param producerConfig
+    *   String => [[kinesis4cats.producer.Producer.Config Producer.Config]]
+    *   function that creates configuration given a stream name. Defaults to
+    *   Producer.Config.default
+    * @param F
+    *   F with an [[cats.effect.Async Async]] instance
+    * @param LE
+    *   [[kinesis4cats.client.KinesisClient.LogEncoders LogEncoders]]
+    * @param SLE
+    *   [[kinesis4cats.producer.ShardMapCache.LogEncoders ShardMapCache.LogEncoders]]
+    * @param PLE
+    *   [[kinesis4cats.producer.Producer.LogEncoders Producer.LogEncoders]]
+    * @return
+    *   [[cats.effect.Resource Resource]] of
+    *   [[kinesis4cats.client.producer.KinesisProducer KinesisProducer]]
+    */
   def resource[F[_]](
       streamName: String,
       prefix: Option[String] = None,
