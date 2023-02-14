@@ -51,7 +51,12 @@ lazy val `shared-localstack` = projectMatrix
 lazy val `shared-tests` = projectMatrix
   .settings(
     description := "Common test interfaces",
-    libraryDependencies ++= testDependencies
+    libraryDependencies ++= testDependencies,
+    tlVersionIntroduced := Map(
+      "2.12" -> "0.0.2",
+      "2.13" -> "0.0.2",
+      "3" -> "0.0.2"
+    )
   )
   .jvmPlatform(allScalaVersions)
   .enableIntegrationTests
