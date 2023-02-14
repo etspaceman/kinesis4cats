@@ -61,11 +61,6 @@ object show {
     case StreamNameOrArn.Arn(arn)         => arn.streamArn.show
   }
 
-  implicit val putRequestShow: Show[PutRequest] = x =>
-    ShowBuilder("PutRequest")
-      .add("records", x.records)
-      .build
-
   implicit val shardMapCacheLogEncoders: ShardMapCache.LogEncoders =
     new ShardMapCache.LogEncoders()
 

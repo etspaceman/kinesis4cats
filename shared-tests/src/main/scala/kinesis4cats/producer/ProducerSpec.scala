@@ -62,7 +62,7 @@ abstract class ProducerSpec[PutReq, PutRes, A] extends munit.CatsEffectSuite {
             )
           )
         )
-        _ <- resources.producer.put(PutRequest(records))
+        _ <- resources.producer.put(records)
         retryPolicy = limitRetries[IO](30).join(constantDelay(1.second))
         size <- retryingOnFailures(
           retryPolicy,

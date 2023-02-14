@@ -75,10 +75,12 @@ final class KinesisProducer[F[_]] private (
       .maybeTransform(record.explicitHashKey)(_.explicitHashKey(_))
       .build()
 
-  override protected def asPutRequest(req: PutRequest): PutRecordsRequest =
+  override protected def asPutRequest(
+      records: NonEmptyList[Rec]
+  ): PutRecordsRequest =
     PutRecordsRequest
       .builder()
-      .records(req.records.toList.map(toEntry).asJava)
+      .records(records.toList.map(toEntry).asJava)
       .maybeTransform(config.streamNameOrArn.streamName)(_.streamName(_))
       .maybeTransform(config.streamNameOrArn.streamArn.map(_.streamArn))(
         _.streamARN(_)
@@ -86,11 +88,11 @@ final class KinesisProducer[F[_]] private (
       .build()
 
   override protected def failedRecords(
-      req: PutRequest,
+      records: NonEmptyList[Rec],
       resp: PutRecordsResponse
   ): Option[NonEmptyList[Producer.FailedRecord]] =
     NonEmptyList.fromList(
-      resp.records().asScala.toList.zip(req.records.toList).collect {
+      resp.records().asScala.toList.zip(records.toList).collect {
         case (respEntry, record) if Option(respEntry.errorCode()).nonEmpty =>
           Producer.FailedRecord(
             record,

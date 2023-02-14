@@ -76,19 +76,21 @@ final class KinesisProducer[F[_]] private[kinesis4cats] (
       record.explicitHashKey.map(HashKey(_))
     )
 
-  override protected def asPutRequest(req: PutRequest): PutRecordsInput =
+  override protected def asPutRequest(
+      records: NonEmptyList[Rec]
+  ): PutRecordsInput =
     PutRecordsInput(
-      req.records.toList.map(toEntry),
+      records.toList.map(toEntry),
       config.streamNameOrArn.streamName.map(StreamName(_)),
       config.streamNameOrArn.streamArn.map(x => StreamARN(x.streamArn))
     )
 
   override protected def failedRecords(
-      req: PutRequest,
+      records: NonEmptyList[Rec],
       resp: PutRecordsOutput
   ): Option[NonEmptyList[Producer.FailedRecord]] =
     NonEmptyList.fromList(
-      resp.records.zip(req.records.toList).collect {
+      resp.records.zip(records.toList).collect {
         case (respEntry, record)
             if respEntry.errorCode.nonEmpty && respEntry.errorMessage.nonEmpty =>
           Producer.FailedRecord(

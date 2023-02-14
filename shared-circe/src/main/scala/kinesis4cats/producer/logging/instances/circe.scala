@@ -55,9 +55,6 @@ object circe {
     case StreamNameOrArn.Arn(arn)         => arn.streamArn.asJson
   }
 
-  implicit val putRequestEncoder: Encoder[PutRequest] =
-    Encoder.forProduct1("records")(_.records)
-
   implicit val shardMapCacheLogEncoders: ShardMapCache.LogEncoders =
     new ShardMapCache.LogEncoders()
 

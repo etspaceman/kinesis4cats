@@ -68,22 +68,25 @@ abstract class Producer[F[_], PutReq, PutRes](implicit
     */
   protected def putImpl(req: PutReq): F[PutRes]
 
-  /** Transforms a [[kinesis4cats.producer.PutRequest PutRequest]] into the
-    * underlying put request
+  /** Transforms a a [[cats.data.NonEmptyList NonEmptyList]] of
+    * [[kinesis4cats.producer.Record Records]] into the underlying put request
     *
     * @param req
-    *   [[kinesis4cats.producer.PutRequest PutRequest]]
+    *   a [[cats.data.NonEmptyList NonEmptyList]] of
+    *   [[kinesis4cats.producer.Record Records]]
     * @return
     *   the underlying put request
     */
-  protected def asPutRequest(req: PutRequest): PutReq
+  protected def asPutRequest(records: NonEmptyList[Record]): PutReq
 
-  /** Matches the [[kinesis4cats.producer.PutRequest PutRequest]] with the
-    * underlying response records and returns any errored records. Useful for
-    * retrying any records that failed
+  /** Matches the a [[cats.data.NonEmptyList NonEmptyList]] of
+    * [[kinesis4cats.producer.Record Records]] with the underlying response
+    * records and returns any errored records. Useful for retrying any records
+    * that failed
     *
     * @param req
-    *   [[kinesis4cats.producer.PutRequest PutRequest]]
+    *   a [[cats.data.NonEmptyList NonEmptyList]] of
+    *   [[kinesis4cats.producer.Record Records]]
     * @param resp
     *   the underlying put response
     * @return
@@ -91,7 +94,7 @@ abstract class Producer[F[_], PutReq, PutRes](implicit
     *   [[kinesis4cats.producer.Producer.FailedRecord Producer.FailedRecord]]
     */
   protected def failedRecords(
-      req: PutRequest,
+      records: NonEmptyList[Record],
       resp: PutRes
   ): Option[NonEmptyList[Producer.FailedRecord]]
 
@@ -101,7 +104,8 @@ abstract class Producer[F[_], PutReq, PutRes](implicit
     *   - Putting batches to Kinesis
     *
     * @param req
-    *   [[kinesis4cats.producer.PutRequest PutRequest]]
+    *   a [[cats.data.NonEmptyList NonEmptyList]] of
+    *   [[kinesis4cats.producer.Record Records]]
     * @return
     *   [[cats.data.Ior Ior]] with the following:
     *   - left: a [[kinesis4cats.producer.Producer.Error Producer.Error]], which
@@ -110,13 +114,15 @@ abstract class Producer[F[_], PutReq, PutRes](implicit
     *   - right: a [[cats.data.NonEmptyList NonEmptyList]] of the underlying put
     *     responses
     */
-  def put(req: PutRequest): F[Ior[Producer.Error, NonEmptyList[PutRes]]] = {
+  def put(
+      records: NonEmptyList[Record]
+  ): F[Ior[Producer.Error, NonEmptyList[PutRes]]] = {
     val ctx = LogContext()
 
     val digest = Producer.md5Digest
 
     for {
-      withShards <- req.records.traverse(rec =>
+      withShards <- records.traverse(rec =>
         for {
           shardRes <- shardMapCache
             .shardForPartitionKey(digest, rec.partitionKey)
@@ -128,8 +134,8 @@ abstract class Producer[F[_], PutReq, PutRes](implicit
                     _ <- logger.warn(ctx.context, e)(
                       s"Did not find a shard for Partition Key ${rec.partitionKey}"
                     )
-                    _ <- logger.trace(ctx.addEncoded("request", req).context)(
-                      "Logging records"
+                    _ <- logger.trace(ctx.addEncoded("record", rec).context)(
+                      "Logging record"
                     )
                   } yield ()
                 )
@@ -144,10 +150,9 @@ abstract class Producer[F[_], PutReq, PutRes](implicit
             batch.shardBatches.toNonEmptyList
               .map(_.records)
               .parTraverseN(config.shardParallelism) { shardBatch =>
-                val request = req.copy(records = shardBatch)
                 for {
-                  resp <- putImpl(asPutRequest(request))
-                  res = failedRecords(request, resp)
+                  resp <- putImpl(asPutRequest(shardBatch))
+                  res = failedRecords(shardBatch, resp)
                     .map(Producer.Error.putFailures)
                     .fold(
                       Ior.right[Producer.Error, PutRes](resp)
@@ -177,7 +182,7 @@ object Producer {
     * @param putReqeustLogEncoder
     */
   final class LogEncoders(implicit
-      val putReqeustLogEncoder: LogEncoder[PutRequest]
+      val recordLogEncoder: LogEncoder[Record]
   )
 
   def md5Digest = MessageDigest.getInstance("MD5")
