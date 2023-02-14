@@ -51,7 +51,7 @@ object LibraryDependencies {
 
     // See https://github.com/etspaceman/kinesis-mock/pull/407, upgrade when available in localstack
     val kpl = "com.amazonaws" % "amazon-kinesis-producer" % "0.14.13"
-    val kcl = "software.amazon.kinesis" % "amazon-kinesis-client" % "2.4.4"
+    val kcl = "software.amazon.kinesis" % "amazon-kinesis-client" % "2.4.5"
   }
 
   object Cats {
