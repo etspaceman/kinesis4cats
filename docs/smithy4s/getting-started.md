@@ -22,7 +22,7 @@ libraryDependencies += "io.github.etspaceman" %% "kinesis4cats-smithy4s-client" 
 ```scala mdoc:compile-only
 import cats.effect._
 import com.amazonaws.kinesis._
-import org.http4s.ember.client.EmberClientBuilder
+import org.http4s.blaze.client.BlazeClientBuilder
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 import smithy4s.aws._
 import smithy4s.ByteArray
@@ -32,7 +32,7 @@ import kinesis4cats.smithy4s.client.logging.instances.show._
 
 object MyApp extends IOApp {
     override def run(args: List[String]) = (for {
-        underlying <- EmberClientBuilder.default[IO].build
+        underlying <-BlazeClientBuilder[IO].resource
         client <- KinesisClient[IO](
             underlying, 
             IO.pure(AwsRegion.US_EAST_1), 

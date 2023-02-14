@@ -314,7 +314,7 @@ lazy val `kinesis-client-producer-tests` = projectMatrix
   .settings(
     description := "Integration Tests for the Client Kinesis Producer",
     tlVersionIntroduced := Map("2.13" -> "0.0.2", "3" -> "0.0.2"),
-    libraryDependencies ++= Seq(Http4s.emberClient % IT, Log4Cats.slf4j % IT)
+    libraryDependencies ++= Seq(Log4Cats.slf4j % IT)
   )
   .jvmPlatform(allScalaVersions)
   .enableIntegrationTests
@@ -386,7 +386,7 @@ lazy val `smithy4s-client-tests` = projectMatrix
   .settings(
     description := "Integration Tests for the Smithy4s Kinesis Client",
     tlVersionIntroduced := Map("2.13" -> "0.0.2", "3" -> "0.0.2"),
-    libraryDependencies ++= Seq(Http4s.emberClient % IT, Log4Cats.slf4j % IT)
+    libraryDependencies ++= Seq(Http4s.blazeClient % IT, Log4Cats.slf4j % IT)
   )
   .jvmPlatform(last2ScalaVersions)
   .enableIntegrationTests
@@ -416,7 +416,11 @@ lazy val docs = projectMatrix
   .in(file("site"))
   .enablePlugins(TypelevelSitePlugin)
   .settings(
-    libraryDependencies ++= Seq(Log4Cats.slf4j, Http4s.emberClient),
+    libraryDependencies ++= Seq(
+      Log4Cats.slf4j,
+      Http4s.emberClient,
+      Http4s.blazeClient
+    ),
     tlFatalWarningsInCi := false,
     tlSiteApiPackage := Some("kinesis4cats"),
     tlSiteRelatedProjects ++= Seq(

@@ -12,7 +12,7 @@ libraryDependencies += "io.github.etspaceman" %% "kinesis4cats-smithy4s-client-l
 
 ```scala mdoc:compile-only
 import cats.effect._
-import org.http4s.ember.client.EmberClientBuilder
+import org.http4s.blaze.client.BlazeClientBuilder
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 import smithy4s.aws._
 
@@ -21,10 +21,9 @@ import kinesis4cats.smithy4s.client.localstack.LocalstackKinesisClient
 import kinesis4cats.smithy4s.client.logging.instances.show._
 // Load a KinesisClient as a Resource
 val kinesisClientResource = for {
-    underlying <- EmberClientBuilder
-        .default[IO]
-        .withoutCheckEndpointAuthentication
-        .build
+    underlying <- BlazeClientBuilder[IO]
+        .withCheckEndpointAuthentication(false)
+        .resource
     client <- LocalstackKinesisClient.clientResource[IO](
         underlying,
         IO.pure(AwsRegion.US_EAST_1),

@@ -23,7 +23,7 @@ import cats.syntax.all._
 import com.amazonaws.kinesis._
 import io.circe.parser._
 import io.circe.syntax._
-import org.http4s.ember.client.EmberClientBuilder
+import org.http4s.blaze.client.BlazeClientBuilder
 import org.scalacheck.Arbitrary
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 import smithy4s.ByteArray
@@ -42,10 +42,9 @@ abstract class KinesisClientSpec(implicit LE: KinesisClient.LogEncoders[IO])
   def fixture: SyncIO[FunFixture[KinesisClient[IO]]] =
     ResourceFixture(
       for {
-        underlying <- EmberClientBuilder
-          .default[IO]
-          .withoutCheckEndpointAuthentication
-          .build
+        underlying <- BlazeClientBuilder[IO]
+          .withCheckEndpointAuthentication(false)
+          .resource
         client <- LocalstackKinesisClient.clientResource[IO](
           underlying,
           IO.pure(region),
