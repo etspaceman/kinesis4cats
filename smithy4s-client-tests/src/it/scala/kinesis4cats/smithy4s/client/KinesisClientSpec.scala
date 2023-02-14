@@ -192,6 +192,7 @@ abstract class KinesisClientSpec(implicit LE: KinesisClient.LogEncoders[IO])
           StreamARN(streamArn),
           StreamModeDetails(StreamMode.ON_DEMAND)
         )
+      _ <- client.deleteStream(Some(StreamName(streamName)))
     } yield {
       assertEquals(List(record1, record2, record3), recordsParsed)
       assert(consumers.consumers.size === 1)

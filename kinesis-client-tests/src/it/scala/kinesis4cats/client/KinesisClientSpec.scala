@@ -255,6 +255,9 @@ abstract class KinesisClientSpec(implicit LE: KinesisClient.LogEncoders)
           )
           .build()
       )
+      _ <- client.deleteStream(
+        DeleteStreamRequest.builder().streamName(streamName).build()
+      )
     } yield {
       assertEquals(List(record1, record2, record3), recordsParsed)
       assert(consumers.consumers().size() === 1)
