@@ -137,7 +137,12 @@ object Kinesis4CatsPlugin extends AutoPlugin {
       style ++ test ++ scalafix ++ mima ++ doc
     },
     githubWorkflowJavaVersions := Seq(JavaSpec.temurin("17")),
-    tlCiScalafixCheck := true
+    tlCiScalafixCheck := true,
+    mergifyStewardConfig := Some(
+      MergifyStewardConfig(action =
+        MergifyAction.Merge(method = Some("squash"))
+      )
+    )
   ) ++ tlReplaceCommandAlias(
     "prePR",
     mkCommand(
