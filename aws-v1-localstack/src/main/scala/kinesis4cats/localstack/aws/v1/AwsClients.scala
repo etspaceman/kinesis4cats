@@ -363,7 +363,10 @@ object AwsClients {
       AmazonCloudWatchAsyncClientBuilder
         .standard()
         .withEndpointConfiguration(
-          new EndpointConfiguration(config.cloudwatchEndpoint, config.region.name)
+          new EndpointConfiguration(
+            config.cloudwatchEndpoint,
+            config.region.name
+          )
         )
         .withCredentials(AwsCreds.LocalCredsProvider)
         .build()
