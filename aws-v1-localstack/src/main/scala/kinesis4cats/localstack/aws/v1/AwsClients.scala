@@ -54,7 +54,7 @@ object AwsClients {
       AmazonKinesisAsyncClientBuilder
         .standard()
         .withEndpointConfiguration(
-          new EndpointConfiguration(config.endpoint, config.region.name)
+          new EndpointConfiguration(config.kinesisEndpoint, config.region.name)
         )
         .withCredentials(AwsCreds.LocalCredsProvider)
         .build()
@@ -281,7 +281,7 @@ object AwsClients {
       AmazonDynamoDBAsyncClientBuilder
         .standard()
         .withEndpointConfiguration(
-          new EndpointConfiguration(config.endpoint, config.region.name)
+          new EndpointConfiguration(config.dynamoEndpoint, config.region.name)
         )
         .withCredentials(AwsCreds.LocalCredsProvider)
         .build()
@@ -363,7 +363,7 @@ object AwsClients {
       AmazonCloudWatchAsyncClientBuilder
         .standard()
         .withEndpointConfiguration(
-          new EndpointConfiguration(config.endpoint, config.region.name)
+          new EndpointConfiguration(config.cloudwatchEndpoint, config.region.name)
         )
         .withCredentials(AwsCreds.LocalCredsProvider)
         .build()

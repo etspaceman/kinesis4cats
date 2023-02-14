@@ -84,7 +84,7 @@ object AwsClients {
         .httpClient(nettyClient)
         .region(Region.of(config.region.name))
         .credentialsProvider(AwsCreds.LocalCredsProvider)
-        .endpointOverride(config.endpointUri)
+        .endpointOverride(config.kinesisEndpointUri)
         .build()
     )
 
@@ -335,7 +335,7 @@ object AwsClients {
         .httpClient(nettyClient)
         .region(Region.of(config.region.name))
         .credentialsProvider(AwsCreds.LocalCredsProvider)
-        .endpointOverride(config.endpointUri)
+        .endpointOverride(config.dynamoEndpointUri)
         .build()
     )
 
@@ -417,7 +417,7 @@ object AwsClients {
         .httpClient(nettyClient)
         .region(Region.of(config.region.name))
         .credentialsProvider(AwsCreds.LocalCredsProvider)
-        .endpointOverride(config.endpointUri)
+        .endpointOverride(config.cloudwatchEndpointUri)
         .build()
     )
 
