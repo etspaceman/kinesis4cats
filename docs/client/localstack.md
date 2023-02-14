@@ -15,6 +15,8 @@ import cats.effect.IO
 
 import kinesis4cats.client.localstack.LocalstackKinesisClient
 import kinesis4cats.client.logging.instances.show._
+import kinesis4cats.client.producer.localstack.LocalstackKinesisProducer
+import kinesis4cats.producer.logging.instances.show._
 
 // Load a KinesisClient as an effect
 LocalstackKinesisClient.client[IO]()
@@ -25,4 +27,7 @@ LocalstackKinesisClient.clientResource[IO]()
 // Load a KinesisClient as a Resource.
 // Also creates and deletes a stream during it's usage. Useful for tests.
 LocalstackKinesisClient.streamResource[IO]("my-stream", 1)
+
+// Load a KinesisProducer as a resource
+LocalstackKinesisProducer.resource[IO]("my-stream")
 ```

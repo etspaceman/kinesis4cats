@@ -19,6 +19,8 @@ import smithy4s.aws._
 import kinesis4cats.logging.instances.show._
 import kinesis4cats.smithy4s.client.localstack.LocalstackKinesisClient
 import kinesis4cats.smithy4s.client.logging.instances.show._
+import kinesis4cats.smithy4s.client.producer.localstack.LocalstackKinesisProducer
+import kinesis4cats.producer.logging.instances.show._
 // Load a KinesisClient as a Resource
 val kinesisClientResource = for {
     underlying <- BlazeClientBuilder[IO]
@@ -30,4 +32,17 @@ val kinesisClientResource = for {
         loggerF = (_: Async[IO]) => Slf4jLogger.create[IO]
     )
 } yield client
+
+// Load a KinesisProducer as a Resource
+val kinesisProducerResource = for {
+    underlying <- BlazeClientBuilder[IO]
+        .withCheckEndpointAuthentication(false)
+        .resource
+    producer <- LocalstackKinesisProducer.resource[IO](
+        underlying,
+        "my-stream",
+        IO.pure(AwsRegion.US_EAST_1),
+        loggerF = (_: Async[IO]) => Slf4jLogger.create[IO]
+    )
+} yield producer
 ```
