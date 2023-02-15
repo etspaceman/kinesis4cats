@@ -134,6 +134,7 @@
         <ul class="nav-list">
           <li class="level1"><a href="#installation">Installation</a></li>
           <li class="level1"><a href="#usage">Usage</a></li>
+          <li class="level1"><a href="#producer">Producer</a></li>
         </ul>
 
         <p class="footer"></p>
@@ -177,6 +178,42 @@
                 )
             } </span><span class="keyword">yield</span><span> </span><span class="type-name">ExitCode</span><span>.</span><span class="type-name">Success</span><span>
         )
+}</span></code></pre>
+        
+        <h2 id="producer" class="section">Producer<a class="anchor-link right" href="#producer"><i class="icofont-laika">&#xef71;</i></a></h2>
+        <p>kinesis4cats offers a <a href="https://github.com/etspaceman/kinesis4cats/blob/main/shared/src/main/scala/kinesis4cats/producer/Producer.scala">Producer</a> interface that handles the following:</p>
+        <ul>
+          <li>Maintains a <a href="https://github.com/etspaceman/kinesis4cats/blob/main/shared/src/main/scala/kinesis4cats/producer/ShardMapCache.scala">ShardMapCache</a>, which will routinely track the open shards for a Kinesis stream. It is used to predict which shard a record will be produced to.</li>
+          <li>Batches records against known Kinesis limits (or a user-defined set of configuration).</li>
+          <li>Produces records to Kinesis</li>
+          <li>Provides an Error interface for users to interact with failed records (e.g. retrying failures)</li>
+        </ul>
+        <p>This module provides an implementation of that interface, backed by the <a href="https://github.com/etspaceman/kinesis4cats/blob/main/kinesis-client/src/main/scala/kinesis4cats/client/KinesisClient.scala">KinesisClient</a>.</p>
+        <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">data</span><span>.</span><span class="type-name">NonEmptyList</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">effect</span><span>.</span><span class="identifier">_</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">syntax</span><span>.</span><span class="identifier">all</span><span>.</span><span class="identifier">_</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">software</span><span>.</span><span class="identifier">amazon</span><span>.</span><span class="identifier">awssdk</span><span>.</span><span class="identifier">services</span><span>.</span><span class="identifier">kinesis</span><span>.</span><span class="type-name">KinesisAsyncClient</span><span>
+
+</span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">client</span><span>.</span><span class="identifier">logging</span><span>.</span><span class="identifier">instances</span><span>.</span><span class="identifier">show</span><span>.</span><span class="identifier">_</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">client</span><span>.</span><span class="identifier">producer</span><span>.</span><span class="type-name">KinesisProducer</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">producer</span><span>.</span><span class="identifier">logging</span><span>.</span><span class="identifier">instances</span><span>.</span><span class="identifier">show</span><span>.</span><span class="identifier">_</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">producer</span><span>.</span><span class="identifier">_</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">models</span><span>.</span><span class="type-name">StreamNameOrArn</span><span>
+
+</span><span class="keyword">object</span><span> </span><span class="type-name">MyApp</span><span> </span><span class="keyword">extends</span><span> </span><span class="type-name">IOApp</span><span> {
+    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">run</span><span>(</span><span class="identifier">args</span><span>: </span><span class="type-name">List</span><span>[</span><span class="type-name">String</span><span>]) = 
+        </span><span class="type-name">KinesisProducer</span><span>[</span><span class="type-name">IO</span><span>](</span><span class="type-name">Producer</span><span>.</span><span class="type-name">Config</span><span>.</span><span class="keyword">default</span><span>(</span><span class="type-name">StreamNameOrArn</span><span>.</span><span class="type-name">Name</span><span>(</span><span class="string-literal">&quot;my-stream&quot;</span><span>)), </span><span class="type-name">KinesisAsyncClient</span><span>.</span><span class="identifier">builder</span><span>().</span><span class="identifier">build</span><span>())
+            .</span><span class="identifier">use</span><span>(</span><span class="identifier">producer</span><span> =&gt;
+                </span><span class="keyword">for</span><span> {
+                    </span><span class="identifier">_</span><span> &lt;- </span><span class="identifier">producer</span><span>.</span><span class="identifier">put</span><span>(
+                        </span><span class="type-name">NonEmptyList</span><span>.</span><span class="identifier">of</span><span>(
+                            </span><span class="type-name">Record</span><span>(</span><span class="string-literal">&quot;my-data&quot;</span><span>.</span><span class="identifier">getBytes</span><span>(), </span><span class="string-literal">&quot;some-partition-key&quot;</span><span>),
+                            </span><span class="type-name">Record</span><span>(</span><span class="string-literal">&quot;my-data-2&quot;</span><span>.</span><span class="identifier">getBytes</span><span>(), </span><span class="string-literal">&quot;some-partition-key-2&quot;</span><span>),
+                            </span><span class="type-name">Record</span><span>(</span><span class="string-literal">&quot;my-data-3&quot;</span><span>.</span><span class="identifier">getBytes</span><span>(), </span><span class="string-literal">&quot;some-partition-key-3&quot;</span><span>),
+                        )
+                    )
+                } </span><span class="keyword">yield</span><span> </span><span class="type-name">ExitCode</span><span>.</span><span class="type-name">Success</span><span>
+            )
 }</span></code></pre>
 
         <hr style="margin-top: 30px"/>

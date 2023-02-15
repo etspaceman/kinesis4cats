@@ -152,6 +152,8 @@
 
 </span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">client</span><span>.</span><span class="identifier">localstack</span><span>.</span><span class="type-name">LocalstackKinesisClient</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">client</span><span>.</span><span class="identifier">logging</span><span>.</span><span class="identifier">instances</span><span>.</span><span class="identifier">show</span><span>.</span><span class="identifier">_</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">client</span><span>.</span><span class="identifier">producer</span><span>.</span><span class="identifier">localstack</span><span>.</span><span class="type-name">LocalstackKinesisProducer</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">producer</span><span>.</span><span class="identifier">logging</span><span>.</span><span class="identifier">instances</span><span>.</span><span class="identifier">show</span><span>.</span><span class="identifier">_</span><span>
 
 </span><span class="comment">// Load a KinesisClient as an effect
 </span><span class="type-name">LocalstackKinesisClient</span><span>.</span><span class="identifier">client</span><span>[</span><span class="type-name">IO</span><span>]()
@@ -161,7 +163,10 @@
 
 </span><span class="comment">// Load a KinesisClient as a Resource.
 // Also creates and deletes a stream during it&#39;s usage. Useful for tests.
-</span><span class="type-name">LocalstackKinesisClient</span><span>.</span><span class="identifier">streamResource</span><span>[</span><span class="type-name">IO</span><span>](</span><span class="string-literal">&quot;my-stream&quot;</span><span>, </span><span class="number-literal">1</span><span>)</span></code></pre>
+</span><span class="type-name">LocalstackKinesisClient</span><span>.</span><span class="identifier">streamResource</span><span>[</span><span class="type-name">IO</span><span>](</span><span class="string-literal">&quot;my-stream&quot;</span><span>, </span><span class="number-literal">1</span><span>)
+
+</span><span class="comment">// Load a KinesisProducer as a resource
+</span><span class="type-name">LocalstackKinesisProducer</span><span>.</span><span class="identifier">resource</span><span>[</span><span class="type-name">IO</span><span>](</span><span class="string-literal">&quot;my-stream&quot;</span><span>)</span></code></pre>
 
         <hr style="margin-top: 30px"/>
         <footer style="font-size: 90%; text-align: center">
