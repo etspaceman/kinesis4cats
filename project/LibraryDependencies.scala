@@ -18,6 +18,7 @@ object LibraryDependencies {
 
   object Log4Cats {
     val log4CatsVersion = "2.5.0"
+    val core = "org.typelevel" %% "log4cats-core" % log4CatsVersion
     val slf4j = "org.typelevel" %% "log4cats-slf4j" % log4CatsVersion
     val noop = "org.typelevel" %% "log4cats-noop" % log4CatsVersion
   }
@@ -76,6 +77,7 @@ object LibraryDependencies {
     val http4sVersion = "0.23.18"
     val emberServer = "org.http4s" %% "http4s-ember-server" % http4sVersion
     val emberClient = "org.http4s" %% "http4s-ember-client" % http4sVersion
+    val blazeClient = "org.http4s" %% "http4s-blaze-client" % "0.23.13"
     val circe = "org.http4s" %% "http4s-circe" % http4sVersion
   }
 

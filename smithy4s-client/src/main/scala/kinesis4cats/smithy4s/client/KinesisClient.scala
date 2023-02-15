@@ -46,6 +46,30 @@ import kinesis4cats.smithy4s.client.middleware.RequestResponseLogger
   */
 object KinesisClient {
 
+  def awsEnv[F[_]](
+      client: Client[F],
+      region: F[AwsRegion],
+      credsF: (
+          SimpleHttpClient[F],
+          Async[F]
+      ) => Resource[F, F[AwsCredentials]] =
+        (x: SimpleHttpClient[F], f: Async[F]) =>
+          AwsCredentialsProvider.default[F](x)(f),
+      backendF: (Client[F], Async[F]) => SimpleHttpClient[F] =
+        (client: Client[F], f: Async[F]) => AwsHttp4sBackend[F](client)(f)
+  )(implicit F: Async[F]) = {
+    val backend = backendF(client, F)
+    credsF(backend, F).map(creds =>
+      AwsEnvironment
+        .make[F](
+          backend,
+          region,
+          creds,
+          F.realTime.map(_.toSeconds).map(Timestamp(_, 0))
+        )
+    )
+  }
+
   /** Helper class containing required
     * [[kinesis4cats.logging.LogEncoder LogEncoders]] for the
     * [[kinesis4cats.smithy4s.client.KinesisClient KinesisClient]]
@@ -83,7 +107,7 @@ object KinesisClient {
     */
   def apply[F[_]](
       client: Client[F],
-      region: AwsRegion,
+      region: F[AwsRegion],
       loggerF: Async[F] => F[StructuredLogger[F]] = (f: Async[F]) =>
         f.pure(NoOpLogger[F](f)),
       credsF: (
@@ -91,21 +115,20 @@ object KinesisClient {
           Async[F]
       ) => Resource[F, F[AwsCredentials]] =
         (x: SimpleHttpClient[F], f: Async[F]) =>
-          AwsCredentialsProvider.default[F](x)(f)
+          AwsCredentialsProvider.default[F](x)(f),
+      backendF: (Client[F], Async[F]) => SimpleHttpClient[F] =
+        (client: Client[F], f: Async[F]) => AwsHttp4sBackend[F](client)(f)
   )(implicit
       F: Async[F],
       LE: LogEncoders[F]
   ): Resource[F, KinesisClient[F]] = for {
     logger <- loggerF(F).toResource
-    awsBackend = AwsHttp4sBackend(RequestResponseLogger(logger)(client))
-    creds <- credsF(awsBackend, F)
-    env = AwsEnvironment
-      .make[F](
-        awsBackend,
-        F.pure(region),
-        creds,
-        F.realTime.map(_.toSeconds).map(Timestamp(_, 0))
-      )
+    env <- awsEnv(
+      RequestResponseLogger(logger)(client),
+      region,
+      credsF,
+      backendF
+    )
     awsClient <- AwsClient.simple(Kinesis.service, env)
   } yield awsClient
 }

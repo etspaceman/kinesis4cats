@@ -55,6 +55,9 @@ object show {
   implicit val byteBufferShow: Show[ByteBuffer] = x =>
     Show[String].show(x.asBase64String)
 
+  implicit val arrayBytesShow: Show[Array[Byte]] =
+    byteBufferShow.contramap(ByteBuffer.wrap)
+
   implicit val retryDetailsGivingUpShow: Show[RetryDetails.GivingUp] =
     x =>
       ShowBuilder("GivingUp")

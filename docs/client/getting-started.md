@@ -42,3 +42,44 @@ object MyApp extends IOApp {
         )
 }
 ```
+
+## Producer
+
+kinesis4cats offers a @:source(shared.src.main.scala.kinesis4cats.producer.Producer) interface that handles the following:
+
+- Maintains a @:source(shared.src.main.scala.kinesis4cats.producer.ShardMapCache), which will routinely track the open shards for a Kinesis stream. It is used to predict which shard a record will be produced to.
+- Batches records against known Kinesis limits (or a user-defined set of configuration).
+- Produces records to Kinesis
+- Provides an Error interface for users to interact with failed records (e.g. retrying failures)
+
+This module provides an implementation of that interface, backed by the @:source(kinesis-client.src.main.scala.kinesis4cats.client.KinesisClient).
+
+
+```scala mdoc:compile-only
+import cats.data.NonEmptyList
+import cats.effect._
+import cats.syntax.all._
+import software.amazon.awssdk.services.kinesis.KinesisAsyncClient
+
+import kinesis4cats.client.logging.instances.show._
+import kinesis4cats.client.producer.KinesisProducer
+import kinesis4cats.producer.logging.instances.show._
+import kinesis4cats.producer._
+import kinesis4cats.models.StreamNameOrArn
+
+object MyApp extends IOApp {
+    override def run(args: List[String]) = 
+        KinesisProducer[IO](Producer.Config.default(StreamNameOrArn.Name("my-stream")), KinesisAsyncClient.builder().build())
+            .use(producer =>
+                for {
+                    _ <- producer.put(
+                        NonEmptyList.of(
+                            Record("my-data".getBytes(), "some-partition-key"),
+                            Record("my-data-2".getBytes(), "some-partition-key-2"),
+                            Record("my-data-3".getBytes(), "some-partition-key-3"),
+                        )
+                    )
+                } yield ExitCode.Success
+            )
+}
+```
