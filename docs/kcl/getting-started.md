@@ -23,16 +23,24 @@ import kinesis4cats.syntax.bytebuffer._
 
 object MyApp extends ResourceApp.Forever {
     override def run(args: List[String]) = for {
-        kinesisClient <- Resource.fromAutoCloseable(IO(KinesisAsyncClient.builder().build()))
-        dynamoClient <- Resource.fromAutoCloseable(IO(DynamoDbAsyncClient.builder().build()))
-        cloudWatchClient <- Resource.fromAutoCloseable(IO(CloudWatchAsyncClient.builder().build()))
+        kinesisClient <- Resource.fromAutoCloseable(
+            IO(KinesisAsyncClient.builder().build())
+        )
+        dynamoClient <- Resource.fromAutoCloseable(
+            IO(DynamoDbAsyncClient.builder().build())
+        )
+        cloudWatchClient <- Resource.fromAutoCloseable(
+            IO(CloudWatchAsyncClient.builder().build())
+        )
         consumer <- KCLConsumer.configsBuilder[IO](
             kinesisClient, 
             dynamoClient, 
             cloudWatchClient, 
             "my-stream", 
             "my-app-name"
-        )((records: List[CommittableRecord[IO]]) => records.traverse_(r => IO.println(r.data.asString)))()
+        )((records: List[CommittableRecord[IO]]) => 
+            records.traverse_(r => IO.println(r.data.asString))
+        )()
         _ <- consumer.run()
     } yield ()
 }
@@ -63,13 +71,21 @@ import kinesis4cats.syntax.bytebuffer._
 
 object MyApp extends ResourceApp.Forever {
     override def run(args: List[String]) = for {
-        kinesisClient <- KinesisClient[IO](KinesisAsyncClient.builder().build())
-        dynamoClient <- Resource.fromAutoCloseable(IO(DynamoDbAsyncClient.builder().build()))
-        cloudWatchClient <- Resource.fromAutoCloseable(IO(CloudWatchAsyncClient.builder().build()))
+        kinesisClient <- KinesisClient[IO](
+            KinesisAsyncClient.builder().build()
+        )
+        dynamoClient <- Resource.fromAutoCloseable(
+            IO(DynamoDbAsyncClient.builder().build())
+        )
+        cloudWatchClient <- Resource.fromAutoCloseable(
+            IO(CloudWatchAsyncClient.builder().build())
+        )
         streamArn1 = StreamArn(AwsRegion.US_EAST_1, "my-stream-1", "123456789012")
         streamArn2 = StreamArn(AwsRegion.US_EAST_1, "my-stream-2", "123456789012")
-        position = InitialPositionInStreamExtended.newInitialPosition(InitialPositionInStream.TRIM_HORIZON)
-        tracker <- MultiStreamTracker.noLeaseDeletionFromArns[IO](kinesisClient,
+        position = InitialPositionInStreamExtended
+            .newInitialPosition(InitialPositionInStream.TRIM_HORIZON)
+        tracker <- MultiStreamTracker.noLeaseDeletionFromArns[IO](
+            kinesisClient,
             Map(streamArn1 -> position, streamArn2 -> position)
         ).toResource
         consumer <- KCLConsumer.configsBuilderMultiStream[IO](
@@ -78,7 +94,9 @@ object MyApp extends ResourceApp.Forever {
             cloudWatchClient, 
             tracker, 
             "my-app-name"
-        )((records: List[CommittableRecord[IO]]) => records.traverse_(r => IO.println(r.data.asString)))()
+        )((records: List[CommittableRecord[IO]]) => 
+            records.traverse_(r => IO.println(r.data.asString))
+        )()
         _ <- consumer.run()
     } yield ()
 }

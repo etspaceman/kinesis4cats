@@ -30,6 +30,22 @@ import org.typelevel.log4cats.StructuredLogger
 import kinesis4cats.logging.{LogContext, LogEncoder}
 import kinesis4cats.models._
 
+/** A cache of shards for a stream, which can be used to predict the shard ID
+  * for a given record's partition key
+  *
+  * @param config
+  *   [[kinesis4cats.producer.ShardMapCache ShardMapCache]]
+  * @param logger
+  *   [[org.typelevel.log4cats.StructuredLogger StructuredLogger]]
+  * @param shardMapRef
+  *   [[cats.effect.Ref Ref]] of [[kinesis4cats.producer.ShardMap ShardMap]]
+  * @param shardMapF
+  *   F that supplies a new [[kinesis4cats.producer.ShardMap ShardMap]]
+  * @param F
+  *   [[cats.effect.Async Async]]
+  * @param LE
+  *   [[kinesis4cats.producer.ShardMapCache.LogEncoders ShardMapCache.LogEncoders]]
+  */
 class ShardMapCache[F[_]] private (
     config: ShardMapCache.Config,
     logger: StructuredLogger[F],
@@ -40,12 +56,26 @@ class ShardMapCache[F[_]] private (
     LE: ShardMapCache.LogEncoders
 ) {
   import LE._
+
+  /** Predicts a shard that a record will land on given its partition key
+    *
+    * @param digest
+    *   [[https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/security/MessageDigest.html MessageDigest]]
+    * @param partitionKey
+    *   The partition key for the record
+    * @return
+    *   Either a
+    *   [[kinesis4cats.producer.ShardMapCache.Error ShardMapCache.Error]] or
+    *   [[kinesis4cats.models.ShardId ShardId]]
+    */
   def shardForPartitionKey(
       digest: MessageDigest,
       partitionKey: String
   ): F[Either[ShardMapCache.Error, ShardId]] =
     shardMapRef.get.map(_.shardForPartitionKey(digest, partitionKey))
 
+  /** Refresh the shard cache by running shardMapF
+    */
   def refresh(): F[Either[ShardMapCache.Error, Unit]] = {
     val ctx = LogContext()
     for {
@@ -69,6 +99,8 @@ class ShardMapCache[F[_]] private (
     } yield res
   }
 
+  /** Start the cache
+    */
   private def start() = refresh()
     .flatMap(_ => F.sleep(config.refreshInterval))
     .foreverM
@@ -77,6 +109,21 @@ class ShardMapCache[F[_]] private (
 }
 
 object ShardMapCache {
+
+  /** Construct a [[kinesis4cats.producer.ShardMapCache ShardMapCache]]
+    *
+    * @param config
+    *   [[kinesis4cats.producer.ShardMapCache ShardMapCache]]
+    * @param shardMapF
+    *   F that supplies a new [[kinesis4cats.producer.ShardMap ShardMap]]
+    * @param loggerF
+    *   F of [[org.typelevel.log4cats.StructuredLogger StructuredLogger]]
+    * @param F
+    *   [[cats.effect.Async Async]]
+    * @param LE
+    *   [[kinesis4cats.producer.ShardMapCache.LogEncoders ShardMapCache.LogEncoders]]
+    * @return
+    */
   def apply[F[_]](
       config: Config,
       shardMapF: F[Either[Error, ShardMap]],
@@ -91,17 +138,52 @@ object ShardMapCache {
     _ <- service.start()
   } yield service
 
+  /** [[kinesis4cats.logging.LogEncoder LogEncoder]] instances for the
+    * [[kinesis4cats.producer.ShardMapCache ShardMapCache]]
+    *
+    * @param shardMapLogEncoder
+    *   [[kinesis4cats.logging.LogEncoder LogEncoder]] instance for
+    *   [[kinesis4cats.producer.ShardMap]]
+    */
   final class LogEncoders(implicit val shardMapLogEncoder: LogEncoder[ShardMap])
 
+  /** Configuration for the
+    * [[kinesis4cats.producer.ShardMapCache ShardMapCache]]
+    *
+    * @param refreshInterval
+    *   How often to refresh the shard cache
+    */
   final case class Config(refreshInterval: FiniteDuration)
 
   object Config {
+
+    /** Default configuration for the
+      * [[kinesis4cats.producer.ShardMapCache ShardMapCache]]
+      */
     val default = Config(1.hour)
   }
 
+  /** Errors that can be received in the
+    * [[kinesis4cats.producer.ShardMapCache ShardMapCache]]
+    *
+    * @param msg
+    *   Error message
+    */
   sealed abstract class Error(msg: String) extends Exception(msg)
+
+  /** Error for when the partition key cannot be matched to a shard
+    *
+    * @param partitionKey
+    *   partition key that was not matched
+    */
   final case class ShardForPartitionKeyNotFound(partitionKey: String)
       extends Error(s"Could not find shard for partition key ${partitionKey}")
+
+  /** Error for when the cache could not list the shards
+    *
+    * @param e
+    *   Underlying error
+    */
   final case class ListShardsError(e: Throwable) extends Error(e.getMessage())
 
 }
