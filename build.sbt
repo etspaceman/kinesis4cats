@@ -42,7 +42,12 @@ lazy val `shared-ciris` = projectMatrix
 lazy val `shared-localstack` = projectMatrix
   .settings(
     description := "Common utilities for the localstack test-kits",
-    libraryDependencies ++= Seq(Scalacheck)
+    libraryDependencies ++= Seq(Scalacheck),
+    tlVersionIntroduced := Map(
+      "2.12" -> "0.0.2",
+      "2.13" -> "0.0.2",
+      "3" -> "0.0.2"
+    )
   )
   .jvmPlatform(allScalaVersions)
   .enableIntegrationTests
