@@ -67,13 +67,13 @@ object LocalstackProxy {
         req.uri.copy(authority =
           req.uri.authority.map(x =>
             x.copy(
-              host = Uri.RegName(config.host),
-              port = config.servicePort.some
+              host = Uri.RegName(config.kinesisHost),
+              port = config.kinesisPort.some
             )
           )
         )
       )
-      .putHeaders(Header.Raw(ci"host", config.host))
+      .putHeaders(Header.Raw(ci"host", config.kinesisHost))
     val ctx = LogContext()
       .addEncoded("localstackConfig", config)
       .addEncoded("originalRequest", req)

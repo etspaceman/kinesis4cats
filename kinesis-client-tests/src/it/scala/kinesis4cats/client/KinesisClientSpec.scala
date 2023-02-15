@@ -53,6 +53,12 @@ abstract class KinesisClientSpec(implicit LE: KinesisClient.LogEncoders)
           .builder()
           .streamName(streamName)
           .shardCount(1)
+          .streamModeDetails(
+            StreamModeDetails
+              .builder()
+              .streamMode(StreamMode.PROVISIONED)
+              .build()
+          )
           .build()
       )
       _ <- client.addTagsToStream(
@@ -248,6 +254,9 @@ abstract class KinesisClientSpec(implicit LE: KinesisClient.LogEncoders)
             StreamModeDetails.builder().streamMode(StreamMode.ON_DEMAND).build()
           )
           .build()
+      )
+      _ <- client.deleteStream(
+        DeleteStreamRequest.builder().streamName(streamName).build()
       )
     } yield {
       assertEquals(List(record1, record2, record3), recordsParsed)
