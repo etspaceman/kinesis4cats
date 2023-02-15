@@ -161,16 +161,24 @@
 
 </span><span class="keyword">object</span><span> </span><span class="type-name">MyApp</span><span> </span><span class="keyword">extends</span><span> </span><span class="type-name">ResourceApp</span><span>.</span><span class="type-name">Forever</span><span> {
     </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">run</span><span>(</span><span class="identifier">args</span><span>: </span><span class="type-name">List</span><span>[</span><span class="type-name">String</span><span>]) = </span><span class="keyword">for</span><span> {
-        </span><span class="identifier">kinesisClient</span><span> &lt;- </span><span class="type-name">Resource</span><span>.</span><span class="identifier">fromAutoCloseable</span><span>(</span><span class="type-name">IO</span><span>(</span><span class="type-name">KinesisAsyncClient</span><span>.</span><span class="identifier">builder</span><span>().</span><span class="identifier">build</span><span>()))
-        </span><span class="identifier">dynamoClient</span><span> &lt;- </span><span class="type-name">Resource</span><span>.</span><span class="identifier">fromAutoCloseable</span><span>(</span><span class="type-name">IO</span><span>(</span><span class="type-name">DynamoDbAsyncClient</span><span>.</span><span class="identifier">builder</span><span>().</span><span class="identifier">build</span><span>()))
-        </span><span class="identifier">cloudWatchClient</span><span> &lt;- </span><span class="type-name">Resource</span><span>.</span><span class="identifier">fromAutoCloseable</span><span>(</span><span class="type-name">IO</span><span>(</span><span class="type-name">CloudWatchAsyncClient</span><span>.</span><span class="identifier">builder</span><span>().</span><span class="identifier">build</span><span>()))
+        </span><span class="identifier">kinesisClient</span><span> &lt;- </span><span class="type-name">Resource</span><span>.</span><span class="identifier">fromAutoCloseable</span><span>(
+            </span><span class="type-name">IO</span><span>(</span><span class="type-name">KinesisAsyncClient</span><span>.</span><span class="identifier">builder</span><span>().</span><span class="identifier">build</span><span>())
+        )
+        </span><span class="identifier">dynamoClient</span><span> &lt;- </span><span class="type-name">Resource</span><span>.</span><span class="identifier">fromAutoCloseable</span><span>(
+            </span><span class="type-name">IO</span><span>(</span><span class="type-name">DynamoDbAsyncClient</span><span>.</span><span class="identifier">builder</span><span>().</span><span class="identifier">build</span><span>())
+        )
+        </span><span class="identifier">cloudWatchClient</span><span> &lt;- </span><span class="type-name">Resource</span><span>.</span><span class="identifier">fromAutoCloseable</span><span>(
+            </span><span class="type-name">IO</span><span>(</span><span class="type-name">CloudWatchAsyncClient</span><span>.</span><span class="identifier">builder</span><span>().</span><span class="identifier">build</span><span>())
+        )
         </span><span class="identifier">consumer</span><span> &lt;- </span><span class="type-name">KCLConsumer</span><span>.</span><span class="identifier">configsBuilder</span><span>[</span><span class="type-name">IO</span><span>](
             </span><span class="identifier">kinesisClient</span><span>, 
             </span><span class="identifier">dynamoClient</span><span>, 
             </span><span class="identifier">cloudWatchClient</span><span>, 
             </span><span class="string-literal">&quot;my-stream&quot;</span><span>, 
             </span><span class="string-literal">&quot;my-app-name&quot;</span><span>
-        )((</span><span class="identifier">records</span><span>: </span><span class="type-name">List</span><span>[</span><span class="type-name">CommittableRecord</span><span>[</span><span class="type-name">IO</span><span>]]) =&gt; </span><span class="identifier">records</span><span>.</span><span class="identifier">traverse_</span><span>(</span><span class="identifier">r</span><span> =&gt; </span><span class="type-name">IO</span><span>.</span><span class="identifier">println</span><span>(</span><span class="identifier">r</span><span>.</span><span class="identifier">data</span><span>.</span><span class="identifier">asString</span><span>)))()
+        )((</span><span class="identifier">records</span><span>: </span><span class="type-name">List</span><span>[</span><span class="type-name">CommittableRecord</span><span>[</span><span class="type-name">IO</span><span>]]) =&gt; 
+            </span><span class="identifier">records</span><span>.</span><span class="identifier">traverse_</span><span>(</span><span class="identifier">r</span><span> =&gt; </span><span class="type-name">IO</span><span>.</span><span class="identifier">println</span><span>(</span><span class="identifier">r</span><span>.</span><span class="identifier">data</span><span>.</span><span class="identifier">asString</span><span>))
+        )()
         </span><span class="identifier">_</span><span> &lt;- </span><span class="identifier">consumer</span><span>.</span><span class="identifier">run</span><span>()
     } </span><span class="keyword">yield</span><span> ()
 }</span></code></pre>
@@ -196,13 +204,21 @@
 
 </span><span class="keyword">object</span><span> </span><span class="type-name">MyApp</span><span> </span><span class="keyword">extends</span><span> </span><span class="type-name">ResourceApp</span><span>.</span><span class="type-name">Forever</span><span> {
     </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">run</span><span>(</span><span class="identifier">args</span><span>: </span><span class="type-name">List</span><span>[</span><span class="type-name">String</span><span>]) = </span><span class="keyword">for</span><span> {
-        </span><span class="identifier">kinesisClient</span><span> &lt;- </span><span class="type-name">KinesisClient</span><span>[</span><span class="type-name">IO</span><span>](</span><span class="type-name">KinesisAsyncClient</span><span>.</span><span class="identifier">builder</span><span>().</span><span class="identifier">build</span><span>())
-        </span><span class="identifier">dynamoClient</span><span> &lt;- </span><span class="type-name">Resource</span><span>.</span><span class="identifier">fromAutoCloseable</span><span>(</span><span class="type-name">IO</span><span>(</span><span class="type-name">DynamoDbAsyncClient</span><span>.</span><span class="identifier">builder</span><span>().</span><span class="identifier">build</span><span>()))
-        </span><span class="identifier">cloudWatchClient</span><span> &lt;- </span><span class="type-name">Resource</span><span>.</span><span class="identifier">fromAutoCloseable</span><span>(</span><span class="type-name">IO</span><span>(</span><span class="type-name">CloudWatchAsyncClient</span><span>.</span><span class="identifier">builder</span><span>().</span><span class="identifier">build</span><span>()))
+        </span><span class="identifier">kinesisClient</span><span> &lt;- </span><span class="type-name">KinesisClient</span><span>[</span><span class="type-name">IO</span><span>](
+            </span><span class="type-name">KinesisAsyncClient</span><span>.</span><span class="identifier">builder</span><span>().</span><span class="identifier">build</span><span>()
+        )
+        </span><span class="identifier">dynamoClient</span><span> &lt;- </span><span class="type-name">Resource</span><span>.</span><span class="identifier">fromAutoCloseable</span><span>(
+            </span><span class="type-name">IO</span><span>(</span><span class="type-name">DynamoDbAsyncClient</span><span>.</span><span class="identifier">builder</span><span>().</span><span class="identifier">build</span><span>())
+        )
+        </span><span class="identifier">cloudWatchClient</span><span> &lt;- </span><span class="type-name">Resource</span><span>.</span><span class="identifier">fromAutoCloseable</span><span>(
+            </span><span class="type-name">IO</span><span>(</span><span class="type-name">CloudWatchAsyncClient</span><span>.</span><span class="identifier">builder</span><span>().</span><span class="identifier">build</span><span>())
+        )
         </span><span class="identifier">streamArn1</span><span> = </span><span class="type-name">StreamArn</span><span>(</span><span class="type-name">AwsRegion</span><span>.</span><span class="type-name">US_EAST_1</span><span>, </span><span class="string-literal">&quot;my-stream-1&quot;</span><span>, </span><span class="string-literal">&quot;123456789012&quot;</span><span>)
         </span><span class="identifier">streamArn2</span><span> = </span><span class="type-name">StreamArn</span><span>(</span><span class="type-name">AwsRegion</span><span>.</span><span class="type-name">US_EAST_1</span><span>, </span><span class="string-literal">&quot;my-stream-2&quot;</span><span>, </span><span class="string-literal">&quot;123456789012&quot;</span><span>)
-        </span><span class="identifier">position</span><span> = </span><span class="type-name">InitialPositionInStreamExtended</span><span>.</span><span class="identifier">newInitialPosition</span><span>(</span><span class="type-name">InitialPositionInStream</span><span>.</span><span class="type-name">TRIM_HORIZON</span><span>)
-        </span><span class="identifier">tracker</span><span> &lt;- </span><span class="type-name">MultiStreamTracker</span><span>.</span><span class="identifier">noLeaseDeletionFromArns</span><span>[</span><span class="type-name">IO</span><span>](</span><span class="identifier">kinesisClient</span><span>,
+        </span><span class="identifier">position</span><span> = </span><span class="type-name">InitialPositionInStreamExtended</span><span>
+            .</span><span class="identifier">newInitialPosition</span><span>(</span><span class="type-name">InitialPositionInStream</span><span>.</span><span class="type-name">TRIM_HORIZON</span><span>)
+        </span><span class="identifier">tracker</span><span> &lt;- </span><span class="type-name">MultiStreamTracker</span><span>.</span><span class="identifier">noLeaseDeletionFromArns</span><span>[</span><span class="type-name">IO</span><span>](
+            </span><span class="identifier">kinesisClient</span><span>,
             </span><span class="type-name">Map</span><span>(</span><span class="identifier">streamArn1</span><span> -&gt; </span><span class="identifier">position</span><span>, </span><span class="identifier">streamArn2</span><span> -&gt; </span><span class="identifier">position</span><span>)
         ).</span><span class="identifier">toResource</span><span>
         </span><span class="identifier">consumer</span><span> &lt;- </span><span class="type-name">KCLConsumer</span><span>.</span><span class="identifier">configsBuilderMultiStream</span><span>[</span><span class="type-name">IO</span><span>](
@@ -211,7 +227,9 @@
             </span><span class="identifier">cloudWatchClient</span><span>, 
             </span><span class="identifier">tracker</span><span>, 
             </span><span class="string-literal">&quot;my-app-name&quot;</span><span>
-        )((</span><span class="identifier">records</span><span>: </span><span class="type-name">List</span><span>[</span><span class="type-name">CommittableRecord</span><span>[</span><span class="type-name">IO</span><span>]]) =&gt; </span><span class="identifier">records</span><span>.</span><span class="identifier">traverse_</span><span>(</span><span class="identifier">r</span><span> =&gt; </span><span class="type-name">IO</span><span>.</span><span class="identifier">println</span><span>(</span><span class="identifier">r</span><span>.</span><span class="identifier">data</span><span>.</span><span class="identifier">asString</span><span>)))()
+        )((</span><span class="identifier">records</span><span>: </span><span class="type-name">List</span><span>[</span><span class="type-name">CommittableRecord</span><span>[</span><span class="type-name">IO</span><span>]]) =&gt; 
+            </span><span class="identifier">records</span><span>.</span><span class="identifier">traverse_</span><span>(</span><span class="identifier">r</span><span> =&gt; </span><span class="type-name">IO</span><span>.</span><span class="identifier">println</span><span>(</span><span class="identifier">r</span><span>.</span><span class="identifier">data</span><span>.</span><span class="identifier">asString</span><span>))
+        )()
         </span><span class="identifier">_</span><span> &lt;- </span><span class="identifier">consumer</span><span>.</span><span class="identifier">run</span><span>()
     } </span><span class="keyword">yield</span><span> ()
 }</span></code></pre>

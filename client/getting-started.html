@@ -202,18 +202,20 @@
 
 </span><span class="keyword">object</span><span> </span><span class="type-name">MyApp</span><span> </span><span class="keyword">extends</span><span> </span><span class="type-name">IOApp</span><span> {
     </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">run</span><span>(</span><span class="identifier">args</span><span>: </span><span class="type-name">List</span><span>[</span><span class="type-name">String</span><span>]) = 
-        </span><span class="type-name">KinesisProducer</span><span>[</span><span class="type-name">IO</span><span>](</span><span class="type-name">Producer</span><span>.</span><span class="type-name">Config</span><span>.</span><span class="keyword">default</span><span>(</span><span class="type-name">StreamNameOrArn</span><span>.</span><span class="type-name">Name</span><span>(</span><span class="string-literal">&quot;my-stream&quot;</span><span>)), </span><span class="type-name">KinesisAsyncClient</span><span>.</span><span class="identifier">builder</span><span>().</span><span class="identifier">build</span><span>())
-            .</span><span class="identifier">use</span><span>(</span><span class="identifier">producer</span><span> =&gt;
-                </span><span class="keyword">for</span><span> {
-                    </span><span class="identifier">_</span><span> &lt;- </span><span class="identifier">producer</span><span>.</span><span class="identifier">put</span><span>(
-                        </span><span class="type-name">NonEmptyList</span><span>.</span><span class="identifier">of</span><span>(
-                            </span><span class="type-name">Record</span><span>(</span><span class="string-literal">&quot;my-data&quot;</span><span>.</span><span class="identifier">getBytes</span><span>(), </span><span class="string-literal">&quot;some-partition-key&quot;</span><span>),
-                            </span><span class="type-name">Record</span><span>(</span><span class="string-literal">&quot;my-data-2&quot;</span><span>.</span><span class="identifier">getBytes</span><span>(), </span><span class="string-literal">&quot;some-partition-key-2&quot;</span><span>),
-                            </span><span class="type-name">Record</span><span>(</span><span class="string-literal">&quot;my-data-3&quot;</span><span>.</span><span class="identifier">getBytes</span><span>(), </span><span class="string-literal">&quot;some-partition-key-3&quot;</span><span>),
-                        )
+        </span><span class="type-name">KinesisProducer</span><span>[</span><span class="type-name">IO</span><span>](
+            </span><span class="type-name">Producer</span><span>.</span><span class="type-name">Config</span><span>.</span><span class="keyword">default</span><span>(</span><span class="type-name">StreamNameOrArn</span><span>.</span><span class="type-name">Name</span><span>(</span><span class="string-literal">&quot;my-stream&quot;</span><span>)), 
+            </span><span class="type-name">KinesisAsyncClient</span><span>.</span><span class="identifier">builder</span><span>().</span><span class="identifier">build</span><span>()
+        ).</span><span class="identifier">use</span><span>(</span><span class="identifier">producer</span><span> =&gt;
+            </span><span class="keyword">for</span><span> {
+                </span><span class="identifier">_</span><span> &lt;- </span><span class="identifier">producer</span><span>.</span><span class="identifier">put</span><span>(
+                    </span><span class="type-name">NonEmptyList</span><span>.</span><span class="identifier">of</span><span>(
+                        </span><span class="type-name">Record</span><span>(</span><span class="string-literal">&quot;my-data&quot;</span><span>.</span><span class="identifier">getBytes</span><span>(), </span><span class="string-literal">&quot;some-partition-key&quot;</span><span>),
+                        </span><span class="type-name">Record</span><span>(</span><span class="string-literal">&quot;my-data-2&quot;</span><span>.</span><span class="identifier">getBytes</span><span>(), </span><span class="string-literal">&quot;some-partition-key-2&quot;</span><span>),
+                        </span><span class="type-name">Record</span><span>(</span><span class="string-literal">&quot;my-data-3&quot;</span><span>.</span><span class="identifier">getBytes</span><span>(), </span><span class="string-literal">&quot;some-partition-key-3&quot;</span><span>),
                     )
-                } </span><span class="keyword">yield</span><span> </span><span class="type-name">ExitCode</span><span>.</span><span class="type-name">Success</span><span>
-            )
+                )
+            } </span><span class="keyword">yield</span><span> </span><span class="type-name">ExitCode</span><span>.</span><span class="type-name">Success</span><span>
+        )
 }</span></code></pre>
 
         <hr style="margin-top: 30px"/>
