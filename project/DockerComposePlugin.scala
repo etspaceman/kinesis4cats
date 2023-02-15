@@ -95,6 +95,9 @@ object DockerComposePlugin extends AutoPlugin {
       removeNetworkTask
     )
 
+  val dockerComposeRestartTask: Def.Initialize[Task[Unit]] =
+    Def.sequential(dockerComposeDownTask, dockerComposeUpTask)
+
   val dockerComposeLogsTask: Def.Initialize[Task[Unit]] = Def.task {
     val log = sbt.Keys.streams.value.log
     val cmd =
@@ -146,6 +149,7 @@ object DockerComposePlugin extends AutoPlugin {
       removeNetwork := removeNetworkTask.value,
       dockerComposeUp := dockerComposeUpTask.value,
       dockerComposeDown := dockerComposeDownTask.value,
+      dockerComposeRestart := dockerComposeRestartTask.value,
       dockerComposeLogs := dockerComposeLogsTask.value,
       dockerComposePs := dockerComposePsTask.value,
       dockerComposeTestQuick := dockerComposeTestQuickTask(configuration).value,
@@ -183,6 +187,10 @@ object DockerComposePluginKeys {
     )
   val dockerComposeDown =
     taskKey[Unit]("Runs `docker-compose -f <file> down` for the scope")
+  val dockerComposeRestart =
+    taskKey[Unit](
+      "Runs `docker-compose -f <file> down` and `docker-compose -f <file> up` for the scope"
+    )
   val dockerComposeLogs =
     taskKey[Unit]("Runs `docker-compose -f <file> logs` for the scope")
   val dockerComposePs =

@@ -31,67 +31,200 @@ import kinesis4cats.models.AwsRegion
 /** Configuration loading for
   * [[https://docs.localstack.cloud/references/configuration/ Localstack]]
   *
-  * @param servicePort
-  *   Port for Localstack. Default is 4566
-  * @param protocol
-  *   Protocol for Localstack. Default is https
-  * @param host
-  *   Host for Localstack. Default is localhost
+  * @param cloudwatchPort
+  *   Port for Cloudwatch in Localstack. Default is 4566
+  * @param cloudwatchProtocol
+  *   Protocol for Cloudwatch in Localstack. Default is https
+  * @param cloudwatchHost
+  *   Host for Cloudwatch in Localstack. Default is localhost
+  * @param kinesisPort
+  *   Port for Kinesis in Localstack. Default is 4566
+  * @param kinesisProtocol
+  *   Protocol for Kinesis in Localstack. Default is https
+  * @param kinesisHost
+  *   Host for Kinesis in Localstack. Default is localhost
+  * @param dynamoPort
+  *   Port for Dynamo in Localstack. Default is 4566
+  * @param dynamoProtocol
+  *   Protocol for Dynamo in Localstack. Default is https
+  * @param dynamoHost
+  *   Host for Dynamo in Localstack. Default is localhost
   * @param region
   *   Default region for Localstack. Default is us-east-1
   */
 final case class LocalstackConfig(
-    servicePort: Int,
-    protocol: Protocol,
-    host: String,
+    cloudwatchPort: Int,
+    cloudwatchProtocol: Protocol,
+    cloudwatchHost: String,
+    kinesisPort: Int,
+    kinesisProtocol: Protocol,
+    kinesisHost: String,
+    dynamoPort: Int,
+    dynamoProtocol: Protocol,
+    dynamoHost: String,
     region: AwsRegion
 ) {
-  val endpoint: String = s"${protocol.name}://$host:$servicePort"
-  val endpointUri: URI = URI.create(endpoint)
+  val cloudwatchEndpoint: String =
+    s"${cloudwatchProtocol.name}://$cloudwatchHost:$cloudwatchPort"
+  val cloudwatchEndpointUri: URI = URI.create(cloudwatchEndpoint)
+  val kinesisEndpoint: String =
+    s"${kinesisProtocol.name}://$kinesisHost:$kinesisPort"
+  val kinesisEndpointUri: URI = URI.create(kinesisEndpoint)
+  val dynamoEndpoint: String =
+    s"${dynamoProtocol.name}://$dynamoHost:$dynamoPort"
+  val dynamoEndpointUri: URI = URI.create(dynamoEndpoint)
 }
 
 object LocalstackConfig {
   implicit val localstackConfigShow: Show[LocalstackConfig] = x =>
     ShowBuilder("LocalstackConfig")
-      .add("servicePort", x.servicePort)
-      .add("protocol", x.protocol.name)
-      .add("host", x.host)
+      .add("cloudwatchPort", x.cloudwatchPort)
+      .add("cloudwatchProtocol", x.cloudwatchProtocol.name)
+      .add("cloudwatchHost", x.cloudwatchHost)
+      .add("cloudwatchEndpoint", x.cloudwatchEndpoint)
+      .add("kinesisPort", x.kinesisPort)
+      .add("kinesisProtocol", x.kinesisProtocol.name)
+      .add("kinesisHost", x.kinesisHost)
+      .add("kinesisEndpoint", x.kinesisEndpoint)
+      .add("dynamoPort", x.dynamoPort)
+      .add("dynamoProtocol", x.dynamoProtocol.name)
+      .add("dynamoHost", x.dynamoHost)
+      .add("dynamoEndpoint", x.dynamoEndpoint)
       .add("region", x.region.name)
-      .add("endpoint", x.endpoint)
       .build
 
   implicit val localstackCirceEncoder: Encoder[LocalstackConfig] =
-    Encoder.forProduct5(
-      "servicePort",
-      "protocol",
-      "host",
-      "region",
-      "endpoint"
-    )(x => (x.servicePort, x.protocol.name, x.host, x.region.name, x.endpoint))
+    Encoder.forProduct13(
+      "cloudwatchPort",
+      "cloudwatchProtocol",
+      "cloudwatchHost",
+      "cloudwatchEndpoint",
+      "kinesisPort",
+      "kinesisProtocol",
+      "kinesisHost",
+      "kinesisEndpoint",
+      "dynamoPort",
+      "dynamoProtocol",
+      "dynamoHost",
+      "dynamoEndpoint",
+      "region"
+    )(x =>
+      (
+        x.cloudwatchPort,
+        x.cloudwatchProtocol.name,
+        x.cloudwatchHost,
+        x.cloudwatchEndpoint,
+        x.kinesisPort,
+        x.kinesisProtocol.name,
+        x.kinesisHost,
+        x.kinesisEndpoint,
+        x.dynamoPort,
+        x.dynamoProtocol.name,
+        x.dynamoHost,
+        x.dynamoEndpoint,
+        x.region.name
+      )
+    )
 
-  def read(
+  def defaultPort(
       prefix: Option[String] = None
-  ): ConfigValue[Effect, LocalstackConfig] = for {
-    servicePort <- CirisReader.readDefaulted(
+  ): ConfigValue[Effect, Int] =
+    CirisReader.readDefaulted[Int](
       List("localstack", "port"),
       4566,
       prefix
     )
-    protocol <- CirisReader.readDefaulted[Protocol](
+
+  def defaultProtocol(
+      prefix: Option[String] = None
+  ): ConfigValue[Effect, Protocol] =
+    CirisReader.readDefaulted[Protocol](
       List("localstack", "protocol"),
-      Protocol.Https
+      Protocol.Https,
+      prefix
     )
+
+  def defaultHost(prefix: Option[String] = None): ConfigValue[Effect, String] =
+    CirisReader.readDefaulted(
+      List("localstack", "host"),
+      "localhost",
+      prefix
+    )
+
+  def read(
+      prefix: Option[String] = None
+  ): ConfigValue[Effect, LocalstackConfig] = for {
+    cloudwatchPort <- CirisReader
+      .read[Int](
+        List("localstack", "cloudwatch", "port"),
+        prefix
+      )
+      .or(defaultPort(prefix))
+    cloudwatchProtocol <- CirisReader
+      .read[Protocol](
+        List("localstack", "cloudwatch", "protocol"),
+        prefix
+      )
+      .or(defaultProtocol(prefix))
+    cloudwatchHost <- CirisReader
+      .read[String](
+        List("localstack", "cloudwatch", "host"),
+        prefix
+      )
+      .or(defaultHost(prefix))
+    kinesisPort <- CirisReader
+      .read[Int](
+        List("localstack", "kinesis", "port"),
+        prefix
+      )
+      .or(defaultPort(prefix))
+    kinesisProtocol <- CirisReader
+      .read[Protocol](
+        List("localstack", "kinesis", "protocol"),
+        prefix
+      )
+      .or(defaultProtocol(prefix))
+    kinesisHost <- CirisReader
+      .read[String](
+        List("localstack", "kinesis", "host"),
+        prefix
+      )
+      .or(defaultHost(prefix))
+    dynamoPort <- CirisReader
+      .read[Int](
+        List("localstack", "dynamo", "port"),
+        prefix
+      )
+      .or(defaultPort(prefix))
+    dynamoProtocol <- CirisReader
+      .read[Protocol](
+        List("localstack", "dynamo", "protocol"),
+        prefix
+      )
+      .or(defaultProtocol(prefix))
+    dynamoHost <- CirisReader
+      .read[String](
+        List("localstack", "dynamo", "host"),
+        prefix
+      )
+      .or(defaultHost(prefix))
     region <- CirisReader.readDefaulted[AwsRegion](
       List("localstack", "aws", "region"),
       AwsRegion.US_EAST_1,
       prefix
     )
-    host <- CirisReader.readDefaulted(
-      List("localstack", "host"),
-      "localhost",
-      prefix
-    )
-  } yield LocalstackConfig(servicePort, protocol, host, region)
+  } yield LocalstackConfig(
+    cloudwatchPort,
+    cloudwatchProtocol,
+    cloudwatchHost,
+    kinesisPort,
+    kinesisProtocol,
+    kinesisHost,
+    dynamoPort,
+    dynamoProtocol,
+    dynamoHost,
+    region
+  )
 
   def load[F[_]: Async](prefix: Option[String] = None): F[LocalstackConfig] =
     read(prefix).load[F]

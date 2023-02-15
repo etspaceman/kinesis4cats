@@ -54,7 +54,7 @@ object AwsClients {
       AmazonKinesisAsyncClientBuilder
         .standard()
         .withEndpointConfiguration(
-          new EndpointConfiguration(config.endpoint, config.region.name)
+          new EndpointConfiguration(config.kinesisEndpoint, config.region.name)
         )
         .withCredentials(AwsCreds.LocalCredsProvider)
         .build()
@@ -159,7 +159,16 @@ object AwsClients {
     )
     result <- Resource.make(
       for {
-        _ <- F.interruptibleMany(client.createStream(streamName, shardCount))
+        _ <- F.interruptibleMany(
+          client.createStream(
+            new CreateStreamRequest()
+              .withStreamName(streamName)
+              .withShardCount(shardCount)
+              .withStreamModeDetails(
+                new StreamModeDetails().withStreamMode(StreamMode.PROVISIONED)
+              )
+          )
+        )
         _ <- retryingOnFailuresAndAllErrors(
           retryPolicy,
           (x: DescribeStreamSummaryResult) =>
@@ -272,7 +281,7 @@ object AwsClients {
       AmazonDynamoDBAsyncClientBuilder
         .standard()
         .withEndpointConfiguration(
-          new EndpointConfiguration(config.endpoint, config.region.name)
+          new EndpointConfiguration(config.dynamoEndpoint, config.region.name)
         )
         .withCredentials(AwsCreds.LocalCredsProvider)
         .build()
@@ -354,7 +363,10 @@ object AwsClients {
       AmazonCloudWatchAsyncClientBuilder
         .standard()
         .withEndpointConfiguration(
-          new EndpointConfiguration(config.endpoint, config.region.name)
+          new EndpointConfiguration(
+            config.cloudwatchEndpoint,
+            config.region.name
+          )
         )
         .withCredentials(AwsCreds.LocalCredsProvider)
         .build()

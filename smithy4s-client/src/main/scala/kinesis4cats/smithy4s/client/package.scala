@@ -19,5 +19,5 @@ package kinesis4cats.smithy4s
 import com.amazonaws.kinesis.Kinesis
 
 package object client {
-  type KinesisClient[F[_]] = Kinesis.Impl[F]
+  type KinesisClient[F[_]] = Kinesis[F]
 }
