@@ -19,9 +19,11 @@ import kinesis4cats.kcl.logging.instances.show._
 import kinesis4cats.kcl.localstack.LocalstackKCLConsumer
 import kinesis4cats.syntax.bytebuffer._
 
-val processRecords = (records: List[CommittableRecord[IO]]) => records.traverse_(record => IO.println(record.data.asString))
+val processRecords = (records: List[CommittableRecord[IO]]) => 
+    records.traverse_(record => IO.println(record.data.asString))
 
-// Runs a KCLConsumer as a Resource. Resource contains a Deferred value, which completes when the consumer has begun to process records.
+// Runs a KCLConsumer as a Resource. Resource contains a Deferred value, 
+//which completes when the consumer has begun to process records.
 LocalstackKCLConsumer.kclConsumer[IO]("my-stream", "my-app-name")(processRecords)
 
 // Runs a KCLConsumer as a Resource. Resource contains 2 things: 

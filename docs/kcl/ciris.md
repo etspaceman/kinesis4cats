@@ -24,11 +24,21 @@ import kinesis4cats.syntax.bytebuffer._
 
 object MyApp extends ResourceApp.Forever {
     override def run(args: List[String]) = for {
-        kinesisClient <- Resource.fromAutoCloseable(IO(KinesisAsyncClient.builder().build()))
-        dynamoClient <- Resource.fromAutoCloseable(IO(DynamoDbAsyncClient.builder().build()))
-        cloudWatchClient <- Resource.fromAutoCloseable(IO(CloudWatchAsyncClient.builder().build()))
-        consumer <- KCLCiris.consumer[IO](kinesisClient, dynamoClient, cloudWatchClient){ 
-            case records: List[CommittableRecord[IO]] => records.traverse_(r => IO.println(r.data.asString)) 
+        kinesisClient <- Resource.fromAutoCloseable(
+            IO(KinesisAsyncClient.builder().build())
+        )
+        dynamoClient <- Resource.fromAutoCloseable(
+            IO(DynamoDbAsyncClient.builder().build())
+        )
+        cloudWatchClient <- Resource.fromAutoCloseable(
+            IO(CloudWatchAsyncClient.builder().build())
+        )
+        consumer <- KCLCiris.consumer[IO](
+            kinesisClient, 
+            dynamoClient, 
+            cloudWatchClient
+        ){ case records: List[CommittableRecord[IO]] => 
+            records.traverse_(r => IO.println(r.data.asString)) 
         }
         _ <- consumer.run()
     } yield ()

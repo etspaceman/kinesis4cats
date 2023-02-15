@@ -21,6 +21,18 @@ import cats.data.NonEmptyMap
 
 import kinesis4cats.models.ShardId
 
+/** Represents records that can be produced in a single request across shards
+  *
+  * @param shardBatches
+  *   [[cats.data.NonEmptyMap NonEmptyMap]] of
+  *   [[kinesis4cats.producer.batching.ShardBatch]] by shard-id
+  * @param count
+  *   Total records in batch
+  * @param batchSize
+  *   Total payload size in batch
+  * @param config
+  *   [[kinesis4cats.producer.batching.Batcher.Config Batcher.Config]]
+  */
 final case class Batch(
     shardBatches: NonEmptyMap[ShardId, ShardBatch],
     count: Int,
@@ -28,6 +40,13 @@ final case class Batch(
     config: Batcher.Config
 ) {
 
+  /** Add a record to the batch
+    *
+    * @param record
+    *   [[kinesis4cats.producer.Record.WithShard Record.WithShard]]
+    * @return
+    *   [[kinesis4cats.producer.batching.Batch Batch]]
+    */
   def add(record: Record.WithShard): Batch =
     copy(
       shardBatches = shardBatches.add(
@@ -39,6 +58,13 @@ final case class Batch(
       batchSize = batchSize + record.payloadSize
     )
 
+  /** Determines if a record can be added to the batch
+    *
+    * @param record
+    *   [[kinesis4cats.producer.Record.WithShard Record.WithShard]]
+    * @return
+    *   Boolean
+    */
   def canAdd(record: Record.WithShard): Boolean =
     count + 1 <= config.maxRecordsPerRequest &&
       batchSize + record.payloadSize <= config.maxPayloadSizePerRequest &&
@@ -46,15 +72,31 @@ final case class Batch(
         .map(_.canAdd(record.record))
         .getOrElse(true)
 
+  /** Return a finalized [[kinesis4cats.producer.batching.Batch Batch]]
+    *
+    * @return
+    *   [[kinesis4cats.producer.batching.Batch Batch]]
+    */
   def finalizeBatch: Batch =
     copy(shardBatches = shardBatches.map(_.finalizeBatch))
 }
 
 object Batch {
+
+  /** Create a fresh batch with a new record
+    *
+    * @param record
+    *   [[kinesis4cats.producer.Record.WithShard Record.WithShard]]
+    * @param config
+    *   [[kinesis4cats.producer.batching.Batcher.Config Batcher.Config]]
+    * @return
+    *   [[kinesis4cats.producer.batching.Batch Batch]]
+    */
   def create(record: Record.WithShard, config: Batcher.Config): Batch = Batch(
     NonEmptyMap.of(record.predictedShard -> ShardBatch.create(record, config)),
     1,
     record.payloadSize,
     config
   )
+
 }

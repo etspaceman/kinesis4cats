@@ -69,17 +69,19 @@ import kinesis4cats.models.StreamNameOrArn
 
 object MyApp extends IOApp {
     override def run(args: List[String]) = 
-        KinesisProducer[IO](Producer.Config.default(StreamNameOrArn.Name("my-stream")), KinesisAsyncClient.builder().build())
-            .use(producer =>
-                for {
-                    _ <- producer.put(
-                        NonEmptyList.of(
-                            Record("my-data".getBytes(), "some-partition-key"),
-                            Record("my-data-2".getBytes(), "some-partition-key-2"),
-                            Record("my-data-3".getBytes(), "some-partition-key-3"),
-                        )
+        KinesisProducer[IO](
+            Producer.Config.default(StreamNameOrArn.Name("my-stream")), 
+            KinesisAsyncClient.builder().build()
+        ).use(producer =>
+            for {
+                _ <- producer.put(
+                    NonEmptyList.of(
+                        Record("my-data".getBytes(), "some-partition-key"),
+                        Record("my-data-2".getBytes(), "some-partition-key-2"),
+                        Record("my-data-3".getBytes(), "some-partition-key-3"),
                     )
-                } yield ExitCode.Success
-            )
+                )
+            } yield ExitCode.Success
+        )
 }
 ```

@@ -20,7 +20,27 @@ package batching
 import cats.data._
 import cats.syntax.all._
 
+/** A batcher of records against configured limits.
+  *
+  * @param config
+  *   [[kinesis4cats.producer.batching.Batcher.Config Batcher.Config]]
+  */
 final class Batcher(config: Batcher.Config) {
+
+  /** Batch a list of [[kinesis4cats.producer.Record.WithShard records]]
+    *
+    * @param records
+    *   [[cats.data.NonEmptyList NonEmptyList]] of
+    *   [[kinesis4cats.producer.Record.WithShard records]]
+    * @param res
+    *   Result to return. None when initiated.
+    * @return
+    *   [[cats.data.Ior Ior]] with the following:
+    *   - left: a [[kinesis4cats.producer.Producer.Error Producer.Error]], which
+    *     represents records that were too large to be put on kinesis.
+    *   - right: a [[cats.data.NonEmptyList NonEmptyList]] of compliant Kinesis
+    *     [[kinesis4cats.producer.batching.Batch batches]]
+    */
   @annotation.tailrec
   def batch(
       records: NonEmptyList[Record.WithShard],
