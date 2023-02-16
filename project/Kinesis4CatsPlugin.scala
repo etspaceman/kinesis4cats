@@ -160,6 +160,18 @@ object Kinesis4CatsPlugin extends AutoPlugin {
         "session clear"
       )
     )
+  ) ++ tlReplaceCommandAlias(
+    "tlRelease",
+    mkCommand(
+      List(
+        "reload",
+        "project /",
+        // Uncomment this when 0.1.x
+        // "+mimaReportBinaryIssues",
+        "+publish",
+        "tlSonatypeBundleReleaseIfRelevant"
+      )
+    )
   )
 
   override def projectSettings = Seq(
