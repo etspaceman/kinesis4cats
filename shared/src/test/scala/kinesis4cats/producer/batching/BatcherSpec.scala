@@ -188,7 +188,9 @@ class BatcherSpec extends munit.CatsEffectSuite {
         Record.WithShard(Record(tooBig, s"$index", None, None), shardId)
       }
     )
-    val expected = Producer.Error.recordsTooLarge(records.map(_.record))
+    val expected = Producer.Error.invalidRecords(
+      records.map(x => Producer.InvalidRecord.RecordTooLarge(x.record))
+    )
     val res = batcher.batch(records)
     assert(res.isLeft)
     assert(res.swap.contains_(expected))
@@ -212,7 +214,9 @@ class BatcherSpec extends munit.CatsEffectSuite {
       }
     )
 
-    val expectedLeft = Producer.Error.recordsTooLarge(badRecords.map(_.record))
+    val expectedLeft = Producer.Error.invalidRecords(
+      badRecords.map(x => Producer.InvalidRecord.RecordTooLarge(x.record))
+    )
     val expectedRight = {
       val shardBatch = ShardBatch(
         shardId,

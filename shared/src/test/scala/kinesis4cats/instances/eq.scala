@@ -42,6 +42,39 @@ object eq {
   implicit val failedRecordEq: Eq[producer.Producer.FailedRecord] = (x, y) =>
     x.record === y.record && x.errorCode === y.errorCode && x.erorrMessage === y.erorrMessage
 
+  implicit val recordTooLargeEq
+      : Eq[producer.Producer.InvalidRecord.RecordTooLarge] = (x, y) =>
+    x.record === y.record
+
+  implicit val invalidPartitionKeyEq
+      : Eq[producer.Producer.InvalidRecord.InvalidPartitionKey] =
+    Eq.fromUniversalEquals
+
+  implicit val invalidExplicitHashKeyEq
+      : Eq[producer.Producer.InvalidRecord.InvalidExplicitHashKey] =
+    Eq.fromUniversalEquals
+
+  implicit val invalidRecordEq: Eq[producer.Producer.InvalidRecord] = {
+    case (
+          x: producer.Producer.InvalidRecord.RecordTooLarge,
+          y: producer.Producer.InvalidRecord.RecordTooLarge
+        ) =>
+      x === y
+
+    case (
+          x: producer.Producer.InvalidRecord.InvalidPartitionKey,
+          y: producer.Producer.InvalidRecord.InvalidPartitionKey
+        ) =>
+      x === y
+
+    case (
+          x: producer.Producer.InvalidRecord.InvalidExplicitHashKey,
+          y: producer.Producer.InvalidRecord.InvalidExplicitHashKey
+        ) =>
+      x === y
+    case _ => false
+  }
+
   implicit val producerErrorEq: Eq[producer.Producer.Error] = (x, y) =>
     x.errors === y.errors
 }

@@ -40,7 +40,7 @@ final case class ShardBatch private (
     shardId: ShardId,
     records: NonEmptyList[Record],
     count: Int,
-    batchSize: Long,
+    batchSize: Int,
     config: Batcher.Config
 ) {
 

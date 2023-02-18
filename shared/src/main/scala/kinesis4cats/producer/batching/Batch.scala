@@ -36,7 +36,7 @@ import kinesis4cats.models.ShardId
 final case class Batch(
     shardBatches: NonEmptyMap[ShardId, ShardBatch],
     count: Int,
-    batchSize: Long,
+    batchSize: Int,
     config: Batcher.Config
 ) {
 

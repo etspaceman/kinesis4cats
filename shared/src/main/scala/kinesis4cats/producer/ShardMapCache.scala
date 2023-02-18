@@ -195,7 +195,9 @@ final case class ShardMap(shards: List[ShardMapRecord], lastUpdated: Instant) {
   ): Either[ShardMapCache.Error, ShardId] = {
     val hashBytes = digest.digest(partitionKey.getBytes(StandardCharsets.UTF_8))
     val hashKey = BigInt.apply(1, hashBytes)
-    ShardMap.findShard(partitionKey, hashKey, shards)
+    val res = ShardMap.findShard(partitionKey, hashKey, shards)
+    digest.reset()
+    res
   }
 }
 
