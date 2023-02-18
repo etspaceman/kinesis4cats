@@ -23,7 +23,7 @@ import cats.syntax.all._
 import com.amazonaws.kinesis._
 import io.circe.parser._
 import io.circe.syntax._
-import org.http4s.blaze.client.BlazeClientBuilder
+import org.http4s.ember.client.EmberClientBuilder
 import org.scalacheck.Arbitrary
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 import smithy4s.ByteArray
@@ -45,9 +45,10 @@ abstract class KinesisClientSpec(implicit LE: KinesisClient.LogEncoders[IO])
   def fixture: SyncIO[FunFixture[KinesisClient[IO]]] =
     ResourceFixture(
       for {
-        underlying <- BlazeClientBuilder[IO]
-          .withCheckEndpointAuthentication(false)
-          .resource
+        underlying <- EmberClientBuilder
+          .default[IO]
+          .withoutCheckEndpointAuthentication
+          .build
         client <- LocalstackKinesisClient.clientResource[IO](
           underlying,
           IO.pure(region),
@@ -58,7 +59,7 @@ abstract class KinesisClientSpec(implicit LE: KinesisClient.LogEncoders[IO])
 
   // This is flaky as we seem to be getting non-deterministic failures via SSL connections to Localstack.
   // Will look into this more later.
-  fixture.test("It should work through all commands".flaky) { client =>
+  fixture.test("It should work through all commands") { client =>
     val streamName =
       s"smithy4s-kinesis-client-spec-${UUID.randomUUID().toString()}"
     val accountId = "000000000000"

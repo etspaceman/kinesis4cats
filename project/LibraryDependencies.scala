@@ -74,7 +74,7 @@ object LibraryDependencies {
   }
 
   object Http4s {
-    val http4sVersion = "0.23.18"
+    val http4sVersion = "0.23.18-98-66d0795-SNAPSHOT"
     val emberServer = "org.http4s" %% "http4s-ember-server" % http4sVersion
     val emberClient = "org.http4s" %% "http4s-ember-client" % http4sVersion
     val blazeClient = "org.http4s" %% "http4s-blaze-client" % "0.23.13"

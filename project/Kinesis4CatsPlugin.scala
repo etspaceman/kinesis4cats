@@ -54,6 +54,7 @@ object Kinesis4CatsPlugin extends AutoPlugin {
     crossScalaVersions := Seq(Scala212, Scala3, Scala213),
     scalaVersion := Scala213,
     tlCiMimaBinaryIssueCheck := tlBaseVersion.value != "0.0",
+    resolvers += "s01 snapshots" at "https://s01.oss.sonatype.org/content/repositories/snapshots/",
     githubWorkflowBuild := {
       val style = (tlCiHeaderCheck.value, tlCiScalafmtCheck.value) match {
         case (true, true) => // headers + formatting

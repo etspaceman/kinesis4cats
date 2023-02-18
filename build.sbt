@@ -380,7 +380,7 @@ lazy val `smithy4s-client-tests` = projectMatrix
   .enablePlugins(NoPublishPlugin)
   .settings(
     description := "Integration Tests for the Smithy4s Kinesis Client",
-    libraryDependencies ++= Seq(Http4s.blazeClient % IT, Log4Cats.slf4j % IT)
+    libraryDependencies ++= Seq(Http4s.emberClient % IT, Log4Cats.slf4j % IT)
   )
   .jvmPlatform(last2ScalaVersions)
   .enableIntegrationTests
@@ -393,7 +393,7 @@ lazy val `smithy4s-client-producer-tests` = projectMatrix
   .enablePlugins(NoPublishPlugin)
   .settings(
     description := "Integration Tests for the Smithy4s Kinesis Producer",
-    libraryDependencies ++= Seq(Http4s.blazeClient % IT, Log4Cats.slf4j % IT)
+    libraryDependencies ++= Seq(Http4s.emberClient % IT, Log4Cats.slf4j % IT)
   )
   .jvmPlatform(last2ScalaVersions)
   .enableIntegrationTests
