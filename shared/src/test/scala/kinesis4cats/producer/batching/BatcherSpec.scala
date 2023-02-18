@@ -24,7 +24,7 @@ import kinesis4cats.instances.eq._
 import kinesis4cats.models.ShardId
 
 class BatcherSpec extends munit.CatsEffectSuite {
-  val config = Batcher.Config.default
+  val config = Batcher.Config.default.copy(aggregate = false)
   val batcher = new Batcher(config)
 
   test("It should batch records against MaxIngestionPerShard") {
