@@ -30,13 +30,11 @@ import kinesis4cats.models.StreamNameOrArn
 import kinesis4cats.producer.batching.Batcher
 
 /** An interface that gives users the ability to efficiently batch and produce
-  * records. A producer has a
-  * [[kinesis4cats.producer.ShardMapCache ShardMapCache]], and uses it to
-  * predict the shard that a record will be produced to. Knowing this, we can
-  * batch records against both shard and stream-level limits for requests. There
-  * should be 1 instance of a [[kinesis4cats.producer.Producer Producer]] per
-  * Kinesis stream (as a [[kinesis4cats.producer.ShardMapCache ShardMapCache]]
-  * will only consider a single stream)
+  * records. A producer has a ShardMapCache, and uses it to predict the shard
+  * that a record will be produced to. Knowing this, we can batch records
+  * against both shard and stream-level limits for requests. There should be 1
+  * instance of a [[kinesis4cats.producer.Producer Producer]] per Kinesis stream
+  * (as a ShardMapCache will only consider a single stream)
   *
   * @param F
   *   [[cats.effect.Async Async]]
