@@ -183,7 +183,7 @@ private[kinesis4cats] final class Batcher(config: Batcher.Config) {
 
 object Batcher {
 
-  /** Configuration for the [[kinesis4cats.producer.batching.Batcher Batcher]]
+  /** Configuration for the Batcher
     *
     * @param maxRecordsPerRequest
     *   Maximum records that can be submitted with a single request
@@ -218,7 +218,7 @@ object Batcher {
   object Config {
 
     /** A default instance for the
-      * [[kinesis4cats.producer.batching.Batcher Batcher]] which uses the
+      * Batcher which uses the
       * Kinesis limits
       */
     val default = Config(
