@@ -23,6 +23,7 @@ import com.amazonaws.kinesis.agg.AggRecord
 import kinesis4cats.instances.eq._
 import kinesis4cats.models.ShardId
 
+@SuppressWarnings(Array("scalafix:DisableSyntax.null"))
 class AggregatedBatchSpec extends munit.CatsEffectSuite {
   val config = Batcher.Config.default
   test("It calculate the record sizes to be the same") {

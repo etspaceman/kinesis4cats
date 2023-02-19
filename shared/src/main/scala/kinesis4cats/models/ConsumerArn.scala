@@ -22,6 +22,16 @@ import java.time.Instant
 
 import cats.syntax.all._
 
+/** Represents an AWS ARN for Kinesis Consumers
+  *
+  * @param streamArn
+  *   [[kinesis4cats.models.StreamArn StreamArn]]
+  * @param consumerName
+  *   Name of consumer
+  * @param creationTime
+  *   [[https://docs.oracle.com/javase/8/docs/api/java/time/Instant.html Instant]]
+  *   of when the consumer was created
+  */
 final case class ConsumerArn(
     streamArn: StreamArn,
     consumerName: String,
@@ -29,10 +39,19 @@ final case class ConsumerArn(
 ) {
   val consumerArn =
     s"$streamArn/consumer/$consumerName:${creationTime.getEpochSecond}"
-  override def toString: String = consumerArn
 }
 
 object ConsumerArn {
+
+  /** Parses an AWS ARN string into a
+    * [[kinesis4cats.models.ConsumerArn ConsumerARn]]
+    *
+    * @param consumerArn
+    *   AWS ARN of the Consumer to parse
+    * @return
+    *   Either [[kinesis4cats.models.ConsumerArn ConsumerArn]] or a string with
+    *   an error message
+    */
   def fromArn(consumerArn: String): Either[String, ConsumerArn] =
     for {
       streamArn <- Try(consumerArn.split("/consumer")(0)).toEither

@@ -46,7 +46,7 @@ import kinesis4cats.models._
   * @param LE
   *   [[kinesis4cats.producer.ShardMapCache.LogEncoders ShardMapCache.LogEncoders]]
   */
-class ShardMapCache[F[_]] private (
+private[kinesis4cats] class ShardMapCache[F[_]] private (
     config: ShardMapCache.Config,
     logger: StructuredLogger[F],
     shardMapRef: Ref[F, ShardMap],

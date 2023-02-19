@@ -20,15 +20,8 @@ import io.circe.{Decoder, Encoder}
 import org.scalacheck.Arbitrary
 
 /** Basic test data class
-  *
-  * @param string
-  * @param float
-  * @param double
-  * @param boolean
-  * @param int
-  * @param long
   */
-final case class TestData(
+private[kinesis4cats] final case class TestData(
     string: String,
     float: Float,
     double: Double,
@@ -37,7 +30,7 @@ final case class TestData(
     long: Long
 )
 
-object TestData {
+private[kinesis4cats] object TestData {
   implicit val testDataEncoder: Encoder[TestData] =
     Encoder.forProduct6("string", "float", "double", "boolean", "int", "long") {
       x =>

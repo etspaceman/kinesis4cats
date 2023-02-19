@@ -61,6 +61,7 @@ lazy val `shared-localstack` = projectMatrix
   .dependsOn(shared, `shared-ciris`, `shared-circe`)
 
 lazy val `shared-tests` = projectMatrix
+  .enablePlugins(NoPublishPlugin)
   .settings(
     description := "Common test interfaces",
     libraryDependencies ++= testDependencies

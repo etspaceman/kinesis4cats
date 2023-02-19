@@ -36,10 +36,19 @@ final case class StreamArn(
 ) {
   val streamArn =
     s"arn:${awsRegion.awsArnPiece}:kinesis:${awsRegion.name}:$awsAccountId:stream/$streamName"
-  override def toString: String = streamArn
 }
 
 object StreamArn {
+
+  /** Parses an AWS ARN string into a
+    * [[kinesis4cats.models.StreamArn StreamArn]]
+    *
+    * @param streamArn
+    *   AWS ARN of the Stream to parse
+    * @return
+    *   Either [[kinesis4cats.models.StreamArn StreamArn]] or a string with an
+    *   error message
+    */
   def fromArn(streamArn: String): Either[String, StreamArn] =
     for {
       streamName <- Try(streamArn.split("/")(1)).toEither.leftMap(e =>

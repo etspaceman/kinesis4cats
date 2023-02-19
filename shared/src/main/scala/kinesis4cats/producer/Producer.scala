@@ -57,7 +57,8 @@ abstract class Producer[F[_], PutReq, PutRes](implicit
   def logger: StructuredLogger[F]
   def shardMapCache: ShardMapCache[F]
   def config: Producer.Config
-  lazy val batcher: Batcher = new Batcher(config.batcherConfig)
+
+  private lazy val batcher: Batcher = new Batcher(config.batcherConfig)
 
   /** Underlying implementation for putting a batch request to Kinesis
     *
@@ -185,7 +186,7 @@ object Producer {
       val recordLogEncoder: LogEncoder[Record]
   )
 
-  def md5Digest = MessageDigest.getInstance("MD5")
+  private[kinesis4cats] def md5Digest = MessageDigest.getInstance("MD5")
 
   /** Configuration for the [[kinesis4cats.producer.Producer Producer]]
     *
@@ -256,7 +257,9 @@ object Producer {
         Ior[NonEmptyList[InvalidRecord], NonEmptyList[FailedRecord]]
       ]
   ) extends Exception {
-    def add(that: Error): Error = Error(errors.combine(that.errors))
+    private[kinesis4cats] def add(that: Error): Error = Error(
+      errors.combine(that.errors)
+    )
     override def getMessage(): String = errors match {
       case Some(Ior.Both(a, b)) =>
         Error.ivalidRecordsMessage(a) + "\n\nAND\n\n" + Error
@@ -270,8 +273,7 @@ object Producer {
   object Error {
     implicit val producerErrorSemigroup: Semigroup[Error] =
       new Semigroup[Error] {
-        override def combine(x: Error, y: Error): Error =
-          Error(x.errors.combine(y.errors))
+        override def combine(x: Error, y: Error): Error = x.add(y)
       }
     private def ivalidRecordsMessage(
         records: NonEmptyList[InvalidRecord]
@@ -353,11 +355,32 @@ object Producer {
       erorrMessage: String
   )
 
+  /** Represents a record that was invalid per the Kinesis limits
+    */
   sealed trait InvalidRecord extends Product with Serializable
+
   object InvalidRecord {
+
+    /** Represents a record that was too large to put into Kinesis
+      *
+      * @param record
+      *   Invalid [[kinesis4cats.producer.Record Record]]
+      */
     final case class RecordTooLarge(record: Record) extends InvalidRecord
+
+    /** Represents a partition key that was not within the Kinesis limits
+      *
+      * @param partitionKey
+      *   Invalid partition key
+      */
     final case class InvalidPartitionKey(partitionKey: String)
         extends InvalidRecord
+
+    /** Represents an explicit hash key that is in an invalid format
+      *
+      * @param explicitHashKey
+      *   Invalid hash key
+      */
     final case class InvalidExplicitHashKey(explicitHashKey: Option[String])
         extends InvalidRecord
   }

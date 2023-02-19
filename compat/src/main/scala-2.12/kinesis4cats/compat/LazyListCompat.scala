@@ -16,7 +16,7 @@
 
 package kinesis4cats.compat
 
-trait LazyListCompat {
+private[kinesis4cats] trait LazyListCompat {
   type LazyList[A] = Stream[A]
   val LazyList = Stream
 }

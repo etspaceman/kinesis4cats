@@ -34,22 +34,26 @@ final case class Record(
   private val partitionKeyBytes = partitionKey.getBytes(StandardCharsets.UTF_8)
   private val partitionKeyLength = partitionKeyBytes.length
 
-  val payloadSize: Int =
+  private[kinesis4cats] val payloadSize: Int =
     partitionKeyLength + data.length
 
-  def isValidPayloadSize(payloadSizeLimit: Int) =
+  private[kinesis4cats] def isValidPayloadSize(payloadSizeLimit: Int) =
     payloadSize <= payloadSizeLimit
 
-  def isValidPartitionKey(partitionKeyMin: Int, partitionKeyMax: Int) =
+  private[kinesis4cats] def isValidPartitionKey(
+      partitionKeyMin: Int,
+      partitionKeyMax: Int
+  ) =
     partitionKeyLength <= partitionKeyMax && partitionKeyMin <= partitionKeyLength
 
-  def isValidExplicitHashKey = explicitHashKey.forall { case ehs =>
-    val b = BigInt(ehs)
-    b.compareTo(Record.unit128Max) <= 0 &&
-    b.compareTo(BigInt(BigInteger.ZERO)) >= 0
+  private[kinesis4cats] def isValidExplicitHashKey = explicitHashKey.forall {
+    case ehs =>
+      val b = BigInt(ehs)
+      b.compareTo(Record.unit128Max) <= 0 &&
+      b.compareTo(BigInt(BigInteger.ZERO)) >= 0
   }
 
-  def isValid(
+  private[kinesis4cats] def isValid(
       payloadSizeLimit: Int,
       partitionKeyMin: Int,
       partitionKeyMax: Int
@@ -79,11 +83,14 @@ object Record {
     else varintBytes
   }
 
-  final case class WithShard(record: Record, predictedShard: ShardId) {
+  private[kinesis4cats] final case class WithShard(
+      record: Record,
+      predictedShard: ShardId
+  ) {
     def getExplicitHashKey(
         digest: MessageDigest
     ): String = record.explicitHashKey.getOrElse {
-      var hashKey = BigInt(BigInteger.ZERO)
+      var hashKey = BigInt(BigInteger.ZERO) // scalafix:ok
       val pkDigest = digest.digest(record.partitionKeyBytes)
 
       for (i <- 0 until digest.getDigestLength()) {
@@ -123,12 +130,12 @@ object Record {
         .aggregatedPayloadSize(currentPartitionKeys, currentExplicitHashKeys)
   }
 
-  object WithShard {
+  private[kinesis4cats] object WithShard {
     def fromOption(record: Record, predictedShard: Option[ShardId]) =
       WithShard(record, predictedShard.getOrElse(ShardId("DEFAULT")))
   }
 
-  final case class AggregationEntry(
+  private[kinesis4cats] final case class AggregationEntry(
       record: Record,
       explicitHashKey: String,
       partitionKeyTableIndex: Int,

@@ -33,7 +33,8 @@ import retry._
 
 import kinesis4cats.syntax.scalacheck._
 
-abstract class ProducerSpec[PutReq, PutRes, A] extends munit.CatsEffectSuite {
+private[kinesis4cats] abstract class ProducerSpec[PutReq, PutRes, A]
+    extends munit.CatsEffectSuite {
 
   def producerResource: Resource[IO, Producer[IO, PutReq, PutRes]]
   def streamName: String

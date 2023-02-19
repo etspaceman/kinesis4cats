@@ -29,7 +29,30 @@ import kinesis4cats.models.ShardId
 import kinesis4cats.producer.Producer
 import kinesis4cats.protobuf.Messages.AggregatedRecord
 
-final case class AggregatedBatch private (
+/** Represents records that can be aggregated into a single record using the
+  * [[https://docs.aws.amazon.com/streams/latest/dev/kinesis-kpl-concepts.html#kinesis-kpl-concepts-aggretation KPL Aggregation Format]]
+  *
+  * @param shardId
+  *   Shard ID for the batch
+  * @param records
+  *   [[cats.data.NonEmptyList NonEmptyList]] of
+  *   [[kinesis4cats.producer.Record.AggregationEntry Record.AggregationEntry]]
+  * @param aggregatedMessageSize
+  *   Accumulated size of messages in the aggregated data
+  * @param explicitHashKeys
+  *   Map of explicit hash keys to their known index in the records
+  * @param partitionKeys
+  *   Map of partition kyes to their known index in the records
+  * @param digest
+  *   [[https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/security/MessageDigest.html MessageDigest]]
+  * @param aggPartitionKey
+  *   Partition Key for the aggregated record
+  * @param aggExplicitHashKey
+  *   Explicit Hash Key for the aggregated record
+  * @param config
+  *   [[kinesis4cats.producer.batching.Batcher.Config Batcher.Config]]
+  */
+private[kinesis4cats] final case class AggregatedBatch private (
     shardId: ShardId,
     records: NonEmptyList[Record.AggregationEntry],
     aggregatedMessageSize: Int,
@@ -111,10 +134,9 @@ final case class AggregatedBatch private (
     Record(asBytes, aggPartitionKey, aggExplicitHashKey, None),
     shardId
   )
-
 }
 
-object AggregatedBatch {
+private[kinesis4cats] object AggregatedBatch {
   def create(
       record: Record.WithShard,
       config: Batcher.Config

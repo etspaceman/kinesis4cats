@@ -21,7 +21,7 @@ import cats.syntax.all._
 import org.http4s.{Charset, MediaType, Message}
 import scodec.bits.ByteVector
 
-object Utils {
+private[kinesis4cats] object Utils {
 
   /** Copied from Http4s's internal
     * [[https://github.com/http4s/http4s/blob/34fbd95ce53f86d009df11622a8ec4037854533a/core/shared/src/main/scala/org/http4s/internal/Logger.scala Logger]]

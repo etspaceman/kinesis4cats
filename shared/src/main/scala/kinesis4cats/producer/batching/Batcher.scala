@@ -28,7 +28,7 @@ import kinesis4cats.syntax.id._
   * @param config
   *   [[kinesis4cats.producer.batching.Batcher.Config Batcher.Config]]
   */
-final class Batcher(config: Batcher.Config) {
+private[kinesis4cats] final class Batcher(config: Batcher.Config) {
 
   /** Batch a list of [[kinesis4cats.producer.Record.WithShard records]]
     *

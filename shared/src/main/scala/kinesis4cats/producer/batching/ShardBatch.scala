@@ -36,7 +36,7 @@ import kinesis4cats.models.ShardId
   * @param config
   *   [[kinesis4cats.producer.batching.Batcher.Config Batcher.Config]]
   */
-final case class ShardBatch private (
+private[kinesis4cats] final case class ShardBatch private (
     shardId: ShardId,
     records: NonEmptyList[Record],
     count: Int,
@@ -78,7 +78,7 @@ final case class ShardBatch private (
   def finalizeBatch: ShardBatch = copy(records = records.reverse)
 }
 
-object ShardBatch {
+private[kinesis4cats] object ShardBatch {
 
   /** Create a fresh batch with a new record
     *
