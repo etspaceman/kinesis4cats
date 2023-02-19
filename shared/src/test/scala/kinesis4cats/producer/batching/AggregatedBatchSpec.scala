@@ -18,9 +18,10 @@ class AggregatedBatchSpec extends munit.CatsEffectSuite {
       Batcher.Config.default
     )
 
-    val testSize1 = batch.aggregatedMessageSize
-    val batch2 = batch.add(Record.WithShard(Record(data2, partitionKey2), ShardId("1")))
-    val testSize2 = batch2.aggregatedMessageSize
+    val testSize1 = batch.getSizeBytes
+    val batch2 =
+      batch.add(Record.WithShard(Record(data2, partitionKey2), ShardId("1")))
+    val testSize2 = batch2.getSizeBytes
 
     val agRecord = new AggRecord()
     agRecord.addUserRecord(partitionKey1, null, data1)

@@ -75,7 +75,7 @@ object Record {
     val bitsNeeded = if (value == 0) 1 else getBitsNeeded(value)
     val varintBytes = bitsNeeded / 7
 
-    if (varintBytes % 7 > 0) varintBytes + 1
+    if (bitsNeeded % 7 > 0) varintBytes + 1
     else varintBytes
   }
 
