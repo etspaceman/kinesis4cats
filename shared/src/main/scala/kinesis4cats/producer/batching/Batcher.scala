@@ -217,9 +217,7 @@ object Batcher {
 
   object Config {
 
-    /** A default instance for the
-      * Batcher which uses the
-      * Kinesis limits
+    /** A default instance for the Batcher which uses the Kinesis limits
       */
     val default = Config(
       500,
