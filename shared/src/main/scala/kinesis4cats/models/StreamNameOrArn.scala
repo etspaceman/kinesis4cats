@@ -16,6 +16,8 @@
 
 package kinesis4cats.models
 
+/** Trait representing either a Stream name or ARN
+  */
 sealed trait StreamNameOrArn { self =>
   def streamName: Option[String] = self match {
     case StreamNameOrArn.Name(streamName) => Some(streamName)

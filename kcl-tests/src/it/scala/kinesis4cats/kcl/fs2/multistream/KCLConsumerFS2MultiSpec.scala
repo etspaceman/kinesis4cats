@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-package kinesis4cats.kcl.fs2.multistream
+package kinesis4cats
+package kcl.fs2.multistream
 
 import scala.concurrent.duration._
 
@@ -38,10 +39,9 @@ import kinesis4cats.kcl.fs2.KCLConsumerFS2
 import kinesis4cats.kcl.fs2.localstack.LocalstackKCLConsumerFS2
 import kinesis4cats.kcl.multistream.MultiStreamTracker
 import kinesis4cats.kcl.{CommittableRecord, RecordProcessor}
-import kinesis4cats.localstack.TestData
-import kinesis4cats.localstack.syntax.scalacheck._
 import kinesis4cats.models.{AwsRegion, StreamArn}
 import kinesis4cats.syntax.bytebuffer._
+import kinesis4cats.syntax.scalacheck._
 
 abstract class KCLConsumerFS2MultiSpec(implicit
     KCLLE: RecordProcessor.LogEncoders,

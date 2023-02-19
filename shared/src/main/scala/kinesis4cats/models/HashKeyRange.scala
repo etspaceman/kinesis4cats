@@ -16,7 +16,22 @@
 
 package kinesis4cats.models
 
+/** Helper class representing the hash key range for a shard
+  *
+  * @param endingHashKey
+  *   Max hash key for the shard
+  * @param startingHashKey
+  *   Min hash key for the shard
+  */
 final case class HashKeyRange(endingHashKey: BigInt, startingHashKey: BigInt) {
+
+  /** If true, provided hash key is within the shard's hash key range
+    *
+    * @param hashKey
+    *   Hash key to compare
+    * @return
+    *   true if within hash key range, false if not
+    */
   def isBetween(hashKey: BigInt): Boolean =
     hashKey >= startingHashKey && hashKey <= endingHashKey
 }

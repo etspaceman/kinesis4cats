@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-package kinesis4cats.producer
+package kinesis4cats
+package producer
 
 import scala.concurrent.duration._
 
@@ -30,10 +31,10 @@ import org.scalacheck.Arbitrary
 import retry.RetryPolicies._
 import retry._
 
-import kinesis4cats.localstack.TestData
-import kinesis4cats.localstack.syntax.scalacheck._
+import kinesis4cats.syntax.scalacheck._
 
-abstract class ProducerSpec[PutReq, PutRes, A] extends munit.CatsEffectSuite {
+private[kinesis4cats] abstract class ProducerSpec[PutReq, PutRes, A]
+    extends munit.CatsEffectSuite {
 
   def producerResource: Resource[IO, Producer[IO, PutReq, PutRes]]
   def streamName: String

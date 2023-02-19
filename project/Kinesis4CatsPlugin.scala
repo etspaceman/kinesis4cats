@@ -54,6 +54,7 @@ object Kinesis4CatsPlugin extends AutoPlugin {
     crossScalaVersions := Seq(Scala212, Scala3, Scala213),
     scalaVersion := Scala213,
     tlCiMimaBinaryIssueCheck := tlBaseVersion.value != "0.0",
+    resolvers += "jitpack" at "https://jitpack.io",
     githubWorkflowBuild := {
       val style = (tlCiHeaderCheck.value, tlCiScalafmtCheck.value) match {
         case (true, true) => // headers + formatting

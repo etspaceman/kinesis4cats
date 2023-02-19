@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-package kinesis4cats.kpl
+package kinesis4cats
+package kpl
 
 import java.nio.ByteBuffer
 
@@ -24,8 +25,7 @@ import io.circe.syntax._
 import org.scalacheck.Arbitrary
 
 import kinesis4cats.kpl.localstack.LocalstackKPLProducer
-import kinesis4cats.localstack.TestData
-import kinesis4cats.localstack.syntax.scalacheck._
+import kinesis4cats.syntax.scalacheck._
 
 abstract class KPLProducerSpec(implicit LE: KPLProducer.LogEncoders)
     extends munit.CatsEffectSuite

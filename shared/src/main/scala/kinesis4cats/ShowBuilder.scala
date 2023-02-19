@@ -29,7 +29,10 @@ import kinesis4cats.syntax.id._
   * @param isEmpty
   *   If no values have been added to the String
   */
-final case class ShowBuilder private (current: String, isEmpty: Boolean) {
+private[kinesis4cats] final case class ShowBuilder private (
+    current: String,
+    isEmpty: Boolean
+) {
 
   private def add(key: String, value: String): ShowBuilder = copy(
     current = current.safeTransform(value) { (curr, a) =>
@@ -60,7 +63,7 @@ final case class ShowBuilder private (current: String, isEmpty: Boolean) {
 
 }
 
-object ShowBuilder {
+private[kinesis4cats] object ShowBuilder {
 
   /** Constructor for [[kinesis4cats.ShowBuilder]]
     *

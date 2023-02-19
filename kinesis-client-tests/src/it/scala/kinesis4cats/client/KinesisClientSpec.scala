@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-package kinesis4cats.client
+package kinesis4cats
+package client
 
 import scala.jdk.CollectionConverters._
 
@@ -30,9 +31,8 @@ import software.amazon.awssdk.core.SdkBytes
 import software.amazon.awssdk.services.kinesis.model._
 
 import kinesis4cats.client.localstack.LocalstackKinesisClient
-import kinesis4cats.localstack._
-import kinesis4cats.localstack.syntax.scalacheck._
 import kinesis4cats.models.{AwsRegion, StreamArn}
+import kinesis4cats.syntax.scalacheck._
 
 abstract class KinesisClientSpec(implicit LE: KinesisClient.LogEncoders)
     extends munit.CatsEffectSuite {

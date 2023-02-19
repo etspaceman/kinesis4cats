@@ -18,6 +18,11 @@ package kinesis4cats.models
 
 import cats.Order
 
+/** Basic wrapper for Shard ID values
+  *
+  * @param shardId
+  *   Underlying shardId string value
+  */
 final case class ShardId(shardId: String)
 
 object ShardId {

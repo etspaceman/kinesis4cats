@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-package kinesis4cats.kcl
+package kinesis4cats
+package kcl
 package multistream
 
 import scala.concurrent.duration._
@@ -38,10 +39,9 @@ import software.amazon.kinesis.common._
 import kinesis4cats.client.KinesisClient
 import kinesis4cats.client.localstack.LocalstackKinesisClient
 import kinesis4cats.kcl.localstack.LocalstackKCLConsumer
-import kinesis4cats.localstack.TestData
-import kinesis4cats.localstack.syntax.scalacheck._
 import kinesis4cats.models.{AwsRegion, StreamArn}
 import kinesis4cats.syntax.bytebuffer._
+import kinesis4cats.syntax.scalacheck._
 
 abstract class KCLConsumerMultiSpec(implicit
     KCLLE: RecordProcessor.LogEncoders,
