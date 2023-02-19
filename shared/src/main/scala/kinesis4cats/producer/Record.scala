@@ -66,7 +66,7 @@ final case class Record(
 object Record {
   private val unit128Max = BigInt(List.fill(16)("FF").mkString, 16)
 
-  // See https://github.com/awslabs/kinesis-aggregation/blob/master/java/KinesisAggregatorV2/src/main/java/com/amazonaws/kinesis/agg/AggRecord.java
+  // See https://github.com/awslabs/kinesis-aggregation/blob/2.0.3/java/KinesisAggregatorV2/src/main/java/com/amazonaws/kinesis/agg/AggRecord.java#L280
   // shift the value right one bit at a time until
   // there are no more '1' bits left...this counts
   // how many bits we need to represent the number
@@ -75,6 +75,7 @@ object Record {
     if (value <= 0) bitsNeeded
     else getBitsNeeded(value >> 1, bitsNeeded + 1)
 
+  // See https://github.com/awslabs/kinesis-aggregation/blob/2.0.3/java/KinesisAggregatorV2/src/main/java/com/amazonaws/kinesis/agg/AggRecord.java#L280
   private def calculateVarIntSize(value: Int): Int = {
     val bitsNeeded = if (value == 0) 1 else getBitsNeeded(value)
     val varintBytes = bitsNeeded / 7
@@ -87,6 +88,8 @@ object Record {
       record: Record,
       predictedShard: ShardId
   ) {
+
+    // See https://github.com/awslabs/kinesis-aggregation/blob/2.0.3/java/KinesisAggregatorV2/src/main/java/com/amazonaws/kinesis/agg/AggRecord.java#L467
     def getExplicitHashKey(
         digest: MessageDigest
     ): String = record.explicitHashKey.getOrElse {
@@ -141,6 +144,8 @@ object Record {
       partitionKeyTableIndex: Int,
       explicitHashKeyTableIndex: Int
   ) {
+
+    // See https://github.com/awslabs/kinesis-aggregation/blob/2.0.3/java/KinesisAggregatorV2/src/main/java/com/amazonaws/kinesis/agg/AggRecord.java#L221
     def aggregatedPayloadSize(
         currentPartitionKeys: Map[String, Int],
         currentExplicitHashKeys: Map[String, Int]

@@ -63,11 +63,14 @@ private[kinesis4cats] final case class AggregatedBatch private (
     aggExplicitHashKey: Option[String],
     config: Batcher.Config
 ) {
+
+  // See https://github.com/awslabs/kinesis-aggregation/blob/2.0.3/java/KinesisAggregatorV2/src/main/java/com/amazonaws/kinesis/agg/AggRecord.java#L127
   def getSizeBytes: Int =
     AggregatedBatch.magicBytes.length +
       aggregatedMessageSize +
       digest.getDigestLength()
 
+  // See https://github.com/awslabs/kinesis-aggregation/blob/2.0.3/java/KinesisAggregatorV2/src/main/java/com/amazonaws/kinesis/agg/AggRecord.java#L330
   def canAdd(record: Record.WithShard): Boolean =
     (record.aggregatedPayloadSize(
       partitionKeys,
@@ -110,6 +113,7 @@ private[kinesis4cats] final case class AggregatedBatch private (
     .addAllExplicitHashKeyTable(explicitHashKeys.keys.asJava)
     .build()
 
+  // See https://github.com/awslabs/kinesis-aggregation/blob/2.0.3/java/KinesisAggregatorV2/src/main/java/com/amazonaws/kinesis/agg/AggRecord.java#L142
   def asBytes: Array[Byte] = {
     val messageBody: Array[Byte] = asAggregatedRecord.toByteArray()
     val messageDigest: Array[Byte] = digest.digest(messageBody)
