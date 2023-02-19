@@ -39,6 +39,8 @@ final case class ConsumerArn(
 ) {
   val consumerArn =
     s"$streamArn/consumer/$consumerName:${creationTime.getEpochSecond}"
+
+  override def toString(): String = consumerArn
 }
 
 object ConsumerArn {
