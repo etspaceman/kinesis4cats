@@ -28,14 +28,12 @@ import cats.syntax.all._
 import kinesis4cats.models.ShardId
 import kinesis4cats.producer.Producer
 import kinesis4cats.protobuf.Messages.AggregatedRecord
-import kinesis4cats.syntax.id._
-
 
 final case class AggregatedBatch private (
     shardId: ShardId,
     records: NonEmptyList[Record.AggregationEntry],
     aggregatedMessageSize: Int,
-    explicitHashKeys: Option[Map[String, Int]],
+    explicitHashKeys: Map[String, Int],
     partitionKeys: Map[String, Int],
     digest: MessageDigest,
     aggPartitionKey: String,
@@ -50,35 +48,30 @@ final case class AggregatedBatch private (
   def canAdd(record: Record.WithShard): Boolean =
     (record.aggregatedPayloadSize(
       partitionKeys,
-      explicitHashKeys
+      explicitHashKeys,
+      digest
     ) + getSizeBytes) <= config.maxPayloadSizePerRecord
 
   def add(record: Record.WithShard): AggregatedBatch = {
-    val newHashKeys = record.record.explicitHashKey.fold(explicitHashKeys) {
-      ehk =>
-        explicitHashKeys.map { ehks =>
-          ehks.get(ehk).fold(ehks + (ehk -> ehks.size))(_ => ehks)
-        }
-    }
+    val aggregationEntry =
+      record.asAggregationEntry(partitionKeys, explicitHashKeys, digest)
+
+    val newHashKeys = explicitHashKeys
+      .get(aggregationEntry.explicitHashKey)
+      .fold(
+        explicitHashKeys + (aggregationEntry.explicitHashKey -> aggregationEntry.explicitHashKeyTableIndex)
+      )(_ => explicitHashKeys)
 
     val newPartitionKeys = partitionKeys
-      .get(record.record.partitionKey)
-      .fold(partitionKeys + (record.record.partitionKey -> partitionKeys.size))(
-        _ => partitionKeys
-      )
-
-    val aggregationEntry = Record.AggregationEntry(
-      record.record,
-      newPartitionKeys(record.record.partitionKey),
-      record.record.explicitHashKey.flatMap(ehk =>
-        newHashKeys.map(ehks => ehks(ehk))
-      )
-    )
+      .get(aggregationEntry.record.partitionKey)
+      .fold(
+        partitionKeys + (aggregationEntry.record.partitionKey -> partitionKeys.size)
+      )(_ => partitionKeys)
 
     copy(
       records = records.prepend(aggregationEntry),
       aggregatedMessageSize =
-        aggregatedMessageSize + (record.aggregatedPayloadSize(
+        aggregatedMessageSize + (aggregationEntry.aggregatedPayloadSize(
           partitionKeys,
           explicitHashKeys
         )),
@@ -89,11 +82,9 @@ final case class AggregatedBatch private (
 
   def asAggregatedRecord: AggregatedRecord = AggregatedRecord
     .newBuilder()
-    .addAllRecords(records.reverse.map(_.getEntry).toList.asJava)
+    .addAllRecords(records.reverse.map(_.asEntry).toList.asJava)
     .addAllPartitionKeyTable(partitionKeys.keys.asJava)
-    .maybeTransform(explicitHashKeys) { case (x, y) =>
-      x.addAllExplicitHashKeyTable(y.keys.asJava)
-    }
+    .addAllExplicitHashKeyTable(explicitHashKeys.keys.asJava)
     .build()
 
   def asBytes: Array[Byte] = {
@@ -127,22 +118,24 @@ object AggregatedBatch {
   def create(
       record: Record.WithShard,
       config: Batcher.Config
-  ): AggregatedBatch = AggregatedBatch(
-    record.predictedShard,
-    NonEmptyList.one(
-      Record
-        .AggregationEntry(record.record, 0, record.record.explicitHashKey.as(0))
-    ),
-    record.aggregatedPayloadSize(Map.empty, None),
-    record.record.explicitHashKey.map(x => Map(x -> 0)),
-    Map(record.record.partitionKey -> 0),
-    Producer.md5Digest,
-    record.record.partitionKey,
-    None,
-    config
-  )
+  ): AggregatedBatch = {
+    val digest = Producer.md5Digest
+    val aggregationEntry =
+      record.asAggregationEntry(Map.empty, Map.empty, digest)
+    AggregatedBatch(
+      record.predictedShard,
+      NonEmptyList.one(aggregationEntry),
+      aggregationEntry.aggregatedPayloadSize(Map.empty, Map.empty),
+      Map(aggregationEntry.explicitHashKey -> 0),
+      Map(record.record.partitionKey -> 0),
+      digest,
+      record.record.partitionKey,
+      None,
+      config
+    )
+  }
 
   // From https://github.com/awslabs/amazon-kinesis-producer/blob/master/aggregation-format.md
   val magicBytes: Array[Byte] =
-    List(0xf3, 0x89, 0x9a, 0xc2).map(_.toByte).toArray
+    Array(0xf3, 0x89, 0x9a, 0xc2).map(_.toByte)
 }

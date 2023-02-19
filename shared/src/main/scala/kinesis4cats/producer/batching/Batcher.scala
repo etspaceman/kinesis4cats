@@ -47,21 +47,22 @@ final class Batcher(config: Batcher.Config) {
   ): Ior[Producer.Error, NonEmptyList[Batch]] = {
     val errors = NonEmptyList.fromList(records.collect {
       case record
-          if !record.isValidPayloadSize(config.maxPayloadSizePerRecord) =>
+          if !record.record
+            .isValidPayloadSize(config.maxPayloadSizePerRecord) =>
         InvalidRecord.RecordTooLarge(record.record)
       case record
-          if !record.isValidPartitionKey(
+          if !record.record.isValidPartitionKey(
             config.minPartitionKeySize,
             config.maxPartitionKeySize
           ) =>
         InvalidRecord.InvalidPartitionKey(record.record.partitionKey)
-      case record if !record.isValidExplicitHashKey =>
+      case record if !record.record.isValidExplicitHashKey =>
         InvalidRecord.InvalidExplicitHashKey(record.record.explicitHashKey)
     })
 
     val valid = NonEmptyList.fromList(
       records.filter(
-        _.isValid(
+        _.record.isValid(
           config.maxPayloadSizePerRecord,
           config.minPartitionKeySize,
           config.maxPartitionKeySize

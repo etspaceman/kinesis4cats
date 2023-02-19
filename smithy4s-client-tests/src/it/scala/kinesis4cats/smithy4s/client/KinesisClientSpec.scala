@@ -14,10 +14,13 @@
  * limitations under the License.
  */
 
-package kinesis4cats.smithy4s.client
+package kinesis4cats
+package smithy4s.client
 
 import java.util.UUID
 
+import _root_.smithy4s.ByteArray
+import _root_.smithy4s.aws.AwsRegion
 import cats.effect._
 import cats.syntax.all._
 import com.amazonaws.kinesis._
@@ -26,14 +29,11 @@ import io.circe.syntax._
 import org.http4s.blaze.client.BlazeClientBuilder
 import org.scalacheck.Arbitrary
 import org.typelevel.log4cats.slf4j.Slf4jLogger
-import smithy4s.ByteArray
-import smithy4s.aws.AwsRegion
 
-import kinesis4cats.localstack._
-import kinesis4cats.localstack.syntax.scalacheck._
 import kinesis4cats.logging.instances.show._
 import kinesis4cats.models.StreamArn
 import kinesis4cats.smithy4s.client.localstack.LocalstackKinesisClient
+import kinesis4cats.syntax.scalacheck._
 
 abstract class KinesisClientSpec(implicit LE: KinesisClient.LogEncoders[IO])
     extends munit.CatsEffectSuite {

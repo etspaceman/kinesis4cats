@@ -94,7 +94,7 @@ object ShardBatch {
       record.predictedShard,
       NonEmptyList.one(record.record),
       1,
-      record.payloadSize,
+      record.record.payloadSize,
       config
     )
 }

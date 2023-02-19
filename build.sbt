@@ -9,10 +9,23 @@ lazy val compat = projectMatrix
   .jvmPlatform(allScalaVersions)
   .enableIntegrationTests
 
+lazy val `kernel-tests` = projectMatrix
+  .settings(
+    description := "Common test utilities",
+    libraryDependencies ++= testDependencies
+  )
+  .jvmPlatform(allScalaVersions)
+  .enableIntegrationTests
+  .dependsOn(`shared-localstack`)
+
 lazy val shared = projectMatrix
   .enablePlugins(ProtobufPlugin)
   .settings(
-    description := "Common shared utilities"
+    description := "Common shared utilities",
+    libraryDependencies ++= Seq(
+      Aws.Aggregation.aggregator % Test,
+      Aws.Aggregation.deaggregator % Test
+    )
   )
   .jvmPlatform(allScalaVersions)
   .enableIntegrationTests
@@ -41,8 +54,7 @@ lazy val `shared-ciris` = projectMatrix
 
 lazy val `shared-localstack` = projectMatrix
   .settings(
-    description := "Common utilities for the localstack test-kits",
-    libraryDependencies ++= Seq(Scalacheck)
+    description := "Common utilities for the localstack test-kits"
   )
   .jvmPlatform(allScalaVersions)
   .enableIntegrationTests
@@ -55,7 +67,7 @@ lazy val `shared-tests` = projectMatrix
   )
   .jvmPlatform(allScalaVersions)
   .enableIntegrationTests
-  .dependsOn(`shared-localstack`)
+  .dependsOn(`shared-localstack`, `kernel-tests`)
 
 lazy val `aws-v2-localstack` = projectMatrix
   .settings(
@@ -205,7 +217,8 @@ lazy val `kcl-tests` = projectMatrix
     `kcl-localstack`,
     `kcl-logging-circe` % IT,
     `kinesis-client-localstack` % IT,
-    `kinesis-client-logging-circe` % IT
+    `kinesis-client-logging-circe` % IT,
+    `kernel-tests` % "test;it;fun"
   )
 
 lazy val kpl = projectMatrix
@@ -261,7 +274,8 @@ lazy val `kpl-tests` = projectMatrix
   .enableIntegrationTests
   .dependsOn(
     `kpl-localstack` % IT,
-    `kpl-logging-circe` % IT
+    `kpl-logging-circe` % IT,
+    `kernel-tests` % IT
   )
 
 lazy val `kinesis-client` = projectMatrix
@@ -306,7 +320,8 @@ lazy val `kinesis-client-tests` = projectMatrix
   .dependsOn(
     `kinesis-client-localstack` % IT,
     `kinesis-client-logging-circe` % IT,
-    `shared-tests` % IT
+    `shared-tests` % IT,
+    `kernel-tests` % IT
   )
 
 lazy val `kinesis-client-producer-tests` = projectMatrix
@@ -322,7 +337,8 @@ lazy val `kinesis-client-producer-tests` = projectMatrix
     `kcl-logging-circe` % IT,
     `kinesis-client-localstack` % IT,
     `kinesis-client-logging-circe` % IT,
-    `shared-tests` % IT
+    `shared-tests` % IT,
+    `kernel-tests` % IT
   )
 
 lazy val `smithy4s-client-transformers` = projectMatrix
@@ -386,7 +402,8 @@ lazy val `smithy4s-client-tests` = projectMatrix
   .enableIntegrationTests
   .dependsOn(
     `smithy4s-client-localstack` % IT,
-    `smithy4s-client-logging-circe` % IT
+    `smithy4s-client-logging-circe` % IT,
+    `kernel-tests` % IT
   )
 
 lazy val `smithy4s-client-producer-tests` = projectMatrix
@@ -402,7 +419,8 @@ lazy val `smithy4s-client-producer-tests` = projectMatrix
     `kcl-logging-circe` % IT,
     `smithy4s-client-localstack` % IT,
     `smithy4s-client-logging-circe` % IT,
-    `shared-tests` % IT
+    `shared-tests` % IT,
+    `kernel-tests` % IT
   )
 
 lazy val docs = projectMatrix
@@ -450,6 +468,7 @@ lazy val docs = projectMatrix
   .jvmPlatform(List(Scala213))
   .dependsOn(
     compat,
+    `kernel-tests`,
     shared,
     `shared-circe`,
     `shared-ciris`,
@@ -485,6 +504,7 @@ lazy val unidocs = projectMatrix
     ScalaUnidoc / unidoc / unidocProjectFilter := inProjects(
       List(
         compat,
+        `kernel-tests`,
         shared,
         `shared-circe`,
         `shared-ciris`,
@@ -515,6 +535,7 @@ lazy val unidocs = projectMatrix
 
 lazy val allProjects = Seq(
   compat,
+  `kernel-tests`,
   shared,
   `shared-circe`,
   `shared-ciris`,

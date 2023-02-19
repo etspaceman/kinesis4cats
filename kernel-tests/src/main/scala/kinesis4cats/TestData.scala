@@ -13,8 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package kinesis4cats.localstack
+package kinesis4cats
 
 import io.circe.{Decoder, Encoder}
 import org.scalacheck.Arbitrary

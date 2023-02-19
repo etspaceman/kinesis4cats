@@ -46,12 +46,12 @@ class BatcherSpec extends munit.CatsEffectSuite {
               shardId,
               x.map(_.record),
               x.length,
-              x.map(_.payloadSize).sumAll,
+              x.map(_.record.payloadSize).sumAll,
               config
             )
           ),
           x.length,
-          x.map(_.payloadSize).sumAll,
+          x.map(_.record.payloadSize).sumAll,
           config
         )
       )
@@ -82,7 +82,7 @@ class BatcherSpec extends munit.CatsEffectSuite {
               shardId,
               NonEmptyList.one(record.record),
               1,
-              record.payloadSize,
+              record.record.payloadSize,
               config
             )
           }
@@ -122,12 +122,12 @@ class BatcherSpec extends munit.CatsEffectSuite {
               shardId,
               x.map(_.record),
               x.length,
-              x.map(_.payloadSize).sumAll,
+              x.map(_.record.payloadSize).sumAll,
               config
             )
           ),
           x.length,
-          x.map(_.payloadSize).sumAll,
+          x.map(_.record.payloadSize).sumAll,
           config
         )
       )
@@ -158,7 +158,7 @@ class BatcherSpec extends munit.CatsEffectSuite {
               shardId,
               NonEmptyList.one(record.record),
               1,
-              record.payloadSize,
+              record.record.payloadSize,
               config
             )
           }
@@ -222,7 +222,7 @@ class BatcherSpec extends munit.CatsEffectSuite {
         shardId,
         goodRecords.map(_._2.record),
         goodRecords.length,
-        goodRecords.map(_._2.payloadSize).sumAll,
+        goodRecords.map(_._2.record.payloadSize).sumAll,
         config
       )
 

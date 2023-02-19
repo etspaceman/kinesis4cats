@@ -104,6 +104,14 @@ pull_request_rules:
       add:
       - kcl-tests
       remove: []
+- name: Label kernel-tests PRs
+  conditions:
+  - files~=^kernel-tests/
+  actions:
+    label:
+      add:
+      - kernel-tests
+      remove: []
 - name: Label kinesis-client PRs
   conditions:
   - files~=^kinesis-client/

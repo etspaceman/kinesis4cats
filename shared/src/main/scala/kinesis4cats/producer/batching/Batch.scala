@@ -55,7 +55,7 @@ final case class Batch(
             .fold(ShardBatch.create(record, config))(x => x.add(record.record))
       ),
       count = count + 1,
-      batchSize = batchSize + record.payloadSize
+      batchSize = batchSize + record.record.payloadSize
     )
 
   /** Determines if a record can be added to the batch
@@ -67,7 +67,7 @@ final case class Batch(
     */
   def canAdd(record: Record.WithShard): Boolean =
     count + 1 <= config.maxRecordsPerRequest &&
-      batchSize + record.payloadSize <= config.maxPayloadSizePerRequest &&
+      batchSize + record.record.payloadSize <= config.maxPayloadSizePerRequest &&
       shardBatches(record.predictedShard)
         .map(_.canAdd(record.record))
         .getOrElse(true)
@@ -95,7 +95,7 @@ object Batch {
   def create(record: Record.WithShard, config: Batcher.Config): Batch = Batch(
     NonEmptyMap.of(record.predictedShard -> ShardBatch.create(record, config)),
     1,
-    record.payloadSize,
+    record.record.payloadSize,
     config
   )
 
