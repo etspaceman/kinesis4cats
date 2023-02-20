@@ -24,7 +24,8 @@ lazy val shared = projectMatrix
     description := "Common shared utilities",
     libraryDependencies ++= Seq(
       Aws.Aggregation.aggregator % Test,
-      Aws.Aggregation.deaggregator % Test
+      Aws.Aggregation.deaggregator % Test,
+      Log4Cats.slf4j % Test
     )
   )
   .jvmPlatform(allScalaVersions)
