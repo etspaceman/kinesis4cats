@@ -204,7 +204,11 @@ abstract class Producer[F[_], PutReq, PutRes](implicit
       case x if x.isRight                                     => F.pure(x)
       case x if x.left.exists(e => e.errors.exists(_.isLeft)) => F.pure(x)
       case x if retries.exists(_ <= 0) =>
-        logger.debug(ctx.context)("All retries have been exhausted").as(x)
+        logger
+          .warn(ctx.context)(
+            "All retries have been exhausted, and the final retry detected errors"
+          )
+          .as(x)
       case x =>
         logger
           .debug(ctx.context)("Failures detected, retrying failed records")
