@@ -92,12 +92,14 @@ final class KinesisProducer[F[_]] private (
       resp: PutRecordsResponse
   ): Option[NonEmptyList[Producer.FailedRecord]] =
     NonEmptyList.fromList(
-      resp.records().asScala.toList.zip(records.toList).collect {
-        case (respEntry, record) if Option(respEntry.errorCode()).nonEmpty =>
+      resp.records().asScala.toList.zipWithIndex.zip(records.toList).collect {
+        case ((respEntry, respIndex), record)
+            if Option(respEntry.errorCode()).nonEmpty =>
           Producer.FailedRecord(
             record,
             respEntry.errorCode(),
-            respEntry.errorMessage()
+            respEntry.errorMessage(),
+            respIndex
           )
       }
     )
