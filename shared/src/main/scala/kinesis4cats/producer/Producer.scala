@@ -16,12 +16,14 @@
 
 package kinesis4cats.producer
 
+import scala.concurrent.duration.FiniteDuration
+
 import java.security.MessageDigest
 
+import cats.Semigroup
 import cats.data.{Ior, NonEmptyList}
 import cats.effect.Async
 import cats.effect.syntax.all._
-import cats.kernel.Semigroup
 import cats.syntax.all._
 import org.typelevel.log4cats.StructuredLogger
 
@@ -102,7 +104,7 @@ abstract class Producer[F[_], PutReq, PutRes](implicit
     *   - Batching records against Kinesis limits for shards / streams
     *   - Putting batches to Kinesis
     *
-    * @param req
+    * @param records
     *   a [[cats.data.NonEmptyList NonEmptyList]] of
     *   [[kinesis4cats.producer.Record Records]]
     * @return
@@ -171,6 +173,61 @@ abstract class Producer[F[_], PutReq, PutRes](implicit
         .map(_.flatMap(_.sequence))
     } yield res
   }
+
+  /** Runs the put method in a retry loop, retrying any records that failed to
+    * produce in the previous try.
+    *
+    * @param records
+    *   a [[cats.data.NonEmptyList NonEmptyList]] of
+    *   [[kinesis4cats.producer.Record Records]]
+    * @param retries
+    *   Number of retries to attempt after an initial failure.
+    * @param retryDuration
+    *   Amount of time to wait between retries.
+    * @return
+    *   [[cats.data.Ior Ior]] with the following:
+    *   - left: a [[kinesis4cats.producer.Producer.Error Producer.Error]], which
+    *     represents records that were too large to be put on kinesis as well as
+    *     records that were not produced successfully in the batch request.
+    *   - right: a [[cats.data.NonEmptyList NonEmptyList]] of the underlying put
+    *     responses
+    */
+  def putWithRetry(
+      records: NonEmptyList[Record],
+      retries: Option[Int],
+      retryDuration: FiniteDuration
+  ): F[Ior[Producer.Error, NonEmptyList[PutRes]]] = {
+    val ctx = LogContext()
+      .addEncoded("retriesRemaining", retries.fold("Infinite")(_.toString()))
+      .addEncoded("retryDuration", retryDuration)
+    put(records).flatMap {
+      case x if x.isRight                                     => F.pure(x)
+      case x if x.left.exists(e => e.errors.exists(_.isLeft)) => F.pure(x)
+      case x if retries.exists(_ <= 0) =>
+        logger.debug(ctx.context)("All retries have been exhausted").as(x)
+      case x =>
+        logger
+          .debug(ctx.context)("Failures detected, retrying failed records")
+          .flatMap { _ =>
+            for {
+              _ <- F.sleep(retryDuration)
+              failedRecords <- F.fromOption(
+                x.left.flatMap { e =>
+                  e.errors.flatMap(errors => errors.right)
+                },
+                new RuntimeException(
+                  "Failed records empty, this should never happen"
+                )
+              )
+              res <- putWithRetry(
+                failedRecords.map(_.record),
+                retries.map(_ - 1),
+                retryDuration
+              )
+            } yield x.combine(res)
+          }
+    }
+  }
 }
 
 object Producer {
@@ -181,7 +238,8 @@ object Producer {
     * @param putReqeustLogEncoder
     */
   final class LogEncoders(implicit
-      val recordLogEncoder: LogEncoder[Record]
+      val recordLogEncoder: LogEncoder[Record],
+      val finiteDurationEncoder: LogEncoder[FiniteDuration]
   )
 
   private[kinesis4cats] def md5Digest = MessageDigest.getInstance("MD5")
@@ -346,11 +404,14 @@ object Producer {
     *   The error code of the failure
     * @param erorrMessage
     *   The error message of the failure
+    * @param requestIndex
+    *   Index of record in the overarching request
     */
   final case class FailedRecord(
       record: Record,
       errorCode: String,
-      erorrMessage: String
+      erorrMessage: String,
+      requestIndex: Int
   )
 
   /** Represents a record that was invalid per the Kinesis limits
