@@ -57,7 +57,7 @@ object Kinesis4CatsPlugin extends AutoPlugin {
     tlCiMimaBinaryIssueCheck := tlBaseVersion.value != "0.0",
     resolvers += "jitpack" at "https://jitpack.io",
     protobufUseSystemProtoc := sys.env.get("CI").nonEmpty,
-    githubWorkflowBuildPreamble ++= List(
+    githubWorkflowJobSetup ++= List(
       WorkflowStep.Use(
         UseRef.Public("arduino", "setup-protoc", "v1"),
         name = Some("Setup protoc"),
