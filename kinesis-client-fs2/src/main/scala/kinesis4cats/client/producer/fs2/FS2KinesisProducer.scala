@@ -22,6 +22,8 @@ import cats.effect.Async
 import cats.effect.kernel.Resource
 import cats.effect.std.Queue
 import cats.effect.syntax.all._
+import org.typelevel.log4cats.StructuredLogger
+import org.typelevel.log4cats.slf4j.Slf4jLogger
 import software.amazon.awssdk.services.kinesis.KinesisAsyncClient
 import software.amazon.awssdk.services.kinesis.model.PutRecordsRequest
 import software.amazon.awssdk.services.kinesis.model.PutRecordsResponse
@@ -43,12 +45,11 @@ import kinesis4cats.producer.fs2.FS2Producer
   *   Function that can be run after each of the put results from the underlying
   * @param F
   *   [[cats.effect.Async Async]]
-  * @param LE
-  *   [[kinesis4cats.producer.Producer.LogEncoders Producer.LogEncoders]]
   */
 final class FS2KinesisProducer[F[_]] private[kinesis4cats] (
+    override val logger: StructuredLogger[F],
     override val config: FS2Producer.Config,
-    override protected val queue: Queue[F, Record],
+    override protected val queue: Queue[F, Option[Record]],
     override protected val underlying: KinesisProducer[F]
 )(
     override protected val callback: (
@@ -62,14 +63,14 @@ final class FS2KinesisProducer[F[_]] private[kinesis4cats] (
 object FS2KinesisProducer {
 
   /** Basic constructor for the
-    * [[kinesis4cats.client.producer.KinesisProducer KinesisProducer]]
+    * [[kinesis4cats.client.producer.fs2.FS2KinesisProducer FS2KinesisProducer]]
     *
     * @param config
-    *   [[kinesis4cats.producer.Producer.Config Producer.Config]]
+    *   [[kinesis4cats.producer.fs2.FS2Producer.Config FS2Producer.Config]]
     * @param _underlying
     *   [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/kinesis/KinesisAsyncClient.html KinesisAsyncClient]]
     *   instance
-    * @param callback:
+    * @param callback
     *   Function that can be run after each of the put results from the
     *   underlying
     * @param F
@@ -82,7 +83,7 @@ object FS2KinesisProducer {
     *   [[kinesis4cats.producer.ShardMapCache.LogEncoders ShardMapCache.LogEncoders]]
     * @return
     *   [[cats.effect.Resource Resource]] of
-    *   [[kinesis4cats.client.producer.KinesisProducer KinesisProducer]]
+    *   [[kinesis4cats.client.producer.fs2.FS2KinesisProducer FS2KinesisProducer]]
     */
   def apply[F[_]](
       config: FS2Producer.Config,
@@ -95,10 +96,16 @@ object FS2KinesisProducer {
       KLE: KinesisClient.LogEncoders,
       SLE: ShardMapCache.LogEncoders
   ): Resource[F, FS2KinesisProducer[F]] = for {
-    producer <- KinesisProducer(
+    logger <- Slf4jLogger.create[F].toResource
+    underlying <- KinesisProducer(
       config.producerConfig,
       _underlying
     )
-    queue <- Queue.bounded[F, Record](config.queueSize).toResource
-  } yield new FS2KinesisProducer[F](config, queue, producer)(callback)
+    queue <- Queue.bounded[F, Option[Record]](config.queueSize).toResource
+    producer = new FS2KinesisProducer[F](logger, config, queue, underlying)(
+      callback
+    )
+    _ <- producer.start()
+    _ <- Resource.onFinalize(producer.stop())
+  } yield producer
 }

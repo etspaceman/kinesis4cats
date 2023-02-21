@@ -27,38 +27,119 @@ import cats.effect.Resource
 import cats.effect.std.Queue
 import cats.effect.syntax.all._
 import cats.syntax.all._
+import org.typelevel.log4cats.StructuredLogger
 
+import kinesis4cats.logging.LogContext
+
+/** An interface that runs a [[kinesis4cats.producer.Producer Producer's]]
+  * putWithRetry method in the background against a stream of records, offered
+  * by the user. This is intended to be used in the same way that the
+  * [[https://github.com/awslabs/amazon-kinesis-producer KPL]].
+  *
+  * @param F
+  *   [[cats.effect.Async Async]]
+  * @tparam PutReq
+  *   The class that represents a batch put request for the underlying client
+  * @tparam PutRes
+  *   The class that represents a batch put response for the underlying client
+  */
 abstract class FS2Producer[F[_], PutReq, PutRes](implicit
     F: Async[F]
 ) {
 
+  def logger: StructuredLogger[F]
   def config: FS2Producer.Config
-  protected def queue: Queue[F, Record]
+
+  /** The underlying queue of records to process
+    */
+  protected def queue: Queue[F, Option[Record]]
+
+  /** A user defined function that can be run against the results of a request
+    */
   protected def callback
       : (Ior[Producer.Error, NonEmptyList[PutRes]], Async[F]) => F[Unit]
 
   protected def underlying: Producer[F, PutReq, PutRes]
 
-  private[kinesis4cats] def start(): Resource[F, Unit] = Stream
-    .fromQueueUnterminated(queue)
-    .groupWithin(config.putMaxChunk, config.putMaxWait)
-    .evalMap { x =>
-      x.toNel.fold(F.unit) { records =>
-        underlying
-          .putWithRetry(records, config.putMaxRetries, config.putRetryInterval)
-          .flatMap(callback(_, implicitly))
-          .void
-      }
-    }
-    .compile
-    .drain
-    .background
-    .void
+  /** Put a record into the producer's buffer, to be batched and produced at a
+    * defined interval
+    *
+    * @param record
+    *   [[kinesis4cats.producer.Record Record]]
+    * @return
+    *   F of Unit
+    */
+  def put(record: Record): F[Unit] = queue.offer(Some(record))
+
+  private[kinesis4cats] def stop(): F[Unit] = {
+    val ctx = LogContext()
+    for {
+      _ <- logger.debug(ctx.context)("Stopping the FS2KinesisProducer")
+      _ <- queue.offer(None)
+    } yield ()
+  }
+
+  /** Start the processing of records
+    */
+  private[kinesis4cats] def start(): Resource[F, Unit] = {
+    val ctx = LogContext()
+    for {
+      _ <- logger
+        .debug(ctx.context)("Starting the FS2KinesisProducer")
+        .toResource
+      _ <- Stream
+        .fromQueueNoneTerminated(queue)
+        .groupWithin(config.putMaxChunk, config.putMaxWait)
+        .evalMap { x =>
+          val c = ctx.addEncoded("batchSize", x.size)
+          x.toNel.fold(F.unit) { records =>
+            for {
+              _ <- logger.debug(c.context)(
+                "Received batch to process"
+              )
+              _ <- underlying
+                .putWithRetry(
+                  records,
+                  config.putMaxRetries,
+                  config.putRetryInterval
+                )
+                .flatMap(callback(_, implicitly))
+                .void
+              _ <- logger.debug(c.context)(
+                "Finished processing batch"
+              )
+            } yield ()
+          }
+        }
+        .compile
+        .drain
+        .background
+        .void
+    } yield ()
+
+  }
 
 }
 
 object FS2Producer {
 
+  /** Configuration for the
+    * [[kinesis4cats.producer.fs2.FS2Producer FS2Producer]]
+    *
+    * @param queueSize
+    *   Size of underlying buffer of records
+    * @param putMaxChunk
+    *   Max records to buffer before running a put request
+    * @param putMaxWait
+    *   Max time to wait before running a put request
+    * @param putMaxRetries
+    *   Number of retries for the underlying put request. None means infinite
+    *   retries.
+    * @param putRetryInterval
+    *   Delay between retries
+    * @param producerConfig
+    *   [[kinesis4cats.producer.Producer.Config Producer.Config]]
+    */
   final case class Config(
       queueSize: Int,
       putMaxChunk: Int,

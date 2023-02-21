@@ -53,8 +53,9 @@ import kinesis4cats.producer.fs2.FS2Producer
   *   [[kinesis4cats.producer.Producer.LogEncoders Producer.LogEncoders]]
   */
 final class FS2KinesisProducer[F[_]] private[kinesis4cats] (
+    override val logger: StructuredLogger[F],
     override val config: FS2Producer.Config,
-    override protected val queue: Queue[F, Record],
+    override protected val queue: Queue[F, Option[Record]],
     override protected val underlying: KinesisProducer[F]
 )(
     override protected val callback: (
@@ -68,10 +69,10 @@ final class FS2KinesisProducer[F[_]] private[kinesis4cats] (
 object FS2KinesisProducer {
 
   /** Basic constructor for the
-    * [[kinesis4cats.smithy4s.client.producer.KinesisProducer KinesisProducer]]
+    * [[kinesis4cats.smithy4s.client.producer.fs2.FS2KinesisProducer FS2KinesisProducer]]
     *
     * @param config
-    *   [[kinesis4cats.producer.Producer.Config Producer.Config]]
+    *   [[kinesis4cats.producer.fs2.FS2Producer.Config FS2Producer.Config]]
     * @param client
     *   [[org.http4s.client.Client Client]] instance
     * @param region
@@ -87,7 +88,7 @@ object FS2KinesisProducer {
     *   [[https://github.com/disneystreaming/smithy4s/blob/series/0.17/modules/aws-kernel/src/smithy4s/aws/AwsCredentials.scala AwsCredentials]]
     *   Default uses
     *   [[https://github.com/disneystreaming/smithy4s/blob/series/0.17/modules/aws/src/smithy4s/aws/AwsCredentialsProvider.scala AwsCredentialsProvider.default]]
-    * @param callback:
+    * @param callback
     *   Function that can be run after each of the put results from the
     *   underlying
     * @param F
@@ -122,13 +123,19 @@ object FS2KinesisProducer {
       KLE: KinesisClient.LogEncoders[F],
       SLE: ShardMapCache.LogEncoders
   ): Resource[F, FS2KinesisProducer[F]] = for {
-    producer <- KinesisProducer(
+    logger <- loggerF(F).toResource
+    underlying <- KinesisProducer(
       config.producerConfig,
       client,
       region,
       loggerF,
       credsF
     )
-    queue <- Queue.bounded[F, Record](config.queueSize).toResource
-  } yield new FS2KinesisProducer[F](config, queue, producer)(callback)
+    queue <- Queue.bounded[F, Option[Record]](config.queueSize).toResource
+    producer = new FS2KinesisProducer[F](logger, config, queue, underlying)(
+      callback
+    )
+    _ <- producer.start()
+    _ <- Resource.onFinalize(producer.stop())
+  } yield producer
 }
