@@ -155,8 +155,8 @@ object FS2Producer {
   object Config {
     def default(streamNameOrArn: StreamNameOrArn): Config = Config(
       1000,
-      100,
-      10.seconds,
+      500,
+      100.millis,
       Some(5),
       0.seconds,
       Producer.Config.default(streamNameOrArn)

@@ -78,7 +78,7 @@ lazy val `shared-tests` = projectMatrix
   )
   .jvmPlatform(allScalaVersions)
   .enableIntegrationTests
-  .dependsOn(`shared-localstack`, `kernel-tests`)
+  .dependsOn(`shared-localstack`, `shared-fs2`, `kernel-tests`)
 
 lazy val `aws-v2-localstack` = projectMatrix
   .settings(

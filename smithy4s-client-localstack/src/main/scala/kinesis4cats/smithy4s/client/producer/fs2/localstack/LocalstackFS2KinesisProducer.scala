@@ -100,9 +100,17 @@ object LocalstackFS2KinesisProducer {
       producerConfig.producerConfig,
       _underlying
     )
-  } yield new FS2KinesisProducer[F](logger, producerConfig, queue, underlying)(
-    callback
-  )
+    producer = new FS2KinesisProducer[F](
+      logger,
+      producerConfig,
+      queue,
+      underlying
+    )(
+      callback
+    )
+    _ <- producer.start()
+    _ <- Resource.onFinalize(producer.stop())
+  } yield producer
 
   /** Creates a [[cats.effect.Resource Resource]] of a
     * [[kinesis4cats.smithy4s.client.producer.KinesisProducer KinesisProducer]]
