@@ -60,7 +60,8 @@ object Kinesis4CatsPlugin extends AutoPlugin {
     githubWorkflowBuildPreamble ++= List(
       WorkflowStep.Use(
         UseRef.Public("arduino", "setup-protoc", "v1"),
-        name = Some("Setup protoc")
+        name = Some("Setup protoc"),
+        params = Map("repo-token" -> "${{ secrets.GITHUB_TOKEN }}")
       )
     ),
     githubWorkflowBuild := {
