@@ -324,7 +324,7 @@ lazy val `kinesis-client-localstack` = projectMatrix
   )
   .jvmPlatform(allScalaVersions)
   .enableIntegrationTests
-  .dependsOn(`aws-v2-localstack`, `kinesis-client`)
+  .dependsOn(`aws-v2-localstack`, `kinesis-client-fs2`)
 
 lazy val `kinesis-client-tests` = projectMatrix
   .enablePlugins(NoPublishPlugin)
@@ -411,7 +411,7 @@ lazy val `smithy4s-client-localstack` = projectMatrix
     description := "A test-kit for working with Kinesis and Localstack, via the Smithy4s Client project"
   )
   .jvmPlatform(last2ScalaVersions)
-  .dependsOn(`shared-localstack`, `smithy4s-client`)
+  .dependsOn(`shared-localstack`, `smithy4s-client-fs2`)
 
 lazy val `smithy4s-client-tests` = projectMatrix
   .enablePlugins(NoPublishPlugin)

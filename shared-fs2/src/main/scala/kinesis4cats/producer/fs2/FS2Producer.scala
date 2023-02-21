@@ -17,7 +17,7 @@
 package kinesis4cats.producer
 package fs2
 
-import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.duration._
 
 import _root_.fs2.Stream
 import cats.data.Ior
@@ -30,6 +30,7 @@ import cats.syntax.all._
 import org.typelevel.log4cats.StructuredLogger
 
 import kinesis4cats.logging.LogContext
+import kinesis4cats.models.StreamNameOrArn
 
 /** An interface that runs a [[kinesis4cats.producer.Producer Producer's]]
   * putWithRetry method in the background against a stream of records, offered
@@ -71,6 +72,8 @@ abstract class FS2Producer[F[_], PutReq, PutRes](implicit
     */
   def put(record: Record): F[Unit] = queue.offer(Some(record))
 
+  /** Stop the processing of records
+    */
   private[kinesis4cats] def stop(): F[Unit] = {
     val ctx = LogContext()
     for {
@@ -148,5 +151,16 @@ object FS2Producer {
       putRetryInterval: FiniteDuration,
       producerConfig: Producer.Config
   )
+
+  object Config {
+    def default(streamNameOrArn: StreamNameOrArn): Config = Config(
+      1000,
+      100,
+      10.seconds,
+      Some(5),
+      0.seconds,
+      Producer.Config.default(streamNameOrArn)
+    )
+  }
 
 }
