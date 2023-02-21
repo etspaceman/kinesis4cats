@@ -28,6 +28,7 @@ object Kinesis4CatsPlugin extends AutoPlugin {
   import de.heikoseeberger.sbtheader.HeaderPlugin.autoImport._
   import org.scalafmt.sbt.ScalafmtPlugin.autoImport._
   import sbtassembly.AssemblyPlugin.autoImport._
+  import sbtprotobuf.ProtobufPlugin.autoImport._
   import scalafix.sbt.ScalafixPlugin.autoImport._
 
   private val primaryJavaOSCond = Def.setting {
@@ -55,6 +56,13 @@ object Kinesis4CatsPlugin extends AutoPlugin {
     scalaVersion := Scala213,
     tlCiMimaBinaryIssueCheck := tlBaseVersion.value != "0.0",
     resolvers += "jitpack" at "https://jitpack.io",
+    protobufUseSystemProtoc := sys.env.get("CI").nonEmpty,
+    githubWorkflowBuildPreamble ++= List(
+      WorkflowStep.Use(
+        UseRef.Public("arduino", "setup-protoc", "v1"),
+        name = Some("Setup protoc")
+      )
+    ),
     githubWorkflowBuild := {
       val style = (tlCiHeaderCheck.value, tlCiScalafmtCheck.value) match {
         case (true, true) => // headers + formatting
