@@ -35,8 +35,8 @@ import kinesis4cats.producer.fs2.FS2ProducerSpec
 import kinesis4cats.producer.logging.instances.show._
 import kinesis4cats.smithy4s.client.localstack.LocalstackKinesisClient
 import kinesis4cats.smithy4s.client.logging.instances.show._
-import kinesis4cats.syntax.bytebuffer._
 import kinesis4cats.smithy4s.client.producer.fs2.localstack.LocalstackFS2KinesisProducer
+import kinesis4cats.syntax.bytebuffer._
 
 class FS2KinesisProducerSpec
     extends FS2ProducerSpec[
@@ -92,7 +92,10 @@ class FS2KinesisProducerSpec
       )((_: List[CommittableRecord[IO]]) => IO.unit)
       _ <- deferredWithResults.deferred.get.toResource
       producer <- producerResource
-    } yield FS2ProducerSpec.Resources(deferredWithResults.resultsQueue, producer)
+    } yield FS2ProducerSpec.Resources(
+      deferredWithResults.resultsQueue,
+      producer
+    )
   )
 
 }
