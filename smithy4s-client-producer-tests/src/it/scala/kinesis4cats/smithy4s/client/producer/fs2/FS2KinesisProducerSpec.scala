@@ -45,7 +45,7 @@ class FS2KinesisProducerSpec
       CommittableRecord[IO]
     ]() {
   override lazy val streamName: String =
-    s"kinesis-client-producer-spec-${UUID.randomUUID().toString()}"
+    s"kinesis-client-fs2-producer-spec-${UUID.randomUUID().toString()}"
 
   def http4sClientResource =
     BlazeClientBuilder[IO].withCheckEndpointAuthentication(false).resource

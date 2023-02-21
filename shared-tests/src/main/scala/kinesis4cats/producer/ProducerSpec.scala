@@ -70,7 +70,7 @@ private[kinesis4cats] abstract class ProducerSpec[PutReq, PutRes, A]
           (x: Int) => IO(x === 50),
           noop[IO, Int]
         )(resources.resultsQueue.size)
-        _ <- IO(assert(size === 50))
+        _ <- IO(assertEquals(size, 50))
         results <- resources.resultsQueue.tryTakeN(None)
         resultRecords <- results.traverse { x =>
           IO.fromEither(decode[TestData](new String(aAsBytes(x))))

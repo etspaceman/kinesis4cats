@@ -41,7 +41,7 @@ class KinesisFS2ProducerSpec
       CommittableRecord[IO]
     ]() {
   override lazy val streamName: String =
-    s"kinesis-client-producer-spec-${UUID.randomUUID().toString()}"
+    s"kinesis-client-fs2-producer-spec-${UUID.randomUUID().toString()}"
   override def producerResource
       : Resource[IO, FS2Producer[IO, PutRecordsRequest, PutRecordsResponse]] =
     LocalstackFS2KinesisProducer.resource[IO](streamName)
