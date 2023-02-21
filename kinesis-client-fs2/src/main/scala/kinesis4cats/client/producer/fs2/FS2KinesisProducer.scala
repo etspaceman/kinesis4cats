@@ -22,12 +22,12 @@ import cats.effect.Async
 import cats.effect.kernel.Resource
 import cats.effect.std.Queue
 import cats.effect.syntax.all._
+import software.amazon.awssdk.services.kinesis.KinesisAsyncClient
+import software.amazon.awssdk.services.kinesis.model.PutRecordsRequest
+import software.amazon.awssdk.services.kinesis.model.PutRecordsResponse
 
 import kinesis4cats.producer._
 import kinesis4cats.producer.fs2.FS2Producer
-import software.amazon.awssdk.services.kinesis.model.PutRecordsResponse
-import software.amazon.awssdk.services.kinesis.model.PutRecordsRequest
-import software.amazon.awssdk.services.kinesis.KinesisAsyncClient
 
 /** A buffered Kinesis producer which will produce batches of data at a
   * configurable rate.

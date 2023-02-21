@@ -34,7 +34,8 @@ abstract class FS2Producer[F[_], PutReq, PutRes](implicit
 
   def config: FS2Producer.Config
   protected def queue: Queue[F, Record]
-  protected def callback: (Ior[Producer.Error, NonEmptyList[PutRes]], Async[F]) => F[Unit]
+  protected def callback
+      : (Ior[Producer.Error, NonEmptyList[PutRes]], Async[F]) => F[Unit]
 
   protected def underlying: Producer[F, PutReq, PutRes]
 
