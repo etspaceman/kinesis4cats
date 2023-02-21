@@ -120,6 +120,14 @@ pull_request_rules:
       add:
       - kinesis-client
       remove: []
+- name: Label kinesis-client-fs2 PRs
+  conditions:
+  - files~=^kinesis-client-fs2/
+  actions:
+    label:
+      add:
+      - kinesis-client-fs2
+      remove: []
 - name: Label kinesis-client-localstack PRs
   conditions:
   - files~=^kinesis-client-localstack/
@@ -216,6 +224,14 @@ pull_request_rules:
       add:
       - shared-ciris
       remove: []
+- name: Label shared-fs2 PRs
+  conditions:
+  - files~=^shared-fs2/
+  actions:
+    label:
+      add:
+      - shared-fs2
+      remove: []
 - name: Label shared-localstack PRs
   conditions:
   - files~=^shared-localstack/
@@ -239,6 +255,14 @@ pull_request_rules:
     label:
       add:
       - smithy4s-client
+      remove: []
+- name: Label smithy4s-client-fs2 PRs
+  conditions:
+  - files~=^smithy4s-client-fs2/
+  actions:
+    label:
+      add:
+      - smithy4s-client-fs2
       remove: []
 - name: Label smithy4s-client-localstack PRs
   conditions:

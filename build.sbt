@@ -32,6 +32,15 @@ lazy val shared = projectMatrix
   .enableIntegrationTests
   .dependsOn(compat)
 
+lazy val `shared-fs2` = projectMatrix
+  .settings(
+    description := "Common code for FS2",
+    libraryDependencies ++= Seq(FS2.core)
+  )
+  .jvmPlatform(allScalaVersions)
+  .enableIntegrationTests
+  .dependsOn(shared)
+
 lazy val `shared-circe` = projectMatrix
   .settings(
     description := "Common shared utilities for Circe",
@@ -292,6 +301,11 @@ lazy val `kinesis-client` = projectMatrix
   .enableIntegrationTests
   .dependsOn(shared)
 
+lazy val `kinesis-client-fs2` = projectMatrix
+  .jvmPlatform(allScalaVersions)
+  .enableIntegrationTests
+  .dependsOn(`kinesis-client`, `shared-fs2`)
+
 lazy val `kinesis-client-logging-circe` = projectMatrix
   .settings(
     description := "JSON structured logging instances for the Java Kinesis Client, via Circe"
@@ -376,6 +390,11 @@ lazy val `smithy4s-client` = projectMatrix
   .jvmPlatform(last2ScalaVersions)
   .enableIntegrationTests
   .dependsOn(shared)
+
+lazy val `smithy4s-client-fs2` = projectMatrix
+  .jvmPlatform(last2ScalaVersions)
+  .enableIntegrationTests
+  .dependsOn(`smithy4s-client`, `shared-fs2`)
 
 lazy val `smithy4s-client-logging-circe` = projectMatrix
   .enablePlugins(Smithy4sCodegenPlugin)
@@ -472,6 +491,7 @@ lazy val docs = projectMatrix
     compat,
     `kernel-tests`,
     shared,
+    `shared-fs2`,
     `shared-circe`,
     `shared-ciris`,
     `shared-localstack`,
@@ -490,9 +510,11 @@ lazy val docs = projectMatrix
     `kpl-logging-circe`,
     `kpl-localstack`,
     `kinesis-client`,
+    `kinesis-client-fs2`,
     `kinesis-client-logging-circe`,
     `kinesis-client-localstack`,
     `smithy4s-client`,
+    `smithy4s-client-fs2`,
     `smithy4s-client-logging-circe`,
     `smithy4s-client-localstack`
   )
@@ -508,6 +530,7 @@ lazy val unidocs = projectMatrix
         compat,
         `kernel-tests`,
         shared,
+        `shared-fs2`,
         `shared-circe`,
         `shared-ciris`,
         `shared-localstack`,
@@ -526,9 +549,11 @@ lazy val unidocs = projectMatrix
         `kpl-logging-circe`,
         `kpl-localstack`,
         `kinesis-client`,
+        `kinesis-client-fs2`,
         `kinesis-client-logging-circe`,
         `kinesis-client-localstack`,
         `smithy4s-client`,
+        `smithy4s-client-fs2`,
         `smithy4s-client-logging-circe`,
         `smithy4s-client-localstack`
       ).flatMap(_.projectRefs): _*
@@ -539,6 +564,7 @@ lazy val allProjects = Seq(
   compat,
   `kernel-tests`,
   shared,
+  `shared-fs2`,
   `shared-circe`,
   `shared-ciris`,
   `shared-localstack`,
@@ -559,12 +585,14 @@ lazy val allProjects = Seq(
   `kpl-localstack`,
   `kpl-tests`,
   `kinesis-client`,
+  `kinesis-client-fs2`,
   `kinesis-client-logging-circe`,
   `kinesis-client-localstack`,
   `kinesis-client-tests`,
   `kinesis-client-producer-tests`,
   `smithy4s-client-transformers`,
   `smithy4s-client`,
+  `smithy4s-client-fs2`,
   `smithy4s-client-logging-circe`,
   `smithy4s-client-localstack`,
   `smithy4s-client-tests`,
