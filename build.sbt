@@ -25,6 +25,7 @@ lazy val shared = projectMatrix
     libraryDependencies ++= Seq(
       Aws.Aggregation.aggregator % Test,
       Aws.Aggregation.deaggregator % Test,
+      Aws.kcl % Test,
       Log4Cats.slf4j % Test
     )
   )
