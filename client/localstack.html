@@ -85,10 +85,12 @@
         <li class="level2"><a href="../kcl/localstack.html">Localstack</a></li>
         <li class="level1 nav-header">Kinesis Client</li>
         <li class="level2"><a href="getting-started.html">Getting Started</a></li>
+        <li class="level2"><a href="fs2.html">FS2</a></li>
         <li class="level2"><a href="circe.html">Circe Logging</a></li>
         <li class="level2 active"><a href="#">Localstack</a></li>
         <li class="level1 nav-header">Smithy4s</li>
         <li class="level2"><a href="../smithy4s/getting-started.html">Getting Started</a></li>
+        <li class="level2"><a href="../smithy4s/fs2.html">FS2</a></li>
         <li class="level2"><a href="../smithy4s/circe.html">Circe Logging</a></li>
         <li class="level2"><a href="../smithy4s/localstack.html">Localstack</a></li>
         <li class="level1 nav-header">Localstack</li>
@@ -153,6 +155,7 @@
 </span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">client</span><span>.</span><span class="identifier">localstack</span><span>.</span><span class="type-name">LocalstackKinesisClient</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">client</span><span>.</span><span class="identifier">logging</span><span>.</span><span class="identifier">instances</span><span>.</span><span class="identifier">show</span><span>.</span><span class="identifier">_</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">client</span><span>.</span><span class="identifier">producer</span><span>.</span><span class="identifier">localstack</span><span>.</span><span class="type-name">LocalstackKinesisProducer</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">client</span><span>.</span><span class="identifier">producer</span><span>.</span><span class="identifier">fs2</span><span>.</span><span class="identifier">localstack</span><span>.</span><span class="type-name">LocalstackFS2KinesisProducer</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">producer</span><span>.</span><span class="identifier">logging</span><span>.</span><span class="identifier">instances</span><span>.</span><span class="identifier">show</span><span>.</span><span class="identifier">_</span><span>
 
 </span><span class="comment">// Load a KinesisClient as an effect
@@ -166,7 +169,10 @@
 </span><span class="type-name">LocalstackKinesisClient</span><span>.</span><span class="identifier">streamResource</span><span>[</span><span class="type-name">IO</span><span>](</span><span class="string-literal">&quot;my-stream&quot;</span><span>, </span><span class="number-literal">1</span><span>)
 
 </span><span class="comment">// Load a KinesisProducer as a resource
-</span><span class="type-name">LocalstackKinesisProducer</span><span>.</span><span class="identifier">resource</span><span>[</span><span class="type-name">IO</span><span>](</span><span class="string-literal">&quot;my-stream&quot;</span><span>)</span></code></pre>
+</span><span class="type-name">LocalstackKinesisProducer</span><span>.</span><span class="identifier">resource</span><span>[</span><span class="type-name">IO</span><span>](</span><span class="string-literal">&quot;my-stream&quot;</span><span>)
+
+</span><span class="comment">// Load a FS2KinesisProducer as a resource
+</span><span class="type-name">LocalstackFS2KinesisProducer</span><span>.</span><span class="identifier">resource</span><span>[</span><span class="type-name">IO</span><span>](</span><span class="string-literal">&quot;my-stream&quot;</span><span>)</span></code></pre>
 
         <hr style="margin-top: 30px"/>
         <footer style="font-size: 90%; text-align: center">

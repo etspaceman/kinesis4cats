@@ -85,10 +85,12 @@
         <li class="level2"><a href="../kcl/localstack.html">Localstack</a></li>
         <li class="level1 nav-header">Kinesis Client</li>
         <li class="level2"><a href="../client/getting-started.html">Getting Started</a></li>
+        <li class="level2"><a href="../client/fs2.html">FS2</a></li>
         <li class="level2"><a href="../client/circe.html">Circe Logging</a></li>
         <li class="level2"><a href="../client/localstack.html">Localstack</a></li>
         <li class="level1 nav-header">Smithy4s</li>
         <li class="level2"><a href="getting-started.html">Getting Started</a></li>
+        <li class="level2"><a href="fs2.html">FS2</a></li>
         <li class="level2"><a href="circe.html">Circe Logging</a></li>
         <li class="level2 active"><a href="#">Localstack</a></li>
         <li class="level1 nav-header">Localstack</li>
@@ -157,6 +159,7 @@
 </span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">smithy4s</span><span>.</span><span class="identifier">client</span><span>.</span><span class="identifier">localstack</span><span>.</span><span class="type-name">LocalstackKinesisClient</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">smithy4s</span><span>.</span><span class="identifier">client</span><span>.</span><span class="identifier">logging</span><span>.</span><span class="identifier">instances</span><span>.</span><span class="identifier">show</span><span>.</span><span class="identifier">_</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">smithy4s</span><span>.</span><span class="identifier">client</span><span>.</span><span class="identifier">producer</span><span>.</span><span class="identifier">localstack</span><span>.</span><span class="type-name">LocalstackKinesisProducer</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">smithy4s</span><span>.</span><span class="identifier">client</span><span>.</span><span class="identifier">producer</span><span>.</span><span class="identifier">fs2</span><span>.</span><span class="identifier">localstack</span><span>.</span><span class="type-name">LocalstackFS2KinesisProducer</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">producer</span><span>.</span><span class="identifier">logging</span><span>.</span><span class="identifier">instances</span><span>.</span><span class="identifier">show</span><span>.</span><span class="identifier">_</span><span>
 </span><span class="comment">// Load a KinesisClient as a Resource
 </span><span class="keyword">val</span><span> </span><span class="identifier">kinesisClientResource</span><span> = </span><span class="keyword">for</span><span> {
@@ -176,6 +179,19 @@
         .</span><span class="identifier">withCheckEndpointAuthentication</span><span>(</span><span class="boolean-literal">false</span><span>)
         .</span><span class="identifier">resource</span><span>
     </span><span class="identifier">producer</span><span> &lt;- </span><span class="type-name">LocalstackKinesisProducer</span><span>.</span><span class="identifier">resource</span><span>[</span><span class="type-name">IO</span><span>](
+        </span><span class="identifier">underlying</span><span>,
+        </span><span class="string-literal">&quot;my-stream&quot;</span><span>,
+        </span><span class="type-name">IO</span><span>.</span><span class="identifier">pure</span><span>(</span><span class="type-name">AwsRegion</span><span>.</span><span class="type-name">US_EAST_1</span><span>),
+        </span><span class="identifier">loggerF</span><span> = (</span><span class="identifier">_</span><span>: </span><span class="type-name">Async</span><span>[</span><span class="type-name">IO</span><span>]) =&gt; </span><span class="type-name">Slf4jLogger</span><span>.</span><span class="identifier">create</span><span>[</span><span class="type-name">IO</span><span>]
+    )
+} </span><span class="keyword">yield</span><span> </span><span class="identifier">producer</span><span>
+
+</span><span class="comment">// Load a FS2KinesisProducer as a Resource
+</span><span class="keyword">val</span><span> </span><span class="identifier">fs2KinesisProducerResource</span><span> = </span><span class="keyword">for</span><span> {
+    </span><span class="identifier">underlying</span><span> &lt;- </span><span class="type-name">BlazeClientBuilder</span><span>[</span><span class="type-name">IO</span><span>]
+        .</span><span class="identifier">withCheckEndpointAuthentication</span><span>(</span><span class="boolean-literal">false</span><span>)
+        .</span><span class="identifier">resource</span><span>
+    </span><span class="identifier">producer</span><span> &lt;- </span><span class="type-name">LocalstackFS2KinesisProducer</span><span>.</span><span class="identifier">resource</span><span>[</span><span class="type-name">IO</span><span>](
         </span><span class="identifier">underlying</span><span>,
         </span><span class="string-literal">&quot;my-stream&quot;</span><span>,
         </span><span class="type-name">IO</span><span>.</span><span class="identifier">pure</span><span>(</span><span class="type-name">AwsRegion</span><span>.</span><span class="type-name">US_EAST_1</span><span>),
