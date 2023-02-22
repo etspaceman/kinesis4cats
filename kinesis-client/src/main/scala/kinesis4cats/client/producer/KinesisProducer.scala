@@ -53,7 +53,7 @@ import kinesis4cats.syntax.id._
   * @param LE
   *   [[kinesis4cats.producer.Producer.LogEncoders Producer.LogEncoders]]
   */
-final class KinesisProducer[F[_]] private (
+final class KinesisProducer[F[_]] private[kinesis4cats] (
     override val logger: StructuredLogger[F],
     override val shardMapCache: ShardMapCache[F],
     override val config: Producer.Config,
@@ -107,7 +107,7 @@ final class KinesisProducer[F[_]] private (
 
 object KinesisProducer {
 
-  private def getShardMap[F[_]](
+  private[kinesis4cats] def getShardMap[F[_]](
       client: KinesisClient[F],
       streamNameOrArn: models.StreamNameOrArn
   )(implicit
