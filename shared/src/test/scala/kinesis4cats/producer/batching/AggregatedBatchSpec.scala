@@ -30,7 +30,6 @@ import software.amazon.kinesis.retrieval.KinesisClientRecord
 import kinesis4cats.instances.eq._
 import kinesis4cats.models.ShardId
 import kinesis4cats.syntax.bytebuffer._
-import kinesis4cats.syntax.id._
 
 @SuppressWarnings(Array("scalafix:DisableSyntax.null"))
 class AggregatedBatchSpec extends munit.CatsEffectSuite {
@@ -133,14 +132,13 @@ class AggregatedBatchSpec extends munit.CatsEffectSuite {
     val kclRecord = KinesisClientRecord
       .builder()
       .data(ByteBuffer.wrap(testBytes))
-      .partitionKey(batch.aggPartitionKey)
-      .maybeTransform(batch.aggExplicitHashKey)(_.explicitHashKey(_))
+      .partitionKey(batch.partitionKey)
       .aggregated(true)
       .approximateArrivalTimestamp(Instant.now())
       .build()
 
     val res = new AggregatorUtil()
-      .deaggregate(java.util.List.of(kclRecord))
+      .deaggregate(java.util.List.of[KinesisClientRecord](kclRecord))
       .asScala
       .toList
 
