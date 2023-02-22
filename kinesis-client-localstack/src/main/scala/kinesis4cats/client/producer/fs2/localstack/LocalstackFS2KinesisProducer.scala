@@ -14,32 +14,34 @@
  * limitations under the License.
  */
 
-package kinesis4cats.client.producer.localstack
+package kinesis4cats.client.producer
+package fs2
+package localstack
 
 import cats.effect._
-import cats.effect.syntax.all._
-import cats.syntax.all._
-import org.typelevel.log4cats.slf4j.Slf4jLogger
+import software.amazon.awssdk.services.kinesis.model.PutRecordsResponse
 
 import kinesis4cats.client.KinesisClient
-import kinesis4cats.client.producer.KinesisProducer
 import kinesis4cats.localstack.LocalstackConfig
 import kinesis4cats.localstack.aws.v2.AwsClients
 import kinesis4cats.models.StreamNameOrArn
 import kinesis4cats.producer.Producer
-import kinesis4cats.producer.ShardMap
 import kinesis4cats.producer.ShardMapCache
+import kinesis4cats.producer.fs2.FS2Producer
 
-object LocalstackKinesisProducer {
+object LocalstackFS2KinesisProducer {
 
   /** Builds a [[kinesis4cats.client.producer.KinesisProducer KinesisProducer]]
     * that is compliant for Localstack usage. Lifecycle is managed as a
     * [[cats.effect.Resource Resource]].
     *
     * @param producerConfig
-    *   [[kinesis4cats.producer.Producer.Config Producer.Config]]
+    *   [[kinesis4cats.producer.fs2.FS2Producer.Config FS2Producer.Config]]
     * @param config
     *   [[kinesis4cats.localstack.LocalstackConfig LocalstackConfig]]
+    * @param callback
+    *   Function that can be run after each of the put results from the
+    *   underlying
     * @param F
     *   F with an [[cats.effect.Async Async]] instance
     * @param LE
@@ -50,39 +52,25 @@ object LocalstackKinesisProducer {
     *   [[kinesis4cats.producer.Producer.LogEncoders Producer.LogEncoders]]
     * @return
     *   [[cats.effect.Resource Resource]] of
-    *   [[kinesis4cats.client.producer.KinesisProducer KinesisProducer]]
+    *   [[kinesis4cats.client.producer.fs2.FS2KinesisProducer FS2KinesisProducer]]
     */
   def resource[F[_]](
-      producerConfig: Producer.Config,
+      producerConfig: FS2Producer.Config,
       config: LocalstackConfig,
-      shardMapF: (
-          KinesisClient[F],
-          StreamNameOrArn,
-          Async[F]
-      ) => F[Either[ShardMapCache.Error, ShardMap]]
+      callback: (Producer.Res[PutRecordsResponse], Async[F]) => F[Unit]
   )(implicit
       F: Async[F],
       LE: KinesisClient.LogEncoders,
       SLE: ShardMapCache.LogEncoders,
       PLE: Producer.LogEncoders
-  ): Resource[F, KinesisProducer[F]] = AwsClients
+  ): Resource[F, FS2KinesisProducer[F]] = AwsClients
     .kinesisClientResource[F](config)
-    .flatMap(_underlying =>
-      for {
-        logger <- Slf4jLogger.create[F].toResource
-        underlying <- KinesisClient[F](_underlying)
-        shardMapCache <- ShardMapCache[F](
-          producerConfig.shardMapCacheConfig,
-          shardMapF(underlying, producerConfig.streamNameOrArn, F),
-          Slf4jLogger.create[F].widen
-        )
-        producer = new KinesisProducer[F](
-          logger,
-          shardMapCache,
-          producerConfig,
-          underlying
-        )
-      } yield producer
+    .flatMap(underlying =>
+      FS2KinesisProducer[F](
+        producerConfig,
+        underlying,
+        callback
+      )
     )
 
   /** Builds a [[kinesis4cats.client.producer.KinesisProducer KinesisProducer]]
@@ -94,9 +82,13 @@ object LocalstackKinesisProducer {
     * @param prefix
     *   Optional prefix for parsing configuration. Default to None
     * @param producerConfig
-    *   String => [[kinesis4cats.producer.Producer.Config Producer.Config]]
+    *   String =>
+    *   [[kinesis4cats.producer.fs2.FS2Producer.Config FS2Producer.Config]]
     *   function that creates configuration given a stream name. Defaults to
     *   Producer.Config.default
+    * @param callback
+    *   Function that can be run after each of the put results from the
+    *   underlying. Defaults to F.unit.
     * @param F
     *   F with an [[cats.effect.Async Async]] instance
     * @param LE
@@ -107,28 +99,21 @@ object LocalstackKinesisProducer {
     *   [[kinesis4cats.producer.Producer.LogEncoders Producer.LogEncoders]]
     * @return
     *   [[cats.effect.Resource Resource]] of
-    *   [[kinesis4cats.client.producer.KinesisProducer KinesisProducer]]
+    *   [[kinesis4cats.client.producer.fs2.FS2KinesisProducer FS2KinesisProducer]]
     */
   def resource[F[_]](
       streamName: String,
       prefix: Option[String] = None,
-      producerConfig: String => Producer.Config = (streamName: String) =>
-        Producer.Config.default(StreamNameOrArn.Name(streamName)),
-      shardMapF: (
-          KinesisClient[F],
-          StreamNameOrArn,
-          Async[F]
-      ) => F[Either[ShardMapCache.Error, ShardMap]] = (
-          client: KinesisClient[F],
-          streamNameOrArn: StreamNameOrArn,
-          f: Async[F]
-      ) => KinesisProducer.getShardMap(client, streamNameOrArn)(f)
+      producerConfig: String => FS2Producer.Config = (streamName: String) =>
+        FS2Producer.Config.default(StreamNameOrArn.Name(streamName)),
+      callback: (Producer.Res[PutRecordsResponse], Async[F]) => F[Unit] =
+        (_: Producer.Res[PutRecordsResponse], f: Async[F]) => f.unit
   )(implicit
       F: Async[F],
       LE: KinesisClient.LogEncoders,
       SLE: ShardMapCache.LogEncoders,
       PLE: Producer.LogEncoders
-  ): Resource[F, KinesisProducer[F]] = LocalstackConfig
+  ): Resource[F, FS2KinesisProducer[F]] = LocalstackConfig
     .resource[F](prefix)
-    .flatMap(resource[F](producerConfig(streamName), _, shardMapF))
+    .flatMap(resource[F](producerConfig(streamName), _, callback))
 }

@@ -20,6 +20,7 @@ import kinesis4cats.logging.instances.show._
 import kinesis4cats.smithy4s.client.localstack.LocalstackKinesisClient
 import kinesis4cats.smithy4s.client.logging.instances.show._
 import kinesis4cats.smithy4s.client.producer.localstack.LocalstackKinesisProducer
+import kinesis4cats.smithy4s.client.producer.fs2.localstack.LocalstackFS2KinesisProducer
 import kinesis4cats.producer.logging.instances.show._
 // Load a KinesisClient as a Resource
 val kinesisClientResource = for {
@@ -39,6 +40,19 @@ val kinesisProducerResource = for {
         .withCheckEndpointAuthentication(false)
         .resource
     producer <- LocalstackKinesisProducer.resource[IO](
+        underlying,
+        "my-stream",
+        IO.pure(AwsRegion.US_EAST_1),
+        loggerF = (_: Async[IO]) => Slf4jLogger.create[IO]
+    )
+} yield producer
+
+// Load a FS2KinesisProducer as a Resource
+val fs2KinesisProducerResource = for {
+    underlying <- BlazeClientBuilder[IO]
+        .withCheckEndpointAuthentication(false)
+        .resource
+    producer <- LocalstackFS2KinesisProducer.resource[IO](
         underlying,
         "my-stream",
         IO.pure(AwsRegion.US_EAST_1),

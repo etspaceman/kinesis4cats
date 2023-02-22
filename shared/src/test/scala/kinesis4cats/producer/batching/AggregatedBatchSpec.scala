@@ -17,11 +17,19 @@
 package kinesis4cats.producer
 package batching
 
+import scala.jdk.CollectionConverters._
+
+import java.nio.ByteBuffer
+import java.time.Instant
+
 import cats.syntax.all._
 import com.amazonaws.kinesis.agg.AggRecord
+import software.amazon.kinesis.retrieval.AggregatorUtil
+import software.amazon.kinesis.retrieval.KinesisClientRecord
 
 import kinesis4cats.instances.eq._
 import kinesis4cats.models.ShardId
+import kinesis4cats.syntax.bytebuffer._
 
 @SuppressWarnings(Array("scalafix:DisableSyntax.null"))
 class AggregatedBatchSpec extends munit.CatsEffectSuite {
@@ -104,5 +112,40 @@ class AggregatedBatchSpec extends munit.CatsEffectSuite {
     assert(agRecord.addUserRecord(partitionKey1, null, data1))
     assert(agRecord.addUserRecord(partitionKey2, null, data2))
     assert(!agRecord.addUserRecord(partitionKey3, null, data3))
+  }
+
+  test("It should be able to deaggregate") {
+    val data1 = Array.fill[Byte](500)(1)
+    val partitionKey1 = "foo"
+    val data2 = Array.fill[Byte](500)(1)
+    val partitionKey2 = "wazzle"
+
+    val batch = AggregatedBatch
+      .create(
+        Record.WithShard.fromOption(Record(data1, partitionKey1), None),
+        Batcher.Config.default
+      )
+      .add(Record.WithShard.fromOption(Record(data2, partitionKey2), None))
+
+    val testBytes = batch.asBytes
+
+    val kclRecord = KinesisClientRecord
+      .builder()
+      .data(ByteBuffer.wrap(testBytes))
+      .partitionKey(batch.partitionKey)
+      .aggregated(true)
+      .approximateArrivalTimestamp(Instant.now())
+      .build()
+
+    val res = new AggregatorUtil()
+      .deaggregate(java.util.List.of[KinesisClientRecord](kclRecord))
+      .asScala
+      .toList
+
+    assert(res.head.data().asArray === data1)
+    assert(res.head.partitionKey() === partitionKey1)
+    assert(res(1).data().asArray === data2)
+    assert(res(1).partitionKey() === partitionKey2)
+
   }
 }

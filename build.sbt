@@ -25,12 +25,22 @@ lazy val shared = projectMatrix
     libraryDependencies ++= Seq(
       Aws.Aggregation.aggregator % Test,
       Aws.Aggregation.deaggregator % Test,
+      Aws.kcl % Test,
       Log4Cats.slf4j % Test
     )
   )
   .jvmPlatform(allScalaVersions)
   .enableIntegrationTests
   .dependsOn(compat)
+
+lazy val `shared-fs2` = projectMatrix
+  .settings(
+    description := "Common code for FS2",
+    libraryDependencies ++= Seq(FS2.core)
+  )
+  .jvmPlatform(allScalaVersions)
+  .enableIntegrationTests
+  .dependsOn(shared)
 
 lazy val `shared-circe` = projectMatrix
   .settings(
@@ -69,7 +79,7 @@ lazy val `shared-tests` = projectMatrix
   )
   .jvmPlatform(allScalaVersions)
   .enableIntegrationTests
-  .dependsOn(`shared-localstack`, `kernel-tests`)
+  .dependsOn(`shared-localstack`, `shared-fs2`, `kernel-tests`)
 
 lazy val `aws-v2-localstack` = projectMatrix
   .settings(
@@ -292,6 +302,11 @@ lazy val `kinesis-client` = projectMatrix
   .enableIntegrationTests
   .dependsOn(shared)
 
+lazy val `kinesis-client-fs2` = projectMatrix
+  .jvmPlatform(allScalaVersions)
+  .enableIntegrationTests
+  .dependsOn(`kinesis-client`, `shared-fs2`)
+
 lazy val `kinesis-client-logging-circe` = projectMatrix
   .settings(
     description := "JSON structured logging instances for the Java Kinesis Client, via Circe"
@@ -310,7 +325,7 @@ lazy val `kinesis-client-localstack` = projectMatrix
   )
   .jvmPlatform(allScalaVersions)
   .enableIntegrationTests
-  .dependsOn(`aws-v2-localstack`, `kinesis-client`)
+  .dependsOn(`aws-v2-localstack`, `kinesis-client-fs2`)
 
 lazy val `kinesis-client-tests` = projectMatrix
   .enablePlugins(NoPublishPlugin)
@@ -377,6 +392,11 @@ lazy val `smithy4s-client` = projectMatrix
   .enableIntegrationTests
   .dependsOn(shared)
 
+lazy val `smithy4s-client-fs2` = projectMatrix
+  .jvmPlatform(last2ScalaVersions)
+  .enableIntegrationTests
+  .dependsOn(`smithy4s-client`, `shared-fs2`)
+
 lazy val `smithy4s-client-logging-circe` = projectMatrix
   .enablePlugins(Smithy4sCodegenPlugin)
   .settings(
@@ -392,7 +412,7 @@ lazy val `smithy4s-client-localstack` = projectMatrix
     description := "A test-kit for working with Kinesis and Localstack, via the Smithy4s Client project"
   )
   .jvmPlatform(last2ScalaVersions)
-  .dependsOn(`shared-localstack`, `smithy4s-client`)
+  .dependsOn(`shared-localstack`, `smithy4s-client-fs2`)
 
 lazy val `smithy4s-client-tests` = projectMatrix
   .enablePlugins(NoPublishPlugin)
@@ -472,6 +492,7 @@ lazy val docs = projectMatrix
     compat,
     `kernel-tests`,
     shared,
+    `shared-fs2`,
     `shared-circe`,
     `shared-ciris`,
     `shared-localstack`,
@@ -490,9 +511,11 @@ lazy val docs = projectMatrix
     `kpl-logging-circe`,
     `kpl-localstack`,
     `kinesis-client`,
+    `kinesis-client-fs2`,
     `kinesis-client-logging-circe`,
     `kinesis-client-localstack`,
     `smithy4s-client`,
+    `smithy4s-client-fs2`,
     `smithy4s-client-logging-circe`,
     `smithy4s-client-localstack`
   )
@@ -508,6 +531,7 @@ lazy val unidocs = projectMatrix
         compat,
         `kernel-tests`,
         shared,
+        `shared-fs2`,
         `shared-circe`,
         `shared-ciris`,
         `shared-localstack`,
@@ -526,9 +550,11 @@ lazy val unidocs = projectMatrix
         `kpl-logging-circe`,
         `kpl-localstack`,
         `kinesis-client`,
+        `kinesis-client-fs2`,
         `kinesis-client-logging-circe`,
         `kinesis-client-localstack`,
         `smithy4s-client`,
+        `smithy4s-client-fs2`,
         `smithy4s-client-logging-circe`,
         `smithy4s-client-localstack`
       ).flatMap(_.projectRefs): _*
@@ -539,6 +565,7 @@ lazy val allProjects = Seq(
   compat,
   `kernel-tests`,
   shared,
+  `shared-fs2`,
   `shared-circe`,
   `shared-ciris`,
   `shared-localstack`,
@@ -559,12 +586,14 @@ lazy val allProjects = Seq(
   `kpl-localstack`,
   `kpl-tests`,
   `kinesis-client`,
+  `kinesis-client-fs2`,
   `kinesis-client-logging-circe`,
   `kinesis-client-localstack`,
   `kinesis-client-tests`,
   `kinesis-client-producer-tests`,
   `smithy4s-client-transformers`,
   `smithy4s-client`,
+  `smithy4s-client-fs2`,
   `smithy4s-client-logging-circe`,
   `smithy4s-client-localstack`,
   `smithy4s-client-tests`,

@@ -101,10 +101,15 @@ private[kinesis4cats] class ShardMapCache[F[_]] private (
 
   /** Start the cache
     */
-  private def start() = refresh()
-    .flatMap(_ => F.sleep(config.refreshInterval))
-    .foreverM
-    .background
+  private def start() = for {
+    _ <- refresh().toResource
+    _ <- F
+      .sleep(config.refreshInterval)
+      .flatMap(_ => refresh())
+      .foreverM
+      .background
+      .void
+  } yield ()
 
 }
 

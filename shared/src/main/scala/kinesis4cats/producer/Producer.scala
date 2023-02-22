@@ -196,7 +196,7 @@ abstract class Producer[F[_], PutReq, PutRes](implicit
       records: NonEmptyList[Record],
       retries: Option[Int],
       retryDuration: FiniteDuration
-  ): F[Ior[Producer.Error, NonEmptyList[PutRes]]] = {
+  ): F[Producer.Res[PutRes]] = {
     val ctx = LogContext()
       .addEncoded("retriesRemaining", retries.fold("Infinite")(_.toString()))
       .addEncoded("retryDuration", retryDuration)
@@ -204,11 +204,15 @@ abstract class Producer[F[_], PutReq, PutRes](implicit
       case x if x.isRight                                     => F.pure(x)
       case x if x.left.exists(e => e.errors.exists(_.isLeft)) => F.pure(x)
       case x if retries.exists(_ <= 0) =>
-        logger
-          .warn(ctx.context)(
-            "All retries have been exhausted, and the final retry detected errors"
-          )
-          .as(x)
+        if (config.raiseOnExhaustedRetries) {
+          x.leftTraverse(F.raiseError)
+        } else {
+          logger
+            .warn(ctx.context)(
+              "All retries have been exhausted, and the final retry detected errors"
+            )
+            .as(x)
+        }
       case x =>
         logger
           .debug(ctx.context)("Failures detected, retrying failed records")
@@ -236,6 +240,9 @@ abstract class Producer[F[_], PutReq, PutRes](implicit
 
 object Producer {
 
+  type Res[A] = Ior[Producer.Error, NonEmptyList[A]]
+  type Errs = Ior[NonEmptyList[InvalidRecord], NonEmptyList[FailedRecord]]
+
   /** [[kinesis4cats.logging.LogEncoder LogEncoder]] instances for the
     * [[kinesis4cats.producer.Producer]]
     *
@@ -261,12 +268,16 @@ object Producer {
     * @param raiseOnFailures
     *   If true, an exception will be raised if a
     *   [[kinesis4cats.producer.Producer.Error Producer.Error]] is detected in
-    *   one fo the batches
+    *   one of the batches
     * @param shardMapCacheConfig
     *   [[kinesis4cats.producer.ShardMapCache.Config ShardMapCache.Config]]
     * @param streamNameOrArn
     *   [[kinesis4cats.models.StreamNameOrArn StreamNameOrArn]] either a stream
     *   name or a stream ARN for the producer.
+    * @param raiseOnExhaustedRetries
+    *   If true, an exception will be raised if a
+    *   [[kinesis4cats.producer.Producer.Error Producer.Error]] is detected in
+    *   the final batch of retried put requests
     */
   final case class Config(
       warnOnShardCacheMisses: Boolean,
@@ -275,7 +286,8 @@ object Producer {
       raiseOnFailures: Boolean,
       shardMapCacheConfig: ShardMapCache.Config,
       batcherConfig: Batcher.Config,
-      streamNameOrArn: StreamNameOrArn
+      streamNameOrArn: StreamNameOrArn,
+      raiseOnExhaustedRetries: Boolean
   )
 
   object Config {
@@ -296,7 +308,8 @@ object Producer {
       false,
       ShardMapCache.Config.default,
       Batcher.Config.default,
-      streamNameOrArn
+      streamNameOrArn,
+      false
     )
   }
 
@@ -312,11 +325,7 @@ object Producer {
     *     which represent records that failed to produce to Kinesis within a
     *     given batch
     */
-  final case class Error(
-      errors: Option[
-        Ior[NonEmptyList[InvalidRecord], NonEmptyList[FailedRecord]]
-      ]
-  ) extends Exception {
+  final case class Error(errors: Option[Errs]) extends Exception {
     private[kinesis4cats] def add(that: Error): Error = Error(
       errors.combine(that.errors)
     )
