@@ -24,19 +24,19 @@ import cats.syntax.all._
 import software.amazon.awssdk.services.kinesis.model.PutRecordsRequest
 import software.amazon.awssdk.services.kinesis.model.PutRecordsResponse
 
+import kinesis4cats.client.KinesisClient
 import kinesis4cats.client.localstack.LocalstackKinesisClient
 import kinesis4cats.client.logging.instances.show._
 import kinesis4cats.client.producer.localstack.LocalstackKinesisProducer
 import kinesis4cats.kcl.CommittableRecord
 import kinesis4cats.kcl.localstack.LocalstackKCLConsumer
 import kinesis4cats.kcl.logging.instances.show._
+import kinesis4cats.models.StreamNameOrArn
 import kinesis4cats.producer.Producer
 import kinesis4cats.producer.ProducerSpec
+import kinesis4cats.producer.ShardMapCache
 import kinesis4cats.producer.logging.instances.show._
 import kinesis4cats.syntax.bytebuffer._
-import kinesis4cats.client.KinesisClient
-import kinesis4cats.models.StreamNameOrArn
-import kinesis4cats.producer.ShardMapCache
 
 class KinesisProducerNoShardMapSpec
     extends ProducerSpec[
