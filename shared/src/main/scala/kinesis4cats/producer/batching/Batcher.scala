@@ -112,14 +112,15 @@ private[kinesis4cats] final class Batcher(config: Batcher.Config) {
   ): Option[NonEmptyList[Batch]] = {
     val aggregated =
       records
-        .groupByNem(_.predictedShard)
+        .groupByNem(_.record.partitionKey)
         .toNonEmptyList
-        .flatTraverse(_aggregateShard(_))
+        .flatTraverse(_aggregatePartitionKey(_))
 
     aggregated.flatMap(_batch(_))
   }
 
   /** Aggregate a list of [[kinesis4cats.producer.Record.WithShard records]]
+    * that share the same partition key
     *
     * @param records
     *   [[cats.data.NonEmptyList NonEmptyList]] of
@@ -130,7 +131,7 @@ private[kinesis4cats] final class Batcher(config: Batcher.Config) {
     *   List of batches
     */
   @annotation.tailrec
-  private def _aggregateShard(
+  private def _aggregatePartitionKey(
       records: NonEmptyList[Record.WithShard],
       res: Option[NonEmptyList[AggregatedBatch]] = None
   ): Option[NonEmptyList[Record.WithShard]] = {
@@ -146,7 +147,7 @@ private[kinesis4cats] final class Batcher(config: Batcher.Config) {
 
     NonEmptyList.fromList(records.tail) match {
       case None       => newRes.map(_.map(_.asRecord).reverse)
-      case Some(recs) => _aggregateShard(recs, newRes)
+      case Some(recs) => _aggregatePartitionKey(recs, newRes)
     }
   }
 

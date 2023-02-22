@@ -30,7 +30,11 @@ import kinesis4cats.producer.Producer
 import kinesis4cats.protobuf.Messages.AggregatedRecord
 
 /** Represents records that can be aggregated into a single record using the
-  * [[https://docs.aws.amazon.com/streams/latest/dev/kinesis-kpl-concepts.html#kinesis-kpl-concepts-aggretation KPL Aggregation Format]]
+  * [[https://docs.aws.amazon.com/streams/latest/dev/kinesis-kpl-concepts.html#kinesis-kpl-concepts-aggretation KPL Aggregation Format]].
+  * We can aggregate records that share a single partition key. If the shard-map
+  * never changed, you could potentially aggregate records for an entire shard,
+  * however if a user scales the stream, then that shard map would be out of
+  * date.
   *
   * @param shardId
   *   Shard ID for the batch
@@ -45,10 +49,8 @@ import kinesis4cats.protobuf.Messages.AggregatedRecord
   *   Map of partition kyes to their known index in the records
   * @param digest
   *   [[https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/security/MessageDigest.html MessageDigest]]
-  * @param aggPartitionKey
+  * @param partitionKey
   *   Partition Key for the aggregated record
-  * @param aggExplicitHashKey
-  *   Explicit Hash Key for the aggregated record
   * @param config
   *   [[kinesis4cats.producer.batching.Batcher.Config Batcher.Config]]
   */
@@ -59,8 +61,7 @@ private[kinesis4cats] final case class AggregatedBatch private (
     explicitHashKeys: Map[String, Int],
     partitionKeys: Map[String, Int],
     digest: MessageDigest,
-    aggPartitionKey: String,
-    aggExplicitHashKey: Option[String],
+    partitionKey: String,
     config: Batcher.Config
 ) {
 
@@ -135,7 +136,7 @@ private[kinesis4cats] final case class AggregatedBatch private (
   }
 
   def asRecord: Record.WithShard = Record.WithShard(
-    Record(asBytes, aggPartitionKey, aggExplicitHashKey, None),
+    Record(asBytes, partitionKey, None, None),
     shardId
   )
 }
@@ -156,7 +157,6 @@ private[kinesis4cats] object AggregatedBatch {
       Map(record.record.partitionKey -> 0),
       digest,
       record.record.partitionKey,
-      None,
       config
     )
   }
