@@ -597,7 +597,8 @@ lazy val allProjects = Seq(
   `smithy4s-client-logging-circe`,
   `smithy4s-client-localstack`,
   `smithy4s-client-tests`,
-  `smithy4s-client-producer-tests`
+  `smithy4s-client-producer-tests`,
+  unidocs
 )
 
 lazy val functionalTestProjects = List(`kcl-tests`).map(_.jvm(Scala213))
