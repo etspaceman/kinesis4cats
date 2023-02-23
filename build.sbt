@@ -8,6 +8,7 @@ lazy val compat = projectMatrix
   )
   .jvmPlatform(allScalaVersions)
   .nativePlatform(allScalaVersions)
+  .jsPlatform(allScalaVersions)
   .enableIntegrationTests
 
 lazy val `kernel-tests` = projectMatrix
@@ -33,6 +34,7 @@ lazy val shared = projectMatrix
   )
   .jvmPlatform(allScalaVersions)
   .nativePlatform(allScalaVersions)
+  .jsPlatform(allScalaVersions)
   .enableIntegrationTests
   .dependsOn(compat)
 
@@ -43,6 +45,7 @@ lazy val `shared-fs2` = projectMatrix
   )
   .jvmPlatform(allScalaVersions)
   .nativePlatform(allScalaVersions)
+  .jsPlatform(allScalaVersions)
   .enableIntegrationTests
   .dependsOn(shared)
 
@@ -56,16 +59,18 @@ lazy val `shared-circe` = projectMatrix
   )
   .jvmPlatform(allScalaVersions)
   .nativePlatform(allScalaVersions)
+  .jsPlatform(allScalaVersions)
   .enableIntegrationTests
   .dependsOn(shared)
 
 lazy val `shared-ciris` = projectMatrix
   .settings(
     description := "Common shared utilities for Ciris",
-    libraryDependencies ++= Seq(Ciris.core)
+    libraryDependencies ++= Seq(Ciris.core.value)
   )
   .jvmPlatform(allScalaVersions)
   .nativePlatform(allScalaVersions)
+  .jsPlatform(allScalaVersions)
   .enableIntegrationTests
   .dependsOn(shared)
 
@@ -75,6 +80,7 @@ lazy val `shared-localstack` = projectMatrix
   )
   .jvmPlatform(allScalaVersions)
   .nativePlatform(allScalaVersions)
+  .jsPlatform(allScalaVersions)
   .enableIntegrationTests
   .dependsOn(shared, `shared-ciris`, `shared-circe`)
 
@@ -129,7 +135,7 @@ lazy val kcl = projectMatrix
 lazy val `kcl-fs2` = projectMatrix
   .settings(
     description := "FS2 interfaces for the KCL",
-    libraryDependencies ++= Seq(FS2.core)
+    libraryDependencies ++= Seq(FS2.core.value)
   )
   .jvmPlatform(allScalaVersions)
   .enableIntegrationTests
@@ -140,10 +146,10 @@ lazy val `kcl-http4s` = projectMatrix
   .settings(
     description := "Http4s interfaces for the KCL",
     libraryDependencies ++= Seq(
-      S4S.core(smithy4sVersion.value),
-      S4S.http4s(smithy4sVersion.value),
-      S4S.http4sSwagger(smithy4sVersion.value),
-      Http4s.emberServer
+      S4S.core(smithy4sVersion.value).value,
+      S4S.http4s(smithy4sVersion.value).value,
+      S4S.http4sSwagger(smithy4sVersion.value).value,
+      Http4s.emberServer.value
     )
   )
   .jvmPlatform(allScalaVersions)
@@ -211,8 +217,8 @@ lazy val `kcl-tests` = projectMatrix
     description := "Integration Tests for the KCL",
     libraryDependencies ++= Seq(
       Logback,
-      Http4s.emberClient % FunctionalTest,
-      Http4s.emberClient % IT
+      Http4s.emberClient.value % FunctionalTest,
+      Http4s.emberClient.value % IT
     ),
     assembly / assemblyMergeStrategy := {
       case "module-info.class"                        => MergeStrategy.discard
@@ -384,8 +390,8 @@ lazy val `smithy4s-client` = projectMatrix
   .settings(
     description := "Cats tooling for the Smithy4s Kinesis Client",
     libraryDependencies ++= Seq(
-      S4S.http4sAws(smithy4sVersion.value),
-      Log4Cats.noop,
+      S4S.http4sAws(smithy4sVersion.value).value,
+      Log4Cats.noop.value,
       Smithy.rulesEngine(smithy4s.codegen.BuildInfo.smithyVersion) % Smithy4s,
       S4S.kinesis % Smithy4s
     ),
@@ -401,12 +407,14 @@ lazy val `smithy4s-client` = projectMatrix
   )
   .jvmPlatform(last2ScalaVersions)
   .nativePlatform(last2ScalaVersions)
+  .jsPlatform(last2ScalaVersions)
   .enableIntegrationTests
   .dependsOn(shared)
 
 lazy val `smithy4s-client-fs2` = projectMatrix
   .jvmPlatform(last2ScalaVersions)
   .nativePlatform(last2ScalaVersions)
+  .jsPlatform(last2ScalaVersions)
   .enableIntegrationTests
   .dependsOn(`smithy4s-client`, `shared-fs2`)
 
@@ -414,10 +422,11 @@ lazy val `smithy4s-client-logging-circe` = projectMatrix
   .enablePlugins(Smithy4sCodegenPlugin)
   .settings(
     description := "JSON structured logging instances for the Smithy4s Kinesis Client, via Circe",
-    libraryDependencies ++= Seq(Http4s.circe)
+    libraryDependencies ++= Seq(Http4s.circe.value)
   )
   .jvmPlatform(last2ScalaVersions)
   .nativePlatform(last2ScalaVersions)
+  .jsPlatform(last2ScalaVersions)
   .enableIntegrationTests
   .dependsOn(`shared-circe`, `smithy4s-client`)
 
@@ -427,15 +436,20 @@ lazy val `smithy4s-client-localstack` = projectMatrix
   )
   .jvmPlatform(last2ScalaVersions)
   .nativePlatform(last2ScalaVersions)
+  .jsPlatform(last2ScalaVersions)
   .dependsOn(`shared-localstack`, `smithy4s-client-fs2`)
 
 lazy val `smithy4s-client-tests` = projectMatrix
   .enablePlugins(NoPublishPlugin)
   .settings(
     description := "Integration Tests for the Smithy4s Kinesis Client",
-    libraryDependencies ++= Seq(Http4s.blazeClient % IT, Log4Cats.slf4j % IT)
+    libraryDependencies ++= Seq(
+      Http4s.blazeClient.value % IT
+    )
   )
   .jvmPlatform(last2ScalaVersions)
+  .nativePlatform(last2ScalaVersions)
+  .jsPlatform(last2ScalaVersions)
   .enableIntegrationTests
   .dependsOn(
     `smithy4s-client-localstack` % IT,

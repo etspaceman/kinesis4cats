@@ -203,12 +203,12 @@ object Kinesis4CatsPlugin extends AutoPlugin {
     ThisBuild / semanticdbEnabled := true,
     semanticdbVersion := scalafixSemanticdb.revision,
     libraryDependencies ++= Seq(
-      Cats.core,
-      Cats.effect,
-      CatsRetry,
-      Scala.java8Compat,
-      Log4Cats.core
-    ) ++ testDependencies.map(_ % Test),
+      Cats.core.value,
+      Cats.effect.value,
+      CatsRetry.value,
+      Scala.java8Compat.value,
+      Log4Cats.core.value
+    ) ++ testDependencies.map(x => x.value % Test),
     libraryDependencySchemes += "org.scala-lang.modules" %% "scala-xml" % VersionScheme.Always,
     moduleName := "kinesis4cats-" + name.value,
     headerLicense := Some(
@@ -274,12 +274,8 @@ object Kinesis4CatsPluginKeys {
   val testDependencies = List(
     Munit.core,
     Munit.catsEffect,
-    Munit.scalacheck,
-    Munit.scalacheckEffect,
-    Logback,
     Scalacheck,
-    FS2.core,
-    FS2.reactiveStreams
+    FS2.core
   )
 
   final implicit class Kinesi4CatsProjectMatrixOps(private val p: ProjectMatrix)
