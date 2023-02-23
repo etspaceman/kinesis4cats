@@ -280,7 +280,11 @@ lazy val `kpl-localstack` = projectMatrix
 lazy val `kpl-tests` = projectMatrix
   .enablePlugins(NoPublishPlugin)
   .settings(
-    description := "Integration Tests for the KPL"
+    description := "Integration Tests for the KPL",
+    IT / envVars ++= Map(
+      "AWS_ACCESS_KEY_ID" -> "test",
+      "AWS_SECRET_ACCESS_KEY" -> "test"
+    )
   )
   .jvmPlatform(allScalaVersions)
   .enableIntegrationTests
