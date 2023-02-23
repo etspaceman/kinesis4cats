@@ -522,7 +522,7 @@ lazy val docs = projectMatrix
 
 lazy val unidocs = projectMatrix
   .enablePlugins(TypelevelUnidocPlugin)
-  .jvmPlatform(allScalaVersions)
+  .jvmPlatform(List(Scala213))
   .settings(
     name := "kinesis4cats-docs",
     moduleName := name.value,
@@ -557,7 +557,7 @@ lazy val unidocs = projectMatrix
         `smithy4s-client-fs2`,
         `smithy4s-client-logging-circe`,
         `smithy4s-client-localstack`
-      ).flatMap(_.projectRefs): _*
+      ).map(_.jvm(Scala213).project): _*
     )
   )
 
@@ -597,7 +597,8 @@ lazy val allProjects = Seq(
   `smithy4s-client-logging-circe`,
   `smithy4s-client-localstack`,
   `smithy4s-client-tests`,
-  `smithy4s-client-producer-tests`
+  `smithy4s-client-producer-tests`,
+  unidocs
 )
 
 lazy val functionalTestProjects = List(`kcl-tests`).map(_.jvm(Scala213))

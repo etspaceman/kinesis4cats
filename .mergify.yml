@@ -304,3 +304,11 @@ pull_request_rules:
       add:
       - smithy4s-client-transformers
       remove: []
+- name: Label unidocs PRs
+  conditions:
+  - files~=^unidocs/
+  actions:
+    label:
+      add:
+      - unidocs
+      remove: []
