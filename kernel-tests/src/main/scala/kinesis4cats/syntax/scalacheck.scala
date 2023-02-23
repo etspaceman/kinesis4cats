@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package kinesis4cats.localstack.syntax
+package kinesis4cats.syntax
 
 import org.scalacheck.Gen
 

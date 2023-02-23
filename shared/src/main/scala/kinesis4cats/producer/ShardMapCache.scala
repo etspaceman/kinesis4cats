@@ -34,7 +34,7 @@ import kinesis4cats.models._
   * for a given record's partition key
   *
   * @param config
-  *   [[kinesis4cats.producer.ShardMapCache ShardMapCache]]
+  *   [[kinesis4cats.producer.ShardMapCache.Config ShardMapCache.Config]]
   * @param logger
   *   [[org.typelevel.log4cats.StructuredLogger StructuredLogger]]
   * @param shardMapRef
@@ -46,7 +46,7 @@ import kinesis4cats.models._
   * @param LE
   *   [[kinesis4cats.producer.ShardMapCache.LogEncoders ShardMapCache.LogEncoders]]
   */
-class ShardMapCache[F[_]] private (
+private[kinesis4cats] class ShardMapCache[F[_]] private (
     config: ShardMapCache.Config,
     logger: StructuredLogger[F],
     shardMapRef: Ref[F, ShardMap],
@@ -101,19 +101,24 @@ class ShardMapCache[F[_]] private (
 
   /** Start the cache
     */
-  private def start() = refresh()
-    .flatMap(_ => F.sleep(config.refreshInterval))
-    .foreverM
-    .background
+  private def start() = for {
+    _ <- refresh().toResource
+    _ <- F
+      .sleep(config.refreshInterval)
+      .flatMap(_ => refresh())
+      .foreverM
+      .background
+      .void
+  } yield ()
 
 }
 
 object ShardMapCache {
 
-  /** Construct a [[kinesis4cats.producer.ShardMapCache ShardMapCache]]
+  /** Construct a ShardMapCache
     *
     * @param config
-    *   [[kinesis4cats.producer.ShardMapCache ShardMapCache]]
+    *   ShardMapCache
     * @param shardMapF
     *   F that supplies a new [[kinesis4cats.producer.ShardMap ShardMap]]
     * @param loggerF
@@ -139,7 +144,7 @@ object ShardMapCache {
   } yield service
 
   /** [[kinesis4cats.logging.LogEncoder LogEncoder]] instances for the
-    * [[kinesis4cats.producer.ShardMapCache ShardMapCache]]
+    * ShardMapCache
     *
     * @param shardMapLogEncoder
     *   [[kinesis4cats.logging.LogEncoder LogEncoder]] instance for
@@ -147,8 +152,7 @@ object ShardMapCache {
     */
   final class LogEncoders(implicit val shardMapLogEncoder: LogEncoder[ShardMap])
 
-  /** Configuration for the
-    * [[kinesis4cats.producer.ShardMapCache ShardMapCache]]
+  /** Configuration for the ShardMapCache
     *
     * @param refreshInterval
     *   How often to refresh the shard cache
@@ -157,14 +161,12 @@ object ShardMapCache {
 
   object Config {
 
-    /** Default configuration for the
-      * [[kinesis4cats.producer.ShardMapCache ShardMapCache]]
+    /** Default configuration for the ShardMapCache
       */
     val default = Config(1.hour)
   }
 
-  /** Errors that can be received in the
-    * [[kinesis4cats.producer.ShardMapCache ShardMapCache]]
+  /** Errors that can be received in the ShardMapCache
     *
     * @param msg
     *   Error message
@@ -195,7 +197,9 @@ final case class ShardMap(shards: List[ShardMapRecord], lastUpdated: Instant) {
   ): Either[ShardMapCache.Error, ShardId] = {
     val hashBytes = digest.digest(partitionKey.getBytes(StandardCharsets.UTF_8))
     val hashKey = BigInt.apply(1, hashBytes)
-    ShardMap.findShard(partitionKey, hashKey, shards)
+    val res = ShardMap.findShard(partitionKey, hashKey, shards)
+    digest.reset()
+    res
   }
 }
 

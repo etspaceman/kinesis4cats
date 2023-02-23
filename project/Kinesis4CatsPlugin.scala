@@ -28,6 +28,7 @@ object Kinesis4CatsPlugin extends AutoPlugin {
   import de.heikoseeberger.sbtheader.HeaderPlugin.autoImport._
   import org.scalafmt.sbt.ScalafmtPlugin.autoImport._
   import sbtassembly.AssemblyPlugin.autoImport._
+  import sbtprotobuf.ProtobufPlugin.autoImport._
   import scalafix.sbt.ScalafixPlugin.autoImport._
 
   private val primaryJavaOSCond = Def.setting {
@@ -55,6 +56,15 @@ object Kinesis4CatsPlugin extends AutoPlugin {
     scalaVersion := Scala213,
     tlCiMimaBinaryIssueCheck := tlBaseVersion.value != "0.0",
     resolvers += "s01 snapshots" at "https://s01.oss.sonatype.org/content/repositories/snapshots/",
+    resolvers += "jitpack" at "https://jitpack.io",
+    protobufUseSystemProtoc := sys.env.get("CI").nonEmpty,
+    githubWorkflowJobSetup ++= List(
+      WorkflowStep.Use(
+        UseRef.Public("arduino", "setup-protoc", "v1"),
+        name = Some("Setup protoc"),
+        params = Map("repo-token" -> "${{ secrets.GITHUB_TOKEN }}")
+      )
+    ),
     githubWorkflowBuild := {
       val style = (tlCiHeaderCheck.value, tlCiScalafmtCheck.value) match {
         case (true, true) => // headers + formatting
@@ -205,7 +215,6 @@ object Kinesis4CatsPlugin extends AutoPlugin {
     headerLicense := Some(
       HeaderLicense.ALv2(s"${startYear.value.get}-2023", organizationName.value)
     ),
-    Test / fork := true,
     Compile / doc / sources := {
       if (scalaVersion.value.startsWith("3.")) Nil
       else (Compile / doc / sources).value
@@ -276,6 +285,8 @@ object Kinesis4CatsPluginKeys {
 
   final implicit class Kinesi4CatsProjectMatrixOps(private val p: ProjectMatrix)
       extends AnyVal {
+    def forkTests = p.settings(Test / fork := true)
+
     def enableIntegrationTests = p
       .configs(IT)
       .settings(inConfig(IT) {

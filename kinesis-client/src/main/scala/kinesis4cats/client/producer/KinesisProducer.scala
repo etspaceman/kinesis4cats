@@ -53,7 +53,7 @@ import kinesis4cats.syntax.id._
   * @param LE
   *   [[kinesis4cats.producer.Producer.LogEncoders Producer.LogEncoders]]
   */
-final class KinesisProducer[F[_]] private (
+final class KinesisProducer[F[_]] private[kinesis4cats] (
     override val logger: StructuredLogger[F],
     override val shardMapCache: ShardMapCache[F],
     override val config: Producer.Config,
@@ -92,12 +92,14 @@ final class KinesisProducer[F[_]] private (
       resp: PutRecordsResponse
   ): Option[NonEmptyList[Producer.FailedRecord]] =
     NonEmptyList.fromList(
-      resp.records().asScala.toList.zip(records.toList).collect {
-        case (respEntry, record) if Option(respEntry.errorCode()).nonEmpty =>
+      resp.records().asScala.toList.zipWithIndex.zip(records.toList).collect {
+        case ((respEntry, respIndex), record)
+            if Option(respEntry.errorCode()).nonEmpty =>
           Producer.FailedRecord(
             record,
             respEntry.errorCode(),
-            respEntry.errorMessage()
+            respEntry.errorMessage(),
+            respIndex
           )
       }
     )
@@ -105,7 +107,7 @@ final class KinesisProducer[F[_]] private (
 
 object KinesisProducer {
 
-  private def getShardMap[F[_]](
+  private[kinesis4cats] def getShardMap[F[_]](
       client: KinesisClient[F],
       streamNameOrArn: models.StreamNameOrArn
   )(implicit

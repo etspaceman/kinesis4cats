@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-package kinesis4cats.kcl
+package kinesis4cats
+package kcl
 package fs2
 
 import scala.concurrent.duration._
@@ -34,9 +35,8 @@ import software.amazon.awssdk.services.kinesis.model.PutRecordRequest
 import kinesis4cats.client.KinesisClient
 import kinesis4cats.client.localstack.LocalstackKinesisClient
 import kinesis4cats.kcl.fs2.localstack.LocalstackKCLConsumerFS2
-import kinesis4cats.localstack.TestData
-import kinesis4cats.localstack.syntax.scalacheck._
 import kinesis4cats.syntax.bytebuffer._
+import kinesis4cats.syntax.scalacheck._
 
 abstract class KCLConsumerFS2Spec(implicit
     KCLLE: RecordProcessor.LogEncoders,

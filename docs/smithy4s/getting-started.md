@@ -56,6 +56,7 @@ object MyApp extends IOApp {
 kinesis4cats offers a @:source(shared.src.main.scala.kinesis4cats.producer.Producer) interface that handles the following:
 
 - Maintains a @:source(shared.src.main.scala.kinesis4cats.producer.ShardMapCache), which will routinely track the open shards for a Kinesis stream. It is used to predict which shard a record will be produced to.
+- Aggregates records using the [KPL Aggregation Format](https://docs.aws.amazon.com/streams/latest/dev/kinesis-kpl-concepts.html#kinesis-kpl-concepts-aggretation) (if configured)
 - Batches records against known Kinesis limits (or a user-defined set of configuration).
 - Produces records to Kinesis
 - Provides an Error interface for users to interact with failed records (e.g. retrying failures)
@@ -64,6 +65,8 @@ This module provides an implementation of that interface, backed by the @:source
 
 
 ```scala mdoc:compile-only
+import scala.concurrent.duration._
+
 import cats.data.NonEmptyList
 import cats.effect._
 import cats.syntax.all._
@@ -94,6 +97,16 @@ object MyApp extends IOApp {
                             Record("my-data-2".getBytes(), "some-partition-key-2"),
                             Record("my-data-3".getBytes(), "some-partition-key-3"),
                         )
+                    )
+                    // Retries failed records with a configured limit and duration.
+                    _ <- producer.putWithRetry(
+                        NonEmptyList.of(
+                            Record("my-data".getBytes(), "some-partition-key"),
+                            Record("my-data-2".getBytes(), "some-partition-key-2"),
+                            Record("my-data-3".getBytes(), "some-partition-key-3"),
+                        ),
+                        Some(5),
+                        1.second
                     )
                 } yield ExitCode.Success
         )

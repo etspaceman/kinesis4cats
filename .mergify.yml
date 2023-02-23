@@ -11,8 +11,11 @@ pull_request_rules:
   - author=scala-steward
   - body~=labels:.*early-semver-patch
   - status-success=Build and Test (ubuntu-latest, 2.12.17, temurin@17, rootJVM)
+  - status-success=Build and Test (ubuntu-latest, 2.12.17, temurin@17, rootNative)
   - status-success=Build and Test (ubuntu-latest, 3.2.2, temurin@17, rootJVM)
+  - status-success=Build and Test (ubuntu-latest, 3.2.2, temurin@17, rootNative)
   - status-success=Build and Test (ubuntu-latest, 2.13.10, temurin@17, rootJVM)
+  - status-success=Build and Test (ubuntu-latest, 2.13.10, temurin@17, rootNative)
   actions:
     merge:
       method: squash
@@ -104,6 +107,14 @@ pull_request_rules:
       add:
       - kcl-tests
       remove: []
+- name: Label kernel-tests PRs
+  conditions:
+  - files~=^kernel-tests/
+  actions:
+    label:
+      add:
+      - kernel-tests
+      remove: []
 - name: Label kinesis-client PRs
   conditions:
   - files~=^kinesis-client/
@@ -111,6 +122,14 @@ pull_request_rules:
     label:
       add:
       - kinesis-client
+      remove: []
+- name: Label kinesis-client-fs2 PRs
+  conditions:
+  - files~=^kinesis-client-fs2/
+  actions:
+    label:
+      add:
+      - kinesis-client-fs2
       remove: []
 - name: Label kinesis-client-localstack PRs
   conditions:
@@ -208,6 +227,14 @@ pull_request_rules:
       add:
       - shared-ciris
       remove: []
+- name: Label shared-fs2 PRs
+  conditions:
+  - files~=^shared-fs2/
+  actions:
+    label:
+      add:
+      - shared-fs2
+      remove: []
 - name: Label shared-localstack PRs
   conditions:
   - files~=^shared-localstack/
@@ -231,6 +258,14 @@ pull_request_rules:
     label:
       add:
       - smithy4s-client
+      remove: []
+- name: Label smithy4s-client-fs2 PRs
+  conditions:
+  - files~=^smithy4s-client-fs2/
+  actions:
+    label:
+      add:
+      - smithy4s-client-fs2
       remove: []
 - name: Label smithy4s-client-localstack PRs
   conditions:
@@ -271,4 +306,12 @@ pull_request_rules:
     label:
       add:
       - smithy4s-client-transformers
+      remove: []
+- name: Label unidocs PRs
+  conditions:
+  - files~=^unidocs/
+  actions:
+    label:
+      add:
+      - unidocs
       remove: []

@@ -14,9 +14,11 @@
  * limitations under the License.
  */
 
-package kinesis4cats.kpl
+package kinesis4cats
+package kpl
 
 import java.nio.ByteBuffer
+import java.util.UUID
 
 import cats.effect.{IO, SyncIO}
 import com.amazonaws.services.kinesis.producer._
@@ -24,8 +26,7 @@ import io.circe.syntax._
 import org.scalacheck.Arbitrary
 
 import kinesis4cats.kpl.localstack.LocalstackKPLProducer
-import kinesis4cats.localstack.TestData
-import kinesis4cats.localstack.syntax.scalacheck._
+import kinesis4cats.syntax.scalacheck._
 
 abstract class KPLProducerSpec(implicit LE: KPLProducer.LogEncoders)
     extends munit.CatsEffectSuite
@@ -37,25 +38,28 @@ abstract class KPLProducerSpec(implicit LE: KPLProducer.LogEncoders)
     LocalstackKPLProducer.producerWithStream(streamName, shardCount)
   )
 
-  fixture("test1", 1).test("It should run commands successfully") { producer =>
-    val testData = Arbitrary.arbitrary[TestData].one
-    val testDataBB = ByteBuffer.wrap(testData.asJson.noSpaces.getBytes())
+  val streamName = s"kpl-producer-spec-${UUID.randomUUID()}"
 
-    for {
-      _ <- producer
-        .put(new UserRecord("test1", "partitionKey", testDataBB))
-        .map { result =>
-          assert(result.isSuccessful())
-        }
-      _ <- producer.put("test1", "partitionKey", None, testDataBB)
-      _ <- producer.getOutstandingRecordsCount()
-      _ <- producer.getOldestRecordTimeInMillis()
-      _ <- producer.getMetrics()
-      _ <- producer.getMetrics(1)
-      _ <- producer.getMetrics("foo")
-      _ <- producer.getMetrics("foo", 1)
-      _ <- producer.flush("test1")
-      _ <- producer.flush()
-    } yield ()
+  fixture(streamName, 1).test("It should run commands successfully") {
+    producer =>
+      val testData = Arbitrary.arbitrary[TestData].one
+      val testDataBB = ByteBuffer.wrap(testData.asJson.noSpaces.getBytes())
+
+      for {
+        _ <- producer
+          .put(new UserRecord(streamName, "partitionKey", testDataBB))
+          .map { result =>
+            assert(result.isSuccessful())
+          }
+        _ <- producer.put(streamName, "partitionKey", None, testDataBB)
+        _ <- producer.getOutstandingRecordsCount()
+        _ <- producer.getOldestRecordTimeInMillis()
+        _ <- producer.getMetrics()
+        _ <- producer.getMetrics(1)
+        _ <- producer.getMetrics("foo")
+        _ <- producer.getMetrics("foo", 1)
+        _ <- producer.flush(streamName)
+        _ <- producer.flush()
+      } yield ()
   }
 }

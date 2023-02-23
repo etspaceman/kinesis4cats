@@ -36,7 +36,7 @@ object LibraryDependencies {
 
     object V1 {
       val awsVersion =
-        "1.12.296" // Should be the same as the version in the KPL
+        "1.12.382" // Should be the same as the version in the KPL
       val kinesis = "com.amazonaws" % "aws-java-sdk-kinesis" % awsVersion
       val dynamo = "com.amazonaws" % "aws-java-sdk-dynamodb" % awsVersion
       val cloudwatch = "com.amazonaws" % "aws-java-sdk-cloudwatch" % awsVersion
@@ -50,8 +50,14 @@ object LibraryDependencies {
       val cloudwatch = "software.amazon.awssdk" % "cloudwatch" % awssdkVersion
     }
 
-    // See https://github.com/etspaceman/kinesis-mock/pull/407, upgrade when available in localstack
-    val kpl = "com.amazonaws" % "amazon-kinesis-producer" % "0.14.13"
+    object Aggregation {
+      val aggregator =
+        "com.github.awslabs.kinesis-aggregation" % "amazon-kinesis-aggregator" % "2.0.3-agg"
+      val deaggregator =
+        "com.github.awslabs.kinesis-aggregation" % "amazon-kinesis-aggregator" % "2.0.3-deagg"
+    }
+
+    val kpl = "com.amazonaws" % "amazon-kinesis-producer" % "0.15.5"
     val kcl = "software.amazon.kinesis" % "amazon-kinesis-client" % "2.4.5"
   }
 

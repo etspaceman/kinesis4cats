@@ -90,13 +90,14 @@ final class KinesisProducer[F[_]] private[kinesis4cats] (
       resp: PutRecordsOutput
   ): Option[NonEmptyList[Producer.FailedRecord]] =
     NonEmptyList.fromList(
-      resp.records.zip(records.toList).collect {
-        case (respEntry, record)
+      resp.records.zipWithIndex.zip(records.toList).collect {
+        case ((respEntry, index), record)
             if respEntry.errorCode.nonEmpty && respEntry.errorMessage.nonEmpty =>
           Producer.FailedRecord(
             record,
             respEntry.errorCode.get.value,
-            respEntry.errorMessage.get.value
+            respEntry.errorMessage.get.value,
+            index
           )
       }
     )

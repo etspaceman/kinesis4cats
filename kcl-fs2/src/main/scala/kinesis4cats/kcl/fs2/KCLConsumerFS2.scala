@@ -690,8 +690,8 @@ object KCLConsumerFS2 {
 
   object FS2Config {
     val default = FS2Config(
-      100,
       1000,
+      100,
       10.seconds,
       5,
       0.seconds

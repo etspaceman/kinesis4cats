@@ -24,7 +24,7 @@ import kinesis4cats.instances.eq._
 import kinesis4cats.models.ShardId
 
 class BatcherSpec extends munit.CatsEffectSuite {
-  val config = Batcher.Config.default
+  val config = Batcher.Config.default.copy(aggregate = false)
   val batcher = new Batcher(config)
 
   test("It should batch records against MaxIngestionPerShard") {
@@ -46,12 +46,12 @@ class BatcherSpec extends munit.CatsEffectSuite {
               shardId,
               x.map(_.record),
               x.length,
-              x.map(_.payloadSize).sumAll,
+              x.map(_.record.payloadSize).sumAll,
               config
             )
           ),
           x.length,
-          x.map(_.payloadSize).sumAll,
+          x.map(_.record.payloadSize).sumAll,
           config
         )
       )
@@ -82,7 +82,7 @@ class BatcherSpec extends munit.CatsEffectSuite {
               shardId,
               NonEmptyList.one(record.record),
               1,
-              record.payloadSize,
+              record.record.payloadSize,
               config
             )
           }
@@ -122,12 +122,12 @@ class BatcherSpec extends munit.CatsEffectSuite {
               shardId,
               x.map(_.record),
               x.length,
-              x.map(_.payloadSize).sumAll,
+              x.map(_.record.payloadSize).sumAll,
               config
             )
           ),
           x.length,
-          x.map(_.payloadSize).sumAll,
+          x.map(_.record.payloadSize).sumAll,
           config
         )
       )
@@ -158,7 +158,7 @@ class BatcherSpec extends munit.CatsEffectSuite {
               shardId,
               NonEmptyList.one(record.record),
               1,
-              record.payloadSize,
+              record.record.payloadSize,
               config
             )
           }
@@ -188,7 +188,9 @@ class BatcherSpec extends munit.CatsEffectSuite {
         Record.WithShard(Record(tooBig, s"$index", None, None), shardId)
       }
     )
-    val expected = Producer.Error.recordsTooLarge(records.map(_.record))
+    val expected = Producer.Error.invalidRecords(
+      records.map(x => Producer.InvalidRecord.RecordTooLarge(x.record))
+    )
     val res = batcher.batch(records)
     assert(res.isLeft)
     assert(res.swap.contains_(expected))
@@ -212,13 +214,15 @@ class BatcherSpec extends munit.CatsEffectSuite {
       }
     )
 
-    val expectedLeft = Producer.Error.recordsTooLarge(badRecords.map(_.record))
+    val expectedLeft = Producer.Error.invalidRecords(
+      badRecords.map(x => Producer.InvalidRecord.RecordTooLarge(x.record))
+    )
     val expectedRight = {
       val shardBatch = ShardBatch(
         shardId,
         goodRecords.map(_._2.record),
         goodRecords.length,
-        goodRecords.map(_._2.payloadSize).sumAll,
+        goodRecords.map(_._2.record.payloadSize).sumAll,
         config
       )
 

@@ -2,3 +2,4 @@
 -Xss4M
 -XX:+UseG1GC
 -XX:+UseStringDeduplication
+-XX:ProfiledCodeHeapSize=200M

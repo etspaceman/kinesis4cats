@@ -75,8 +75,9 @@ object ResponseLogger {
 
             for {
               _ <- logger.debug(ctx.context)("Successfully completed request")
+              body <- newResponseBody.as[String]
               _ <- logger
-                .trace(ctx.addEncoded("responseBody", newResponseBody).context)(
+                .trace(ctx.addEncoded("responseBody", body).context)(
                   "Logging response body"
                 )
                 .handleErrorWith(t =>

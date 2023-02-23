@@ -21,7 +21,7 @@ import ciris._
 /** Convenient methods for constructing configuration via
   * [[https://cir.is/ Ciris]]
   */
-object CirisReader {
+private[kinesis4cats] object CirisReader {
 
   /** Constructs an environment variable string reader given parts and an
     * optional prefix.

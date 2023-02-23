@@ -16,6 +16,7 @@ import cats.effect.IO
 import kinesis4cats.client.localstack.LocalstackKinesisClient
 import kinesis4cats.client.logging.instances.show._
 import kinesis4cats.client.producer.localstack.LocalstackKinesisProducer
+import kinesis4cats.client.producer.fs2.localstack.LocalstackFS2KinesisProducer
 import kinesis4cats.producer.logging.instances.show._
 
 // Load a KinesisClient as an effect
@@ -30,4 +31,7 @@ LocalstackKinesisClient.streamResource[IO]("my-stream", 1)
 
 // Load a KinesisProducer as a resource
 LocalstackKinesisProducer.resource[IO]("my-stream")
+
+// Load a FS2KinesisProducer as a resource
+LocalstackFS2KinesisProducer.resource[IO]("my-stream")
 ```
