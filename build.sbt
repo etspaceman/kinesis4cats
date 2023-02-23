@@ -160,6 +160,7 @@ lazy val `kcl-ciris` = projectMatrix
     Test / buildInfoPackage := "kinesis4cats.kcl.ciris",
     Test / buildInfoOptions += BuildInfoOption.ConstantValue
   )
+  .forkTests
   .jvmPlatform(allScalaVersions)
   .enableIntegrationTests
   .dependsOn(kcl, `shared-ciris`, `kcl-localstack` % Test)
@@ -175,6 +176,7 @@ lazy val `kcl-fs2-ciris` = projectMatrix
     Test / buildInfoPackage := "kinesis4cats.kcl.fs2.ciris",
     Test / buildInfoOptions += BuildInfoOption.ConstantValue
   )
+  .forkTests
   .jvmPlatform(allScalaVersions)
   .enableIntegrationTests
   .dependsOn(`kcl-fs2`, `kcl-ciris`, `shared-ciris`)
@@ -264,6 +266,7 @@ lazy val `kpl-ciris` = projectMatrix
     Test / buildInfoPackage := "kinesis4cats.kpl.ciris",
     Test / buildInfoOptions += BuildInfoOption.ConstantValue
   )
+  .forkTests
   .jvmPlatform(allScalaVersions)
   .enableIntegrationTests
   .dependsOn(kpl, `shared-ciris`)
@@ -289,6 +292,7 @@ lazy val `kpl-tests` = projectMatrix
   .settings(
     description := "Integration Tests for the KPL"
   )
+  .forkTests
   .jvmPlatform(allScalaVersions)
   .enableIntegrationTests
   .dependsOn(
