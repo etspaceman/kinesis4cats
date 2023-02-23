@@ -214,7 +214,6 @@ object Kinesis4CatsPlugin extends AutoPlugin {
     headerLicense := Some(
       HeaderLicense.ALv2(s"${startYear.value.get}-2023", organizationName.value)
     ),
-    Test / fork := true,
     Compile / doc / sources := {
       if (scalaVersion.value.startsWith("3.")) Nil
       else (Compile / doc / sources).value
@@ -285,6 +284,8 @@ object Kinesis4CatsPluginKeys {
 
   final implicit class Kinesi4CatsProjectMatrixOps(private val p: ProjectMatrix)
       extends AnyVal {
+    def forkTests = p.settings(Test / fork := true)
+
     def enableIntegrationTests = p
       .configs(IT)
       .settings(inConfig(IT) {

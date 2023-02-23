@@ -7,9 +7,11 @@ lazy val compat = projectMatrix
     description := "Code to maintain compatability across major scala versions"
   )
   .jvmPlatform(allScalaVersions)
+  .nativePlatform(allScalaVersions)
   .enableIntegrationTests
 
 lazy val `kernel-tests` = projectMatrix
+  .enablePlugins(NoPublishPlugin)
   .settings(
     description := "Common test utilities",
     libraryDependencies ++= testDependencies
@@ -30,6 +32,7 @@ lazy val shared = projectMatrix
     )
   )
   .jvmPlatform(allScalaVersions)
+  .nativePlatform(allScalaVersions)
   .enableIntegrationTests
   .dependsOn(compat)
 
@@ -39,6 +42,7 @@ lazy val `shared-fs2` = projectMatrix
     libraryDependencies ++= Seq(FS2.core)
   )
   .jvmPlatform(allScalaVersions)
+  .nativePlatform(allScalaVersions)
   .enableIntegrationTests
   .dependsOn(shared)
 
@@ -51,6 +55,7 @@ lazy val `shared-circe` = projectMatrix
     )
   )
   .jvmPlatform(allScalaVersions)
+  .nativePlatform(allScalaVersions)
   .enableIntegrationTests
   .dependsOn(shared)
 
@@ -60,6 +65,7 @@ lazy val `shared-ciris` = projectMatrix
     libraryDependencies ++= Seq(Ciris.core)
   )
   .jvmPlatform(allScalaVersions)
+  .nativePlatform(allScalaVersions)
   .enableIntegrationTests
   .dependsOn(shared)
 
@@ -68,6 +74,7 @@ lazy val `shared-localstack` = projectMatrix
     description := "Common utilities for the localstack test-kits"
   )
   .jvmPlatform(allScalaVersions)
+  .nativePlatform(allScalaVersions)
   .enableIntegrationTests
   .dependsOn(shared, `shared-ciris`, `shared-circe`)
 
@@ -153,6 +160,7 @@ lazy val `kcl-ciris` = projectMatrix
     Test / buildInfoPackage := "kinesis4cats.kcl.ciris",
     Test / buildInfoOptions += BuildInfoOption.ConstantValue
   )
+  .forkTests
   .jvmPlatform(allScalaVersions)
   .enableIntegrationTests
   .dependsOn(kcl, `shared-ciris`, `kcl-localstack` % Test)
@@ -168,6 +176,7 @@ lazy val `kcl-fs2-ciris` = projectMatrix
     Test / buildInfoPackage := "kinesis4cats.kcl.fs2.ciris",
     Test / buildInfoOptions += BuildInfoOption.ConstantValue
   )
+  .forkTests
   .jvmPlatform(allScalaVersions)
   .enableIntegrationTests
   .dependsOn(`kcl-fs2`, `kcl-ciris`, `shared-ciris`)
@@ -257,6 +266,7 @@ lazy val `kpl-ciris` = projectMatrix
     Test / buildInfoPackage := "kinesis4cats.kpl.ciris",
     Test / buildInfoOptions += BuildInfoOption.ConstantValue
   )
+  .forkTests
   .jvmPlatform(allScalaVersions)
   .enableIntegrationTests
   .dependsOn(kpl, `shared-ciris`)
@@ -282,6 +292,7 @@ lazy val `kpl-tests` = projectMatrix
   .settings(
     description := "Integration Tests for the KPL"
   )
+  .forkTests
   .jvmPlatform(allScalaVersions)
   .enableIntegrationTests
   .dependsOn(
@@ -389,11 +400,13 @@ lazy val `smithy4s-client` = projectMatrix
       ) / Compile / packageBin).value
   )
   .jvmPlatform(last2ScalaVersions)
+  .nativePlatform(last2ScalaVersions)
   .enableIntegrationTests
   .dependsOn(shared)
 
 lazy val `smithy4s-client-fs2` = projectMatrix
   .jvmPlatform(last2ScalaVersions)
+  .nativePlatform(last2ScalaVersions)
   .enableIntegrationTests
   .dependsOn(`smithy4s-client`, `shared-fs2`)
 
@@ -404,6 +417,7 @@ lazy val `smithy4s-client-logging-circe` = projectMatrix
     libraryDependencies ++= Seq(Http4s.circe)
   )
   .jvmPlatform(last2ScalaVersions)
+  .nativePlatform(last2ScalaVersions)
   .enableIntegrationTests
   .dependsOn(`shared-circe`, `smithy4s-client`)
 
@@ -412,6 +426,7 @@ lazy val `smithy4s-client-localstack` = projectMatrix
     description := "A test-kit for working with Kinesis and Localstack, via the Smithy4s Client project"
   )
   .jvmPlatform(last2ScalaVersions)
+  .nativePlatform(last2ScalaVersions)
   .dependsOn(`shared-localstack`, `smithy4s-client-fs2`)
 
 lazy val `smithy4s-client-tests` = projectMatrix
