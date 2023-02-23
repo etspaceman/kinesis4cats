@@ -3,7 +3,7 @@ services:
   localstack:
     image: "localstack/localstack:latest"
     environment:
-      - "SERVICES=cloudwatch,kinesis,dynamodb"
+      - "SERVICES=cloudwatch,kinesis,dynamodb,sts"
       - "KINESIS_LATENCY=0"
     healthcheck:
       test: "awslocal cloudwatch list-metrics"

@@ -62,6 +62,9 @@ final case class LocalstackConfig(
     dynamoPort: Int,
     dynamoProtocol: Protocol,
     dynamoHost: String,
+    stsPort: Int,
+    stsProtocol: Protocol,
+    stsHost: String,
     region: AwsRegion
 ) {
   val cloudwatchEndpoint: String =
@@ -73,6 +76,9 @@ final case class LocalstackConfig(
   val dynamoEndpoint: String =
     s"${dynamoProtocol.name}://$dynamoHost:$dynamoPort"
   val dynamoEndpointUri: URI = URI.create(dynamoEndpoint)
+  val stsEndpoint: String =
+    s"${stsProtocol.name}://$stsHost:$stsPort"
+  val stsEndpointUri: URI = URI.create(stsEndpoint)
 }
 
 object LocalstackConfig {
@@ -90,11 +96,14 @@ object LocalstackConfig {
       .add("dynamoProtocol", x.dynamoProtocol.name)
       .add("dynamoHost", x.dynamoHost)
       .add("dynamoEndpoint", x.dynamoEndpoint)
+      .add("stsProtocol", x.stsProtocol.name)
+      .add("stsHost", x.stsHost)
+      .add("stsEndpoint", x.stsEndpoint)
       .add("region", x.region.name)
       .build
 
   implicit val localstackCirceEncoder: Encoder[LocalstackConfig] =
-    Encoder.forProduct13(
+    Encoder.forProduct17(
       "cloudwatchPort",
       "cloudwatchProtocol",
       "cloudwatchHost",
@@ -107,6 +116,10 @@ object LocalstackConfig {
       "dynamoProtocol",
       "dynamoHost",
       "dynamoEndpoint",
+      "stsPort",
+      "stsProtocol",
+      "stsHost",
+      "stsEndpoint",
       "region"
     )(x =>
       (
@@ -122,6 +135,10 @@ object LocalstackConfig {
         x.dynamoProtocol.name,
         x.dynamoHost,
         x.dynamoEndpoint,
+        x.stsPort,
+        x.stsProtocol.name,
+        x.stsHost,
+        x.stsEndpoint,
         x.region.name
       )
     )
@@ -208,6 +225,24 @@ object LocalstackConfig {
         prefix
       )
       .or(defaultHost(prefix))
+    stsPort <- CirisReader
+      .read[Int](
+        List("localstack", "sts", "port"),
+        prefix
+      )
+      .or(defaultPort(prefix))
+    stsProtocol <- CirisReader
+      .read[Protocol](
+        List("localstack", "sts", "protocol"),
+        prefix
+      )
+      .or(defaultProtocol(prefix))
+    stsHost <- CirisReader
+      .read[String](
+        List("localstack", "sts", "host"),
+        prefix
+      )
+      .or(defaultHost(prefix))
     region <- CirisReader.readDefaulted[AwsRegion](
       List("localstack", "aws", "region"),
       AwsRegion.US_EAST_1,
@@ -223,6 +258,9 @@ object LocalstackConfig {
     dynamoPort,
     dynamoProtocol,
     dynamoHost,
+    stsPort,
+    stsProtocol,
+    stsHost,
     region
   )
 
