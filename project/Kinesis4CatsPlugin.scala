@@ -64,6 +64,7 @@ object Kinesis4CatsPlugin extends AutoPlugin {
         params = Map("repo-token" -> "${{ secrets.GITHUB_TOKEN }}")
       )
     ),
+    githubWorkflowBuildMatrixFailFast := Some(false),
     githubWorkflowBuild := {
       val style = (tlCiHeaderCheck.value, tlCiScalafmtCheck.value) match {
         case (true, true) => // headers + formatting
