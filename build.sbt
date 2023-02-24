@@ -426,17 +426,18 @@ lazy val `smithy4s-client-localstack` = projectMatrix
   .dependsOn(`shared-localstack`, `smithy4s-client-fs2`)
 
 lazy val `smithy4s-client-tests` = projectMatrix
-  .enablePlugins(NoPublishPlugin)
+  .enablePlugins(NoPublishPlugin, ScalaNativeBrewedConfigPlugin)
   .settings(
     description := "Integration Tests for the Smithy4s Kinesis Client",
     libraryDependencies ++= Seq(
-      Http4s.emberClient.value % Test
-    )
+      Http4s.emberClient.value % Test,
+      Epollcat.value % Test
+    ),
+    nativeBrewFormulas += "curl"
   )
-  .jvmPlatform(Seq(Scala213))
-  // TODO: Enable when ember client issues are fixed
+  .jvmPlatform(Seq(Scala3))
   .nativePlatform(Seq(Scala3))
-  .jsPlatform(last2ScalaVersions)
+  .jsPlatform(Seq(Scala3))
   .dependsOn(
     `smithy4s-client-localstack` % Test,
     `smithy4s-client-logging-circe` % Test,
@@ -444,13 +445,15 @@ lazy val `smithy4s-client-tests` = projectMatrix
   )
 
 lazy val `smithy4s-client-producer-tests` = projectMatrix
-  .enablePlugins(NoPublishPlugin)
+  .enablePlugins(NoPublishPlugin, ScalaNativeBrewedConfigPlugin)
   .settings(
     description := "Integration Tests for the Smithy4s Kinesis Producer",
     libraryDependencies ++= Seq(
       Http4s.emberClient.value % Test,
-      Log4Cats.slf4j % Test
-    )
+      Log4Cats.slf4j % Test,
+      Epollcat.value % Test
+    ),
+    nativeBrewFormulas += "curl"
   )
   .jvmPlatform(Seq(Scala213))
   .forkTests

@@ -19,8 +19,6 @@ package kcl
 
 import scala.concurrent.duration._
 
-import java.util.UUID
-
 import cats.effect.kernel.Deferred
 import cats.effect.std.Queue
 import cats.effect.{IO, Resource, SyncIO}
@@ -31,6 +29,7 @@ import org.scalacheck.Arbitrary
 import software.amazon.awssdk.core.SdkBytes
 import software.amazon.awssdk.services.kinesis.model.PutRecordRequest
 
+import kinesis4cats.Utils
 import kinesis4cats.client.KinesisClient
 import kinesis4cats.client.localstack.LocalstackKinesisClient
 import kinesis4cats.compat.retry
@@ -53,7 +52,7 @@ abstract class KCLConsumerSpec(implicit
 
   override def munitIOTimeout: Duration = 5.minutes
 
-  val streamName = s"kcl-consumer-spec-${UUID.randomUUID().toString()}"
+  val streamName = s"kcl-consumer-spec-${Utils.randomUUIDString}"
   val appName = streamName
 
   fixture(streamName, 1, appName).test("It should receive produced records") {

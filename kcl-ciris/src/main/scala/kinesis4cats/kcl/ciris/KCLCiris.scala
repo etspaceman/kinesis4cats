@@ -19,7 +19,6 @@ package ciris
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
 
-import java.util.UUID
 import java.util.concurrent.ExecutorService
 
 import _root_.ciris._
@@ -40,6 +39,7 @@ import software.amazon.kinesis.retrieval.fanout.FanOutConfig
 import software.amazon.kinesis.retrieval.polling.PollingConfig
 import software.amazon.kinesis.retrieval.{AggregatorUtil, RetrievalConfig}
 
+import kinesis4cats.Utils
 import kinesis4cats.ciris.CirisReader
 import kinesis4cats.compat.FunctionConverters._
 import kinesis4cats.compat.OptionConverters._
@@ -542,7 +542,7 @@ object KCLCiris {
         .or(Common.readAppName(prefix))
       workerId <- CirisReader.readDefaulted(
         List("kcl", "lease", "worker", "id"),
-        UUID.randomUUID().toString(),
+        Utils.randomUUIDString,
         prefix
       )
       failoverTime <- CirisReader

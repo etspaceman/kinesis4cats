@@ -19,8 +19,6 @@ package producer
 
 import scala.concurrent.duration._
 
-import java.util.UUID
-
 import cats.data.NonEmptyList
 import cats.effect._
 import cats.effect.std.Queue
@@ -29,6 +27,7 @@ import io.circe.parser._
 import io.circe.syntax._
 import org.scalacheck.Arbitrary
 
+import kinesis4cats.Utils
 import kinesis4cats.compat.retry.RetryPolicies._
 import kinesis4cats.compat.retry._
 import kinesis4cats.syntax.scalacheck._
@@ -57,7 +56,7 @@ private[kinesis4cats] abstract class ProducerSpec[PutReq, PutRes, A]
           data.map(x =>
             Record(
               x.asJson.noSpaces.getBytes(),
-              UUID.randomUUID().toString(),
+              Utils.randomUUIDString,
               None,
               None
             )

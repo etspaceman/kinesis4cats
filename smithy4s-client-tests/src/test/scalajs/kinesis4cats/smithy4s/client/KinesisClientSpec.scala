@@ -17,8 +17,6 @@
 package kinesis4cats
 package smithy4s.client
 
-import java.util.UUID
-
 import _root_.smithy4s.ByteArray
 import _root_.smithy4s.aws.AwsRegion
 import cats.effect._
@@ -29,6 +27,7 @@ import io.circe.syntax._
 import org.http4s.ember.client.EmberClientBuilder
 import org.scalacheck.Arbitrary
 
+import kinesis4cats.Utils
 import kinesis4cats.logging.ConsoleLogger
 import kinesis4cats.logging.instances.show._
 import kinesis4cats.models.StreamArn
@@ -61,7 +60,7 @@ abstract class KinesisClientSpec(implicit LE: KinesisClient.LogEncoders[IO])
   // Will look into this more later.
   fixture.test("It should work through all commands") { client =>
     val streamName =
-      s"smithy4s-kinesis-client-spec-${UUID.randomUUID().toString()}"
+      s"smithy4s-kinesis-client-spec-${Utils.randomUUIDString}"
     val accountId = "000000000000"
 
     val streamArn = StreamArn(

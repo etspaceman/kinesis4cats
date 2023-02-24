@@ -18,13 +18,13 @@ package kinesis4cats
 package kpl
 
 import java.nio.ByteBuffer
-import java.util.UUID
 
 import cats.effect.{IO, SyncIO}
 import com.amazonaws.services.kinesis.producer._
 import io.circe.syntax._
 import org.scalacheck.Arbitrary
 
+import kinesis4cats.Utils
 import kinesis4cats.kpl.localstack.LocalstackKPLProducer
 import kinesis4cats.syntax.scalacheck._
 
@@ -38,7 +38,7 @@ abstract class KPLProducerSpec(implicit LE: KPLProducer.LogEncoders)
     LocalstackKPLProducer.producerWithStream[IO](streamName, shardCount)
   )
 
-  val streamName = s"kpl-producer-spec-${UUID.randomUUID()}"
+  val streamName = s"kpl-producer-spec-${Utils.randomUUID}"
 
   fixture(streamName, 1).test("It should run commands successfully") {
     producer =>

@@ -20,8 +20,6 @@ package fs2
 
 import scala.concurrent.duration._
 
-import java.util.UUID
-
 import _root_.fs2.Stream
 import cats.effect.kernel.Deferred
 import cats.effect.{IO, Resource, SyncIO}
@@ -32,6 +30,7 @@ import org.scalacheck.Arbitrary
 import software.amazon.awssdk.core.SdkBytes
 import software.amazon.awssdk.services.kinesis.model.PutRecordRequest
 
+import kinesis4cats.Utils
 import kinesis4cats.client.KinesisClient
 import kinesis4cats.client.localstack.LocalstackKinesisClient
 import kinesis4cats.kcl.fs2.localstack.LocalstackKCLConsumerFS2
@@ -52,7 +51,7 @@ abstract class KCLConsumerFS2Spec(implicit
 
   override def munitIOTimeout: Duration = 5.minutes
 
-  val streamName = s"kcl-fs2-consumer-spec-${UUID.randomUUID().toString()}"
+  val streamName = s"kcl-fs2-consumer-spec-${Utils.randomUUIDString}"
   val appName = streamName
 
   fixture(streamName, 1, appName).test("It should receive produced records") {
