@@ -130,20 +130,10 @@ object DockerComposePlugin extends AutoPlugin {
       throw new IllegalStateException(s"docker-compose ps -a returned $res")
   }
 
-  def dockerComposeTestQuickTask(
-      configuration: Configuration
-  ): Def.Initialize[Task[Unit]] =
-    Def.sequential(
-      dockerComposeUp,
-      configuration / test,
-      dockerComposeDown
-    )
-
   def settings(
-      configuration: Configuration,
       build: Boolean,
       projects: List[Project]
-  ): Seq[Setting[_]] = inConfig(configuration)(
+  ): Seq[Setting[_]] =
     Seq(
       createNetwork := createNetworkTask.value,
       removeNetwork := removeNetworkTask.value,
@@ -152,9 +142,8 @@ object DockerComposePlugin extends AutoPlugin {
       dockerComposeRestart := dockerComposeRestartTask.value,
       dockerComposeLogs := dockerComposeLogsTask.value,
       dockerComposePs := dockerComposePsTask.value,
-      dockerComposeTestQuick := dockerComposeTestQuickTask(configuration).value,
       composeFileLocation := "docker/",
-      composeFileName := s"docker-compose-${configuration.name.toLowerCase}.yml",
+      composeFileName := s"docker-compose.yml",
       networkName := sys.env
         .getOrElse("DOCKER_NET_NAME", "kinesis4cats_network"),
       composeProjectName := sys.env
@@ -162,7 +151,6 @@ object DockerComposePlugin extends AutoPlugin {
       buildImage := build,
       projectsToBuild := projects
     )
-  )
 }
 
 object DockerComposePluginKeys {
