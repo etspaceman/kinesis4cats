@@ -54,7 +54,7 @@ object LibraryDependencies {
       val aggregator =
         "com.github.awslabs.kinesis-aggregation" % "amazon-kinesis-aggregator" % "2.0.3-agg"
       val deaggregator =
-        "com.github.awslabs.kinesis-aggregation" % "amazon-kinesis-aggregator" % "2.0.3-deagg"
+        "com.github.awslabs.kinesis-aggregation" % "amazon-kinesis-aggregator" % "2.0.3"
     }
 
     val kpl = "com.amazonaws" % "amazon-kinesis-producer" % "0.15.5"
