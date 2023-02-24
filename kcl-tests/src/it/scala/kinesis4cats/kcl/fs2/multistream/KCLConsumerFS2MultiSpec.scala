@@ -53,7 +53,7 @@ abstract class KCLConsumerFS2MultiSpec(implicit
       shardCount: Int,
       appName: String
   ): SyncIO[FunFixture[KCLConsumerFS2MultiSpec.Resources[IO]]] =
-    ResourceFixture(
+    ResourceFunFixture(
       KCLConsumerFS2MultiSpec.resource(
         streamArn1,
         streamArn2,
@@ -62,7 +62,7 @@ abstract class KCLConsumerFS2MultiSpec(implicit
       )
     )
 
-  override def munitTimeout: Duration = 5.minutes
+  override def munitIOTimeout: Duration = 5.minutes
 
   val accountId = "000000000000"
   val streamArn1 = StreamArn(

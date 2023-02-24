@@ -28,13 +28,13 @@ import cats.syntax.all._
 import io.circe.parser._
 import io.circe.syntax._
 import org.scalacheck.Arbitrary
-import retry.RetryPolicies._
-import retry._
 import software.amazon.awssdk.core.SdkBytes
 import software.amazon.awssdk.services.kinesis.model.PutRecordRequest
 
 import kinesis4cats.client.KinesisClient
 import kinesis4cats.client.localstack.LocalstackKinesisClient
+import kinesis4cats.compat.retry
+import kinesis4cats.compat.retry.RetryPolicies._
 import kinesis4cats.kcl.localstack.LocalstackKCLConsumer
 import kinesis4cats.syntax.bytebuffer._
 import kinesis4cats.syntax.scalacheck._
@@ -47,11 +47,11 @@ abstract class KCLConsumerSpec(implicit
       streamName: String,
       shardCount: Int,
       appName: String
-  ): SyncIO[FunFixture[KCLConsumerSpec.Resources[IO]]] = ResourceFixture(
+  ): SyncIO[FunFixture[KCLConsumerSpec.Resources[IO]]] = ResourceFunFixture(
     KCLConsumerSpec.resource(streamName, shardCount, appName)
   )
 
-  override def munitTimeout: Duration = 5.minutes
+  override def munitIOTimeout: Duration = 5.minutes
 
   val streamName = s"kcl-consumer-spec-${UUID.randomUUID().toString()}"
   val appName = streamName
@@ -72,10 +72,10 @@ abstract class KCLConsumerSpec(implicit
           )
         )
         retryPolicy = limitRetries[IO](30).join(constantDelay(1.second))
-        size <- retryingOnFailures(
+        size <- retry.retryingOnFailures(
           retryPolicy,
           (x: Int) => IO(x === 5),
-          noop[IO, Int]
+          retry.noop[IO, Int]
         )(resources.resultsQueue.size)
         _ <- IO(assert(size === 5))
         results <- resources.resultsQueue.tryTakeN(None)

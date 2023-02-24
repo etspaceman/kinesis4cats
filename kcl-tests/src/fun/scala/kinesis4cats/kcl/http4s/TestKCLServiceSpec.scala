@@ -24,7 +24,7 @@ import org.http4s.ember.client.EmberClientBuilder
 class TestKCLServiceSpec extends munit.CatsEffectSuite {
 
   val fixture: SyncIO[FunFixture[TestKCLServiceSpec.Resources[IO]]] =
-    ResourceFixture(TestKCLServiceSpec.resource)
+    ResourceFunFixture(TestKCLServiceSpec.resource)
 
   fixture.test("It should start successfully") { resources =>
     resources.client.get("http://localhost:8080/initialized")(resp =>

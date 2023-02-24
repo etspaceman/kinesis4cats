@@ -17,7 +17,6 @@
 package kinesis4cats
 package kcl.instances
 
-import scala.compat.java8.OptionConverters._
 import scala.jdk.CollectionConverters._
 
 import cats.Show
@@ -32,6 +31,7 @@ import software.amazon.kinesis.retrieval._
 import software.amazon.kinesis.retrieval.fanout.FanOutConfig
 import software.amazon.kinesis.retrieval.polling.PollingConfig
 
+import kinesis4cats.compat.OptionConverters._
 import kinesis4cats.kcl.{KCLConsumer, RecordProcessor}
 import kinesis4cats.logging.instances.show._
 

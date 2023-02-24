@@ -23,10 +23,10 @@ import cats.effect.syntax.all._
 import cats.effect.{Async, Resource}
 import cats.syntax.all._
 import org.typelevel.log4cats.slf4j.Slf4jLogger
-import retry.RetryPolicies._
-import retry._
 import software.amazon.awssdk.services.kinesis.model._
 
+import kinesis4cats.compat.retry.RetryPolicies._
+import kinesis4cats.compat.retry._
 import kinesis4cats.localstack.LocalstackConfig
 import kinesis4cats.localstack.aws.v2.AwsClients
 

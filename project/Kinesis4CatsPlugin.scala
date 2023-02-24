@@ -204,12 +204,10 @@ object Kinesis4CatsPlugin extends AutoPlugin {
     ThisBuild / semanticdbEnabled := true,
     semanticdbVersion := scalafixSemanticdb.revision,
     libraryDependencies ++= Seq(
-      Cats.core,
-      Cats.effect,
-      CatsRetry,
-      Scala.java8Compat,
-      Log4Cats.core
-    ) ++ testDependencies.map(_ % Test),
+      Cats.core.value,
+      Cats.effect.value,
+      Log4Cats.core.value
+    ) ++ testDependencies.value.map(_ % Test),
     libraryDependencySchemes += "org.scala-lang.modules" %% "scala-xml" % VersionScheme.Always,
     moduleName := "kinesis4cats-" + name.value,
     headerLicense := Some(
@@ -272,15 +270,14 @@ object Kinesis4CatsPluginKeys {
   val IT = config("it").extend(Test)
   val FunctionalTest = config("fun").extend(Test)
 
-  val testDependencies = List(
-    Munit.core,
-    Munit.catsEffect,
-    Munit.scalacheck,
-    Munit.scalacheckEffect,
-    Logback,
-    Scalacheck,
-    FS2.core,
-    FS2.reactiveStreams
+  val testDependencies = Def.setting(
+    List(
+      Munit.core.value,
+      Munit.catsEffect.value,
+      Munit.scalacheck.value,
+      Scalacheck.value,
+      FS2.core.value
+    )
   )
 
   final implicit class Kinesi4CatsProjectMatrixOps(private val p: ProjectMatrix)
@@ -295,10 +292,7 @@ object Kinesis4CatsPluginKeys {
           BloopSettings.default ++
           Defaults.testSettings ++
           headerSettings(IT) ++
-          Seq(
-            parallelExecution := false,
-            javaOptions += "-Dcom.amazonaws.sdk.disableCertChecking=true"
-          )
+          Seq(parallelExecution := false)
       })
 
     def enableFunctionalTests = p
@@ -309,10 +303,7 @@ object Kinesis4CatsPluginKeys {
           BloopSettings.default ++
           Defaults.testSettings ++
           headerSettings(FunctionalTest) ++
-          Seq(
-            parallelExecution := false,
-            javaOptions += "-Dcom.amazonaws.sdk.disableCertChecking=true"
-          )
+          Seq(parallelExecution := false)
       })
   }
 
@@ -326,10 +317,7 @@ object Kinesis4CatsPluginKeys {
           BloopSettings.default ++
           Defaults.testSettings ++
           headerSettings(IT) ++
-          Seq(
-            parallelExecution := false,
-            javaOptions += "-Dcom.amazonaws.sdk.disableCertChecking=true"
-          )
+          Seq(parallelExecution := false)
       })
 
     def enableFunctionalTests = p
@@ -340,10 +328,7 @@ object Kinesis4CatsPluginKeys {
           BloopSettings.default ++
           Defaults.testSettings ++
           headerSettings(FunctionalTest) ++
-          Seq(
-            parallelExecution := false,
-            javaOptions += "-Dcom.amazonaws.sdk.disableCertChecking=true"
-          )
+          Seq(parallelExecution := false)
       })
   }
 }

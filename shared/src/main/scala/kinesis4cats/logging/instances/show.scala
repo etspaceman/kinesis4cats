@@ -26,8 +26,8 @@ import java.time.Instant
 
 import cats.Show
 import cats.syntax.all._
-import retry.RetryDetails
 
+import kinesis4cats.compat.retry._
 import kinesis4cats.syntax.bytebuffer._
 
 object show {

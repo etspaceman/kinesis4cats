@@ -16,7 +16,6 @@
 
 package kinesis4cats.instances
 
-import scala.compat.java8.DurationConverters._
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.jdk.CollectionConverters._
 import scala.util.Try
@@ -26,6 +25,7 @@ import java.time.Instant
 import _root_.ciris.{ConfigDecoder, ConfigError}
 import cats.syntax.all._
 
+import kinesis4cats.compat.DurationConverters._
 import kinesis4cats.models.{AwsRegion, ConsumerArn}
 import kinesis4cats.syntax.string._
 

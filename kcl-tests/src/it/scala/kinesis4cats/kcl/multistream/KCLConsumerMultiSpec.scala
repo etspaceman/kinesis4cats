@@ -30,14 +30,14 @@ import cats.syntax.all._
 import io.circe.parser._
 import io.circe.syntax._
 import org.scalacheck.Arbitrary
-import retry.RetryPolicies._
-import retry._
 import software.amazon.awssdk.core.SdkBytes
 import software.amazon.awssdk.services.kinesis.model.PutRecordRequest
 import software.amazon.kinesis.common._
 
 import kinesis4cats.client.KinesisClient
 import kinesis4cats.client.localstack.LocalstackKinesisClient
+import kinesis4cats.compat.retry.RetryPolicies._
+import kinesis4cats.compat.retry._
 import kinesis4cats.kcl.localstack.LocalstackKCLConsumer
 import kinesis4cats.models.{AwsRegion, StreamArn}
 import kinesis4cats.syntax.bytebuffer._
@@ -52,11 +52,12 @@ abstract class KCLConsumerMultiSpec(implicit
       streamArn2: StreamArn,
       shardCount: Int,
       appName: String
-  ): SyncIO[FunFixture[KCLConsumerMultiSpec.Resources[IO]]] = ResourceFixture(
-    KCLConsumerMultiSpec.resource(streamArn1, streamArn2, shardCount, appName)
-  )
+  ): SyncIO[FunFixture[KCLConsumerMultiSpec.Resources[IO]]] =
+    ResourceFunFixture(
+      KCLConsumerMultiSpec.resource(streamArn1, streamArn2, shardCount, appName)
+    )
 
-  override def munitTimeout: Duration = 5.minutes
+  override def munitIOTimeout: Duration = 5.minutes
 
   val accountId = "000000000000"
   val streamArn1 = StreamArn(

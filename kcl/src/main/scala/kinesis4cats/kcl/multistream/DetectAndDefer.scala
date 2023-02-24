@@ -16,12 +16,13 @@
 
 package kinesis4cats.kcl.multistream
 
-import scala.compat.java8.DurationConverters._
 import scala.concurrent.duration.FiniteDuration
 
 import java.time.Duration
 
 import software.amazon.kinesis.processor.FormerStreamsLeasesDeletionStrategy.AutoDetectionAndDeferredDeletionStrategy
+
+import kinesis4cats.compat.DurationConverters._
 
 /** Basic implementation of the
   * [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/processor/FormerStreamsLeasesDeletionStrategy.java AutoDetectionAndDeferredDeletionStrategy]]

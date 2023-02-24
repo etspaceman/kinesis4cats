@@ -25,7 +25,7 @@ import cats.effect.syntax.all._
 import com.amazonaws.kinesis.PutRecordsOutput
 import org.http4s.client.Client
 import org.typelevel.log4cats.StructuredLogger
-import org.typelevel.log4cats.slf4j.Slf4jLogger
+import org.typelevel.log4cats.noop.NoOpLogger
 import smithy4s.aws.kernel.AwsRegion
 
 import kinesis4cats.localstack.LocalstackConfig
@@ -151,7 +151,7 @@ object LocalstackFS2KinesisProducer {
         FS2Producer.Config
           .default(StreamNameOrArn.Name(streamName)),
       loggerF: Async[F] => F[StructuredLogger[F]] = (f: Async[F]) =>
-        Slf4jLogger.create[F](f, implicitly),
+        f.pure(NoOpLogger[F](f)),
       callback: (Producer.Res[PutRecordsOutput], Async[F]) => F[Unit] =
         (_: Producer.Res[PutRecordsOutput], f: Async[F]) => f.unit
   )(implicit

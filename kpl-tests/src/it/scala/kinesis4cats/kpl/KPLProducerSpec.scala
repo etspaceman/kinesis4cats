@@ -34,8 +34,8 @@ abstract class KPLProducerSpec(implicit LE: KPLProducer.LogEncoders)
   def fixture(
       streamName: String,
       shardCount: Int
-  ): SyncIO[FunFixture[KPLProducer[IO]]] = ResourceFixture(
-    LocalstackKPLProducer.producerWithStream(streamName, shardCount)
+  ): SyncIO[FunFixture[KPLProducer[IO]]] = ResourceFunFixture(
+    LocalstackKPLProducer.producerWithStream[IO](streamName, shardCount)
   )
 
   val streamName = s"kpl-producer-spec-${UUID.randomUUID()}"

@@ -23,8 +23,8 @@ import java.nio.ByteBuffer
 
 import io.circe.syntax._
 import io.circe.{Encoder, KeyEncoder}
-import retry.RetryDetails
 
+import kinesis4cats.compat.retry._
 import kinesis4cats.logging.LogEncoder
 import kinesis4cats.syntax.bytebuffer._
 

@@ -22,8 +22,6 @@ import scala.concurrent.duration._
 import cats.effect.syntax.all._
 import cats.effect.{Async, Resource}
 import cats.syntax.all._
-import retry.RetryPolicies._
-import retry._
 import software.amazon.awssdk.http.SdkHttpConfigurationOption
 import software.amazon.awssdk.http.async.SdkAsyncHttpClient
 import software.amazon.awssdk.http.nio.netty.NettyNioAsyncHttpClient
@@ -33,6 +31,9 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient
 import software.amazon.awssdk.services.kinesis.KinesisAsyncClient
 import software.amazon.awssdk.services.kinesis.model._
 import software.amazon.awssdk.utils.AttributeMap
+
+import kinesis4cats.compat.retry.RetryPolicies._
+import kinesis4cats.compat.retry._
 
 /** Helpers for constructing and leveraging AWS Java Client interfaces with
   * Localstack.

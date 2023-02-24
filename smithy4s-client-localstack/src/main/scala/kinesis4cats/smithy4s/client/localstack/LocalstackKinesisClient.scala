@@ -27,11 +27,11 @@ import com.amazonaws.kinesis._
 import org.http4s.client.Client
 import org.typelevel.log4cats.StructuredLogger
 import org.typelevel.log4cats.noop.NoOpLogger
-import retry.RetryPolicies._
-import retry._
 import smithy4s.aws._
 import smithy4s.aws.kernel.AwsRegion
 
+import kinesis4cats.compat.retry.RetryPolicies._
+import kinesis4cats.compat.retry._
 import kinesis4cats.localstack.LocalstackConfig
 import kinesis4cats.logging.LogEncoder
 import kinesis4cats.smithy4s.client.KinesisClient

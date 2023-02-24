@@ -29,9 +29,9 @@ import cats.syntax.all._
 import io.circe.parser._
 import io.circe.syntax._
 import org.scalacheck.Arbitrary
-import retry.RetryPolicies._
-import retry._
 
+import kinesis4cats.compat.retry.RetryPolicies._
+import kinesis4cats.compat.retry._
 import kinesis4cats.syntax.scalacheck._
 
 private[kinesis4cats] abstract class FS2ProducerSpec[PutReq, PutRes, A]
@@ -46,7 +46,7 @@ private[kinesis4cats] abstract class FS2ProducerSpec[PutReq, PutRes, A]
       appName: String
   ): SyncIO[FunFixture[FS2ProducerSpec.Resources[IO, PutReq, PutRes, A]]]
 
-  override def munitTimeout: Duration = 5.minutes
+  override def munitIOTimeout: Duration = 5.minutes
 
   def appName = streamName
 
