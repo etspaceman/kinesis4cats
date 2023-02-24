@@ -97,41 +97,44 @@ private[kinesis4cats] final class ConsoleLogger[F[_]](
   override def isErrorEnabled: F[Boolean] = F.pure(true)
 
   override def trace(ctx: Map[String, String])(msg: => String): F[Unit] =
-    printMessage("trace", ctx)(msg)
+    isTraceEnabled.ifM(printMessage("trace", ctx)(msg), F.unit)
 
   override def trace(ctx: Map[String, String], t: Throwable)(
       msg: => String
-  ): F[Unit] = printMessage("trace", ctx, Option(t))(msg)
+  ): F[Unit] =
+    isTraceEnabled.ifM(printMessage("trace", ctx, Option(t))(msg), F.unit)
 
   override def debug(ctx: Map[String, String])(msg: => String): F[Unit] =
-    printMessage("debug", ctx)(msg)
+    isDebugEnabled.ifM(printMessage("debug", ctx)(msg), F.unit)
 
   override def debug(ctx: Map[String, String], t: Throwable)(
       msg: => String
   ): F[Unit] =
-    printMessage("debug", ctx, Option(t))(msg)
+    isDebugEnabled.ifM(printMessage("debug", ctx, Option(t))(msg), F.unit)
 
   override def info(ctx: Map[String, String])(msg: => String): F[Unit] =
-    printMessage("info", ctx)(msg)
+    isInfoEnabled.ifM(printMessage("info", ctx)(msg), F.unit)
 
   override def info(ctx: Map[String, String], t: Throwable)(
       msg: => String
-  ): F[Unit] = printMessage("info", ctx, Option(t))(msg)
+  ): F[Unit] =
+    isInfoEnabled.ifM(printMessage("info", ctx, Option(t))(msg), F.unit)
 
   override def warn(ctx: Map[String, String])(msg: => String): F[Unit] =
-    printMessage("warn", ctx)(msg)
+    isWarnEnabled.ifM(printMessage("warn", ctx)(msg), F.unit)
 
   override def warn(ctx: Map[String, String], t: Throwable)(
       msg: => String
-  ): F[Unit] = printMessage("warn", ctx, Option(t))(msg)
+  ): F[Unit] =
+    isWarnEnabled.ifM(printMessage("warn", ctx, Option(t))(msg), F.unit)
 
   override def error(ctx: Map[String, String])(msg: => String): F[Unit] =
-    printMessage("error", ctx)(msg)
+    isErrorEnabled.ifM(printMessage("error", ctx)(msg), F.unit)
 
   override def error(ctx: Map[String, String], t: Throwable)(
       msg: => String
   ): F[Unit] =
-    printMessage("error", ctx, Option(t))(msg)
+    isErrorEnabled.ifM(printMessage("error", ctx, Option(t))(msg), F.unit)
 
 }
 
