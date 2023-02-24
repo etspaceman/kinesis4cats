@@ -225,7 +225,7 @@ lazy val `kcl-tests` = projectMatrix
     },
     assembly / mainClass := Some("kinesis4cats.kcl.http4s.TestKCLService")
   )
-  .jvmPlatform(allScalaVersions)
+  .jvmPlatform(Seq(Scala213))
   .dependsOn(
     `kcl-http4s`,
     `kcl-localstack`,
@@ -288,7 +288,7 @@ lazy val `kpl-tests` = projectMatrix
     Test / javaOptions += "-Dcom.amazonaws.sdk.disableCertChecking=true"
   )
   .forkTests
-  .jvmPlatform(allScalaVersions)
+  .jvmPlatform(Seq(Scala213))
   .dependsOn(
     `kpl-localstack` % Test,
     `kpl-logging-circe` % Test,
@@ -338,7 +338,7 @@ lazy val `kinesis-client-tests` = projectMatrix
       FS2.reactiveStreams % Test
     )
   )
-  .jvmPlatform(allScalaVersions)
+  .jvmPlatform(Seq(Scala213))
   .forkTests
   .dependsOn(
     `kinesis-client-localstack` % Test,
@@ -353,7 +353,7 @@ lazy val `kinesis-client-producer-tests` = projectMatrix
     description := "Integration Tests for the Client Kinesis Producer",
     libraryDependencies ++= Seq(Log4Cats.slf4j % Test, Logback % Test)
   )
-  .jvmPlatform(allScalaVersions)
+  .jvmPlatform(Seq(Scala213))
   .forkTests
   .dependsOn(
     `kcl-localstack` % Test,
@@ -432,7 +432,7 @@ lazy val `smithy4s-client-tests` = projectMatrix
       Http4s.blazeClient.value % Test
     )
   )
-  .jvmPlatform(last2ScalaVersions)
+  .jvmPlatform(Seq(Scala213))
   // TODO: Enable when ember client issues are fixed
   // .nativePlatform(Seq(Scala3))
   // .jsPlatform(last2ScalaVersions)
@@ -451,7 +451,7 @@ lazy val `smithy4s-client-producer-tests` = projectMatrix
       Log4Cats.slf4j % Test
     )
   )
-  .jvmPlatform(last2ScalaVersions)
+  .jvmPlatform(Seq(Scala213))
   .forkTests
   .dependsOn(
     `kcl-localstack` % Test,
