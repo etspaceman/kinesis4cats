@@ -303,7 +303,8 @@ lazy val `kpl-tests` = projectMatrix
     libraryDependencies ++= Seq(
       Logback % IT,
       Log4Cats.slf4j % IT
-    )
+    ),
+    IT / javaOptions += "-Dcom.amazonaws.sdk.disableCertChecking=true"
   )
   .forkTests
   .jvmPlatform(allScalaVersions)

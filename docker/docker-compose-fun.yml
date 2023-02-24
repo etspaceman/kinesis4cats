@@ -7,7 +7,7 @@ services:
       - "KINESIS_LATENCY=0"
       - "KINESIS_INITIALIZE_STREAMS=test-kcl-service-stream:1"
     healthcheck:
-      test: "awslocal cloudwatch list-metrics"
+      test: "awslocal cloudwatch list-metrics && awslocal sts get-caller-identity"
       interval: 5s
       timeout: 10s
       start_period: 10s

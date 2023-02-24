@@ -291,10 +291,7 @@ object Kinesis4CatsPluginKeys {
           BloopSettings.default ++
           Defaults.testSettings ++
           headerSettings(IT) ++
-          Seq(
-            parallelExecution := false,
-            javaOptions += "-Dcom.amazonaws.sdk.disableCertChecking=true"
-          )
+          Seq(parallelExecution := false)
       })
 
     def enableFunctionalTests = p
@@ -305,10 +302,7 @@ object Kinesis4CatsPluginKeys {
           BloopSettings.default ++
           Defaults.testSettings ++
           headerSettings(FunctionalTest) ++
-          Seq(
-            parallelExecution := false,
-            javaOptions += "-Dcom.amazonaws.sdk.disableCertChecking=true"
-          )
+          Seq(parallelExecution := false)
       })
   }
 
@@ -322,10 +316,7 @@ object Kinesis4CatsPluginKeys {
           BloopSettings.default ++
           Defaults.testSettings ++
           headerSettings(IT) ++
-          Seq(
-            parallelExecution := false,
-            javaOptions += "-Dcom.amazonaws.sdk.disableCertChecking=true"
-          )
+          Seq(parallelExecution := false)
       })
 
     def enableFunctionalTests = p
@@ -336,10 +327,7 @@ object Kinesis4CatsPluginKeys {
           BloopSettings.default ++
           Defaults.testSettings ++
           headerSettings(FunctionalTest) ++
-          Seq(
-            parallelExecution := false,
-            javaOptions += "-Dcom.amazonaws.sdk.disableCertChecking=true"
-          )
+          Seq(parallelExecution := false)
       })
   }
 }
