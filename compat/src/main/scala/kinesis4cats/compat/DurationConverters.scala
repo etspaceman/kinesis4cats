@@ -27,6 +27,7 @@ import java.util.concurrent.TimeUnit
   * mediating between Scala and Java libraries with asynchronous APIs where
   * timeouts for example are often expressed as durations.
   */
+@SuppressWarnings(Array("scalafix:DisableSyntax.throw"))
 private[kinesis4cats] object DurationConverters {
 
   /** Transform a Java duration into a Scala duration. If the nanosecond part of

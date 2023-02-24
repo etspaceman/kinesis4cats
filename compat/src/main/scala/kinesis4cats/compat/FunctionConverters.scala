@@ -1115,7 +1115,7 @@ trait Priority1FunctionConverters extends Priority2FunctionConverters {
       evA1: =:=[A1, T],
       evA2: =:=[A2, T]
   ): RichFunction2AsBinaryOperator[T] = new RichFunction2AsBinaryOperator[T](
-    sf.asInstanceOf[scala.Function2[T, T, T]]
+    sf.asInstanceOf[scala.Function2[T, T, T]] // scalafix:ok
   )
 
   @inline implicit def enrichAsJavaConsumer[T](
@@ -1126,40 +1126,42 @@ trait Priority1FunctionConverters extends Priority2FunctionConverters {
       sf: scala.Function1[A0, R]
   )(implicit evA0: =:=[A0, Double]): RichFunction1AsDoubleFunction[R] =
     new RichFunction1AsDoubleFunction[R](
-      sf.asInstanceOf[scala.Function1[Double, R]]
+      sf.asInstanceOf[scala.Function1[Double, R]] // scalafix:ok
     )
 
   @inline implicit def enrichAsJavaIntFunction[A0, R](
       sf: scala.Function1[A0, R]
   )(implicit evA0: =:=[A0, Int]): RichFunction1AsIntFunction[R] =
-    new RichFunction1AsIntFunction[R](sf.asInstanceOf[scala.Function1[Int, R]])
+    new RichFunction1AsIntFunction[R](
+      sf.asInstanceOf[scala.Function1[Int, R]]
+    ) // scalafix:ok
 
   @inline implicit def enrichAsJavaLongFunction[A0, R](
       sf: scala.Function1[A0, R]
   )(implicit evA0: =:=[A0, Long]): RichFunction1AsLongFunction[R] =
     new RichFunction1AsLongFunction[R](
-      sf.asInstanceOf[scala.Function1[Long, R]]
+      sf.asInstanceOf[scala.Function1[Long, R]] // scalafix:ok
     )
 
   @inline implicit def enrichAsJavaObjDoubleConsumer[T, A1](
       sf: scala.Function2[T, A1, Unit]
   )(implicit evA1: =:=[A1, Double]): RichFunction2AsObjDoubleConsumer[T] =
     new RichFunction2AsObjDoubleConsumer[T](
-      sf.asInstanceOf[scala.Function2[T, Double, Unit]]
+      sf.asInstanceOf[scala.Function2[T, Double, Unit]] // scalafix:ok
     )
 
   @inline implicit def enrichAsJavaObjIntConsumer[T, A1](
       sf: scala.Function2[T, A1, Unit]
   )(implicit evA1: =:=[A1, Int]): RichFunction2AsObjIntConsumer[T] =
     new RichFunction2AsObjIntConsumer[T](
-      sf.asInstanceOf[scala.Function2[T, Int, Unit]]
+      sf.asInstanceOf[scala.Function2[T, Int, Unit]] // scalafix:ok
     )
 
   @inline implicit def enrichAsJavaObjLongConsumer[T, A1](
       sf: scala.Function2[T, A1, Unit]
   )(implicit evA1: =:=[A1, Long]): RichFunction2AsObjLongConsumer[T] =
     new RichFunction2AsObjLongConsumer[T](
-      sf.asInstanceOf[scala.Function2[T, Long, Unit]]
+      sf.asInstanceOf[scala.Function2[T, Long, Unit]] // scalafix:ok
     )
 
   @inline implicit def enrichAsJavaPredicate[T](
@@ -1186,7 +1188,9 @@ trait Priority1FunctionConverters extends Priority2FunctionConverters {
   @inline implicit def enrichAsJavaUnaryOperator[T, A1](
       sf: scala.Function1[T, A1]
   )(implicit evA1: =:=[A1, T]): RichFunction1AsUnaryOperator[T] =
-    new RichFunction1AsUnaryOperator[T](sf.asInstanceOf[scala.Function1[T, T]])
+    new RichFunction1AsUnaryOperator[T](
+      sf.asInstanceOf[scala.Function1[T, T]]
+    ) // scalafix:ok
 
 }
 
@@ -1558,21 +1562,21 @@ package object FunctionConverters extends Priority1FunctionConverters {
       evA1: =:=[A1, Double]
   ): RichFunction2AsDoubleBinaryOperator =
     new RichFunction2AsDoubleBinaryOperator(
-      sf.asInstanceOf[scala.Function2[Double, Double, Double]]
+      sf.asInstanceOf[scala.Function2[Double, Double, Double]] // scalafix:ok
     )
 
   @inline implicit def enrichAsJavaDoubleConsumer[A0](
       sf: scala.Function1[A0, Unit]
   )(implicit evA0: =:=[A0, Double]): RichFunction1AsDoubleConsumer =
     new RichFunction1AsDoubleConsumer(
-      sf.asInstanceOf[scala.Function1[Double, Unit]]
+      sf.asInstanceOf[scala.Function1[Double, Unit]] // scalafix:ok
     )
 
   @inline implicit def enrichAsJavaDoublePredicate[A0](
       sf: scala.Function1[A0, Boolean]
   )(implicit evA0: =:=[A0, Double]): RichFunction1AsDoublePredicate =
     new RichFunction1AsDoublePredicate(
-      sf.asInstanceOf[scala.Function1[Double, Boolean]]
+      sf.asInstanceOf[scala.Function1[Double, Boolean]] // scalafix:ok
     )
 
   @inline implicit def enrichAsJavaDoubleSupplier(
@@ -1583,21 +1587,21 @@ package object FunctionConverters extends Priority1FunctionConverters {
       sf: scala.Function1[A0, Int]
   )(implicit evA0: =:=[A0, Double]): RichFunction1AsDoubleToIntFunction =
     new RichFunction1AsDoubleToIntFunction(
-      sf.asInstanceOf[scala.Function1[Double, Int]]
+      sf.asInstanceOf[scala.Function1[Double, Int]] // scalafix:ok
     )
 
   @inline implicit def enrichAsJavaDoubleToLongFunction[A0](
       sf: scala.Function1[A0, Long]
   )(implicit evA0: =:=[A0, Double]): RichFunction1AsDoubleToLongFunction =
     new RichFunction1AsDoubleToLongFunction(
-      sf.asInstanceOf[scala.Function1[Double, Long]]
+      sf.asInstanceOf[scala.Function1[Double, Long]] // scalafix:ok
     )
 
   @inline implicit def enrichAsJavaDoubleUnaryOperator[A0](
       sf: scala.Function1[A0, Double]
   )(implicit evA0: =:=[A0, Double]): RichFunction1AsDoubleUnaryOperator =
     new RichFunction1AsDoubleUnaryOperator(
-      sf.asInstanceOf[scala.Function1[Double, Double]]
+      sf.asInstanceOf[scala.Function1[Double, Double]] // scalafix:ok
     )
 
   @inline implicit def enrichAsJavaIntBinaryOperator[A0, A1](
@@ -1606,19 +1610,21 @@ package object FunctionConverters extends Priority1FunctionConverters {
       evA0: =:=[A0, Int],
       evA1: =:=[A1, Int]
   ): RichFunction2AsIntBinaryOperator = new RichFunction2AsIntBinaryOperator(
-    sf.asInstanceOf[scala.Function2[Int, Int, Int]]
+    sf.asInstanceOf[scala.Function2[Int, Int, Int]] // scalafix:ok
   )
 
   @inline implicit def enrichAsJavaIntConsumer[A0](
       sf: scala.Function1[A0, Unit]
   )(implicit evA0: =:=[A0, Int]): RichFunction1AsIntConsumer =
-    new RichFunction1AsIntConsumer(sf.asInstanceOf[scala.Function1[Int, Unit]])
+    new RichFunction1AsIntConsumer(
+      sf.asInstanceOf[scala.Function1[Int, Unit]]
+    ) // scalafix:ok
 
   @inline implicit def enrichAsJavaIntPredicate[A0](
       sf: scala.Function1[A0, Boolean]
   )(implicit evA0: =:=[A0, Int]): RichFunction1AsIntPredicate =
     new RichFunction1AsIntPredicate(
-      sf.asInstanceOf[scala.Function1[Int, Boolean]]
+      sf.asInstanceOf[scala.Function1[Int, Boolean]] // scalafix:ok
     )
 
   @inline implicit def enrichAsJavaIntSupplier(
@@ -1629,21 +1635,21 @@ package object FunctionConverters extends Priority1FunctionConverters {
       sf: scala.Function1[A0, Double]
   )(implicit evA0: =:=[A0, Int]): RichFunction1AsIntToDoubleFunction =
     new RichFunction1AsIntToDoubleFunction(
-      sf.asInstanceOf[scala.Function1[Int, Double]]
+      sf.asInstanceOf[scala.Function1[Int, Double]] // scalafix:ok
     )
 
   @inline implicit def enrichAsJavaIntToLongFunction[A0](
       sf: scala.Function1[A0, Long]
   )(implicit evA0: =:=[A0, Int]): RichFunction1AsIntToLongFunction =
     new RichFunction1AsIntToLongFunction(
-      sf.asInstanceOf[scala.Function1[Int, Long]]
+      sf.asInstanceOf[scala.Function1[Int, Long]] // scalafix:ok
     )
 
   @inline implicit def enrichAsJavaIntUnaryOperator[A0](
       sf: scala.Function1[A0, Int]
   )(implicit evA0: =:=[A0, Int]): RichFunction1AsIntUnaryOperator =
     new RichFunction1AsIntUnaryOperator(
-      sf.asInstanceOf[scala.Function1[Int, Int]]
+      sf.asInstanceOf[scala.Function1[Int, Int]] // scalafix:ok
     )
 
   @inline implicit def enrichAsJavaLongBinaryOperator[A0, A1](
@@ -1652,21 +1658,21 @@ package object FunctionConverters extends Priority1FunctionConverters {
       evA0: =:=[A0, Long],
       evA1: =:=[A1, Long]
   ): RichFunction2AsLongBinaryOperator = new RichFunction2AsLongBinaryOperator(
-    sf.asInstanceOf[scala.Function2[Long, Long, Long]]
+    sf.asInstanceOf[scala.Function2[Long, Long, Long]] // scalafix:ok
   )
 
   @inline implicit def enrichAsJavaLongConsumer[A0](
       sf: scala.Function1[A0, Unit]
   )(implicit evA0: =:=[A0, Long]): RichFunction1AsLongConsumer =
     new RichFunction1AsLongConsumer(
-      sf.asInstanceOf[scala.Function1[Long, Unit]]
+      sf.asInstanceOf[scala.Function1[Long, Unit]] // scalafix:ok
     )
 
   @inline implicit def enrichAsJavaLongPredicate[A0](
       sf: scala.Function1[A0, Boolean]
   )(implicit evA0: =:=[A0, Long]): RichFunction1AsLongPredicate =
     new RichFunction1AsLongPredicate(
-      sf.asInstanceOf[scala.Function1[Long, Boolean]]
+      sf.asInstanceOf[scala.Function1[Long, Boolean]] // scalafix:ok
     )
 
   @inline implicit def enrichAsJavaLongSupplier(
@@ -1677,21 +1683,21 @@ package object FunctionConverters extends Priority1FunctionConverters {
       sf: scala.Function1[A0, Double]
   )(implicit evA0: =:=[A0, Long]): RichFunction1AsLongToDoubleFunction =
     new RichFunction1AsLongToDoubleFunction(
-      sf.asInstanceOf[scala.Function1[Long, Double]]
+      sf.asInstanceOf[scala.Function1[Long, Double]] // scalafix:ok
     )
 
   @inline implicit def enrichAsJavaLongToIntFunction[A0](
       sf: scala.Function1[A0, Int]
   )(implicit evA0: =:=[A0, Long]): RichFunction1AsLongToIntFunction =
     new RichFunction1AsLongToIntFunction(
-      sf.asInstanceOf[scala.Function1[Long, Int]]
+      sf.asInstanceOf[scala.Function1[Long, Int]] // scalafix:ok
     )
 
   @inline implicit def enrichAsJavaLongUnaryOperator[A0](
       sf: scala.Function1[A0, Long]
   )(implicit evA0: =:=[A0, Long]): RichFunction1AsLongUnaryOperator =
     new RichFunction1AsLongUnaryOperator(
-      sf.asInstanceOf[scala.Function1[Long, Long]]
+      sf.asInstanceOf[scala.Function1[Long, Long]] // scalafix:ok
     )
   @inline implicit def enrichAsScalaFromBiConsumer[T, U](
       jf: java.util.function.BiConsumer[T, U]
