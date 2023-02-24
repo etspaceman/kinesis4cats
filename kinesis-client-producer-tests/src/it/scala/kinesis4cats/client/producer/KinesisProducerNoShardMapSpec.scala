@@ -74,7 +74,7 @@ class KinesisProducerNoShardMapSpec
     PutRecordsRequest,
     PutRecordsResponse,
     CommittableRecord[IO]
-  ]]] = ResourceFixture(
+  ]]] = ResourceFunFixture(
     for {
       _ <- LocalstackKinesisClient.streamResource[IO](streamName, shardCount)
       deferredWithResults <- LocalstackKCLConsumer.kclConsumerWithResults(

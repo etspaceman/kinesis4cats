@@ -91,7 +91,7 @@ class KinesisProducerNoShardMapSpec
     PutRecordsInput,
     PutRecordsOutput,
     CommittableRecord[IO]
-  ]]] = ResourceFixture(
+  ]]] = ResourceFunFixture(
     for {
       http4sClient <- http4sClientResource
       _ <- LocalstackKinesisClient

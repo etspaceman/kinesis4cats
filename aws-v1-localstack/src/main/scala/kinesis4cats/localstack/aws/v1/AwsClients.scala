@@ -27,8 +27,9 @@ import com.amazonaws.services.cloudwatch._
 import com.amazonaws.services.dynamodbv2._
 import com.amazonaws.services.kinesis._
 import com.amazonaws.services.kinesis.model._
-import retry.RetryPolicies._
-import retry._
+
+import kinesis4cats.compat.retry.RetryPolicies._
+import kinesis4cats.compat.retry._
 
 /** Helpers for constructing and leveraging AWS Java Client interfaces with
   * Localstack.

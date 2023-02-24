@@ -16,7 +16,6 @@
 
 package kinesis4cats.kcl.instances
 
-import scala.compat.java8.DurationConverters._
 import scala.concurrent.duration.Duration
 
 import cats.Eq
@@ -30,6 +29,7 @@ import software.amazon.kinesis.retrieval._
 import software.amazon.kinesis.retrieval.fanout.FanOutConfig
 import software.amazon.kinesis.retrieval.polling.PollingConfig
 
+import kinesis4cats.compat.DurationConverters._
 import kinesis4cats.kcl.{KCLConsumer, RecordProcessor}
 
 object eq {

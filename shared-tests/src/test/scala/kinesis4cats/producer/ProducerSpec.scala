@@ -38,7 +38,7 @@ import kinesis4cats.models.StreamNameOrArn
 import kinesis4cats.producer.logging.instances.show._
 
 class ProducerSpec extends munit.CatsEffectSuite {
-  def fixture: SyncIO[FunFixture[MockProducer]] = ResourceFixture(
+  def fixture: SyncIO[FunFixture[MockProducer]] = ResourceFunFixture(
     MockProducer()
   )
 

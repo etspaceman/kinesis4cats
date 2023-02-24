@@ -10,10 +10,13 @@ pull_request_rules:
   conditions:
   - author=scala-steward
   - body~=labels:.*early-semver-patch
+  - status-success=Build and Test (ubuntu-latest, 2.12.17, temurin@17, rootJS)
   - status-success=Build and Test (ubuntu-latest, 2.12.17, temurin@17, rootJVM)
   - status-success=Build and Test (ubuntu-latest, 2.12.17, temurin@17, rootNative)
+  - status-success=Build and Test (ubuntu-latest, 3.2.2, temurin@17, rootJS)
   - status-success=Build and Test (ubuntu-latest, 3.2.2, temurin@17, rootJVM)
   - status-success=Build and Test (ubuntu-latest, 3.2.2, temurin@17, rootNative)
+  - status-success=Build and Test (ubuntu-latest, 2.13.10, temurin@17, rootJS)
   - status-success=Build and Test (ubuntu-latest, 2.13.10, temurin@17, rootJVM)
   - status-success=Build and Test (ubuntu-latest, 2.13.10, temurin@17, rootNative)
   actions:

@@ -16,7 +16,6 @@
 
 package kinesis4cats.kcl.ciris
 
-import scala.compat.java8.OptionConverters._
 import scala.jdk.CollectionConverters._
 
 import cats.effect.IO
@@ -31,6 +30,7 @@ import software.amazon.kinesis.retrieval.RetrievalConfig
 import software.amazon.kinesis.retrieval.fanout.FanOutConfig
 import software.amazon.kinesis.retrieval.polling.PollingConfig
 
+import kinesis4cats.compat.OptionConverters._
 import kinesis4cats.kcl.instances.eq._
 import kinesis4cats.kcl.instances.show._
 import kinesis4cats.kcl.{KCLConsumer, RecordProcessor}

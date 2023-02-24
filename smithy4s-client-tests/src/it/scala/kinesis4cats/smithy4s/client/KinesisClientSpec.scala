@@ -28,8 +28,8 @@ import io.circe.parser._
 import io.circe.syntax._
 import org.http4s.blaze.client.BlazeClientBuilder
 import org.scalacheck.Arbitrary
-import org.typelevel.log4cats.slf4j.Slf4jLogger
 
+import kinesis4cats.logging.ConsoleLogger
 import kinesis4cats.logging.instances.show._
 import kinesis4cats.models.StreamArn
 import kinesis4cats.smithy4s.client.localstack.LocalstackKinesisClient
@@ -43,7 +43,7 @@ abstract class KinesisClientSpec(implicit LE: KinesisClient.LogEncoders[IO])
 
   val region = AwsRegion.US_EAST_1
   def fixture: SyncIO[FunFixture[KinesisClient[IO]]] =
-    ResourceFixture(
+    ResourceFunFixture(
       for {
         underlying <- BlazeClientBuilder[IO]
           .withCheckEndpointAuthentication(false)
@@ -51,7 +51,7 @@ abstract class KinesisClientSpec(implicit LE: KinesisClient.LogEncoders[IO])
         client <- LocalstackKinesisClient.clientResource[IO](
           underlying,
           IO.pure(region),
-          loggerF = (_: Async[IO]) => Slf4jLogger.create[IO]
+          loggerF = (f: Async[IO]) => f.pure(new ConsoleLogger[IO])
         )
       } yield client
     )
