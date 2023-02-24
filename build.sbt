@@ -462,8 +462,8 @@ lazy val `smithy4s-client-tests` = projectMatrix
   )
   .jvmPlatform(last2ScalaVersions)
   // TODO: Enable when ember client issues are fixed
-  // .nativePlatform(Seq(Scala3))
-  // .jsPlatform(last2ScalaVersions)
+  .nativePlatform(Seq(Scala3))
+  .jsPlatform(last2ScalaVersions)
   .enableIntegrationTests
   .dependsOn(
     `smithy4s-client-localstack` % IT,
