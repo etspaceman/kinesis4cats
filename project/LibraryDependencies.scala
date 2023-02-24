@@ -7,11 +7,6 @@ object LibraryDependencies {
   val JavaXMLBind = "javax.xml.bind" % "jaxb-api" % "2.3.1"
   val Scalacheck = Def.setting("org.scalacheck" %%% "scalacheck" % "1.17.0")
 
-  object Scala {
-    val java8Compat =
-      Def.setting("org.scala-lang.modules" %%% "scala-java8-compat" % "1.0.2")
-  }
-
   object FS2 {
     val fs2Version = "3.6.1"
     val core = Def.setting("co.fs2" %%% "fs2-core" % fs2Version)
@@ -28,10 +23,15 @@ object LibraryDependencies {
   }
 
   object Munit {
-    val munitVersion = "0.7.29"
+    val munitVersion = "1.0.0-M7"
     val core = Def.setting("org.scalameta" %%% "munit" % munitVersion)
+    val scalacheck =
+      Def.setting("org.scalameta" %%% "munit-scalacheck" % munitVersion)
     val catsEffect =
-      Def.setting("org.typelevel" %%% "munit-cats-effect-3" % "1.0.7")
+      Def.setting("org.typelevel" %%% "munit-cats-effect" % "2.0.0-M3")
+    val scalacheckEffect =
+      Def.setting("org.typelevel" %%% "scalacheck-effect-munit" % "2.0.0-M2")
+
   }
 
   object Aws {
@@ -73,8 +73,8 @@ object LibraryDependencies {
 
   object Circe {
     val circeVersion = "0.14.3"
-    val core = "io.circe" %% "circe-core" % circeVersion
-    val parser = "io.circe" %% "circe-parser" % circeVersion
+    val core = Def.setting("io.circe" %%% "circe-core" % circeVersion)
+    val parser = Def.setting("io.circe" %%% "circe-parser" % circeVersion)
   }
 
   object Ciris {
@@ -84,9 +84,12 @@ object LibraryDependencies {
 
   object Http4s {
     val http4sVersion = "0.23.18"
-    val emberServer = Def.setting("org.http4s" %% "http4s-ember-server" % http4sVersion)
-    val emberClient = Def.setting("org.http4s" %%% "http4s-ember-client" % http4sVersion)
-    val blazeClient = Def.setting("org.http4s" %%% "http4s-blaze-client" % "0.23.13")
+    val emberServer =
+      Def.setting("org.http4s" %% "http4s-ember-server" % http4sVersion)
+    val emberClient =
+      Def.setting("org.http4s" %%% "http4s-ember-client" % http4sVersion)
+    val blazeClient =
+      Def.setting("org.http4s" %%% "http4s-blaze-client" % "0.23.13")
     val circe = Def.setting("org.http4s" %%% "http4s-circe" % http4sVersion)
   }
 
@@ -98,20 +101,6 @@ object LibraryDependencies {
   }
 
   object Smithy4s {
-    def core(version: String) =
-      Def.setting("com.disneystreaming.smithy4s" %%% "smithy4s-core" % version)
-    def http4s(version: String) =
-      Def.setting(
-        "com.disneystreaming.smithy4s" %%% "smithy4s-http4s" % version
-      )
-    def http4sSwagger(version: String) =
-      Def.setting(
-        "com.disneystreaming.smithy4s" %%% "smithy4s-http4s-swagger" % version
-      )
-    def http4sAws(version: String) =
-      Def.setting(
-        "com.disneystreaming.smithy4s" %%% "smithy4s-aws-http4s" % version
-      )
     val kinesis =
       "com.disneystreaming.smithy" % "aws-kinesis-spec" % "2023.02.10"
   }

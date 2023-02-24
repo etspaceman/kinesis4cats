@@ -15,22 +15,18 @@ lazy val `kernel-tests` = projectMatrix
   .enablePlugins(NoPublishPlugin)
   .settings(
     description := "Common test utilities",
-    libraryDependencies ++= testDependencies
+    libraryDependencies ++= testDependencies.value
   )
   .jvmPlatform(allScalaVersions)
+  .nativePlatform(last2ScalaVersions)
+  .jsPlatform(allScalaVersions)
   .enableIntegrationTests
   .dependsOn(`shared-localstack`)
 
 lazy val shared = projectMatrix
   .enablePlugins(ProtobufPlugin)
   .settings(
-    description := "Common shared utilities",
-    libraryDependencies ++= Seq(
-      Aws.Aggregation.aggregator % Test,
-      Aws.Aggregation.deaggregator % Test,
-      Aws.kcl % Test,
-      Log4Cats.slf4j % Test
-    )
+    description := "Common shared utilities"
   )
   .jvmPlatform(allScalaVersions)
   .nativePlatform(allScalaVersions)
@@ -41,7 +37,7 @@ lazy val shared = projectMatrix
 lazy val `shared-fs2` = projectMatrix
   .settings(
     description := "Common code for FS2",
-    libraryDependencies ++= Seq(FS2.core)
+    libraryDependencies ++= Seq(FS2.core.value)
   )
   .jvmPlatform(allScalaVersions)
   .nativePlatform(allScalaVersions)
@@ -53,8 +49,8 @@ lazy val `shared-circe` = projectMatrix
   .settings(
     description := "Common shared utilities for Circe",
     libraryDependencies ++= Seq(
-      Circe.core,
-      Circe.parser
+      Circe.core.value,
+      Circe.parser.value
     )
   )
   .jvmPlatform(allScalaVersions)
@@ -69,7 +65,7 @@ lazy val `shared-ciris` = projectMatrix
     libraryDependencies ++= Seq(Ciris.core.value)
   )
   .jvmPlatform(allScalaVersions)
-  .nativePlatform(allScalaVersions)
+  .nativePlatform(last2ScalaVersions)
   .jsPlatform(allScalaVersions)
   .enableIntegrationTests
   .dependsOn(shared)
@@ -79,7 +75,7 @@ lazy val `shared-localstack` = projectMatrix
     description := "Common utilities for the localstack test-kits"
   )
   .jvmPlatform(allScalaVersions)
-  .nativePlatform(allScalaVersions)
+  .nativePlatform(last2ScalaVersions)
   .jsPlatform(allScalaVersions)
   .enableIntegrationTests
   .dependsOn(shared, `shared-ciris`, `shared-circe`)
@@ -88,7 +84,14 @@ lazy val `shared-tests` = projectMatrix
   .enablePlugins(NoPublishPlugin)
   .settings(
     description := "Common test interfaces",
-    libraryDependencies ++= testDependencies
+    libraryDependencies ++= testDependencies.value ++ Seq(
+      Aws.Aggregation.aggregator % Test,
+      Aws.Aggregation.deaggregator % Test,
+      Aws.kcl % Test,
+      Log4Cats.slf4j % Test,
+      Logback % Test,
+      CatsRetry.value
+    )
   )
   .jvmPlatform(allScalaVersions)
   .enableIntegrationTests
@@ -146,9 +149,9 @@ lazy val `kcl-http4s` = projectMatrix
   .settings(
     description := "Http4s interfaces for the KCL",
     libraryDependencies ++= Seq(
-      S4S.core(smithy4sVersion.value).value,
-      S4S.http4s(smithy4sVersion.value).value,
-      S4S.http4sSwagger(smithy4sVersion.value).value,
+      "com.disneystreaming.smithy4s" %%% "smithy4s-core" % smithy4sVersion.value,
+      "com.disneystreaming.smithy4s" %%% "smithy4s-http4s" % smithy4sVersion.value,
+      "com.disneystreaming.smithy4s" %%% "smithy4s-http4s-swagger" % smithy4sVersion.value,
       Http4s.emberServer.value
     )
   )
@@ -296,7 +299,11 @@ lazy val `kpl-localstack` = projectMatrix
 lazy val `kpl-tests` = projectMatrix
   .enablePlugins(NoPublishPlugin)
   .settings(
-    description := "Integration Tests for the KPL"
+    description := "Integration Tests for the KPL",
+    libraryDependencies ++= Seq(
+      Logback % IT,
+      Log4Cats.slf4j % IT
+    )
   )
   .forkTests
   .jvmPlatform(allScalaVersions)
@@ -347,7 +354,12 @@ lazy val `kinesis-client-localstack` = projectMatrix
 lazy val `kinesis-client-tests` = projectMatrix
   .enablePlugins(NoPublishPlugin)
   .settings(
-    description := "Integration Tests for the Kinesis Client"
+    description := "Integration Tests for the Kinesis Client",
+    libraryDependencies ++= Seq(
+      Logback % IT,
+      Log4Cats.slf4j % IT,
+      FS2.reactiveStreams % IT
+    )
   )
   .jvmPlatform(allScalaVersions)
   .enableIntegrationTests
@@ -362,7 +374,7 @@ lazy val `kinesis-client-producer-tests` = projectMatrix
   .enablePlugins(NoPublishPlugin)
   .settings(
     description := "Integration Tests for the Client Kinesis Producer",
-    libraryDependencies ++= Seq(Log4Cats.slf4j % IT)
+    libraryDependencies ++= Seq(Log4Cats.slf4j % IT, Logback % IT)
   )
   .jvmPlatform(allScalaVersions)
   .enableIntegrationTests
@@ -390,7 +402,7 @@ lazy val `smithy4s-client` = projectMatrix
   .settings(
     description := "Cats tooling for the Smithy4s Kinesis Client",
     libraryDependencies ++= Seq(
-      S4S.http4sAws(smithy4sVersion.value).value,
+      "com.disneystreaming.smithy4s" %%% "smithy4s-aws-http4s" % smithy4sVersion.value,
       Log4Cats.noop.value,
       Smithy.rulesEngine(smithy4s.codegen.BuildInfo.smithyVersion) % Smithy4s,
       S4S.kinesis % Smithy4s
@@ -406,14 +418,14 @@ lazy val `smithy4s-client` = projectMatrix
       ) / Compile / packageBin).value
   )
   .jvmPlatform(last2ScalaVersions)
-  .nativePlatform(last2ScalaVersions)
+  .nativePlatform(Seq(Scala3))
   .jsPlatform(last2ScalaVersions)
   .enableIntegrationTests
   .dependsOn(shared)
 
 lazy val `smithy4s-client-fs2` = projectMatrix
   .jvmPlatform(last2ScalaVersions)
-  .nativePlatform(last2ScalaVersions)
+  .nativePlatform(Seq(Scala3))
   .jsPlatform(last2ScalaVersions)
   .enableIntegrationTests
   .dependsOn(`smithy4s-client`, `shared-fs2`)
@@ -425,7 +437,7 @@ lazy val `smithy4s-client-logging-circe` = projectMatrix
     libraryDependencies ++= Seq(Http4s.circe.value)
   )
   .jvmPlatform(last2ScalaVersions)
-  .nativePlatform(last2ScalaVersions)
+  .nativePlatform(Seq(Scala3))
   .jsPlatform(last2ScalaVersions)
   .enableIntegrationTests
   .dependsOn(`shared-circe`, `smithy4s-client`)
@@ -435,7 +447,7 @@ lazy val `smithy4s-client-localstack` = projectMatrix
     description := "A test-kit for working with Kinesis and Localstack, via the Smithy4s Client project"
   )
   .jvmPlatform(last2ScalaVersions)
-  .nativePlatform(last2ScalaVersions)
+  .nativePlatform(Seq(Scala3))
   .jsPlatform(last2ScalaVersions)
   .dependsOn(`shared-localstack`, `smithy4s-client-fs2`)
 
@@ -448,8 +460,9 @@ lazy val `smithy4s-client-tests` = projectMatrix
     )
   )
   .jvmPlatform(last2ScalaVersions)
-  .nativePlatform(last2ScalaVersions)
-  .jsPlatform(last2ScalaVersions)
+  // TODO: Enable when ember client issues are fixed
+  // .nativePlatform(Seq(Scala3))
+  // .jsPlatform(last2ScalaVersions)
   .enableIntegrationTests
   .dependsOn(
     `smithy4s-client-localstack` % IT,
@@ -461,7 +474,10 @@ lazy val `smithy4s-client-producer-tests` = projectMatrix
   .enablePlugins(NoPublishPlugin)
   .settings(
     description := "Integration Tests for the Smithy4s Kinesis Producer",
-    libraryDependencies ++= Seq(Http4s.blazeClient % IT, Log4Cats.slf4j % IT)
+    libraryDependencies ++= Seq(
+      Http4s.blazeClient.value % IT,
+      Log4Cats.slf4j % IT
+    )
   )
   .jvmPlatform(last2ScalaVersions)
   .enableIntegrationTests
@@ -480,8 +496,8 @@ lazy val docs = projectMatrix
   .settings(
     libraryDependencies ++= Seq(
       Log4Cats.slf4j,
-      Http4s.emberClient,
-      Http4s.blazeClient
+      Http4s.emberClient.value,
+      Http4s.blazeClient.value
     ),
     tlFatalWarningsInCi := false,
     tlSiteApiPackage := Some("kinesis4cats"),

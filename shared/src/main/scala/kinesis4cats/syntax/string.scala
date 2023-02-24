@@ -16,11 +16,12 @@
 
 package kinesis4cats.syntax
 
-import scala.compat.java8.DurationConverters._
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.util.Try
 
 import cats.syntax.all._
+
+import kinesis4cats.compat.DurationConverters._
 
 object string extends StringSyntax
 

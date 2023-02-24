@@ -46,11 +46,11 @@ abstract class KCLConsumerFS2Spec(implicit
       streamName: String,
       shardCount: Int,
       appName: String
-  ): SyncIO[FunFixture[KCLConsumerFS2Spec.Resources[IO]]] = ResourceFixture(
+  ): SyncIO[FunFixture[KCLConsumerFS2Spec.Resources[IO]]] = ResourceFunFixture(
     KCLConsumerFS2Spec.resource(streamName, shardCount, appName)
   )
 
-  override def munitTimeout: Duration = 5.minutes
+  override def munitIOTimeout: Duration = 5.minutes
 
   val streamName = s"kcl-fs2-consumer-spec-${UUID.randomUUID().toString()}"
   val appName = streamName

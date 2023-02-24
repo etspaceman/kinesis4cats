@@ -205,10 +205,8 @@ object Kinesis4CatsPlugin extends AutoPlugin {
     libraryDependencies ++= Seq(
       Cats.core.value,
       Cats.effect.value,
-      CatsRetry.value,
-      Scala.java8Compat.value,
       Log4Cats.core.value
-    ) ++ testDependencies.map(x => x.value % Test),
+    ) ++ testDependencies.value.map(_ % Test),
     libraryDependencySchemes += "org.scala-lang.modules" %% "scala-xml" % VersionScheme.Always,
     moduleName := "kinesis4cats-" + name.value,
     headerLicense := Some(
@@ -271,11 +269,14 @@ object Kinesis4CatsPluginKeys {
   val IT = config("it").extend(Test)
   val FunctionalTest = config("fun").extend(Test)
 
-  val testDependencies = List(
-    Munit.core,
-    Munit.catsEffect,
-    Scalacheck,
-    FS2.core
+  val testDependencies = Def.setting(
+    List(
+      Munit.core.value,
+      Munit.catsEffect.value,
+      Munit.scalacheck.value,
+      Scalacheck.value,
+      FS2.core.value
+    )
   )
 
   final implicit class Kinesi4CatsProjectMatrixOps(private val p: ProjectMatrix)

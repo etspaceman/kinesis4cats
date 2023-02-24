@@ -17,8 +17,6 @@
 package kinesis4cats.kcl
 package ciris
 
-import scala.compat.java8.FunctionConverters._
-import scala.compat.java8.OptionConverters._
 import scala.concurrent.duration.{Duration, FiniteDuration}
 
 import java.util.UUID
@@ -43,6 +41,8 @@ import software.amazon.kinesis.retrieval.polling.PollingConfig
 import software.amazon.kinesis.retrieval.{AggregatorUtil, RetrievalConfig}
 
 import kinesis4cats.ciris.CirisReader
+import kinesis4cats.compat.FunctionConverters._
+import kinesis4cats.compat.OptionConverters._
 import kinesis4cats.instances.ciris._
 import kinesis4cats.kcl.instances.ciris._
 import kinesis4cats.models

@@ -37,8 +37,8 @@ import kinesis4cats.syntax.scalacheck._
 abstract class KinesisClientSpec(implicit LE: KinesisClient.LogEncoders)
     extends munit.CatsEffectSuite {
   def fixture: SyncIO[FunFixture[KinesisClient[IO]]] =
-    ResourceFixture(
-      LocalstackKinesisClient.clientResource()
+    ResourceFunFixture(
+      LocalstackKinesisClient.clientResource[IO]()
     )
 
   val streamName = s"kinesis-client-spec-${UUID.randomUUID().toString()}"

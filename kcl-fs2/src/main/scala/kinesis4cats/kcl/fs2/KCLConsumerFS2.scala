@@ -28,8 +28,6 @@ import cats.effect.{Async, Ref, Resource}
 import cats.syntax.all._
 import fs2.concurrent.SignallingRef
 import fs2.{Pipe, Stream}
-import retry.RetryPolicies._
-import retry._
 import software.amazon.awssdk.services.cloudwatch.CloudWatchAsyncClient
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient
 import software.amazon.awssdk.services.kinesis.KinesisAsyncClient
@@ -41,6 +39,8 @@ import software.amazon.kinesis.lifecycle.LifecycleConfig
 import software.amazon.kinesis.metrics.MetricsConfig
 import software.amazon.kinesis.retrieval.RetrievalConfig
 
+import kinesis4cats.compat.retry.RetryPolicies._
+import kinesis4cats.compat.retry._
 import kinesis4cats.kcl.WorkerListeners._
 import kinesis4cats.kcl.multistream.MultiStreamTracker
 import kinesis4cats.kcl.{CommittableRecord, KCLConsumer, RecordProcessor}
