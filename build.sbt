@@ -9,7 +9,6 @@ lazy val compat = projectMatrix
   .jvmPlatform(allScalaVersions)
   .nativePlatform(allScalaVersions)
   .jsPlatform(allScalaVersions)
-  .enableIntegrationTests
 
 lazy val `kernel-tests` = projectMatrix
   .enablePlugins(NoPublishPlugin)
@@ -20,7 +19,6 @@ lazy val `kernel-tests` = projectMatrix
   .jvmPlatform(allScalaVersions)
   .nativePlatform(last2ScalaVersions)
   .jsPlatform(allScalaVersions)
-  .enableIntegrationTests
   .dependsOn(`shared-localstack`)
 
 lazy val shared = projectMatrix
@@ -31,7 +29,6 @@ lazy val shared = projectMatrix
   .jvmPlatform(allScalaVersions)
   .nativePlatform(allScalaVersions)
   .jsPlatform(allScalaVersions)
-  .enableIntegrationTests
   .dependsOn(compat)
 
 lazy val `shared-fs2` = projectMatrix
@@ -42,7 +39,6 @@ lazy val `shared-fs2` = projectMatrix
   .jvmPlatform(allScalaVersions)
   .nativePlatform(allScalaVersions)
   .jsPlatform(allScalaVersions)
-  .enableIntegrationTests
   .dependsOn(shared)
 
 lazy val `shared-circe` = projectMatrix
@@ -56,7 +52,6 @@ lazy val `shared-circe` = projectMatrix
   .jvmPlatform(allScalaVersions)
   .nativePlatform(allScalaVersions)
   .jsPlatform(allScalaVersions)
-  .enableIntegrationTests
   .dependsOn(shared)
 
 lazy val `shared-ciris` = projectMatrix
@@ -67,7 +62,6 @@ lazy val `shared-ciris` = projectMatrix
   .jvmPlatform(allScalaVersions)
   .nativePlatform(last2ScalaVersions)
   .jsPlatform(allScalaVersions)
-  .enableIntegrationTests
   .dependsOn(shared)
 
 lazy val `shared-localstack` = projectMatrix
@@ -77,7 +71,6 @@ lazy val `shared-localstack` = projectMatrix
   .jvmPlatform(allScalaVersions)
   .nativePlatform(last2ScalaVersions)
   .jsPlatform(allScalaVersions)
-  .enableIntegrationTests
   .dependsOn(shared, `shared-ciris`, `shared-circe`)
 
 lazy val `shared-tests` = projectMatrix
@@ -94,7 +87,6 @@ lazy val `shared-tests` = projectMatrix
     )
   )
   .jvmPlatform(allScalaVersions)
-  .enableIntegrationTests
   .dependsOn(`shared-localstack`, `shared-fs2`, `kernel-tests`)
 
 lazy val `aws-v2-localstack` = projectMatrix
@@ -107,7 +99,6 @@ lazy val `aws-v2-localstack` = projectMatrix
     )
   )
   .jvmPlatform(allScalaVersions)
-  .enableIntegrationTests
   .dependsOn(`shared-localstack`)
 
 lazy val `aws-v1-localstack` = projectMatrix
@@ -120,7 +111,6 @@ lazy val `aws-v1-localstack` = projectMatrix
     )
   )
   .jvmPlatform(allScalaVersions)
-  .enableIntegrationTests
   .dependsOn(`shared-localstack`)
 
 lazy val kcl = projectMatrix
@@ -128,11 +118,11 @@ lazy val kcl = projectMatrix
     description := "Cats tooling for the Kinesis Client Library (KCL)",
     libraryDependencies ++= Seq(
       Aws.kcl,
-      Log4Cats.slf4j
+      Log4Cats.slf4j,
+      Logback % Test
     )
   )
   .jvmPlatform(allScalaVersions)
-  .enableIntegrationTests
   .dependsOn(shared, `kinesis-client`)
 
 lazy val `kcl-fs2` = projectMatrix
@@ -141,7 +131,6 @@ lazy val `kcl-fs2` = projectMatrix
     libraryDependencies ++= Seq(FS2.core.value)
   )
   .jvmPlatform(allScalaVersions)
-  .enableIntegrationTests
   .dependsOn(kcl)
 
 lazy val `kcl-http4s` = projectMatrix
@@ -163,6 +152,7 @@ lazy val `kcl-ciris` = projectMatrix
   .settings(BuildInfoPlugin.buildInfoScopedSettings(Test))
   .settings(
     description := "Ciris tooling for the Kinesis Client Library (KCL)",
+    libraryDependencies ++= Seq(Logback % Test),
     Test / envVars ++= KCLCirisSpecVars.env,
     Test / javaOptions ++= KCLCirisSpecVars.prop,
     Test / buildInfoKeys := KCLCirisSpecVars.buildInfoKeys,
@@ -171,7 +161,6 @@ lazy val `kcl-ciris` = projectMatrix
   )
   .forkTests
   .jvmPlatform(allScalaVersions)
-  .enableIntegrationTests
   .dependsOn(kcl, `shared-ciris`, `kcl-localstack` % Test)
 
 lazy val `kcl-fs2-ciris` = projectMatrix
@@ -179,6 +168,7 @@ lazy val `kcl-fs2-ciris` = projectMatrix
   .settings(BuildInfoPlugin.buildInfoScopedSettings(Test))
   .settings(
     description := "Ciris tooling for the Kinesis Client Library (KCL) via FS2",
+    libraryDependencies ++= Seq(Logback % Test),
     Test / envVars ++= KCLFS2CirisSpecVars.env,
     Test / javaOptions ++= KCLFS2CirisSpecVars.prop,
     Test / buildInfoKeys := KCLFS2CirisSpecVars.buildInfoKeys,
@@ -187,7 +177,6 @@ lazy val `kcl-fs2-ciris` = projectMatrix
   )
   .forkTests
   .jvmPlatform(allScalaVersions)
-  .enableIntegrationTests
   .dependsOn(`kcl-fs2`, `kcl-ciris`, `shared-ciris`)
 
 lazy val `kcl-logging-circe` = projectMatrix
@@ -195,12 +184,11 @@ lazy val `kcl-logging-circe` = projectMatrix
     description := "JSON structured logging instances for the KCL, via Circe"
   )
   .jvmPlatform(allScalaVersions)
-  .enableIntegrationTests
   .dependsOn(
     kcl,
     `shared-circe`,
-    `kinesis-client-localstack` % IT,
-    `kcl-localstack` % IT
+    `kinesis-client-localstack` % Test,
+    `kcl-localstack` % Test
   )
 
 lazy val `kcl-localstack` = projectMatrix
@@ -208,20 +196,17 @@ lazy val `kcl-localstack` = projectMatrix
     description := "A test-kit for working with Kinesis and Localstack, via the KCL"
   )
   .jvmPlatform(allScalaVersions)
-  .enableIntegrationTests
   .dependsOn(`aws-v2-localstack`, kcl, `kcl-fs2`)
 
 lazy val `kcl-tests` = projectMatrix
   .enablePlugins(NoPublishPlugin, DockerImagePlugin)
   .settings(DockerImagePlugin.settings)
-  .enableIntegrationTests
-  .enableFunctionalTests
+  .forkTests
   .settings(
     description := "Integration Tests for the KCL",
     libraryDependencies ++= Seq(
       Logback,
-      Http4s.emberClient.value % FunctionalTest,
-      Http4s.emberClient.value % IT
+      Http4s.emberClient.value % Test
     ),
     assembly / assemblyMergeStrategy := {
       case "module-info.class"                        => MergeStrategy.discard
@@ -241,13 +226,13 @@ lazy val `kcl-tests` = projectMatrix
     },
     assembly / mainClass := Some("kinesis4cats.kcl.http4s.TestKCLService")
   )
-  .jvmPlatform(allScalaVersions)
+  .jvmPlatform(Seq(Scala213))
   .dependsOn(
     `kcl-http4s`,
     `kcl-localstack`,
-    `kcl-logging-circe` % IT,
-    `kinesis-client-localstack` % IT,
-    `kinesis-client-logging-circe` % IT,
+    `kcl-logging-circe` % Test,
+    `kinesis-client-localstack` % Test,
+    `kinesis-client-logging-circe` % Test,
     `kernel-tests` % "test;it;fun"
   )
 
@@ -261,7 +246,6 @@ lazy val kpl = projectMatrix
     )
   )
   .jvmPlatform(allScalaVersions)
-  .enableIntegrationTests
   .dependsOn(shared)
 
 lazy val `kpl-ciris` = projectMatrix
@@ -269,6 +253,7 @@ lazy val `kpl-ciris` = projectMatrix
   .settings(BuildInfoPlugin.buildInfoScopedSettings(Test))
   .settings(
     description := "Circe tooling for the Kinesis Producer Library (KPL)",
+    libraryDependencies ++= Seq(Logback % Test),
     Test / envVars ++= KPLCirisSpecVars.env,
     Test / javaOptions ++= KPLCirisSpecVars.prop,
     Test / buildInfoKeys := KPLCirisSpecVars.buildInfoKeys,
@@ -277,7 +262,6 @@ lazy val `kpl-ciris` = projectMatrix
   )
   .forkTests
   .jvmPlatform(allScalaVersions)
-  .enableIntegrationTests
   .dependsOn(kpl, `shared-ciris`)
 
 lazy val `kpl-logging-circe` = projectMatrix
@@ -285,7 +269,6 @@ lazy val `kpl-logging-circe` = projectMatrix
     description := "JSON structured logging instances for the KPL, via Circe"
   )
   .jvmPlatform(allScalaVersions)
-  .enableIntegrationTests
   .dependsOn(kpl, `shared-circe`)
 
 lazy val `kpl-localstack` = projectMatrix
@@ -293,7 +276,6 @@ lazy val `kpl-localstack` = projectMatrix
     description := "A test-kit for working with Kinesis and Localstack, via the KPL"
   )
   .jvmPlatform(allScalaVersions)
-  .enableIntegrationTests
   .dependsOn(`aws-v1-localstack`, kpl)
 
 lazy val `kpl-tests` = projectMatrix
@@ -301,18 +283,17 @@ lazy val `kpl-tests` = projectMatrix
   .settings(
     description := "Integration Tests for the KPL",
     libraryDependencies ++= Seq(
-      Logback % IT,
-      Log4Cats.slf4j % IT
+      Logback % Test,
+      Log4Cats.slf4j % Test
     ),
-    IT / javaOptions += "-Dcom.amazonaws.sdk.disableCertChecking=true"
+    Test / javaOptions += "-Dcom.amazonaws.sdk.disableCertChecking=true"
   )
   .forkTests
-  .jvmPlatform(allScalaVersions)
-  .enableIntegrationTests
+  .jvmPlatform(Seq(Scala213))
   .dependsOn(
-    `kpl-localstack` % IT,
-    `kpl-logging-circe` % IT,
-    `kernel-tests` % IT
+    `kpl-localstack` % Test,
+    `kpl-logging-circe` % Test,
+    `kernel-tests` % Test
   )
 
 lazy val `kinesis-client` = projectMatrix
@@ -324,12 +305,10 @@ lazy val `kinesis-client` = projectMatrix
     )
   )
   .jvmPlatform(allScalaVersions)
-  .enableIntegrationTests
   .dependsOn(shared)
 
 lazy val `kinesis-client-fs2` = projectMatrix
   .jvmPlatform(allScalaVersions)
-  .enableIntegrationTests
   .dependsOn(`kinesis-client`, `shared-fs2`)
 
 lazy val `kinesis-client-logging-circe` = projectMatrix
@@ -337,11 +316,10 @@ lazy val `kinesis-client-logging-circe` = projectMatrix
     description := "JSON structured logging instances for the Java Kinesis Client, via Circe"
   )
   .jvmPlatform(allScalaVersions)
-  .enableIntegrationTests
   .dependsOn(
     `kinesis-client`,
     `shared-circe`,
-    `aws-v2-localstack` % IT
+    `aws-v2-localstack` % Test
   )
 
 lazy val `kinesis-client-localstack` = projectMatrix
@@ -349,7 +327,6 @@ lazy val `kinesis-client-localstack` = projectMatrix
     description := "A test-kit for working with Kinesis and Localstack, via the Kinesis Client project"
   )
   .jvmPlatform(allScalaVersions)
-  .enableIntegrationTests
   .dependsOn(`aws-v2-localstack`, `kinesis-client-fs2`)
 
 lazy val `kinesis-client-tests` = projectMatrix
@@ -357,35 +334,35 @@ lazy val `kinesis-client-tests` = projectMatrix
   .settings(
     description := "Integration Tests for the Kinesis Client",
     libraryDependencies ++= Seq(
-      Logback % IT,
-      Log4Cats.slf4j % IT,
-      FS2.reactiveStreams % IT
+      Logback % Test,
+      Log4Cats.slf4j % Test,
+      FS2.reactiveStreams % Test
     )
   )
-  .jvmPlatform(allScalaVersions)
-  .enableIntegrationTests
+  .jvmPlatform(Seq(Scala213))
+  .forkTests
   .dependsOn(
-    `kinesis-client-localstack` % IT,
-    `kinesis-client-logging-circe` % IT,
-    `shared-tests` % IT,
-    `kernel-tests` % IT
+    `kinesis-client-localstack` % Test,
+    `kinesis-client-logging-circe` % Test,
+    `shared-tests` % Test,
+    `kernel-tests` % Test
   )
 
 lazy val `kinesis-client-producer-tests` = projectMatrix
   .enablePlugins(NoPublishPlugin)
   .settings(
     description := "Integration Tests for the Client Kinesis Producer",
-    libraryDependencies ++= Seq(Log4Cats.slf4j % IT, Logback % IT)
+    libraryDependencies ++= Seq(Log4Cats.slf4j % Test, Logback % Test)
   )
-  .jvmPlatform(allScalaVersions)
-  .enableIntegrationTests
+  .jvmPlatform(Seq(Scala213))
+  .forkTests
   .dependsOn(
-    `kcl-localstack` % IT,
-    `kcl-logging-circe` % IT,
-    `kinesis-client-localstack` % IT,
-    `kinesis-client-logging-circe` % IT,
-    `shared-tests` % IT,
-    `kernel-tests` % IT
+    `kcl-localstack` % Test,
+    `kcl-logging-circe` % Test,
+    `kinesis-client-localstack` % Test,
+    `kinesis-client-logging-circe` % Test,
+    `shared-tests` % Test,
+    `kernel-tests` % Test
   )
 
 lazy val `smithy4s-client-transformers` = projectMatrix
@@ -396,7 +373,6 @@ lazy val `smithy4s-client-transformers` = projectMatrix
     )
   )
   .jvmPlatform(List(Scala212))
-  .enableIntegrationTests
 
 lazy val `smithy4s-client` = projectMatrix
   .enablePlugins(Smithy4sCodegenPlugin)
@@ -421,14 +397,12 @@ lazy val `smithy4s-client` = projectMatrix
   .jvmPlatform(last2ScalaVersions)
   .nativePlatform(Seq(Scala3))
   .jsPlatform(last2ScalaVersions)
-  .enableIntegrationTests
   .dependsOn(shared)
 
 lazy val `smithy4s-client-fs2` = projectMatrix
   .jvmPlatform(last2ScalaVersions)
   .nativePlatform(Seq(Scala3))
   .jsPlatform(last2ScalaVersions)
-  .enableIntegrationTests
   .dependsOn(`smithy4s-client`, `shared-fs2`)
 
 lazy val `smithy4s-client-logging-circe` = projectMatrix
@@ -440,7 +414,6 @@ lazy val `smithy4s-client-logging-circe` = projectMatrix
   .jvmPlatform(last2ScalaVersions)
   .nativePlatform(Seq(Scala3))
   .jsPlatform(last2ScalaVersions)
-  .enableIntegrationTests
   .dependsOn(`shared-circe`, `smithy4s-client`)
 
 lazy val `smithy4s-client-localstack` = projectMatrix
@@ -457,18 +430,17 @@ lazy val `smithy4s-client-tests` = projectMatrix
   .settings(
     description := "Integration Tests for the Smithy4s Kinesis Client",
     libraryDependencies ++= Seq(
-      Http4s.emberClient.value % IT
+      Http4s.emberClient.value % Test
     )
   )
-  .jvmPlatform(last2ScalaVersions)
+  .jvmPlatform(Seq(Scala213))
   // TODO: Enable when ember client issues are fixed
   .nativePlatform(Seq(Scala3))
   .jsPlatform(last2ScalaVersions)
-  .enableIntegrationTests
   .dependsOn(
-    `smithy4s-client-localstack` % IT,
-    `smithy4s-client-logging-circe` % IT,
-    `kernel-tests` % IT
+    `smithy4s-client-localstack` % Test,
+    `smithy4s-client-logging-circe` % Test,
+    `kernel-tests` % Test
   )
 
 lazy val `smithy4s-client-producer-tests` = projectMatrix
@@ -476,19 +448,19 @@ lazy val `smithy4s-client-producer-tests` = projectMatrix
   .settings(
     description := "Integration Tests for the Smithy4s Kinesis Producer",
     libraryDependencies ++= Seq(
-      Http4s.emberClient.value % IT,
-      Log4Cats.slf4j % IT
+      Http4s.emberClient.value % Test,
+      Log4Cats.slf4j % Test
     )
   )
-  .jvmPlatform(last2ScalaVersions)
-  .enableIntegrationTests
+  .jvmPlatform(Seq(Scala213))
+  .forkTests
   .dependsOn(
-    `kcl-localstack` % IT,
-    `kcl-logging-circe` % IT,
-    `smithy4s-client-localstack` % IT,
-    `smithy4s-client-logging-circe` % IT,
-    `shared-tests` % IT,
-    `kernel-tests` % IT
+    `kcl-localstack` % Test,
+    `kcl-logging-circe` % Test,
+    `smithy4s-client-localstack` % Test,
+    `smithy4s-client-logging-circe` % Test,
+    `shared-tests` % Test,
+    `kernel-tests` % Test
   )
 
 lazy val docs = projectMatrix
@@ -651,14 +623,8 @@ lazy val functionalTestProjects = List(`kcl-tests`).map(_.jvm(Scala213))
 
 lazy val root =
   tlCrossRootProject
-    .configure(
-      _.enableIntegrationTests,
-      _.enableFunctionalTests
-    )
     .settings(
-      DockerComposePlugin.settings(IT, false, Nil),
-      DockerComposePlugin
-        .settings(FunctionalTest, true, functionalTestProjects),
+      DockerComposePlugin.settings(true, functionalTestProjects),
       name := "kinesis4cats",
       ThisBuild / mergifyLabelPaths ++= allProjects.map { x =>
         x.id -> x.base

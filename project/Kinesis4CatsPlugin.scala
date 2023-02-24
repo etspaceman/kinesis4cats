@@ -65,6 +65,7 @@ object Kinesis4CatsPlugin extends AutoPlugin {
         params = Map("repo-token" -> "${{ secrets.GITHUB_TOKEN }}")
       )
     ),
+    githubWorkflowBuildMatrixFailFast := Some(false),
     githubWorkflowBuild := {
       val style = (tlCiHeaderCheck.value, tlCiScalafmtCheck.value) match {
         case (true, true) => // headers + formatting
@@ -100,13 +101,9 @@ object Kinesis4CatsPlugin extends AutoPlugin {
       val test = List(
         WorkflowStep.Sbt(
           List(
-            "IT / dockerComposeUp",
+            "dockerComposeUp",
             "test",
-            "IT / test",
-            "IT / dockerComposeDown",
-            "FunctionalTest / dockerComposeUp",
-            "FunctionalTest / test",
-            "FunctionalTest / dockerComposeDown"
+            "dockerComposeDown"
           ),
           name = Some("Test"),
           cond = Some(primaryJavaOSCond.value)
@@ -162,9 +159,7 @@ object Kinesis4CatsPlugin extends AutoPlugin {
         "reload",
         "project /",
         "clean",
-        "githubWorkflowGenerate",
         "cpl",
-        "headerCreateAll",
         "pretty",
         "set ThisBuild / tlFatalWarnings := tlFatalWarningsInCi.value",
         "doc",
@@ -221,35 +216,35 @@ object Kinesis4CatsPlugin extends AutoPlugin {
   ) ++ Seq(
     addCommandAlias(
       "cpl",
-      ";Test / compile;IT / compile;FunctionalTest / compile"
+      ";Test / compile"
     ),
     addCommandAlias(
       "fixCheck",
-      ";Compile / scalafix --check;Test / scalafix --check;IT / scalafix --check;FunctionalTest / scalafix --check"
+      ";Compile / scalafix --check;Test / scalafix --check"
     ),
     addCommandAlias(
       "fix",
-      ";Compile / scalafix;Test / scalafix;IT / scalafix;FunctionalTest / scalafix"
+      ";Compile / scalafix;Test / scalafix"
     ),
     addCommandAlias(
       "fmtCheck",
-      ";Compile / scalafmtCheck;Test / scalafmtCheck;IT / scalafmtCheck;FunctionalTest / scalafmtCheck;scalafmtSbtCheck"
+      ";Compile / scalafmtCheck;Test / scalafmtCheck;scalafmtSbtCheck"
     ),
     addCommandAlias(
       "fmt",
-      ";Compile / scalafmt;Test / scalafmt;IT / scalafmt;FunctionalTest / scalafmt;scalafmtSbt"
+      ";Compile / scalafmt;Test / scalafmt;scalafmtSbt"
     ),
     addCommandAlias(
       "pretty",
-      "fix;fmt"
+      ";githubWorkflowGenerate;headerCreateAll;fix;fmt"
     ),
     addCommandAlias(
       "prettyCheck",
-      ";fixCheck;fmtCheck"
+      ";headerCheckAll;fixCheck;fmtCheck"
     ),
     addCommandAlias(
       "cov",
-      ";clean;coverage;test;IT/test;coverageReport;coverageOff"
+      ";clean;coverage;test;coverageReport;coverageOff"
     )
   ).flatten
 }
@@ -267,9 +262,6 @@ object Kinesis4CatsPluginKeys {
   import de.heikoseeberger.sbtheader.HeaderPlugin.autoImport._
   import scalafix.sbt.ScalafixPlugin.autoImport._
 
-  val IT = config("it").extend(Test)
-  val FunctionalTest = config("fun").extend(Test)
-
   val testDependencies = Def.setting(
     List(
       Munit.core.value,
@@ -283,52 +275,5 @@ object Kinesis4CatsPluginKeys {
   final implicit class Kinesi4CatsProjectMatrixOps(private val p: ProjectMatrix)
       extends AnyVal {
     def forkTests = p.settings(Test / fork := true)
-
-    def enableIntegrationTests = p
-      .configs(IT)
-      .settings(inConfig(IT) {
-        ScalafmtPlugin.scalafmtConfigSettings ++
-          scalafixConfigSettings(IT) ++
-          BloopSettings.default ++
-          Defaults.testSettings ++
-          headerSettings(IT) ++
-          Seq(parallelExecution := false)
-      })
-
-    def enableFunctionalTests = p
-      .configs(FunctionalTest)
-      .settings(inConfig(FunctionalTest) {
-        ScalafmtPlugin.scalafmtConfigSettings ++
-          scalafixConfigSettings(FunctionalTest) ++
-          BloopSettings.default ++
-          Defaults.testSettings ++
-          headerSettings(FunctionalTest) ++
-          Seq(parallelExecution := false)
-      })
-  }
-
-  final implicit class Kinesis4CatsProjectOps(private val p: Project)
-      extends AnyVal {
-    def enableIntegrationTests = p
-      .configs(IT)
-      .settings(inConfig(IT) {
-        ScalafmtPlugin.scalafmtConfigSettings ++
-          scalafixConfigSettings(IT) ++
-          BloopSettings.default ++
-          Defaults.testSettings ++
-          headerSettings(IT) ++
-          Seq(parallelExecution := false)
-      })
-
-    def enableFunctionalTests = p
-      .configs(FunctionalTest)
-      .settings(inConfig(FunctionalTest) {
-        ScalafmtPlugin.scalafmtConfigSettings ++
-          scalafixConfigSettings(FunctionalTest) ++
-          BloopSettings.default ++
-          Defaults.testSettings ++
-          headerSettings(FunctionalTest) ++
-          Seq(parallelExecution := false)
-      })
   }
 }
