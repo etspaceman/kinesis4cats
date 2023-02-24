@@ -216,6 +216,7 @@ lazy val `kcl-tests` = projectMatrix
   .settings(DockerImagePlugin.settings)
   .enableIntegrationTests
   .enableFunctionalTests
+  .forkTests
   .settings(
     description := "Integration Tests for the KCL",
     libraryDependencies ++= Seq(
@@ -364,6 +365,7 @@ lazy val `kinesis-client-tests` = projectMatrix
   )
   .jvmPlatform(allScalaVersions)
   .enableIntegrationTests
+  .forkTests
   .dependsOn(
     `kinesis-client-localstack` % IT,
     `kinesis-client-logging-circe` % IT,
@@ -379,6 +381,7 @@ lazy val `kinesis-client-producer-tests` = projectMatrix
   )
   .jvmPlatform(allScalaVersions)
   .enableIntegrationTests
+  .forkTests
   .dependsOn(
     `kcl-localstack` % IT,
     `kcl-logging-circe` % IT,
@@ -481,6 +484,7 @@ lazy val `smithy4s-client-producer-tests` = projectMatrix
     )
   )
   .jvmPlatform(last2ScalaVersions)
+  .forkTests
   .enableIntegrationTests
   .dependsOn(
     `kcl-localstack` % IT,
