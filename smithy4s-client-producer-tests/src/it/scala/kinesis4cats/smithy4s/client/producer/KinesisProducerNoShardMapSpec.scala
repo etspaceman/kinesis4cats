@@ -23,7 +23,7 @@ import cats.effect.syntax.all._
 import cats.syntax.all._
 import com.amazonaws.kinesis.PutRecordsInput
 import com.amazonaws.kinesis.PutRecordsOutput
-import org.http4s.blaze.client.BlazeClientBuilder
+import org.http4s.ember.client.EmberClientBuilder
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 import smithy4s.aws.kernel.AwsRegion
 
@@ -52,7 +52,7 @@ class KinesisProducerNoShardMapSpec
     s"kinesis-client-producer-no-shard-map-spec-${UUID.randomUUID().toString()}"
 
   def http4sClientResource =
-    BlazeClientBuilder[IO].withCheckEndpointAuthentication(false).resource
+    EmberClientBuilder.default[IO].withoutCheckEndpointAuthentication.build
 
   lazy val region = IO.pure(AwsRegion.US_EAST_1)
 
