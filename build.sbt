@@ -118,7 +118,8 @@ lazy val kcl = projectMatrix
     description := "Cats tooling for the Kinesis Client Library (KCL)",
     libraryDependencies ++= Seq(
       Aws.kcl,
-      Log4Cats.slf4j
+      Log4Cats.slf4j,
+      Logback % Test
     )
   )
   .jvmPlatform(allScalaVersions)
