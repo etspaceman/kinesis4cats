@@ -23,7 +23,7 @@ import cats.effect._
 import cats.syntax.all._
 import com.amazonaws.kinesis._
 import fs2.io.net.tls.TLSContext
-import io.circe.parser._
+import io.circe.jawn._
 import io.circe.syntax._
 import org.http4s.ember.client.EmberClientBuilder
 import org.scalacheck.Arbitrary
