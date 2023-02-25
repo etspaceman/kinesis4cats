@@ -29,8 +29,9 @@ services:
     depends_on:
       localstack:
         condition: service_healthy
+  # TODO: Remove this when localstack upgrades to the latest kinesis mock
   kinesisMock:
-    image: "ghcr.io/etspaceman/kinesis-mock:0.3.8"
+    image: "ghcr.io/etspaceman/kinesis-mock-jvm:0.3.10"
     environment:
       - "LOG_LEVEL=TRACE"
       - "CREATE_STREAM_DURATION=0s"

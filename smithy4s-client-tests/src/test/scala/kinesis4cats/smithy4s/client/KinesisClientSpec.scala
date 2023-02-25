@@ -40,9 +40,6 @@ import kinesis4cats.syntax.scalacheck._
 abstract class KinesisClientSpec(implicit LE: KinesisClient.LogEncoders[IO])
     extends munit.CatsEffectSuite {
 
-  // allow flaky tests on ci
-  override def munitFlakyOK: Boolean = sys.env.contains("CI")
-
   val region = AwsRegion.US_EAST_1
   def fixture: SyncIO[FunFixture[KinesisClient[IO]]] =
     ResourceFunFixture(
@@ -56,6 +53,7 @@ abstract class KinesisClientSpec(implicit LE: KinesisClient.LogEncoders[IO])
         client <- LocalstackKinesisClient.clientResource[IO](
           underlying,
           IO.pure(region),
+          // TODO: Go back to default when Localstack updates to the newest kinesis-mock
           LocalstackConfig(
             4566,
             Protocol.Https,
@@ -76,8 +74,6 @@ abstract class KinesisClientSpec(implicit LE: KinesisClient.LogEncoders[IO])
       } yield client
     )
 
-  // This is flaky as we seem to be getting non-deterministic failures via SSL connections to Localstack.
-  // Will look into this more later.
   fixture.test("It should work through all commands") { client =>
     val streamName =
       s"smithy4s-kinesis-client-spec-${Utils.randomUUIDString}"
