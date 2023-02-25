@@ -16,6 +16,10 @@
 
 package kinesis4cats.smithy4s.client
 
+import epollcat.unsafe.EpollRuntime
+
 import kinesis4cats.smithy4s.client.logging.instances.show._
 
-class KinesisClientShowSpec extends KinesisClientSpec
+class KinesisClientShowSpec extends KinesisClientSpec {
+  override def munitIORuntime = EpollRuntime.global
+}

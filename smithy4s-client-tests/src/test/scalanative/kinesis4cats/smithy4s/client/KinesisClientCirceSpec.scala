@@ -16,6 +16,10 @@
 
 package kinesis4cats.smithy4s.client
 
+import epollcat.unsafe.EpollRuntime
+
 import kinesis4cats.smithy4s.client.logging.instances.circe._
 
-class KinesisClientCirceSpec extends KinesisClientSpec
+class KinesisClientCirceSpec extends KinesisClientSpec {
+  override def munitIORuntime = EpollRuntime.global
+}
