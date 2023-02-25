@@ -100,6 +100,19 @@ object Kinesis4CatsPlugin extends AutoPlugin {
         case (false, false) => Nil // nada
       }
 
+      val links = List(
+        WorkflowStep.Sbt(
+          List("Test/fastLinkJS"),
+          name = Some("Link JS"),
+          cond = Some(primaryJavaOSCond.value)
+        ),
+        WorkflowStep.Sbt(
+          List("Test/nativeLink"),
+          name = Some("Link Native"),
+          cond = Some(primaryJavaOSCond.value)
+        )
+      )
+
       val test = List(
         WorkflowStep.Sbt(
           List(
@@ -145,7 +158,7 @@ object Kinesis4CatsPlugin extends AutoPlugin {
           )
         else Nil
 
-      style ++ test ++ scalafix ++ mima ++ doc
+      style ++ links ++ test ++ scalafix ++ mima ++ doc
     },
     githubWorkflowJavaVersions := Seq(JavaSpec.temurin("17")),
     tlCiScalafixCheck := true,
