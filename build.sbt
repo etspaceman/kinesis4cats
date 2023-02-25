@@ -2,6 +2,7 @@ import LibraryDependencies.{Smithy4s => S4S, _}
 import laika.rewrite.link._
 
 Global / concurrentRestrictions += Tags.limit(ScalaJSTags.Link, 1)
+Global / concurrentRestrictions += Tags.limit(NativeTags.Link, 1)
 
 lazy val compat = projectMatrix
   .settings(
