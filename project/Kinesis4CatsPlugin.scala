@@ -54,6 +54,10 @@ object Kinesis4CatsPlugin extends AutoPlugin {
     primaryJavaOSCond.value + s" && matrix.project == 'rootNative'"
   }
 
+  private val onlyFailures = Def.setting {
+    primaryJavaOSCond.value + " && ${{ falure() }} "
+  }
+
   override def buildSettings = Seq(
     tlBaseVersion := "0.0",
     organization := "io.github.etspaceman",
@@ -125,10 +129,24 @@ object Kinesis4CatsPlugin extends AutoPlugin {
         WorkflowStep.Sbt(
           List(
             "dockerComposeUp",
-            "test",
-            "dockerComposeDown"
+            "test"
           ),
           name = Some("Test"),
+          cond = Some(primaryJavaOSCond.value)
+        ),
+        WorkflowStep.Sbt(
+          List(
+            "dockerComposePs",
+            "dockerComposeLogs"
+          ),
+          name = Some("Print docker logs and container listing"),
+          cond = Some(onlyFailures.value)
+        ),
+        WorkflowStep.Sbt(
+          List(
+            "dockerComposeDown"
+          ),
+          name = Some("Remove docker containers"),
           cond = Some(primaryJavaOSCond.value)
         )
       )
