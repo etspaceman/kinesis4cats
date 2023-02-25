@@ -16,12 +16,12 @@
 
 package kinesis4cats.smithy4s.client.producer
 
+import _root_.fs2.io.net.tls.TLSContext
 import cats.effect._
 import cats.effect.syntax.all._
 import cats.syntax.all._
 import com.amazonaws.kinesis.PutRecordsInput
 import com.amazonaws.kinesis.PutRecordsOutput
-import fs2.io.net.tls.TLSContext
 import org.http4s.ember.client.EmberClientBuilder
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 import smithy4s.aws.kernel.AwsRegion
