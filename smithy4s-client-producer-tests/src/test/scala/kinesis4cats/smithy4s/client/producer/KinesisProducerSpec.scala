@@ -20,6 +20,7 @@ import cats.effect._
 import cats.effect.syntax.all._
 import com.amazonaws.kinesis.PutRecordsInput
 import com.amazonaws.kinesis.PutRecordsOutput
+import fs2.io.net.tls.TLSContext
 import org.http4s.ember.client.EmberClientBuilder
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 import smithy4s.aws.kernel.AwsRegion
@@ -46,8 +47,10 @@ class KinesisProducerSpec
   override lazy val streamName: String =
     s"kinesis-client-producer-spec-${Utils.randomUUIDString}"
 
-  def http4sClientResource =
-    EmberClientBuilder.default[IO].withoutCheckEndpointAuthentication.build
+  def http4sClientResource = for {
+    tlsContext <- TLSContext.Builder.forAsync[IO].insecureResource
+    client <- EmberClientBuilder.default[IO].withTLSContext(tlsContext).build
+  } yield client
 
   lazy val region = IO.pure(AwsRegion.US_EAST_1)
 

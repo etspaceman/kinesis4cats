@@ -467,7 +467,8 @@ lazy val `smithy4s-client-producer-tests` = projectMatrix
     description := "Integration Tests for the Smithy4s Kinesis Producer",
     libraryDependencies ++= Seq(
       Http4s.emberClient.value % Test,
-      Log4Cats.slf4j % Test
+      Log4Cats.slf4j % Test,
+      Logback % Test
     ),
     Test / parallelExecution := false
   )
