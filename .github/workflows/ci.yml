@@ -84,11 +84,11 @@ jobs:
         run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' headerCheckAll fmtCheck
 
       - name: Link JS
-        if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-latest'
+        if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-latest' && matrix.project == 'rootJS'
         run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' Test/fastLinkJS
 
       - name: Link Native
-        if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-latest'
+        if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-latest' && matrix.project == 'rootNative'
         run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' Test/nativeLink
 
       - name: Test

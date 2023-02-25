@@ -46,6 +46,14 @@ object Kinesis4CatsPlugin extends AutoPlugin {
     primaryJavaOSCond.value + s" && matrix.scala == '$Scala3'"
   }
 
+  private val onlyScalaJsCond = Def.setting {
+    primaryJavaOSCond.value + s" && matrix.project == 'rootJS'"
+  }
+
+  private val onlyNativeCond = Def.setting {
+    primaryJavaOSCond.value + s" && matrix.project == 'rootNative'"
+  }
+
   override def buildSettings = Seq(
     tlBaseVersion := "0.0",
     organization := "io.github.etspaceman",
@@ -104,12 +112,12 @@ object Kinesis4CatsPlugin extends AutoPlugin {
         WorkflowStep.Sbt(
           List("Test/fastLinkJS"),
           name = Some("Link JS"),
-          cond = Some(primaryJavaOSCond.value)
+          cond = Some(onlyScalaJsCond.value)
         ),
         WorkflowStep.Sbt(
           List("Test/nativeLink"),
           name = Some("Link Native"),
-          cond = Some(primaryJavaOSCond.value)
+          cond = Some(onlyNativeCond.value)
         )
       )
 
