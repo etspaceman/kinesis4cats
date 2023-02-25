@@ -96,7 +96,7 @@ jobs:
         run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' dockerComposeUp test
 
       - name: Print docker logs and container listing
-        if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-latest' && ${{ falure() }} 
+        if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-latest' && ${{ failure() }}
         run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' dockerComposePs dockerComposeLogs
 
       - name: Remove docker containers

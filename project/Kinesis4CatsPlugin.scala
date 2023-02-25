@@ -55,7 +55,7 @@ object Kinesis4CatsPlugin extends AutoPlugin {
   }
 
   private val onlyFailures = Def.setting {
-    primaryJavaOSCond.value + " && ${{ falure() }} "
+    primaryJavaOSCond.value + " && ${{ failure() }}"
   }
 
   override def buildSettings = Seq(
