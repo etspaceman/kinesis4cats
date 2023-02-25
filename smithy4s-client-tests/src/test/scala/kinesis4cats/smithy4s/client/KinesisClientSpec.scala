@@ -54,7 +54,8 @@ abstract class KinesisClientSpec(implicit LE: KinesisClient.LogEncoders[IO])
         client <- LocalstackKinesisClient.clientResource[IO](
           underlying,
           IO.pure(region),
-          loggerF = (f: Async[IO]) => f.pure(new ConsoleLogger[IO])
+          loggerF = (f: Async[IO]) =>
+            f.pure(new ConsoleLogger[IO](ConsoleLogger.LogLevel.Trace))
         )
       } yield client
     )
