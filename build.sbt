@@ -446,7 +446,8 @@ lazy val `smithy4s-client-tests-native` = `smithy4s-client-tests`
   .enablePlugins(ScalaNativeBrewedConfigPlugin)
   .settings(
     libraryDependencies ++= Seq(Epollcat.value % Test),
-    nativeBrewFormulas += "s2n"
+    nativeBrewFormulas += "s2n",
+    Test / envVars ++= Map("S2N_DONT_MLOCK" -> "1")
   )
 
 lazy val `smithy4s-client-tests-js` = `smithy4s-client-tests`
