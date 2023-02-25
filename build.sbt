@@ -1,6 +1,5 @@
 import LibraryDependencies.{Smithy4s => S4S, _}
 import laika.rewrite.link._
-import org.eclipse.jgit.api.MergeCommand.FastForwardMode.Merge
 
 lazy val compat = projectMatrix
   .settings(
@@ -448,6 +447,12 @@ lazy val `smithy4s-client-tests-native` = `smithy4s-client-tests`
   .settings(
     libraryDependencies ++= Seq(Epollcat.value % Test),
     nativeBrewFormulas += "s2n"
+  )
+
+lazy val `smithy4s-client-tests-js` = `smithy4s-client-tests`
+  .js(Scala3)
+  .settings(
+    scalaJSLinkerConfig ~= (_.withModuleKind(ModuleKind.CommonJSModule))
   )
 
 lazy val `smithy4s-client-producer-tests` = projectMatrix

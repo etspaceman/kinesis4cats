@@ -22,6 +22,7 @@ import _root_.smithy4s.aws.AwsRegion
 import cats.effect._
 import cats.syntax.all._
 import com.amazonaws.kinesis._
+import fs2.io.net.tls.TLSContext
 import io.circe.parser._
 import io.circe.syntax._
 import org.http4s.ember.client.EmberClientBuilder
@@ -44,8 +45,10 @@ abstract class KinesisClientSpec(implicit LE: KinesisClient.LogEncoders[IO])
   def fixture: SyncIO[FunFixture[KinesisClient[IO]]] =
     ResourceFunFixture(
       for {
+        tlsContext <- TLSContext.Builder.forAsync[IO].insecureResource
         underlying <- EmberClientBuilder
           .default[IO]
+          .withTLSContext(tlsContext)
           .withoutCheckEndpointAuthentication
           .build
         client <- LocalstackKinesisClient.clientResource[IO](
