@@ -653,22 +653,19 @@ object KCLConsumer {
       _ <- F
         .race(
           F.interruptible(scheduler.run()),
-          if (config.raiseOnError)
-            config.deferredException.get.flatMap(F.raiseError(_).void)
-          else F.never
+          (if (config.raiseOnError)
+             config.deferredException.get.flatMap(F.raiseError[Throwable])
+           else F.never[Throwable]).guarantee(for {
+            _ <- F.fromCompletableFuture(
+              F.delay(scheduler.startGracefulShutdown())
+            )
+            // There is sometimes a race condition which causes the graceful shutdown to complete
+            // but with a returned value of `false`, meaning that the Scheduler is not fully
+            // shut down. We run the shutdown() directly in these cases.
+            // See https://github.com/awslabs/amazon-kinesis-client/issues/616
+            _ <- F.blocking(scheduler.shutdown())
+          } yield ())
         )
         .background
-      _ <- Resource.onFinalize(
-        for {
-          _ <- F.fromCompletableFuture(
-            F.delay(scheduler.startGracefulShutdown())
-          )
-          // There is sometimes a race condition which causes the graceful shutdown to complete
-          // but with a returned value of `false`, meaning that the Scheduler is not fully
-          // shut down. We run the shutdown() directly in these cases.
-          // See https://github.com/awslabs/amazon-kinesis-client/issues/616
-          _ <- F.blocking(scheduler.shutdown())
-        } yield ()
-      )
     } yield ()
 }
