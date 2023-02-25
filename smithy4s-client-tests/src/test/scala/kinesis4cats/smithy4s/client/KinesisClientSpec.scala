@@ -17,6 +17,8 @@
 package kinesis4cats
 package smithy4s.client
 
+import scala.concurrent.duration._
+
 import _root_.smithy4s.ByteArray
 import _root_.smithy4s.aws.AwsRegion
 import cats.effect._
@@ -93,6 +95,7 @@ abstract class KinesisClientSpec(implicit LE: KinesisClient.LogEncoders[IO])
         Some(PositiveIntegerObject(1)),
         Some(StreamModeDetails(StreamMode.PROVISIONED))
       )
+      _ <- IO.sleep(1.second)
       _ <- client
         .addTagsToStream(
           Map(TagKey("foo") -> TagValue("bar")),
@@ -103,13 +106,16 @@ abstract class KinesisClientSpec(implicit LE: KinesisClient.LogEncoders[IO])
           RetentionPeriodHours(48),
           Some(StreamName(streamName))
         )
+      _ <- IO.sleep(1.second)
       _ <- client
         .decreaseStreamRetentionPeriod(
           RetentionPeriodHours(24),
           Some(StreamName(streamName))
         )
+      _ <- IO.sleep(1.second)
       _ <- client
         .registerStreamConsumer(StreamARN(streamArn), ConsumerName("foo"))
+      _ <- IO.sleep(1.second)
       _ <- client.describeLimits()
       _ <- client.describeStream(Some(StreamName(streamName)))
       _ <- client
@@ -176,6 +182,7 @@ abstract class KinesisClientSpec(implicit LE: KinesisClient.LogEncoders[IO])
           Some(StreamARN(streamArn)),
           Some(ConsumerName("foo"))
         )
+      _ <- IO.sleep(1.second)
       tags <- client.listTagsForStream(Some(StreamName(streamName)))
       _ <- client
         .removeTagsFromStream(List(TagKey("foo")), Some(StreamName(streamName)))
@@ -185,18 +192,21 @@ abstract class KinesisClientSpec(implicit LE: KinesisClient.LogEncoders[IO])
           KeyId("12345678-1234-1234-1234-123456789012"),
           Some(StreamName(streamName))
         )
+      _ <- IO.sleep(1.second)
       _ <- client
         .stopStreamEncryption(
           EncryptionType.KMS,
           KeyId("12345678-1234-1234-1234-123456789012"),
           Some(StreamName(streamName))
         )
+      _ <- IO.sleep(1.second)
       _ <- client
         .updateShardCount(
           PositiveIntegerObject(2),
           ScalingType.UNIFORM_SCALING,
           Some(StreamName(streamName))
         )
+      _ <- IO.sleep(1.second)
       shards2response <- client.listShards(Some(StreamName(streamName)))
       shards2 = shards2response.shards.getOrElse(fail("No shards returned"))
       newShards = shards2.takeRight(2)
@@ -207,11 +217,13 @@ abstract class KinesisClientSpec(implicit LE: KinesisClient.LogEncoders[IO])
           shard3.shardId,
           Some(StreamName(streamName))
         )
+      _ <- IO.sleep(1.second)
       _ <- client
         .updateStreamMode(
           StreamARN(streamArn),
           StreamModeDetails(StreamMode.ON_DEMAND)
         )
+      _ <- IO.sleep(1.second)
       _ <- client.deleteStream(Some(StreamName(streamName)))
     } yield {
       assertEquals(List(record1, record2, record3), recordsParsed)
