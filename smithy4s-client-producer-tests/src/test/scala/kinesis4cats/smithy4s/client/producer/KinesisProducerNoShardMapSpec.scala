@@ -30,7 +30,10 @@ import kinesis4cats.Utils
 import kinesis4cats.kcl.CommittableRecord
 import kinesis4cats.kcl.localstack.LocalstackKCLConsumer
 import kinesis4cats.kcl.logging.instances.show._
+import kinesis4cats.localstack.LocalstackConfig
+import kinesis4cats.localstack.Protocol
 import kinesis4cats.logging.instances.show._
+import kinesis4cats.models
 import kinesis4cats.models.StreamNameOrArn
 import kinesis4cats.producer.Producer
 import kinesis4cats.producer.ProducerSpec
@@ -65,10 +68,26 @@ class KinesisProducerNoShardMapSpec
       producer <- LocalstackKinesisProducer
         .resource[IO](
           http4sClient,
-          streamName,
           region,
-          loggerF = (_: Async[IO]) => Slf4jLogger.create[IO],
-          shardMapF = (
+          Producer.Config.default(models.StreamNameOrArn.Name(streamName)),
+          // TODO: Go back to default when Localstack updates to the newest kinesis-mock
+          LocalstackConfig(
+            4566,
+            Protocol.Https,
+            "localhost",
+            4567,
+            Protocol.Https,
+            "localhost",
+            4566,
+            Protocol.Https,
+            "localhost",
+            4566,
+            Protocol.Https,
+            "localhost",
+            models.AwsRegion.US_EAST_1
+          ),
+          (_: Async[IO]) => Slf4jLogger.create[IO],
+          (
               _: KinesisClient[IO],
               _: StreamNameOrArn,
               _: Async[IO]
