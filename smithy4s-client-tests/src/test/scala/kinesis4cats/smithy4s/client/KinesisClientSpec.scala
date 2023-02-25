@@ -29,8 +29,10 @@ import org.http4s.ember.client.EmberClientBuilder
 import org.scalacheck.Arbitrary
 
 import kinesis4cats.Utils
+import kinesis4cats.localstack._
 import kinesis4cats.logging.ConsoleLogger
 import kinesis4cats.logging.instances.show._
+import kinesis4cats.models
 import kinesis4cats.models.StreamArn
 import kinesis4cats.smithy4s.client.localstack.LocalstackKinesisClient
 import kinesis4cats.syntax.scalacheck._
@@ -54,6 +56,21 @@ abstract class KinesisClientSpec(implicit LE: KinesisClient.LogEncoders[IO])
         client <- LocalstackKinesisClient.clientResource[IO](
           underlying,
           IO.pure(region),
+          LocalstackConfig(
+            4566,
+            Protocol.Https,
+            "localhost",
+            4567,
+            Protocol.Https,
+            "localhost",
+            4566,
+            Protocol.Https,
+            "localhost",
+            4566,
+            Protocol.Https,
+            "localhost",
+            models.AwsRegion.US_EAST_1
+          ),
           loggerF = (f: Async[IO]) => f.pure(new ConsoleLogger[IO])
         )
       } yield client
