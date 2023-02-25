@@ -33,7 +33,6 @@ services:
   kinesisMock:
     image: "ghcr.io/etspaceman/kinesis-mock-jvm:0.3.10"
     environment:
-      - "LOG_LEVEL=TRACE"
       - "CREATE_STREAM_DURATION=0s"
       - "DELETE_STREAM_DURATION=0s"
       - "REGISTER_STREAM_CONSUMER_DURATION=0s"

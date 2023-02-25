@@ -71,8 +71,7 @@ abstract class KinesisClientSpec(implicit LE: KinesisClient.LogEncoders[IO])
             "localhost",
             models.AwsRegion.US_EAST_1
           ),
-          loggerF = (f: Async[IO]) =>
-            f.pure(new ConsoleLogger[IO](ConsoleLogger.LogLevel.Trace))
+          loggerF = (f: Async[IO]) => f.pure(new ConsoleLogger[IO])
         )
       } yield client
     )
