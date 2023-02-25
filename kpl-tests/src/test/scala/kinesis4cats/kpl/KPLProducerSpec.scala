@@ -17,6 +17,8 @@
 package kinesis4cats
 package kpl
 
+import scala.concurrent.duration._
+
 import java.nio.ByteBuffer
 
 import cats.effect.{IO, SyncIO}
@@ -26,16 +28,42 @@ import org.scalacheck.Arbitrary
 
 import kinesis4cats.Utils
 import kinesis4cats.kpl.localstack.LocalstackKPLProducer
+import kinesis4cats.localstack.LocalstackConfig
+import kinesis4cats.localstack.Protocol
 import kinesis4cats.syntax.scalacheck._
 
 abstract class KPLProducerSpec(implicit LE: KPLProducer.LogEncoders)
     extends munit.CatsEffectSuite
     with munit.CatsEffectFunFixtures {
+
+  override def munitIOTimeout: Duration = 45.seconds
+
   def fixture(
       streamName: String,
       shardCount: Int
   ): SyncIO[FunFixture[KPLProducer[IO]]] = ResourceFunFixture(
-    LocalstackKPLProducer.producerWithStream[IO](streamName, shardCount)
+    LocalstackKPLProducer.producerWithStream[IO](
+      // TODO: Go back to default when Localstack updates to the newest kinesis-mock
+      LocalstackConfig(
+        4566,
+        Protocol.Https,
+        "localhost",
+        4567,
+        Protocol.Https,
+        "localhost",
+        4566,
+        Protocol.Https,
+        "localhost",
+        4566,
+        Protocol.Https,
+        "localhost",
+        models.AwsRegion.US_EAST_1
+      ),
+      streamName,
+      shardCount,
+      5,
+      500.millis
+    )
   )
 
   val streamName = s"kpl-producer-spec-${Utils.randomUUID}"
