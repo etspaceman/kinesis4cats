@@ -652,7 +652,7 @@ object KCLConsumer {
       )
       _ <- F
         .race(
-          F.interruptible(scheduler.run()),
+          F.blocking(scheduler.run()),
           (if (config.raiseOnError)
              config.deferredException.get.flatMap(F.raiseError[Throwable])
            else F.never[Throwable]).guarantee(for {
