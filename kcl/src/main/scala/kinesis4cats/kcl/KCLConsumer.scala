@@ -16,8 +16,6 @@
 
 package kinesis4cats.kcl
 
-import java.util.UUID
-
 import cats.effect.kernel.Deferred
 import cats.effect.syntax.all._
 import cats.effect.{Async, Ref, Resource}
@@ -35,6 +33,7 @@ import software.amazon.kinesis.metrics.MetricsConfig
 import software.amazon.kinesis.processor.ProcessorConfig
 import software.amazon.kinesis.retrieval.RetrievalConfig
 
+import kinesis4cats.Utils
 import kinesis4cats.kcl.WorkerListeners._
 import kinesis4cats.kcl.multistream.MultiStreamTracker
 import kinesis4cats.syntax.id._
@@ -223,7 +222,7 @@ object KCLConsumer {
       cloudWatchClient: CloudWatchAsyncClient,
       streamName: String,
       appName: String,
-      workerId: String = UUID.randomUUID.toString,
+      workerId: String = Utils.randomUUIDString,
       processConfig: ProcessConfig = ProcessConfig.default
   )(
       cb: List[CommittableRecord[F]] => F[Unit]
@@ -294,7 +293,7 @@ object KCLConsumer {
       cloudWatchClient: CloudWatchAsyncClient,
       tracker: MultiStreamTracker,
       appName: String,
-      workerId: String = UUID.randomUUID.toString,
+      workerId: String = Utils.randomUUIDString,
       processConfig: ProcessConfig = ProcessConfig.default
   )(
       cb: List[CommittableRecord[F]] => F[Unit]
@@ -495,7 +494,7 @@ object KCLConsumer {
         cloudWatchClient: CloudWatchAsyncClient,
         streamName: String,
         appName: String,
-        workerId: String = UUID.randomUUID.toString,
+        workerId: String = Utils.randomUUIDString,
         processConfig: ProcessConfig = ProcessConfig.default
     )(
         cb: List[CommittableRecord[F]] => F[Unit]
@@ -586,7 +585,7 @@ object KCLConsumer {
         cloudWatchClient: CloudWatchAsyncClient,
         tracker: MultiStreamTracker,
         appName: String,
-        workerId: String = UUID.randomUUID.toString,
+        workerId: String = Utils.randomUUIDString,
         processConfig: KCLConsumer.ProcessConfig =
           KCLConsumer.ProcessConfig.default
     )(

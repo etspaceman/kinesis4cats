@@ -208,6 +208,7 @@ lazy val `kcl-tests` = projectMatrix
       Logback,
       Http4s.emberClient.value % Test
     ),
+    Test / parallelExecution := false,
     assembly / assemblyMergeStrategy := {
       case "module-info.class"                        => MergeStrategy.discard
       case "AUTHORS"                                  => MergeStrategy.discard
@@ -286,7 +287,8 @@ lazy val `kpl-tests` = projectMatrix
       Logback % Test,
       Log4Cats.slf4j % Test
     ),
-    Test / javaOptions += "-Dcom.amazonaws.sdk.disableCertChecking=true"
+    Test / javaOptions += "-Dcom.amazonaws.sdk.disableCertChecking=true",
+    Test / parallelExecution := false
   )
   .forkTests
   .jvmPlatform(Seq(Scala213))
@@ -337,7 +339,8 @@ lazy val `kinesis-client-tests` = projectMatrix
       Logback % Test,
       Log4Cats.slf4j % Test,
       FS2.reactiveStreams % Test
-    )
+    ),
+    Test / parallelExecution := false
   )
   .jvmPlatform(Seq(Scala213))
   .forkTests
@@ -352,7 +355,8 @@ lazy val `kinesis-client-producer-tests` = projectMatrix
   .enablePlugins(NoPublishPlugin)
   .settings(
     description := "Integration Tests for the Client Kinesis Producer",
-    libraryDependencies ++= Seq(Log4Cats.slf4j % Test, Logback % Test)
+    libraryDependencies ++= Seq(Log4Cats.slf4j % Test, Logback % Test),
+    Test / parallelExecution := false
   )
   .jvmPlatform(Seq(Scala213))
   .forkTests
@@ -431,7 +435,8 @@ lazy val `smithy4s-client-tests` = projectMatrix
     description := "Integration Tests for the Smithy4s Kinesis Client",
     libraryDependencies ++= Seq(
       Http4s.blazeClient.value % Test
-    )
+    ),
+    Test / parallelExecution := false
   )
   .jvmPlatform(Seq(Scala213))
   // TODO: Enable when ember client issues are fixed
@@ -449,8 +454,10 @@ lazy val `smithy4s-client-producer-tests` = projectMatrix
     description := "Integration Tests for the Smithy4s Kinesis Producer",
     libraryDependencies ++= Seq(
       Http4s.blazeClient.value % Test,
-      Log4Cats.slf4j % Test
-    )
+      Log4Cats.slf4j % Test,
+      Logback % Test
+    ),
+    Test / parallelExecution := false
   )
   .jvmPlatform(Seq(Scala213))
   .forkTests

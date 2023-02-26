@@ -17,8 +17,6 @@
 package kinesis4cats.kcl
 package localstack
 
-import java.util.UUID
-
 import cats.effect.std.Queue
 import cats.effect.syntax.all._
 import cats.effect.{Async, Deferred, Resource}
@@ -32,6 +30,7 @@ import software.amazon.kinesis.metrics.MetricsConfig
 import software.amazon.kinesis.retrieval.RetrievalConfig
 import software.amazon.kinesis.retrieval.polling.PollingConfig
 
+import kinesis4cats.Utils
 import kinesis4cats.kcl.multistream.MultiStreamTracker
 import kinesis4cats.localstack.LocalstackConfig
 import kinesis4cats.localstack.aws.v2.AwsClients
@@ -197,7 +196,7 @@ object LocalstackKCLConsumer {
       streamName: String,
       appName: String,
       prefix: Option[String] = None,
-      workerId: String = UUID.randomUUID().toString,
+      workerId: String = Utils.randomUUIDString,
       position: InitialPositionInStreamExtended =
         InitialPositionInStreamExtended.newInitialPosition(
           InitialPositionInStream.TRIM_HORIZON
@@ -247,7 +246,7 @@ object LocalstackKCLConsumer {
       tracker: MultiStreamTracker,
       appName: String,
       prefix: Option[String] = None,
-      workerId: String = UUID.randomUUID().toString,
+      workerId: String = Utils.randomUUIDString,
       processConfig: KCLConsumer.ProcessConfig =
         KCLConsumer.ProcessConfig.default
   )(cb: List[CommittableRecord[F]] => F[Unit])(implicit
@@ -410,7 +409,7 @@ object LocalstackKCLConsumer {
       streamName: String,
       appName: String,
       prefix: Option[String] = None,
-      workerId: String = UUID.randomUUID().toString(),
+      workerId: String = Utils.randomUUIDString,
       position: InitialPositionInStreamExtended =
         InitialPositionInStreamExtended.newInitialPosition(
           InitialPositionInStream.TRIM_HORIZON
@@ -467,7 +466,7 @@ object LocalstackKCLConsumer {
       tracker: MultiStreamTracker,
       appName: String,
       prefix: Option[String] = None,
-      workerId: String = UUID.randomUUID().toString(),
+      workerId: String = Utils.randomUUIDString,
       processConfig: KCLConsumer.ProcessConfig =
         KCLConsumer.ProcessConfig.default,
       resultsQueueSize: Int = 50
@@ -624,7 +623,7 @@ object LocalstackKCLConsumer {
       streamName: String,
       appName: String,
       prefix: Option[String] = None,
-      workerId: String = UUID.randomUUID().toString(),
+      workerId: String = Utils.randomUUIDString,
       position: InitialPositionInStreamExtended =
         InitialPositionInStreamExtended.newInitialPosition(
           InitialPositionInStream.TRIM_HORIZON
@@ -679,7 +678,7 @@ object LocalstackKCLConsumer {
       tracker: MultiStreamTracker,
       appName: String,
       prefix: Option[String] = None,
-      workerId: String = UUID.randomUUID().toString(),
+      workerId: String = Utils.randomUUIDString,
       processConfig: KCLConsumer.ProcessConfig =
         KCLConsumer.ProcessConfig.default
   )(cb: List[CommittableRecord[F]] => F[Unit])(implicit
@@ -847,7 +846,7 @@ object LocalstackKCLConsumer {
       streamName: String,
       appName: String,
       prefix: Option[String] = None,
-      workerId: String = UUID.randomUUID().toString(),
+      workerId: String = Utils.randomUUIDString,
       position: InitialPositionInStreamExtended =
         InitialPositionInStreamExtended.newInitialPosition(
           InitialPositionInStream.TRIM_HORIZON
@@ -909,7 +908,7 @@ object LocalstackKCLConsumer {
       tracker: MultiStreamTracker,
       appName: String,
       prefix: Option[String] = None,
-      workerId: String = UUID.randomUUID().toString(),
+      workerId: String = Utils.randomUUIDString,
       processConfig: KCLConsumer.ProcessConfig =
         KCLConsumer.ProcessConfig.default,
       resultsQueueSize: Int = 50

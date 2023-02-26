@@ -20,8 +20,6 @@ package multistream
 
 import scala.concurrent.duration._
 
-import java.util.UUID
-
 import cats.effect.kernel.Deferred
 import cats.effect.std.Queue
 import cats.effect.syntax.all._
@@ -34,6 +32,7 @@ import software.amazon.awssdk.core.SdkBytes
 import software.amazon.awssdk.services.kinesis.model.PutRecordRequest
 import software.amazon.kinesis.common._
 
+import kinesis4cats.Utils
 import kinesis4cats.client.KinesisClient
 import kinesis4cats.client.localstack.LocalstackKinesisClient
 import kinesis4cats.compat.retry.RetryPolicies._
@@ -62,15 +61,15 @@ abstract class KCLConsumerMultiSpec(implicit
   val accountId = "000000000000"
   val streamArn1 = StreamArn(
     AwsRegion.US_EAST_1,
-    s"kcl-multi-consumer-spec-1-${UUID.randomUUID().toString()}",
+    s"kcl-multi-consumer-spec-1-${Utils.randomUUIDString}",
     accountId
   )
   val streamArn2 = StreamArn(
     AwsRegion.US_EAST_1,
-    s"kcl-multi-consumer-spec-2-${UUID.randomUUID().toString()}",
+    s"kcl-multi-consumer-spec-2-${Utils.randomUUIDString}",
     accountId
   )
-  val appName = s"kcl-multi-consumer-spec-${UUID.randomUUID().toString()}"
+  val appName = s"kcl-multi-consumer-spec-${Utils.randomUUIDString}"
 
   fixture(streamArn1, streamArn2, 1, appName).test(
     "It should receive produced records"
