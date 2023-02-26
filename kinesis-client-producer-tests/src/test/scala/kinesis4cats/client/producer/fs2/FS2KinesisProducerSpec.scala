@@ -1,5 +1,3 @@
-package kinesis4cats.client.producer.fs2
-
 /*
  * Copyright 2023-2023 etspaceman
  *
@@ -15,6 +13,8 @@ package kinesis4cats.client.producer.fs2
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+package kinesis4cats.client.producer.fs2
 
 import cats.effect._
 import cats.effect.syntax.all._
