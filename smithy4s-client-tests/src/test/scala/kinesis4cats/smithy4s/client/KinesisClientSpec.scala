@@ -56,21 +56,7 @@ abstract class KinesisClientSpec(implicit LE: KinesisClient.LogEncoders[IO])
           underlying,
           IO.pure(region),
           // TODO: Go back to default when Localstack updates to the newest kinesis-mock
-          LocalstackConfig(
-            4566,
-            Protocol.Https,
-            "localhost",
-            4567,
-            Protocol.Https,
-            "localhost",
-            4566,
-            Protocol.Https,
-            "localhost",
-            4566,
-            Protocol.Https,
-            "localhost",
-            models.AwsRegion.US_EAST_1
-          ),
+          Custom.kinesisMockConfig,
           loggerF = (f: Async[IO]) => f.pure(new ConsoleLogger[IO])
         )
       } yield client

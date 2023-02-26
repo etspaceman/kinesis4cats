@@ -461,12 +461,18 @@ lazy val `smithy4s-client-tests-js` = `smithy4s-client-tests`
     scalaJSLinkerConfig ~= (_.withModuleKind(ModuleKind.CommonJSModule))
   )
 
+lazy val `smithy4s-client-tests-jvm` = `smithy4s-client-tests`
+  .jvm(Scala3)
+  .settings(
+    libraryDependencies ++= Seq(Http4s.blazeClient.value)
+  )
+
 lazy val `smithy4s-client-producer-tests` = projectMatrix
   .enablePlugins(NoPublishPlugin)
   .settings(
     description := "Integration Tests for the Smithy4s Kinesis Producer",
     libraryDependencies ++= Seq(
-      Http4s.emberClient.value % Test,
+      Http4s.blazeClient.value % Test,
       Log4Cats.slf4j % Test,
       Logback % Test
     ),

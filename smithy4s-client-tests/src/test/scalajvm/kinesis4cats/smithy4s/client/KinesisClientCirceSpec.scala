@@ -16,6 +16,37 @@
 
 package kinesis4cats.smithy4s.client
 
+import java.security.SecureRandom
+import java.security.cert.X509Certificate
+
+import cats.effect.IO
+import cats.effect.SyncIO
+import cats.effect.kernel.Async
+import com.amazonaws.kinesis.Kinesis
+import javax.net.ssl.{SSLContext, X509TrustManager}
+import org.http4s.blaze.client.BlazeClientBuilder
+
+import kinesis4cats.SSL
+import kinesis4cats.localstack.Custom
+import kinesis4cats.logging.ConsoleLogger
+import kinesis4cats.logging.instances.circe._
+import kinesis4cats.smithy4s.client.localstack.LocalstackKinesisClient
 import kinesis4cats.smithy4s.client.logging.instances.circe._
 
-class KinesisClientCirceSpec extends KinesisClientSpec
+class KinesisClientCirceSpec extends KinesisClientSpec {
+  override def fixture: SyncIO[FunFixture[Kinesis[IO]]] =
+    ResourceFunFixture(
+      for {
+        underlying <- BlazeClientBuilder[IO]
+          .withSslContext(SSL.context)
+          .resource
+        client <- LocalstackKinesisClient.clientResource[IO](
+          underlying,
+          IO.pure(region),
+          // TODO: Go back to default when Localstack updates to the newest kinesis-mock
+          Custom.kinesisMockConfig,
+          loggerF = (f: Async[IO]) => f.pure(new ConsoleLogger[IO])
+        )
+      } yield client
+    )
+}

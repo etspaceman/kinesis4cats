@@ -22,13 +22,13 @@ import cats.effect._
 import cats.effect.syntax.all._
 import com.amazonaws.kinesis.PutRecordsInput
 import com.amazonaws.kinesis.PutRecordsOutput
-import fs2.io.net.tls.TLSContext
-import org.http4s.ember.client.EmberClientBuilder
+import org.http4s.blaze.client.BlazeClientBuilder
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 import smithy4s.aws.kernel.AwsRegion
 import software.amazon.kinesis.common.InitialPositionInStream
 import software.amazon.kinesis.common.InitialPositionInStreamExtended
 
+import kinesis4cats.SSL
 import kinesis4cats.Utils
 import kinesis4cats.kcl.CommittableRecord
 import kinesis4cats.kcl.KCLConsumer
@@ -55,10 +55,8 @@ class FS2KinesisProducerSpec
   override lazy val streamName: String =
     s"kinesis-client-fs2-producer-spec-${Utils.randomUUIDString}"
 
-  def http4sClientResource = for {
-    tlsContext <- TLSContext.Builder.forAsync[IO].insecureResource
-    client <- EmberClientBuilder.default[IO].withTLSContext(tlsContext).build
-  } yield client
+  def http4sClientResource =
+    BlazeClientBuilder[IO].withSslContext(SSL.context).resource
 
   lazy val region = IO.pure(AwsRegion.US_EAST_1)
 
