@@ -387,7 +387,7 @@ class KPLProducer[F[_]] private (
   }
 
   /** Instruct the producer to send pending records. Blocks until all pending
-    * data is flushed. Uncancellable.
+    * data is flushed. Interruptible.
     *
     * @return
     *   Unit
@@ -399,7 +399,7 @@ class KPLProducer[F[_]] private (
       _ <- logger.debug(ctx.context)(
         "Received flushSync request"
       )
-      result <- F.blocking(client.flushSync())
+      result <- F.interruptibleMany(client.flushSync())
       _ <- logger.debug(ctx.context)(
         "Successfully processed flushSync request"
       )
