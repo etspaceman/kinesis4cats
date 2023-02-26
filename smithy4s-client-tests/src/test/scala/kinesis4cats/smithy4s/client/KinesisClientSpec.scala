@@ -70,6 +70,8 @@ abstract class KinesisClientSpec(implicit LE: KinesisClient.LogEncoders[IO])
       accountId
     ).streamArn
 
+    val consumerName = s"consumer-${Utils.randomUUIDString}"
+
     for {
       _ <- client.createStream(
         StreamName(streamName),
@@ -92,13 +94,16 @@ abstract class KinesisClientSpec(implicit LE: KinesisClient.LogEncoders[IO])
           Some(StreamName(streamName))
         )
       _ <- client
-        .registerStreamConsumer(StreamARN(streamArn), ConsumerName("foo"))
+        .registerStreamConsumer(
+          StreamARN(streamArn),
+          ConsumerName(consumerName)
+        )
       _ <- client.describeLimits()
       _ <- client.describeStream(Some(StreamName(streamName)))
       _ <- client
         .describeStreamConsumer(
           Some(StreamARN(streamArn)),
-          Some(ConsumerName("foo"))
+          Some(ConsumerName(consumerName))
         )
       _ <- client.describeStreamSummary(Some(StreamName(streamName)))
       _ <- client
@@ -157,7 +162,7 @@ abstract class KinesisClientSpec(implicit LE: KinesisClient.LogEncoders[IO])
       _ <- client
         .deregisterStreamConsumer(
           Some(StreamARN(streamArn)),
-          Some(ConsumerName("foo"))
+          Some(ConsumerName(consumerName))
         )
       tags <- client.listTagsForStream(Some(StreamName(streamName)))
       _ <- client
