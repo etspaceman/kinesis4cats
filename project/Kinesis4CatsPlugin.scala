@@ -250,7 +250,8 @@ object Kinesis4CatsPlugin extends AutoPlugin {
       if (scalaVersion.value.startsWith("3.")) Nil
       else (Compile / doc / sources).value
     },
-    assembly / test := {}
+    assembly / test := {},
+    Test / parallelExecution := false
   ) ++ Seq(
     addCommandAlias(
       "cpl",
