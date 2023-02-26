@@ -28,8 +28,7 @@ import org.scalacheck.Arbitrary
 
 import kinesis4cats.Utils
 import kinesis4cats.kpl.localstack.LocalstackKPLProducer
-import kinesis4cats.localstack.LocalstackConfig
-import kinesis4cats.localstack.Protocol
+import kinesis4cats.localstack.Custom
 import kinesis4cats.syntax.scalacheck._
 
 abstract class KPLProducerSpec(implicit LE: KPLProducer.LogEncoders)
@@ -44,21 +43,7 @@ abstract class KPLProducerSpec(implicit LE: KPLProducer.LogEncoders)
   ): SyncIO[FunFixture[KPLProducer[IO]]] = ResourceFunFixture(
     LocalstackKPLProducer.producerWithStream[IO](
       // TODO: Go back to default when Localstack updates to the newest kinesis-mock
-      LocalstackConfig(
-        4566,
-        Protocol.Https,
-        "localhost",
-        4567,
-        Protocol.Https,
-        "localhost",
-        4566,
-        Protocol.Https,
-        "localhost",
-        4566,
-        Protocol.Https,
-        "localhost",
-        models.AwsRegion.US_EAST_1
-      ),
+      Custom.kinesisMockConfig,
       streamName,
       shardCount,
       5,

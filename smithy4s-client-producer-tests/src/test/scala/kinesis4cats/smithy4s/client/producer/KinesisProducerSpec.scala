@@ -16,6 +16,8 @@
 
 package kinesis4cats.smithy4s.client.producer
 
+import scala.concurrent.duration._
+
 import _root_.fs2.io.net.tls.TLSContext
 import cats.effect._
 import cats.effect.syntax.all._
@@ -24,13 +26,15 @@ import com.amazonaws.kinesis.PutRecordsOutput
 import org.http4s.ember.client.EmberClientBuilder
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 import smithy4s.aws.kernel.AwsRegion
+import software.amazon.kinesis.common.InitialPositionInStream
+import software.amazon.kinesis.common.InitialPositionInStreamExtended
 
 import kinesis4cats.Utils
 import kinesis4cats.kcl.CommittableRecord
+import kinesis4cats.kcl.KCLConsumer
 import kinesis4cats.kcl.localstack.LocalstackKCLConsumer
 import kinesis4cats.kcl.logging.instances.show._
-import kinesis4cats.localstack.LocalstackConfig
-import kinesis4cats.localstack.Protocol
+import kinesis4cats.localstack.Custom
 import kinesis4cats.logging.instances.show._
 import kinesis4cats.models
 import kinesis4cats.producer.Producer
@@ -68,21 +72,7 @@ class KinesisProducerSpec
           region,
           Producer.Config.default(models.StreamNameOrArn.Name(streamName)),
           // TODO: Go back to default when Localstack updates to the newest kinesis-mock
-          LocalstackConfig(
-            4566,
-            Protocol.Https,
-            "localhost",
-            4567,
-            Protocol.Https,
-            "localhost",
-            4566,
-            Protocol.Https,
-            "localhost",
-            4566,
-            Protocol.Https,
-            "localhost",
-            models.AwsRegion.US_EAST_1
-          ),
+          Custom.kinesisMockConfig,
           (_: Async[IO]) => Slf4jLogger.create[IO],
           (
               client: KinesisClient[IO],
@@ -109,13 +99,23 @@ class KinesisProducerSpec
         .streamResource[IO](
           http4sClient,
           region,
+          Custom.kinesisMockConfig,
           streamName,
           shardCount,
-          loggerF = (f: Async[IO]) => Slf4jLogger.create[IO](f, implicitly)
+          5,
+          500.millis,
+          (f: Async[IO]) => Slf4jLogger.create[IO](f, implicitly)
         )
       deferredWithResults <- LocalstackKCLConsumer.kclConsumerWithResults(
+        Custom.kinesisMockConfig,
         streamName,
-        appName
+        appName,
+        Utils.randomUUIDString,
+        InitialPositionInStreamExtended.newInitialPosition(
+          InitialPositionInStream.TRIM_HORIZON
+        ),
+        KCLConsumer.ProcessConfig.default,
+        50
       )((_: List[CommittableRecord[IO]]) => IO.unit)
       _ <- deferredWithResults.deferred.get.toResource
       producer <- producerResource
