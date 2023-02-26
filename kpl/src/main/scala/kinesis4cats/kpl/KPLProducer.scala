@@ -16,6 +16,7 @@
 
 package kinesis4cats.kpl
 
+import scala.concurrent.duration._
 import scala.jdk.CollectionConverters._
 
 import java.nio.ByteBuffer
@@ -28,6 +29,8 @@ import com.amazonaws.services.schemaregistry.common.Schema
 import org.typelevel.log4cats.StructuredLogger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 
+import kinesis4cats.compat.retry.RetryPolicies._
+import kinesis4cats.compat.retry._
 import kinesis4cats.kpl.syntax.listenableFuture._
 import kinesis4cats.logging.{LogContext, LogEncoder}
 
@@ -421,6 +424,34 @@ class KPLProducer[F[_]] private (
       )
     } yield result
   }
+
+  private[kinesis4cats] def gracefulShutdown(
+      flushAttempts: Int,
+      flushInterval: FiniteDuration
+  ): F[Unit] = {
+    val policy = constantDelay(flushInterval).join(limitRetries(flushAttempts))
+    val ctx = LogContext()
+    for {
+      _ <- logger.info(ctx.context)("Starting graceful KPL shutdown")
+      _ <- retryingOnFailures(
+        policy,
+        (_: Unit) => getOutstandingRecordsCount().map(_ === 0),
+        (_: Unit, details: RetryDetails) =>
+          logger.info(ctx.addEncoded("retryDetails", details).context)(
+            "Still outstanding KPL records."
+          )
+      )(flush())
+      outstanding <- getOutstandingRecordsCount()
+      _ <-
+        if (outstanding =!= 0)
+          logger.warn(ctx.addEncoded("outstandingRecord", outstanding).context)(
+            "Still outstanding KPL records after all retries are exhausted. Killing KPL, some records will not be produced."
+          )
+        else logger.info(ctx.context)("Graceful shutdown completed")
+      _ <- destroy()
+    } yield ()
+
+  }
 }
 
 object KPLProducer {
@@ -429,6 +460,11 @@ object KPLProducer {
     *
     * @param config
     *   [[https://github.com/awslabs/amazon-kinesis-producer/blob/master/java/amazon-kinesis-producer/src/main/java/com/amazonaws/services/kinesis/producer/KinesisProducerConfiguration.java KinesisProducerConfiguration]]
+    * @param gracefulShutdownFlushAttempts
+    *   How many times to execute flush() and wait for the KPL's buffer to clear
+    *   before shutting down
+    * @param gracefulShutdownFlushInterval
+    *   Duration between flush() attempts during the graceful shutdown
     * @param F
     *   [[cats.effect.Async Async]]
     * @return
@@ -436,7 +472,9 @@ object KPLProducer {
     *   [[kinesis4cats.kpl.KPLProducer KPLProducer]]
     */
   def apply[F[_]](
-      config: KinesisProducerConfiguration = new KinesisProducerConfiguration()
+      config: KinesisProducerConfiguration = new KinesisProducerConfiguration(),
+      gracefulShutdownFlushAttempts: Int = 5,
+      gracefulShutdownFlushInterval: FiniteDuration = 500.millis
   )(implicit
       F: Async[F],
       LE: LogEncoders
@@ -450,8 +488,10 @@ object KPLProducer {
     ) { x =>
       for {
         _ <- x.state.set(State.ShuttingDown)
-        _ <- x.flushSync()
-        _ <- x.destroy()
+        _ <- x.gracefulShutdown(
+          gracefulShutdownFlushAttempts,
+          gracefulShutdownFlushInterval
+        )
       } yield ()
     }
 
@@ -462,7 +502,8 @@ object KPLProducer {
   final class LogEncoders(implicit
       val userRecordLogEncoder: LogEncoder[UserRecord],
       val userRecordResultLogEncoder: LogEncoder[UserRecordResult],
-      val schemaLogEncoder: LogEncoder[Schema]
+      val schemaLogEncoder: LogEncoder[Schema],
+      val retryDetailsLogEncoder: LogEncoder[RetryDetails]
   )
 
   /** Tracks the [[kinesis4cats.kpl.KPLProducer KPLProducer]] current state.
