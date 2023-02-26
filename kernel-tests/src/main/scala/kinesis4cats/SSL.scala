@@ -52,7 +52,7 @@ object SSL {
           engine: SSLEngine
       ): Unit = {}
     }
-    ctx.init(null, Array(tm), null)
+    ctx.init(null, Array(tm), null) // scalafix:ok
     ctx
   }
 }
