@@ -415,7 +415,7 @@ class KPLProducer[F[_]] private (
       _ <- logger.debug(ctx.context)(
         "Received destroy request"
       )
-      result <- F.delay(client.flush())
+      result <- F.blocking(client.destroy())
       _ <- logger.debug(ctx.context)(
         "Successfully processed destroy request"
       )
