@@ -16,6 +16,13 @@
 
 package kinesis4cats
 
+/** MessageDigest is incredibly heavy-weight and has no linkages in ScalaJS. We
+  * could use the FS2 MD5 hashing, but that spins up MessageDigest with each
+  * pass, which leads to really bad performance. So I created this to deal with
+  * MD5 hashing in a performant way.
+  *
+  * See https://rosettacode.org/wiki/MD5/Implementation#Java
+  */
 @SuppressWarnings(Array("scalafix:DisableSyntax.var"))
 private[kinesis4cats] object MD5 {
   private val initA: Int = 0x67452301
