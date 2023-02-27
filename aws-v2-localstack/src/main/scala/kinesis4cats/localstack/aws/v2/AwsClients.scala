@@ -62,7 +62,6 @@ object AwsClients {
   def nettyClient: SdkAsyncHttpClient =
     NettyNioAsyncHttpClient
       .builder()
-      .maxConcurrency(Int.MaxValue)
       .buildWithDefaults(trustAllCertificates)
 
   /** Builds a

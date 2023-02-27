@@ -32,10 +32,10 @@ import kinesis4cats.logging.ConsoleLogger
 import kinesis4cats.logging.instances.show._
 import kinesis4cats.models.StreamArn
 import kinesis4cats.smithy4s.client.localstack.LocalstackKinesisClient
+import kinesis4cats.smithy4s.client.logging.instances.show._
 import kinesis4cats.syntax.scalacheck._
 
-abstract class KinesisClientSpec(implicit LE: KinesisClient.LogEncoders[IO])
-    extends munit.CatsEffectSuite {
+abstract class KinesisClientSpec extends munit.CatsEffectSuite {
 
   // allow flaky tests on ci
   override def munitFlakyOK: Boolean = sys.env.contains("CI")

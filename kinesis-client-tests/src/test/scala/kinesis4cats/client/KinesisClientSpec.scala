@@ -30,11 +30,11 @@ import software.amazon.awssdk.services.kinesis.model._
 
 import kinesis4cats.Utils
 import kinesis4cats.client.localstack.LocalstackKinesisClient
+import kinesis4cats.client.logging.instances.show._
 import kinesis4cats.models.{AwsRegion, StreamArn}
 import kinesis4cats.syntax.scalacheck._
 
-abstract class KinesisClientSpec(implicit LE: KinesisClient.LogEncoders)
-    extends munit.CatsEffectSuite {
+abstract class KinesisClientSpec extends munit.CatsEffectSuite {
   def fixture: SyncIO[FunFixture[KinesisClient[IO]]] =
     ResourceFunFixture(
       LocalstackKinesisClient.clientResource[IO]()
