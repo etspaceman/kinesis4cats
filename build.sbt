@@ -311,6 +311,10 @@ lazy val `integration-tests` = projectMatrix
     Nil,
     _.settings(
       Test / fork := true,
+      libraryDependencies ++= Seq(
+        Http4s.blazeClient.value % Test,
+        FS2.reactiveStreams % Test
+      ),
       assembly / assemblyMergeStrategy := {
         case "module-info.class"                        => MergeStrategy.discard
         case "AUTHORS"                                  => MergeStrategy.discard
