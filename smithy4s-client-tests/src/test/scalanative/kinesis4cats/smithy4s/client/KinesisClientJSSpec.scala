@@ -14,24 +14,6 @@
  * limitations under the License.
  */
 
-package kinesis4cats.localstack
+package kinesis4cats.smithy4s.client
 
-import kinesis4cats.models.AwsRegion
-
-object Custom {
-  val kinesisMockConfig = LocalstackConfig(
-    4566,
-    Protocol.Https,
-    "localhost",
-    4567,
-    Protocol.Https,
-    "localhost",
-    4566,
-    Protocol.Https,
-    "localhost",
-    4566,
-    Protocol.Https,
-    "localhost",
-    AwsRegion.US_EAST_1
-  )
-}
+class KinesisClientNativeSpec extends KinesisClientSpec

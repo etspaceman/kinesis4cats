@@ -58,8 +58,6 @@ abstract class KinesisClientSpec extends munit.CatsEffectSuite {
         client <- LocalstackKinesisClient.clientResource[IO](
           underlying,
           IO.pure(region),
-          // TODO: Go back to default when Localstack updates to the newest kinesis-mock
-          Custom.kinesisMockConfig,
           loggerF = (f: Async[IO]) => f.pure(new ConsoleLogger[IO])
         )
       } yield client

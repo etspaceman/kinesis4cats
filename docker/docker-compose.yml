@@ -29,36 +29,12 @@ services:
     depends_on:
       localstack:
         condition: service_healthy
-  # TODO: Remove this when localstack upgrades to the latest kinesis mock
-  kinesisMock:
-    image: "ghcr.io/etspaceman/kinesis-mock-jvm:0.3.10"
-    environment:
-      - "CREATE_STREAM_DURATION=0s"
-      - "DELETE_STREAM_DURATION=0s"
-      - "REGISTER_STREAM_CONSUMER_DURATION=0s"
-      - "START_STREAM_ENCRYPTION_DURATION=0s"
-      - "STOP_STREAM_ENCRYPTION_DURATION=0s"
-      - "DEREGISTER_STREAM_CONSUMER_DURATION=0s"
-      - "MERGE_SHARDS_DURATION=0s"
-      - "SPLIT_SHARD_DURATION=0s"
-      - "UPDATE_SHARD_COUNT_DURATION=0s"
-      - "UPDATE_STREAM_MODE_DURATION=0s"
-    ports:
-      - "4567:4567"
-      - "4568:4568"
-    healthcheck:
-      test: "curl --fail http://localhost:4568/healthcheck || exit 1"
-      interval: 5s
-      timeout: 5s
-      retries: 20
   ready:
     image: "library/hello-world"
     depends_on:
       localstack:
         condition: service_healthy
       testKclService:
-        condition: service_healthy
-      kinesisMock:
         condition: service_healthy
 networks:
   default:

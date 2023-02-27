@@ -29,7 +29,6 @@ import org.scalacheck.Arbitrary
 import kinesis4cats.Utils
 import kinesis4cats.kpl.localstack.LocalstackKPLProducer
 import kinesis4cats.kpl.logging.instances.show._
-import kinesis4cats.localstack.Custom
 import kinesis4cats.syntax.scalacheck._
 
 abstract class KPLProducerSpec
@@ -43,12 +42,8 @@ abstract class KPLProducerSpec
       shardCount: Int
   ): SyncIO[FunFixture[KPLProducer[IO]]] = ResourceFunFixture(
     LocalstackKPLProducer.producerWithStream[IO](
-      // TODO: Go back to default when Localstack updates to the newest kinesis-mock
-      Custom.kinesisMockConfig,
       streamName,
-      shardCount,
-      5,
-      500.millis
+      shardCount
     )
   )
 
