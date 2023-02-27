@@ -3,7 +3,6 @@ import sbt._
 
 object LibraryDependencies {
   val Logback = "ch.qos.logback" % "logback-classic" % "1.4.5"
-  val CatsRetry = Def.setting("com.github.cb372" %%% "cats-retry" % "3.1.0")
   val JavaXMLBind = "javax.xml.bind" % "jaxb-api" % "2.3.1"
   val Scalacheck = Def.setting("org.scalacheck" %%% "scalacheck" % "1.17.0")
   val Epollcat = Def.setting("com.armanbilge" %%% "epollcat" % "0.1.4")

@@ -241,7 +241,8 @@ object Kinesis4CatsPlugin extends AutoPlugin {
     libraryDependencies ++= Seq(
       Cats.core.value,
       Cats.effect.value,
-      Log4Cats.core.value
+      Log4Cats.core.value,
+      FS2.core.value
     ) ++ testDependencies.value.map(_ % Test),
     libraryDependencySchemes += "org.scala-lang.modules" %% "scala-xml" % VersionScheme.Always,
     moduleName := "kinesis4cats-" + name.value,
@@ -308,8 +309,7 @@ object Kinesis4CatsPluginKeys {
       Munit.core.value,
       Munit.catsEffect.value,
       Munit.scalacheck.value,
-      Scalacheck.value,
-      FS2.core.value
+      Scalacheck.value
     )
   )
 
