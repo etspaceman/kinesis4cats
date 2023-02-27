@@ -7,6 +7,11 @@ object LibraryDependencies {
   val Scalacheck = Def.setting("org.scalacheck" %%% "scalacheck" % "1.17.0")
   val Epollcat = Def.setting("com.armanbilge" %%% "epollcat" % "0.1.4")
 
+  object ScalaJS {
+    val javaTime =
+      Def.setting("io.github.cquiroz" %%% "scala-java-time" % "2.5.0")
+  }
+
   object FS2 {
     val fs2Version = "3.6.1"
     val core = Def.setting("co.fs2" %%% "fs2-core" % fs2Version)

@@ -18,7 +18,7 @@ package kinesis4cats.logging
 
 import java.time.Instant
 
-import cats.effect.kernel.Async
+import cats.effect._
 import cats.effect.std.Console
 import cats.syntax.all._
 import org.typelevel.log4cats.SelfAwareStructuredLogger
@@ -37,9 +37,9 @@ private[kinesis4cats] final class ConsoleLogger[F[_]](
   )(
       message: => String
   ): F[Unit] = for {
+    now <- F.realTime.map(d => Instant.EPOCH.plusNanos(d.toNanos))
     _ <- C.println(
-      s"[$logLevel] ${Instant
-          .now()} ${ctx.map { case (k, v) => s"$k=$v" }.mkString(", ")} $message"
+      s"[$logLevel] $now ${ctx.map { case (k, v) => s"$k=$v" }.mkString(", ")} $message"
     )
     _ <- e.fold(F.unit)(e => C.printStackTrace(e))
   } yield ()
