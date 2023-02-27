@@ -16,7 +16,7 @@
 
 package kinesis4cats.logging
 
-import java.util.UUID
+import kinesis4cats.Utils
 
 // $COVERAGE-OFF$
 /** Class that represents a structured logging context.
@@ -62,7 +62,7 @@ object LogContext {
     *   [[kinesis4cats.logging.LogContext LogContext]]
     */
   def apply(): LogContext = new LogContext(
-    Map("contextId" -> UUID.randomUUID.toString)
+    Map("contextId" -> Utils.randomUUIDString)
   )
 }
 // $COVERAGE-ON$

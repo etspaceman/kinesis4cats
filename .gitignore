@@ -10,3 +10,6 @@ docker/image/lib/*.jar
 .smithy.lsp.log
 !/**/.gitkeep
 .sbt/
+package.json
+package-lock.json
+node_modules/

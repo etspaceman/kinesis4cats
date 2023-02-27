@@ -45,6 +45,18 @@ object Kinesis4CatsPlugin extends AutoPlugin {
     primaryJavaOSCond.value + s" && matrix.scala == '$Scala3'"
   }
 
+  private val onlyScalaJsCond = Def.setting {
+    primaryJavaOSCond.value + s" && matrix.project == 'rootJS'"
+  }
+
+  private val onlyNativeCond = Def.setting {
+    primaryJavaOSCond.value + s" && matrix.project == 'rootNative'"
+  }
+
+  private val onlyFailures = Def.setting {
+    "${{ failure() }}"
+  }
+
   override def buildSettings = Seq(
     tlBaseVersion := "0.0",
     organization := "io.github.etspaceman",
@@ -97,14 +109,41 @@ object Kinesis4CatsPlugin extends AutoPlugin {
         case (false, false) => Nil // nada
       }
 
+      val links = List(
+        WorkflowStep.Sbt(
+          List("Test/fastLinkJS"),
+          name = Some("Link JS"),
+          cond = Some(onlyScalaJsCond.value)
+        ),
+        WorkflowStep.Sbt(
+          List("Test/nativeLink"),
+          name = Some("Link Native"),
+          cond = Some(onlyNativeCond.value)
+        )
+      )
+
       val test = List(
         WorkflowStep.Sbt(
           List(
             "dockerComposeUp",
-            "test",
-            "dockerComposeDown"
+            "test"
           ),
           name = Some("Test"),
+          cond = Some(primaryJavaOSCond.value)
+        ),
+        WorkflowStep.Sbt(
+          List(
+            "dockerComposePs",
+            "dockerComposeLogs"
+          ),
+          name = Some("Print docker logs and container listing"),
+          cond = Some(onlyFailures.value)
+        ),
+        WorkflowStep.Sbt(
+          List(
+            "dockerComposeDown"
+          ),
+          name = Some("Remove docker containers"),
           cond = Some(primaryJavaOSCond.value)
         )
       )
@@ -142,7 +181,7 @@ object Kinesis4CatsPlugin extends AutoPlugin {
           )
         else Nil
 
-      style ++ test ++ scalafix ++ mima ++ doc
+      style ++ links ++ test ++ scalafix ++ mima ++ doc
     },
     githubWorkflowJavaVersions := Seq(JavaSpec.temurin("17")),
     tlCiScalafixCheck := true,
@@ -211,7 +250,8 @@ object Kinesis4CatsPlugin extends AutoPlugin {
       if (scalaVersion.value.startsWith("3.")) Nil
       else (Compile / doc / sources).value
     },
-    assembly / test := {}
+    assembly / test := {},
+    Test / parallelExecution := false
   ) ++ Seq(
     addCommandAlias(
       "cpl",

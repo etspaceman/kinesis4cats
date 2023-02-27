@@ -16,13 +16,12 @@
 
 package kinesis4cats.client.producer.fs2
 
-import java.util.UUID
-
 import cats.effect._
 import cats.effect.syntax.all._
 import software.amazon.awssdk.services.kinesis.model.PutRecordsRequest
 import software.amazon.awssdk.services.kinesis.model.PutRecordsResponse
 
+import kinesis4cats.Utils
 import kinesis4cats.client.localstack.LocalstackKinesisClient
 import kinesis4cats.client.logging.instances.show._
 import kinesis4cats.client.producer.fs2.localstack.LocalstackFS2KinesisProducer
@@ -41,7 +40,7 @@ class KinesisFS2ProducerSpec
       CommittableRecord[IO]
     ]() {
   override lazy val streamName: String =
-    s"kinesis-client-fs2-producer-spec-${UUID.randomUUID().toString()}"
+    s"kinesis-client-fs2-producer-spec-${Utils.randomUUIDString}"
   override def producerResource
       : Resource[IO, FS2Producer[IO, PutRecordsRequest, PutRecordsResponse]] =
     LocalstackFS2KinesisProducer.resource[IO](streamName)

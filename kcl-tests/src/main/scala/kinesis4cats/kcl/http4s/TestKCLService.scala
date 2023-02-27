@@ -17,11 +17,10 @@
 package kinesis4cats.kcl
 package http4s
 
-import java.util.UUID
-
 import cats.effect.{IO, Resource, ResourceApp}
 import com.comcast.ip4s._
 
+import kinesis4cats.Utils
 import kinesis4cats.ciris.CirisReader
 import kinesis4cats.kcl.localstack.LocalstackKCLConsumer
 import kinesis4cats.kcl.logging.instances.show._
@@ -32,7 +31,7 @@ object TestKCLService extends ResourceApp.Forever {
     streamName <- CirisReader.read[String](List("test", "stream")).resource[IO]
     configAndResults <- LocalstackKCLConsumer.kclConfigWithResults[IO](
       streamName,
-      s"test-kcl-service-spec-${UUID.randomUUID()}"
+      s"test-kcl-service-spec-${Utils.randomUUIDString}"
     )((_: List[CommittableRecord[IO]]) => IO.unit)
     consumer = new KCLConsumer[IO](configAndResults.kclConfig)
     _ <- KCLService.server[IO](consumer, port"8080", host"0.0.0.0")

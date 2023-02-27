@@ -19,8 +19,6 @@ package kcl.fs2.multistream
 
 import scala.concurrent.duration._
 
-import java.util.UUID
-
 import _root_.fs2.Stream
 import cats.effect.kernel.Deferred
 import cats.effect.syntax.all._
@@ -33,20 +31,20 @@ import software.amazon.awssdk.core.SdkBytes
 import software.amazon.awssdk.services.kinesis.model.PutRecordRequest
 import software.amazon.kinesis.common._
 
+import kinesis4cats.Utils
 import kinesis4cats.client.KinesisClient
 import kinesis4cats.client.localstack.LocalstackKinesisClient
+import kinesis4cats.client.logging.instances.show._
+import kinesis4cats.kcl.CommittableRecord
 import kinesis4cats.kcl.fs2.KCLConsumerFS2
 import kinesis4cats.kcl.fs2.localstack.LocalstackKCLConsumerFS2
+import kinesis4cats.kcl.logging.instances.show._
 import kinesis4cats.kcl.multistream.MultiStreamTracker
-import kinesis4cats.kcl.{CommittableRecord, RecordProcessor}
 import kinesis4cats.models.{AwsRegion, StreamArn}
 import kinesis4cats.syntax.bytebuffer._
 import kinesis4cats.syntax.scalacheck._
 
-abstract class KCLConsumerFS2MultiSpec(implicit
-    KCLLE: RecordProcessor.LogEncoders,
-    CLE: KinesisClient.LogEncoders
-) extends munit.CatsEffectSuite {
+class KCLConsumerFS2MultiSpec extends munit.CatsEffectSuite {
   def fixture(
       streamArn1: StreamArn,
       streamArn2: StreamArn,
@@ -67,15 +65,15 @@ abstract class KCLConsumerFS2MultiSpec(implicit
   val accountId = "000000000000"
   val streamArn1 = StreamArn(
     AwsRegion.US_EAST_1,
-    s"kcl-multi-consumer-fs2-spec-1-${UUID.randomUUID().toString()}",
+    s"kcl-multi-consumer-fs2-spec-1-${Utils.randomUUIDString}",
     accountId
   )
   val streamArn2 = StreamArn(
     AwsRegion.US_EAST_1,
-    s"kcl-multi-consumer-fs2-spec-2-${UUID.randomUUID().toString()}",
+    s"kcl-multi-consumer-fs2-spec-2-${Utils.randomUUIDString}",
     accountId
   )
-  val appName = s"kcl-multi-consumer-fs2-spec-${UUID.randomUUID().toString()}"
+  val appName = s"kcl-multi-consumer-fs2-spec-${Utils.randomUUIDString}"
 
   fixture(streamArn1, streamArn2, 1, appName).test(
     "It should receive produced records"
@@ -124,9 +122,6 @@ object KCLConsumerFS2MultiSpec {
       streamArn2: StreamArn,
       shardCount: Int,
       appName: String
-  )(implicit
-      KCLLE: RecordProcessor.LogEncoders,
-      CLE: KinesisClient.LogEncoders
   ): Resource[IO, Resources[IO]] = for {
     _ <- LocalstackKinesisClient
       .streamResource[IO](streamArn1.streamName, shardCount)

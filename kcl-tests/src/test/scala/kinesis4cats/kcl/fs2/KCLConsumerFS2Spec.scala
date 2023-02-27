@@ -20,8 +20,6 @@ package fs2
 
 import scala.concurrent.duration._
 
-import java.util.UUID
-
 import _root_.fs2.Stream
 import cats.effect.kernel.Deferred
 import cats.effect.{IO, Resource, SyncIO}
@@ -32,16 +30,16 @@ import org.scalacheck.Arbitrary
 import software.amazon.awssdk.core.SdkBytes
 import software.amazon.awssdk.services.kinesis.model.PutRecordRequest
 
+import kinesis4cats.Utils
 import kinesis4cats.client.KinesisClient
 import kinesis4cats.client.localstack.LocalstackKinesisClient
+import kinesis4cats.client.logging.instances.show._
 import kinesis4cats.kcl.fs2.localstack.LocalstackKCLConsumerFS2
+import kinesis4cats.kcl.logging.instances.show._
 import kinesis4cats.syntax.bytebuffer._
 import kinesis4cats.syntax.scalacheck._
 
-abstract class KCLConsumerFS2Spec(implicit
-    KCLLE: RecordProcessor.LogEncoders,
-    CLE: KinesisClient.LogEncoders
-) extends munit.CatsEffectSuite {
+class KCLConsumerFS2Spec extends munit.CatsEffectSuite {
   def fixture(
       streamName: String,
       shardCount: Int,
@@ -52,7 +50,7 @@ abstract class KCLConsumerFS2Spec(implicit
 
   override def munitIOTimeout: Duration = 5.minutes
 
-  val streamName = s"kcl-fs2-consumer-spec-${UUID.randomUUID().toString()}"
+  val streamName = s"kcl-fs2-consumer-spec-${Utils.randomUUIDString}"
   val appName = streamName
 
   fixture(streamName, 1, appName).test("It should receive produced records") {
@@ -84,9 +82,10 @@ abstract class KCLConsumerFS2Spec(implicit
 }
 
 object KCLConsumerFS2Spec {
-  def resource(streamName: String, shardCount: Int, appName: String)(implicit
-      KCLLE: RecordProcessor.LogEncoders,
-      CLE: KinesisClient.LogEncoders
+  def resource(
+      streamName: String,
+      shardCount: Int,
+      appName: String
   ): Resource[IO, Resources[IO]] = for {
     client <- LocalstackKinesisClient.streamResource[IO](streamName, shardCount)
     consumer <- LocalstackKCLConsumerFS2.kclConsumer[IO](

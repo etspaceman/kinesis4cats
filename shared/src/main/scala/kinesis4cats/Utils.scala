@@ -14,9 +14,12 @@
  * limitations under the License.
  */
 
-package kinesis4cats.kcl.fs2
+package kinesis4cats
 
-import kinesis4cats.client.logging.instances.circe._
-import kinesis4cats.kcl.logging.instances.circe._
+import cats.effect.SyncIO
+import cats.effect.std.UUIDGen
 
-class KCLConsumerFS2CirceSpec extends KCLConsumerFS2Spec
+object Utils {
+  def randomUUID = UUIDGen.randomUUID[SyncIO].unsafeRunSync()
+  def randomUUIDString = UUIDGen.randomString[SyncIO].unsafeRunSync()
+}

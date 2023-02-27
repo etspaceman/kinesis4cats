@@ -16,8 +16,6 @@
 
 package kinesis4cats.smithy4s.client.producer
 
-import java.util.UUID
-
 import cats.effect._
 import cats.effect.syntax.all._
 import cats.syntax.all._
@@ -27,6 +25,7 @@ import org.http4s.blaze.client.BlazeClientBuilder
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 import smithy4s.aws.kernel.AwsRegion
 
+import kinesis4cats.Utils
 import kinesis4cats.kcl.CommittableRecord
 import kinesis4cats.kcl.localstack.LocalstackKCLConsumer
 import kinesis4cats.kcl.logging.instances.show._
@@ -49,7 +48,7 @@ class KinesisProducerNoShardMapSpec
       CommittableRecord[IO]
     ]() {
   override lazy val streamName: String =
-    s"kinesis-client-producer-no-shard-map-spec-${UUID.randomUUID().toString()}"
+    s"kinesis-client-producer-no-shard-map-spec-${Utils.randomUUIDString}"
 
   def http4sClientResource =
     BlazeClientBuilder[IO].withCheckEndpointAuthentication(false).resource

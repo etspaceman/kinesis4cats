@@ -18,14 +18,13 @@ package kinesis4cats.kcl
 package fs2
 package localstack
 
-import java.util.UUID
-
 import cats.Parallel
 import cats.effect.std.Queue
 import cats.effect.syntax.all._
 import cats.effect.{Async, Resource}
 import software.amazon.kinesis.common._
 
+import kinesis4cats.Utils
 import kinesis4cats.kcl.localstack.LocalstackKCLConsumer
 import kinesis4cats.kcl.multistream.MultiStreamTracker
 import kinesis4cats.localstack.LocalstackConfig
@@ -154,7 +153,7 @@ object LocalstackKCLConsumerFS2 {
       streamName: String,
       appName: String,
       prefix: Option[String] = None,
-      workerId: String = UUID.randomUUID().toString,
+      workerId: String = Utils.randomUUIDString,
       position: InitialPositionInStreamExtended =
         InitialPositionInStreamExtended.newInitialPosition(
           InitialPositionInStream.TRIM_HORIZON
@@ -204,7 +203,7 @@ object LocalstackKCLConsumerFS2 {
       tracker: MultiStreamTracker,
       appName: String,
       prefix: Option[String] = None,
-      workerId: String = UUID.randomUUID().toString,
+      workerId: String = Utils.randomUUIDString,
       processConfig: KCLConsumer.ProcessConfig =
         KCLConsumerFS2.defaultProcessConfig
   )(implicit
@@ -350,7 +349,7 @@ object LocalstackKCLConsumerFS2 {
       streamName: String,
       appName: String,
       prefix: Option[String] = None,
-      workerId: String = UUID.randomUUID().toString(),
+      workerId: String = Utils.randomUUIDString,
       position: InitialPositionInStreamExtended =
         InitialPositionInStreamExtended.newInitialPosition(
           InitialPositionInStream.TRIM_HORIZON
@@ -403,7 +402,7 @@ object LocalstackKCLConsumerFS2 {
       tracker: MultiStreamTracker,
       appName: String,
       prefix: Option[String] = None,
-      workerId: String = UUID.randomUUID().toString(),
+      workerId: String = Utils.randomUUIDString,
       processConfig: KCLConsumer.ProcessConfig =
         KCLConsumerFS2.defaultProcessConfig
   )(implicit

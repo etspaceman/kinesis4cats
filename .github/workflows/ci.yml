@@ -79,9 +79,25 @@ jobs:
         if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-latest'
         run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' headerCheckAll fmtCheck
 
+      - name: Link JS
+        if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-latest' && matrix.project == 'rootJS'
+        run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' Test/fastLinkJS
+
+      - name: Link Native
+        if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-latest' && matrix.project == 'rootNative'
+        run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' Test/nativeLink
+
       - name: Test
         if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-latest'
-        run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' dockerComposeUp test dockerComposeDown
+        run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' dockerComposeUp test
+
+      - name: Print docker logs and container listing
+        if: ${{ failure() }}
+        run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' dockerComposePs dockerComposeLogs
+
+      - name: Remove docker containers
+        if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-latest'
+        run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' dockerComposeDown
 
       - name: Check scalafix lints
         if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-latest' && matrix.scala != '3.2.2'

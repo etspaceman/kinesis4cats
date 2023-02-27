@@ -17,8 +17,6 @@
 package kinesis4cats
 package smithy4s.client
 
-import java.util.UUID
-
 import _root_.smithy4s.ByteArray
 import _root_.smithy4s.aws.AwsRegion
 import cats.effect._
@@ -29,14 +27,15 @@ import io.circe.syntax._
 import org.http4s.blaze.client.BlazeClientBuilder
 import org.scalacheck.Arbitrary
 
+import kinesis4cats.Utils
 import kinesis4cats.logging.ConsoleLogger
 import kinesis4cats.logging.instances.show._
 import kinesis4cats.models.StreamArn
 import kinesis4cats.smithy4s.client.localstack.LocalstackKinesisClient
+import kinesis4cats.smithy4s.client.logging.instances.show._
 import kinesis4cats.syntax.scalacheck._
 
-abstract class KinesisClientSpec(implicit LE: KinesisClient.LogEncoders[IO])
-    extends munit.CatsEffectSuite {
+abstract class KinesisClientSpec extends munit.CatsEffectSuite {
 
   // allow flaky tests on ci
   override def munitFlakyOK: Boolean = sys.env.contains("CI")
@@ -60,7 +59,7 @@ abstract class KinesisClientSpec(implicit LE: KinesisClient.LogEncoders[IO])
   // Will look into this more later.
   fixture.test("It should work through all commands".flaky) { client =>
     val streamName =
-      s"smithy4s-kinesis-client-spec-${UUID.randomUUID().toString()}"
+      s"smithy4s-kinesis-client-spec-${Utils.randomUUIDString}"
     val accountId = "000000000000"
 
     val streamArn = StreamArn(
@@ -70,6 +69,8 @@ abstract class KinesisClientSpec(implicit LE: KinesisClient.LogEncoders[IO])
       streamName,
       accountId
     ).streamArn
+
+    val consumerName = s"consumer-${Utils.randomUUIDString}"
 
     for {
       _ <- client.createStream(
@@ -93,13 +94,16 @@ abstract class KinesisClientSpec(implicit LE: KinesisClient.LogEncoders[IO])
           Some(StreamName(streamName))
         )
       _ <- client
-        .registerStreamConsumer(StreamARN(streamArn), ConsumerName("foo"))
+        .registerStreamConsumer(
+          StreamARN(streamArn),
+          ConsumerName(consumerName)
+        )
       _ <- client.describeLimits()
       _ <- client.describeStream(Some(StreamName(streamName)))
       _ <- client
         .describeStreamConsumer(
           Some(StreamARN(streamArn)),
-          Some(ConsumerName("foo"))
+          Some(ConsumerName(consumerName))
         )
       _ <- client.describeStreamSummary(Some(StreamName(streamName)))
       _ <- client
@@ -158,7 +162,7 @@ abstract class KinesisClientSpec(implicit LE: KinesisClient.LogEncoders[IO])
       _ <- client
         .deregisterStreamConsumer(
           Some(StreamARN(streamArn)),
-          Some(ConsumerName("foo"))
+          Some(ConsumerName(consumerName))
         )
       tags <- client.listTagsForStream(Some(StreamName(streamName)))
       _ <- client

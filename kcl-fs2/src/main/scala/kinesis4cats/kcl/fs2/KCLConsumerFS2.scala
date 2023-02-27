@@ -18,8 +18,6 @@ package kinesis4cats.kcl.fs2
 
 import scala.concurrent.duration._
 
-import java.util.UUID
-
 import cats.Parallel
 import cats.effect.kernel.Deferred
 import cats.effect.std.Queue
@@ -39,6 +37,7 @@ import software.amazon.kinesis.lifecycle.LifecycleConfig
 import software.amazon.kinesis.metrics.MetricsConfig
 import software.amazon.kinesis.retrieval.RetrievalConfig
 
+import kinesis4cats.Utils
 import kinesis4cats.compat.retry.RetryPolicies._
 import kinesis4cats.compat.retry._
 import kinesis4cats.kcl.WorkerListeners._
@@ -311,7 +310,7 @@ object KCLConsumerFS2 {
       streamName: String,
       appName: String,
       fs2Config: FS2Config = FS2Config.default,
-      workerId: String = UUID.randomUUID.toString,
+      workerId: String = Utils.randomUUIDString,
       processConfig: KCLConsumer.ProcessConfig = defaultProcessConfig
   )(
       tfn: kinesis4cats.kcl.KCLConsumer.Config[
@@ -390,7 +389,7 @@ object KCLConsumerFS2 {
       tracker: MultiStreamTracker,
       appName: String,
       fs2Config: FS2Config = FS2Config.default,
-      workerId: String = UUID.randomUUID.toString,
+      workerId: String = Utils.randomUUIDString,
       processConfig: KCLConsumer.ProcessConfig = defaultProcessConfig
   )(
       tfn: kinesis4cats.kcl.KCLConsumer.Config[
@@ -552,7 +551,7 @@ object KCLConsumerFS2 {
         streamName: String,
         appName: String,
         fs2Config: KCLConsumerFS2.FS2Config = KCLConsumerFS2.FS2Config.default,
-        workerId: String = UUID.randomUUID.toString,
+        workerId: String = Utils.randomUUIDString,
         processConfig: KCLConsumer.ProcessConfig = defaultProcessConfig
     )(
         tfn: kinesis4cats.kcl.KCLConsumer.Config[
@@ -637,7 +636,7 @@ object KCLConsumerFS2 {
         tracker: MultiStreamTracker,
         appName: String,
         fs2Config: FS2Config,
-        workerId: String = UUID.randomUUID.toString,
+        workerId: String = Utils.randomUUIDString,
         processConfig: KCLConsumer.ProcessConfig = defaultProcessConfig
     )(
         tfn: kinesis4cats.kcl.KCLConsumer.Config[
