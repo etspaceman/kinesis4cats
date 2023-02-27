@@ -475,8 +475,7 @@ lazy val `smithy4s-client-producer-tests` = projectMatrix
       Http4s.blazeClient.value % Test,
       Log4Cats.slf4j % Test,
       Logback % Test
-    ),
-    Test / parallelExecution := false
+    )
   )
   .jvmPlatform(Seq(Scala213))
   .forkTests

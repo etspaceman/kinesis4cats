@@ -17,6 +17,8 @@
 package kinesis4cats
 package logging
 
+import kinesis4cats.Utils
+
 // $COVERAGE-OFF$
 /** Class that represents a structured logging context.
   *

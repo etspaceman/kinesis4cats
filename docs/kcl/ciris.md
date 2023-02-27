@@ -83,7 +83,7 @@ Currently the [CheckpointConfig](https://github.com/awslabs/amazon-kinesis-clien
 | Environment Variable | System Property | Required | Default | Description |
 | - | - | - | - | - |
 | `KCL_LEASE_TABLE_NAME` | `kcl.lease.table.name` | No | `KCL_APP_NAME`/`kcl.app.name` | Name of the table to use in DynamoDB |
-| `KCL_LEASE_WORKER_ID` | `kcl.lease.worker.id` | No | `Utils.randomUUID.toString` | Used to distinguish different workers/processes of a KCL application. |
+| `KCL_LEASE_WORKER_ID` | `kcl.lease.worker.id` | No | `Utils.randomUUIDString` | Used to distinguish different workers/processes of a KCL application. |
 | `KCL_LEASE_FAILOVER_TIME` | `kcl.lease.failover.time` | No | `10 seconds` | A worker which does not renew it's lease within this time interval will be regarded as having problems and it's shards will be assigned to other workers. |
 | `KCL_LEASE_SHARD_SYNC_INTERVAL` | `kcl.lease.shard.sync.interval` | No | `60 seconds` | Shard sync interval |
 | `KCL_LEASE_CLEANUP_LEASES_UPON_SHARD_COMPLETION` | `kcl.lease.cleanup.leases.upon.shard.completion` | No | true | Cleanup leases upon shards completion. |

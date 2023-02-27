@@ -55,7 +55,7 @@ object Kinesis4CatsPlugin extends AutoPlugin {
   }
 
   private val onlyFailures = Def.setting {
-    primaryJavaOSCond.value + " && ${{ failure() }}"
+    "${{ failure() }}"
   }
 
   override def buildSettings = Seq(
@@ -253,7 +253,8 @@ object Kinesis4CatsPlugin extends AutoPlugin {
       if (scalaVersion.value.startsWith("3.")) Nil
       else (Compile / doc / sources).value
     },
-    assembly / test := {}
+    assembly / test := {},
+    Test / parallelExecution := false
   ) ++ Seq(
     addCommandAlias(
       "cpl",

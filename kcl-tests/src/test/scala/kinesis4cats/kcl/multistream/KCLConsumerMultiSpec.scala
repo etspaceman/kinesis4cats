@@ -35,17 +35,16 @@ import software.amazon.kinesis.common._
 import kinesis4cats.Utils
 import kinesis4cats.client.KinesisClient
 import kinesis4cats.client.localstack.LocalstackKinesisClient
+import kinesis4cats.client.logging.instances.show._
 import kinesis4cats.compat.retry.RetryPolicies._
 import kinesis4cats.compat.retry._
 import kinesis4cats.kcl.localstack.LocalstackKCLConsumer
+import kinesis4cats.kcl.logging.instances.show._
 import kinesis4cats.models.{AwsRegion, StreamArn}
 import kinesis4cats.syntax.bytebuffer._
 import kinesis4cats.syntax.scalacheck._
 
-abstract class KCLConsumerMultiSpec(implicit
-    KCLLE: RecordProcessor.LogEncoders,
-    CLE: KinesisClient.LogEncoders
-) extends munit.CatsEffectSuite {
+class KCLConsumerMultiSpec extends munit.CatsEffectSuite {
   def fixture(
       streamArn1: StreamArn,
       streamArn2: StreamArn,
@@ -120,9 +119,6 @@ object KCLConsumerMultiSpec {
       streamArn2: StreamArn,
       shardCount: Int,
       appName: String
-  )(implicit
-      KCLLE: RecordProcessor.LogEncoders,
-      CLE: KinesisClient.LogEncoders
   ): Resource[IO, Resources[IO]] = for {
     _ <- LocalstackKinesisClient
       .streamResource[IO](streamArn1.streamName, shardCount)

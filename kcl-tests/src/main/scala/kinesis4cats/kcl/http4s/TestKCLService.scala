@@ -31,7 +31,7 @@ object TestKCLService extends ResourceApp.Forever {
     streamName <- CirisReader.read[String](List("test", "stream")).resource[IO]
     configAndResults <- LocalstackKCLConsumer.kclConfigWithResults[IO](
       streamName,
-      s"test-kcl-service-spec-${Utils.randomUUID}"
+      s"test-kcl-service-spec-${Utils.randomUUIDString}"
     )((_: List[CommittableRecord[IO]]) => IO.unit)
     consumer = new KCLConsumer[IO](configAndResults.kclConfig)
     _ <- KCLService.server[IO](consumer, port"8080", host"0.0.0.0")

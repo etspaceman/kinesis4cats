@@ -32,16 +32,15 @@ import software.amazon.awssdk.services.kinesis.model.PutRecordRequest
 import kinesis4cats.Utils
 import kinesis4cats.client.KinesisClient
 import kinesis4cats.client.localstack.LocalstackKinesisClient
+import kinesis4cats.client.logging.instances.show._
 import kinesis4cats.compat.retry
 import kinesis4cats.compat.retry.RetryPolicies._
 import kinesis4cats.kcl.localstack.LocalstackKCLConsumer
+import kinesis4cats.kcl.logging.instances.show._
 import kinesis4cats.syntax.bytebuffer._
 import kinesis4cats.syntax.scalacheck._
 
-abstract class KCLConsumerSpec(implicit
-    KCLLE: RecordProcessor.LogEncoders,
-    CLE: KinesisClient.LogEncoders
-) extends munit.CatsEffectSuite {
+class KCLConsumerSpec extends munit.CatsEffectSuite {
   def fixture(
       streamName: String,
       shardCount: Int,
@@ -86,9 +85,10 @@ abstract class KCLConsumerSpec(implicit
 }
 
 object KCLConsumerSpec {
-  def resource(streamName: String, shardCount: Int, appName: String)(implicit
-      KCLLE: RecordProcessor.LogEncoders,
-      CLE: KinesisClient.LogEncoders
+  def resource(
+      streamName: String,
+      shardCount: Int,
+      appName: String
   ): Resource[IO, Resources[IO]] = for {
     client <- LocalstackKinesisClient.streamResource[IO](streamName, shardCount)
     deferredWithResults <- LocalstackKCLConsumer.kclConsumerWithResults(

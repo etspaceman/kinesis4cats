@@ -37,10 +37,10 @@ import kinesis4cats.logging.instances.show._
 import kinesis4cats.models
 import kinesis4cats.models.StreamArn
 import kinesis4cats.smithy4s.client.localstack.LocalstackKinesisClient
+import kinesis4cats.smithy4s.client.logging.instances.show._
 import kinesis4cats.syntax.scalacheck._
 
-abstract class KinesisClientSpec(implicit LE: KinesisClient.LogEncoders[IO])
-    extends munit.CatsEffectSuite {
+abstract class KinesisClientSpec extends munit.CatsEffectSuite {
 
   val region = AwsRegion.US_EAST_1
   def fixture: SyncIO[FunFixture[KinesisClient[IO]]] =
@@ -75,6 +75,8 @@ abstract class KinesisClientSpec(implicit LE: KinesisClient.LogEncoders[IO])
       accountId
     ).streamArn
 
+    val consumerName = s"consumer-${Utils.randomUUIDString}"
+
     for {
       _ <- client.createStream(
         StreamName(streamName),
@@ -100,14 +102,17 @@ abstract class KinesisClientSpec(implicit LE: KinesisClient.LogEncoders[IO])
         )
       _ <- IO.sleep(1.second)
       _ <- client
-        .registerStreamConsumer(StreamARN(streamArn), ConsumerName("foo"))
+        .registerStreamConsumer(
+          StreamARN(streamArn),
+          ConsumerName(consumerName)
+        )
       _ <- IO.sleep(1.second)
       _ <- client.describeLimits()
       _ <- client.describeStream(Some(StreamName(streamName)))
       _ <- client
         .describeStreamConsumer(
           Some(StreamARN(streamArn)),
-          Some(ConsumerName("foo"))
+          Some(ConsumerName(consumerName))
         )
       _ <- client.describeStreamSummary(Some(StreamName(streamName)))
       _ <- client
@@ -166,7 +171,7 @@ abstract class KinesisClientSpec(implicit LE: KinesisClient.LogEncoders[IO])
       _ <- client
         .deregisterStreamConsumer(
           Some(StreamARN(streamArn)),
-          Some(ConsumerName("foo"))
+          Some(ConsumerName(consumerName))
         )
       _ <- IO.sleep(1.second)
       tags <- client.listTagsForStream(Some(StreamName(streamName)))

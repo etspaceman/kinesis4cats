@@ -30,11 +30,11 @@ import software.amazon.awssdk.services.kinesis.model._
 
 import kinesis4cats.Utils
 import kinesis4cats.client.localstack.LocalstackKinesisClient
+import kinesis4cats.client.logging.instances.show._
 import kinesis4cats.models.{AwsRegion, StreamArn}
 import kinesis4cats.syntax.scalacheck._
 
-abstract class KinesisClientSpec(implicit LE: KinesisClient.LogEncoders)
-    extends munit.CatsEffectSuite {
+abstract class KinesisClientSpec extends munit.CatsEffectSuite {
   def fixture: SyncIO[FunFixture[KinesisClient[IO]]] =
     ResourceFunFixture(
       LocalstackKinesisClient.clientResource[IO]()
@@ -44,6 +44,7 @@ abstract class KinesisClientSpec(implicit LE: KinesisClient.LogEncoders)
   val accountId = "000000000000"
   val region = AwsRegion.US_EAST_1
   val streamArn = StreamArn(region, streamName, accountId).streamArn
+  val consumerName = s"consumer-${Utils.randomUUIDString}"
 
   fixture.test("It should work through all commands") { client =>
     for {
@@ -85,7 +86,7 @@ abstract class KinesisClientSpec(implicit LE: KinesisClient.LogEncoders)
         RegisterStreamConsumerRequest
           .builder()
           .streamARN(streamArn)
-          .consumerName("foo")
+          .consumerName(consumerName)
           .build()
       )
       _ <- client.describeLimits(DescribeLimitsRequest.builder().build())
@@ -100,7 +101,7 @@ abstract class KinesisClientSpec(implicit LE: KinesisClient.LogEncoders)
         DescribeStreamConsumerRequest
           .builder()
           .streamARN(streamArn)
-          .consumerName("foo")
+          .consumerName(consumerName)
           .build()
       )
       _ <- client.describeStreamSummary(
@@ -194,7 +195,7 @@ abstract class KinesisClientSpec(implicit LE: KinesisClient.LogEncoders)
         DeregisterStreamConsumerRequest
           .builder()
           .streamARN(streamArn)
-          .consumerName("foo")
+          .consumerName(consumerName)
           .build()
       )
       tags <- client.listTagsForStream(
