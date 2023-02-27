@@ -18,8 +18,6 @@ package kinesis4cats.producer
 
 import scala.concurrent.duration.FiniteDuration
 
-import java.security.MessageDigest
-
 import cats.Semigroup
 import cats.data.{Ior, NonEmptyList}
 import cats.effect.Async
@@ -120,13 +118,11 @@ abstract class Producer[F[_], PutReq, PutRes](implicit
   ): F[Ior[Producer.Error, NonEmptyList[PutRes]]] = {
     val ctx = LogContext()
 
-    val digest = Producer.md5Digest
-
     for {
       withShards <- records.traverse(rec =>
         for {
           shardRes <- shardMapCache
-            .shardForPartitionKey(digest, rec.partitionKey)
+            .shardForPartitionKey(rec.partitionKey)
           _ <-
             if (config.warnOnShardCacheMisses)
               shardRes
@@ -252,8 +248,6 @@ object Producer {
       val recordLogEncoder: LogEncoder[Record],
       val finiteDurationEncoder: LogEncoder[FiniteDuration]
   )
-
-  private[kinesis4cats] def md5Digest = MessageDigest.getInstance("MD5")
 
   /** Configuration for the [[kinesis4cats.producer.Producer Producer]]
     *

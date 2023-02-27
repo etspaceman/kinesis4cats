@@ -26,10 +26,9 @@ import cats.data.NonEmptyList
 import cats.effect.IO
 import cats.effect.Resource
 import cats.effect.SyncIO
-import cats.effect.syntax.all._
 import cats.syntax.all._
 import org.typelevel.log4cats.StructuredLogger
-import org.typelevel.log4cats.slf4j.Slf4jLogger
+import org.typelevel.log4cats.noop.NoOpLogger
 
 import kinesis4cats.instances.eq._
 import kinesis4cats.models.HashKeyRange
@@ -180,7 +179,7 @@ class MockProducer(
 
 object MockProducer {
   def apply(): Resource[IO, MockProducer] = for {
-    logger <- Slf4jLogger.create[IO].toResource
+    logger <- Resource.pure(NoOpLogger[IO])
     shardMapCache <- ShardMapCache[IO](
       ShardMapCache.Config.default,
       IO.pure(
@@ -196,7 +195,7 @@ object MockProducer {
           )
         )
       ),
-      Slf4jLogger.create[IO]
+      IO.pure(logger)
     )
     defaultConfig = Producer.Config.default(StreamNameOrArn.Name("foo"))
   } yield new MockProducer(

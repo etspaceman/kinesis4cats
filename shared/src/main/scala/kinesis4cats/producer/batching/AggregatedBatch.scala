@@ -17,17 +17,14 @@
 package kinesis4cats.producer
 package batching
 
-import scala.jdk.CollectionConverters._
-
 import java.io.ByteArrayOutputStream
-import java.security.MessageDigest
 
 import cats.data.NonEmptyList
 import cats.syntax.all._
 
+import kinesis4cats.Utils
 import kinesis4cats.models.ShardId
-import kinesis4cats.producer.Producer
-import kinesis4cats.protobuf.Messages.AggregatedRecord
+import kinesis4cats.protobuf.messages.AggregatedRecord
 
 /** Represents records that can be aggregated into a single record using the
   * [[https://docs.aws.amazon.com/streams/latest/dev/kinesis-kpl-concepts.html#kinesis-kpl-concepts-aggretation KPL Aggregation Format]].
@@ -47,8 +44,6 @@ import kinesis4cats.protobuf.Messages.AggregatedRecord
   *   Map of explicit hash keys to their known index in the records
   * @param partitionKeys
   *   Map of partition kyes to their known index in the records
-  * @param digest
-  *   [[https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/security/MessageDigest.html MessageDigest]]
   * @param partitionKey
   *   Partition Key for the aggregated record
   * @param config
@@ -60,7 +55,6 @@ private[kinesis4cats] final case class AggregatedBatch private (
     aggregatedMessageSize: Int,
     explicitHashKeys: Map[String, Int],
     partitionKeys: Map[String, Int],
-    digest: MessageDigest,
     partitionKey: String,
     config: Batcher.Config
 ) {
@@ -69,19 +63,18 @@ private[kinesis4cats] final case class AggregatedBatch private (
   def getSizeBytes: Int =
     AggregatedBatch.magicBytes.length +
       aggregatedMessageSize +
-      digest.getDigestLength()
+      16 // MD5 digest length
 
   // See https://github.com/awslabs/kinesis-aggregation/blob/2.0.3/java/KinesisAggregatorV2/src/main/java/com/amazonaws/kinesis/agg/AggRecord.java#L330
   def canAdd(record: Record.WithShard): Boolean =
     (record.aggregatedPayloadSize(
       partitionKeys,
-      explicitHashKeys,
-      digest
+      explicitHashKeys
     ) + getSizeBytes) <= config.maxPayloadSizePerRecord
 
   def add(record: Record.WithShard): AggregatedBatch = {
     val aggregationEntry =
-      record.asAggregationEntry(partitionKeys, explicitHashKeys, digest)
+      record.asAggregationEntry(partitionKeys, explicitHashKeys)
 
     val newHashKeys = explicitHashKeys
       .get(aggregationEntry.explicitHashKey)
@@ -107,17 +100,16 @@ private[kinesis4cats] final case class AggregatedBatch private (
     )
   }
 
-  def asAggregatedRecord: AggregatedRecord = AggregatedRecord
-    .newBuilder()
-    .addAllRecords(records.reverse.map(_.asEntry).toList.asJava)
-    .addAllPartitionKeyTable(partitionKeys.keys.asJava)
-    .addAllExplicitHashKeyTable(explicitHashKeys.keys.asJava)
-    .build()
+  def asAggregatedRecord: AggregatedRecord = AggregatedRecord(
+    partitionKeys.keys.toSeq,
+    explicitHashKeys.keys.toSeq,
+    records.reverse.map(_.asEntry).toList
+  )
 
   // See https://github.com/awslabs/kinesis-aggregation/blob/2.0.3/java/KinesisAggregatorV2/src/main/java/com/amazonaws/kinesis/agg/AggRecord.java#L142
   def asBytes: Array[Byte] = {
-    val messageBody: Array[Byte] = asAggregatedRecord.toByteArray()
-    val messageDigest: Array[Byte] = digest.digest(messageBody)
+    val messageBody: Array[Byte] = asAggregatedRecord.toByteArray
+    val messageDigest: Array[Byte] = Utils.md5(messageBody)
 
     val baos: ByteArrayOutputStream = new ByteArrayOutputStream(getSizeBytes)
     baos.write(
@@ -129,8 +121,6 @@ private[kinesis4cats] final case class AggregatedBatch private (
     baos.write(messageDigest, 0, messageDigest.length)
 
     val res = baos.toByteArray()
-
-    digest.reset()
 
     res
   }
@@ -146,16 +136,14 @@ private[kinesis4cats] object AggregatedBatch {
       record: Record.WithShard,
       config: Batcher.Config
   ): AggregatedBatch = {
-    val digest = Producer.md5Digest
     val aggregationEntry =
-      record.asAggregationEntry(Map.empty, Map.empty, digest)
+      record.asAggregationEntry(Map.empty, Map.empty)
     AggregatedBatch(
       record.predictedShard,
       NonEmptyList.one(aggregationEntry),
       aggregationEntry.aggregatedPayloadSize(Map.empty, Map.empty),
       Map(aggregationEntry.explicitHashKey -> 0),
       Map(record.record.partitionKey -> 0),
-      digest,
       record.record.partitionKey,
       config
     )

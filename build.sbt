@@ -10,21 +10,49 @@ lazy val compat = projectMatrix
   .jsPlatform(allScalaVersions)
 
 lazy val shared = projectMatrix
-  .enablePlugins(ProtobufPlugin)
   .settings(
     description := "Common shared utilities",
     libraryDependencies ++= testDependencies.value ++ Seq(
-      Aws.kcl % Test,
-      Log4Cats.slf4j % Test,
-      Logback % Test,
-      Aws.Aggregation.aggregator % Test,
-      Aws.Aggregation.deaggregator % Test
+      "com.thesamet.scalapb" %%% "scalapb-runtime" % scalapb.compiler.Version.scalapbVersion,
+      Log4Cats.noop.value % Test
+    ),
+    Compile / PB.targets := Seq(
+      scalapb.gen() -> (Compile / sourceManaged).value / "scalapb"
     )
   )
-  .jvmPlatform(allScalaVersions)
+  .jvmPlatform(
+    allScalaVersions,
+    Seq(
+      libraryDependencies ++= Seq(
+        Aws.kcl % Test,
+        Log4Cats.slf4j % Test,
+        Logback % Test,
+        Aws.Aggregation.aggregator % Test,
+        Aws.Aggregation.deaggregator % Test
+      )
+    )
+  )
   .nativePlatform(allScalaVersions)
   .jsPlatform(allScalaVersions)
   .dependsOn(compat)
+
+// Workaround for https://github.com/sbt/sbt-projectmatrix/pull/79
+lazy val `shared-native-212` = shared
+  .native(Scala212)
+  .enablePlugins(ScalaNativeBrewedConfigPlugin)
+  .settings(nativeBrewFormulas += "openssl")
+
+// Workaround for https://github.com/sbt/sbt-projectmatrix/pull/79
+lazy val `shared-native-213` = shared
+  .native(Scala213)
+  .enablePlugins(ScalaNativeBrewedConfigPlugin)
+  .settings(nativeBrewFormulas += "openssl")
+
+// Workaround for https://github.com/sbt/sbt-projectmatrix/pull/79
+lazy val `shared-native-3` = shared
+  .native(Scala3)
+  .enablePlugins(ScalaNativeBrewedConfigPlugin)
+  .settings(nativeBrewFormulas += "openssl")
 
 lazy val `shared-circe` = projectMatrix
   .settings(
@@ -94,14 +122,6 @@ lazy val kcl = projectMatrix
   .jvmPlatform(allScalaVersions)
   .dependsOn(shared, `kinesis-client`)
 
-lazy val `kcl-fs2` = projectMatrix
-  .settings(
-    description := "FS2 interfaces for the KCL",
-    libraryDependencies ++= Seq(FS2.core.value)
-  )
-  .jvmPlatform(allScalaVersions)
-  .dependsOn(kcl)
-
 lazy val `kcl-http4s` = projectMatrix
   .enablePlugins(Smithy4sCodegenPlugin)
   .settings(
@@ -132,22 +152,6 @@ lazy val `kcl-ciris` = projectMatrix
   .jvmPlatform(allScalaVersions)
   .dependsOn(kcl, `shared-ciris`, `kcl-localstack` % Test)
 
-lazy val `kcl-fs2-ciris` = projectMatrix
-  .settings(BuildInfoPlugin.buildInfoDefaultSettings)
-  .settings(BuildInfoPlugin.buildInfoScopedSettings(Test))
-  .settings(
-    description := "Ciris tooling for the Kinesis Client Library (KCL) via FS2",
-    libraryDependencies ++= Seq(Logback % Test),
-    Test / envVars ++= KCLFS2CirisSpecVars.env,
-    Test / javaOptions ++= KCLFS2CirisSpecVars.prop,
-    Test / buildInfoKeys := KCLFS2CirisSpecVars.buildInfoKeys,
-    Test / buildInfoPackage := "kinesis4cats.kcl.fs2.ciris",
-    Test / buildInfoOptions += BuildInfoOption.ConstantValue
-  )
-  .forkTests
-  .jvmPlatform(allScalaVersions)
-  .dependsOn(`kcl-fs2`, `kcl-ciris`, `shared-ciris`)
-
 lazy val `kcl-logging-circe` = projectMatrix
   .settings(
     description := "JSON structured logging instances for the KCL, via Circe"
@@ -165,7 +169,7 @@ lazy val `kcl-localstack` = projectMatrix
     description := "A test-kit for working with Kinesis and Localstack, via the KCL"
   )
   .jvmPlatform(allScalaVersions)
-  .dependsOn(`aws-v2-localstack`, kcl, `kcl-fs2`)
+  .dependsOn(`aws-v2-localstack`, kcl)
 
 lazy val kpl = projectMatrix
   .settings(
@@ -301,64 +305,64 @@ lazy val `integration-tests` = projectMatrix
       Http4s.emberClient.value % Test
     )
   )
-  .jvmPlatform(Seq(Scala3))
+  .jvmPlatform(
+    Seq(Scala3),
+    Seq(VirtualAxis.jvm),
+    _.settings(
+      libraryDependencies ++= Seq(
+        Logback,
+        Http4s.blazeClient.value % Test,
+        Log4Cats.slf4j % Test,
+        FS2.reactiveStreams % Test
+      ),
+      assembly / assemblyMergeStrategy := {
+        case "module-info.class"                        => MergeStrategy.discard
+        case "AUTHORS"                                  => MergeStrategy.discard
+        case "META-INF/smithy/smithy4s.tracking.smithy" => MergeStrategy.discard
+        case "META-INF/smithy/manifest"                 => MergeStrategy.first
+        case "scala/jdk/CollectionConverters$.class"    => MergeStrategy.first
+        case PathList("google", "protobuf", _ @_*)      => MergeStrategy.first
+        case PathList("codegen-resources", _ @_*)       => MergeStrategy.first
+        case PathList("META-INF", xs @ _*) =>
+          (xs map { _.toLowerCase }) match {
+            case "services" :: xs => MergeStrategy.filterDistinctLines
+            case "resources" :: "webjars" :: xs => MergeStrategy.first
+            case _                              => MergeStrategy.discard
+          }
+        case x => MergeStrategy.defaultMergeStrategy(x)
+      },
+      assembly / mainClass := Some("kinesis4cats.kcl.http4s.TestKCLService"),
+      Test / fork := true
+    ).dependsOn(
+      `kcl-http4s`.jvm(Scala3),
+      `kcl-localstack`.jvm(Scala3),
+      `kcl-logging-circe`.jvm(Scala3) % Test,
+      `kinesis-client-localstack`.jvm(Scala3) % Test,
+      `kinesis-client-logging-circe`.jvm(Scala3) % Test,
+      `kpl-localstack`.jvm(Scala3) % Test,
+      `kpl-logging-circe`.jvm(Scala3) % Test
+    )
+  )
   .nativePlatform(Seq(Scala3))
-  .jsPlatform(Seq(Scala3))
+  .jsPlatform(
+    Seq(Scala3),
+    Seq(VirtualAxis.js),
+    _.settings(
+      scalaJSLinkerConfig ~= (_.withModuleKind(ModuleKind.CommonJSModule))
+    )
+  )
   .dependsOn(
     `smithy4s-client-localstack` % Test,
     `smithy4s-client-logging-circe` % Test
   )
 
-lazy val `integration-tests-jvm` = `integration-tests`
-  .jvm(Scala3)
-  .settings(
-    libraryDependencies ++= Seq(
-      Logback,
-      Http4s.blazeClient.value % Test,
-      Log4Cats.slf4j % Test,
-      FS2.reactiveStreams % Test
-    ),
-    assembly / assemblyMergeStrategy := {
-      case "module-info.class"                        => MergeStrategy.discard
-      case "AUTHORS"                                  => MergeStrategy.discard
-      case "META-INF/smithy/smithy4s.tracking.smithy" => MergeStrategy.discard
-      case "META-INF/smithy/manifest"                 => MergeStrategy.first
-      case "scala/jdk/CollectionConverters$.class"    => MergeStrategy.first
-      case PathList("google", "protobuf", _ @_*)      => MergeStrategy.first
-      case PathList("codegen-resources", _ @_*)       => MergeStrategy.first
-      case PathList("META-INF", xs @ _*) =>
-        (xs map { _.toLowerCase }) match {
-          case "services" :: xs => MergeStrategy.filterDistinctLines
-          case "resources" :: "webjars" :: xs => MergeStrategy.first
-          case _                              => MergeStrategy.discard
-        }
-      case x => MergeStrategy.defaultMergeStrategy(x)
-    },
-    assembly / mainClass := Some("kinesis4cats.kcl.http4s.TestKCLService"),
-    Test / fork := true
-  )
-  .dependsOn(
-    `kcl-http4s`.jvm(Scala3),
-    `kcl-localstack`.jvm(Scala3),
-    `kcl-logging-circe`.jvm(Scala3) % Test,
-    `kinesis-client-localstack`.jvm(Scala3) % Test,
-    `kinesis-client-logging-circe`.jvm(Scala3) % Test,
-    `kpl-localstack`.jvm(Scala3) % Test,
-    `kpl-logging-circe`.jvm(Scala3) % Test
-  )
-
-lazy val `integration-tests-js` = `integration-tests`
-  .js(Scala3)
-  .settings(
-    scalaJSLinkerConfig ~= (_.withModuleKind(ModuleKind.CommonJSModule))
-  )
-
+// Workaround for https://github.com/sbt/sbt-projectmatrix/pull/79
 lazy val `integration-tests-native` = `integration-tests`
   .native(Scala3)
   .enablePlugins(ScalaNativeBrewedConfigPlugin)
   .settings(
     libraryDependencies ++= Seq(Epollcat.value % Test),
-    nativeBrewFormulas += "s2n",
+    nativeBrewFormulas ++= Set("s2n", "openssl"),
     Test / envVars ++= Map("S2N_DONT_MLOCK" -> "1")
   )
 

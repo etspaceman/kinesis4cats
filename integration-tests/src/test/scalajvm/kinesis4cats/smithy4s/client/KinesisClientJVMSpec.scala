@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-
+package kinesis4cats.smithy4s.client
 
 import cats.effect.IO
 import cats.effect.SyncIO

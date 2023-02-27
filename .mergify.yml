@@ -46,6 +46,14 @@ pull_request_rules:
       add:
       - compat
       remove: []
+- name: Label integration-tests PRs
+  conditions:
+  - files~=^integration-tests/
+  actions:
+    label:
+      add:
+      - integration-tests
+      remove: []
 - name: Label kcl PRs
   conditions:
   - files~=^kcl/
@@ -61,22 +69,6 @@ pull_request_rules:
     label:
       add:
       - kcl-ciris
-      remove: []
-- name: Label kcl-fs2 PRs
-  conditions:
-  - files~=^kcl-fs2/
-  actions:
-    label:
-      add:
-      - kcl-fs2
-      remove: []
-- name: Label kcl-fs2-ciris PRs
-  conditions:
-  - files~=^kcl-fs2-ciris/
-  actions:
-    label:
-      add:
-      - kcl-fs2-ciris
       remove: []
 - name: Label kcl-http4s PRs
   conditions:
@@ -102,22 +94,6 @@ pull_request_rules:
       add:
       - kcl-logging-circe
       remove: []
-- name: Label kcl-tests PRs
-  conditions:
-  - files~=^kcl-tests/
-  actions:
-    label:
-      add:
-      - kcl-tests
-      remove: []
-- name: Label kernel-tests PRs
-  conditions:
-  - files~=^kernel-tests/
-  actions:
-    label:
-      add:
-      - kernel-tests
-      remove: []
 - name: Label kinesis-client PRs
   conditions:
   - files~=^kinesis-client/
@@ -125,14 +101,6 @@ pull_request_rules:
     label:
       add:
       - kinesis-client
-      remove: []
-- name: Label kinesis-client-fs2 PRs
-  conditions:
-  - files~=^kinesis-client-fs2/
-  actions:
-    label:
-      add:
-      - kinesis-client-fs2
       remove: []
 - name: Label kinesis-client-localstack PRs
   conditions:
@@ -149,22 +117,6 @@ pull_request_rules:
     label:
       add:
       - kinesis-client-logging-circe
-      remove: []
-- name: Label kinesis-client-producer-tests PRs
-  conditions:
-  - files~=^kinesis-client-producer-tests/
-  actions:
-    label:
-      add:
-      - kinesis-client-producer-tests
-      remove: []
-- name: Label kinesis-client-tests PRs
-  conditions:
-  - files~=^kinesis-client-tests/
-  actions:
-    label:
-      add:
-      - kinesis-client-tests
       remove: []
 - name: Label kpl PRs
   conditions:
@@ -198,14 +150,6 @@ pull_request_rules:
       add:
       - kpl-logging-circe
       remove: []
-- name: Label kpl-tests PRs
-  conditions:
-  - files~=^kpl-tests/
-  actions:
-    label:
-      add:
-      - kpl-tests
-      remove: []
 - name: Label shared PRs
   conditions:
   - files~=^shared/
@@ -230,14 +174,6 @@ pull_request_rules:
       add:
       - shared-ciris
       remove: []
-- name: Label shared-fs2 PRs
-  conditions:
-  - files~=^shared-fs2/
-  actions:
-    label:
-      add:
-      - shared-fs2
-      remove: []
 - name: Label shared-localstack PRs
   conditions:
   - files~=^shared-localstack/
@@ -246,14 +182,6 @@ pull_request_rules:
       add:
       - shared-localstack
       remove: []
-- name: Label shared-tests PRs
-  conditions:
-  - files~=^shared-tests/
-  actions:
-    label:
-      add:
-      - shared-tests
-      remove: []
 - name: Label smithy4s-client PRs
   conditions:
   - files~=^smithy4s-client/
@@ -261,14 +189,6 @@ pull_request_rules:
     label:
       add:
       - smithy4s-client
-      remove: []
-- name: Label smithy4s-client-fs2 PRs
-  conditions:
-  - files~=^smithy4s-client-fs2/
-  actions:
-    label:
-      add:
-      - smithy4s-client-fs2
       remove: []
 - name: Label smithy4s-client-localstack PRs
   conditions:
@@ -285,22 +205,6 @@ pull_request_rules:
     label:
       add:
       - smithy4s-client-logging-circe
-      remove: []
-- name: Label smithy4s-client-producer-tests PRs
-  conditions:
-  - files~=^smithy4s-client-producer-tests/
-  actions:
-    label:
-      add:
-      - smithy4s-client-producer-tests
-      remove: []
-- name: Label smithy4s-client-tests PRs
-  conditions:
-  - files~=^smithy4s-client-tests/
-  actions:
-    label:
-      add:
-      - smithy4s-client-tests
       remove: []
 - name: Label smithy4s-client-transformers PRs
   conditions:
