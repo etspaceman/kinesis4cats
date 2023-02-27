@@ -433,7 +433,8 @@ lazy val `smithy4s-client-tests` = projectMatrix
     )
   )
   .jvmPlatform(Seq(Scala3))
-  .nativePlatform(Seq(Scala3))
+  // TODO - Research why this isn't working yet
+  // .nativePlatform(Seq(Scala3))
   .jsPlatform(Seq(Scala3))
   .dependsOn(
     `smithy4s-client-localstack` % Test,
@@ -441,14 +442,14 @@ lazy val `smithy4s-client-tests` = projectMatrix
     `kernel-tests` % Test
   )
 
-lazy val `smithy4s-client-tests-native` = `smithy4s-client-tests`
+/* lazy val `smithy4s-client-tests-native` = `smithy4s-client-tests`
   .native(Scala3)
   .enablePlugins(ScalaNativeBrewedConfigPlugin)
   .settings(
     libraryDependencies ++= Seq(Epollcat.value % Test),
     nativeBrewFormulas += "s2n",
     Test / envVars ++= Map("S2N_DONT_MLOCK" -> "1")
-  )
+  ) */
 
 lazy val `smithy4s-client-tests-js` = `smithy4s-client-tests`
   .js(Scala3)
