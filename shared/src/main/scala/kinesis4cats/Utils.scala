@@ -26,8 +26,7 @@ object Utils {
   def randomUUIDString = UUIDGen.randomString[SyncIO].unsafeRunSync()
   def md5(bytes: Array[Byte]): Array[Byte] =
     Stream
-      .emit[SyncIO, Chunk[Byte]](Chunk.array(bytes))
-      .unchunks
+      .chunk[SyncIO, Byte](Chunk.array(bytes))
       .through(fs2.hash.md5[SyncIO])
       .compile
       .to(Array)
