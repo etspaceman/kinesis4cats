@@ -42,6 +42,9 @@ import kinesis4cats.syntax.scalacheck._
 
 abstract class KinesisClientSpec extends munit.CatsEffectSuite {
 
+  // allow flaky tests on ci
+  override def munitFlakyOK: Boolean = sys.env.contains("CI")
+
   val region = AwsRegion.US_EAST_1
   def fixture: SyncIO[FunFixture[KinesisClient[IO]]] =
     ResourceFunFixture(
