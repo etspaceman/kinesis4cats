@@ -16,11 +16,23 @@
 
 package kinesis4cats
 
-import cats.effect.SyncIO
-import cats.effect.std.UUIDGen
+import java.nio.charset.StandardCharsets
+import java.security.MessageDigest
 
-private[kinesis4cats] object Utils {
-  def randomUUID = UUIDGen.randomUUID[SyncIO].unsafeRunSync()
-  def randomUUIDString = UUIDGen.randomString[SyncIO].unsafeRunSync()
-  def md5(bytes: Array[Byte]): Array[Byte] = MD5.compute(bytes)
+import cats.syntax.all._
+import org.scalacheck.Prop._
+
+import kinesis4cats.instances.eq._
+
+class MD5Spec extends munit.ScalaCheckSuite {
+
+  property("It should convert to MD5 correctly") {
+    forAll { (str: String) =>
+      val bytes = str.getBytes(StandardCharsets.UTF_8)
+      val res = MD5.compute(bytes)
+      val expected = MessageDigest.getInstance("MD5").digest(bytes)
+
+      (res === expected) :| s"res: ${res.mkString}\nexp: ${res.mkString}"
+    }
+  }
 }
