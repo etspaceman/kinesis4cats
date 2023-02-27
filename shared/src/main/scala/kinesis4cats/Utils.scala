@@ -18,8 +18,16 @@ package kinesis4cats
 
 import cats.effect.SyncIO
 import cats.effect.std.UUIDGen
+import fs2.Stream
 
 object Utils {
   def randomUUID = UUIDGen.randomUUID[SyncIO].unsafeRunSync()
   def randomUUIDString = UUIDGen.randomString[SyncIO].unsafeRunSync()
+  def md5(bytes: Array[Byte]): Array[Byte] =
+    Stream
+      .emits[SyncIO, Byte](bytes.toList)
+      .through(fs2.hash.md5[SyncIO])
+      .compile
+      .to(Array)
+      .unsafeRunSync()
 }

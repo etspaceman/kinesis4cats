@@ -18,12 +18,12 @@ package kinesis4cats.producer
 
 import java.math.BigInteger
 import java.nio.charset.StandardCharsets
-import java.security.MessageDigest
 
 import com.google.protobuf.ByteString
 
+import kinesis4cats.Utils
 import kinesis4cats.models.ShardId
-import kinesis4cats.protobuf.Messages
+import kinesis4cats.protobuf.messages
 
 final case class Record(
     data: Array[Byte],
@@ -90,28 +90,24 @@ object Record {
   ) {
 
     // See https://github.com/awslabs/kinesis-aggregation/blob/2.0.3/java/KinesisAggregatorV2/src/main/java/com/amazonaws/kinesis/agg/AggRecord.java#L467
-    def getExplicitHashKey(
-        digest: MessageDigest
-    ): String = record.explicitHashKey.getOrElse {
+    def getExplicitHashKey: String = record.explicitHashKey.getOrElse {
       var hashKey = BigInt(BigInteger.ZERO) // scalafix:ok
-      val pkDigest = digest.digest(record.partitionKeyBytes)
+      val pkDigest = Utils.md5(record.partitionKeyBytes)
 
-      for (i <- 0 until digest.getDigestLength()) {
+      for (i <- 0 until 16) {
         val p = BigInt(String.valueOf(pkDigest(i).toInt & 0xff))
         val shifted = p << ((16 - i - 1) * 8)
         hashKey = hashKey + shifted
       }
 
-      digest.reset()
       hashKey.toString(10)
     }
 
     def asAggregationEntry(
         currentPartitionKeys: Map[String, Int],
-        currentExplicitHashKeys: Map[String, Int],
-        digest: MessageDigest
+        currentExplicitHashKeys: Map[String, Int]
     ): AggregationEntry = {
-      val ehk = getExplicitHashKey(digest)
+      val ehk = getExplicitHashKey
 
       val partitionKeyIndex = currentPartitionKeys.getOrElse(
         record.partitionKey,
@@ -126,10 +122,9 @@ object Record {
 
     def aggregatedPayloadSize(
         currentPartitionKeys: Map[String, Int],
-        currentExplicitHashKeys: Map[String, Int],
-        digest: MessageDigest
+        currentExplicitHashKeys: Map[String, Int]
     ): Int =
-      asAggregationEntry(currentPartitionKeys, currentExplicitHashKeys, digest)
+      asAggregationEntry(currentPartitionKeys, currentExplicitHashKeys)
         .aggregatedPayloadSize(currentPartitionKeys, currentExplicitHashKeys)
   }
 
@@ -189,11 +184,10 @@ object Record {
       pkSize + explicitHashKeySize + innerRecordSize
     }
 
-    def asEntry: Messages.Record = Messages.Record
-      .newBuilder()
-      .setData(ByteString.copyFrom(record.data))
-      .setPartitionKeyIndex(partitionKeyTableIndex.toLong)
-      .setExplicitHashKeyIndex(explicitHashKeyTableIndex.toLong)
-      .build()
+    def asEntry: messages.Record = messages.Record(
+      partitionKeyTableIndex.toLong,
+      Some(explicitHashKeyTableIndex.toLong),
+      ByteString.copyFrom(record.data)
+    )
   }
 }
