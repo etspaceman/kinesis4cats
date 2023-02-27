@@ -16,14 +16,10 @@
 
 package kinesis4cats.smithy4s.client
 
-import java.security.SecureRandom
-import java.security.cert.X509Certificate
-
 import cats.effect.IO
 import cats.effect.SyncIO
 import cats.effect.kernel.Async
 import com.amazonaws.kinesis.Kinesis
-import javax.net.ssl.{SSLContext, X509TrustManager}
 import org.http4s.blaze.client.BlazeClientBuilder
 
 import kinesis4cats.SSL
