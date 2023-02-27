@@ -25,6 +25,7 @@ object Kinesis4CatsPlugin extends AutoPlugin {
   import TypelevelSitePlugin.autoImport._
   import TypelevelVersioningPlugin.autoImport._
   import autoImport._
+  import com.armanbilge.sbt.ScalaNativeBrewedGithubActionsPlugin.autoImport._
   import de.heikoseeberger.sbtheader.HeaderPlugin.autoImport._
   import org.scalafmt.sbt.ScalafmtPlugin.autoImport._
   import sbtassembly.AssemblyPlugin.autoImport._
@@ -77,7 +78,7 @@ object Kinesis4CatsPlugin extends AutoPlugin {
         params = Map("repo-token" -> "${{ secrets.GITHUB_TOKEN }}")
       )
     ),
-    // githubWorkflowBuildPreamble ++= nativeBrewInstallWorkflowSteps.value,
+    githubWorkflowBuildPreamble ++= nativeBrewInstallWorkflowSteps.value,
     githubWorkflowBuildMatrixFailFast := Some(false),
     githubWorkflowBuild := {
       val style = (tlCiHeaderCheck.value, tlCiScalafmtCheck.value) match {
