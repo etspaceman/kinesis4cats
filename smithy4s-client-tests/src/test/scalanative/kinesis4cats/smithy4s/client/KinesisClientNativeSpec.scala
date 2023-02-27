@@ -16,4 +16,8 @@
 
 package kinesis4cats.smithy4s.client
 
-class KinesisClientNativeSpec extends KinesisClientSpec
+import epollcat.unsafe.EpollRuntime
+
+class KinesisClientNativeSpec extends KinesisClientSpec {
+    override def munitIORuntime = EpollRuntime.global
+}
