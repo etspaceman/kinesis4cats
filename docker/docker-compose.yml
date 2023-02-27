@@ -14,7 +14,7 @@ services:
     ports:
       - "4566:4566"
   testKclService:
-    image: "ghcr.io/etspaceman/functional-tests:${DOCKER_TAG_VERSION}"
+    image: "ghcr.io/etspaceman/integration-tests:${DOCKER_TAG_VERSION}"
     environment:
       - "LOG_LEVEL=TRACE"
       - "TEST_STREAM=test-kcl-service-stream"

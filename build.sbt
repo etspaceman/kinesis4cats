@@ -143,9 +143,9 @@ lazy val `kcl-ciris` = projectMatrix
   .settings(
     description := "Ciris tooling for the Kinesis Client Library (KCL)",
     libraryDependencies ++= Seq(Logback % Test),
-    Test / envVars ++= KCLCirisSpecVars.env,
-    Test / javaOptions ++= KCLCirisSpecVars.prop,
-    Test / buildInfoKeys := KCLCirisSpecVars.buildInfoKeys,
+    Test / envVars ++= KCLFS2CirisSpecVars.env,
+    Test / javaOptions ++= KCLFS2CirisSpecVars.prop,
+    Test / buildInfoKeys := KCLFS2CirisSpecVars.buildInfoKeys,
     Test / buildInfoPackage := "kinesis4cats.kcl.ciris",
     Test / buildInfoOptions += BuildInfoOption.ConstantValue
   )
@@ -297,35 +297,8 @@ lazy val `smithy4s-client-localstack` = projectMatrix
   .jsPlatform(last2ScalaVersions)
   .dependsOn(`shared-localstack`, `smithy4s-client`)
 
-lazy val `functional-tests` = projectMatrix
-  .enablePlugins(NoPublishPlugin, DockerImagePlugin)
-  .settings(DockerImagePlugin.settings)
-  .settings(
-    description := "Functional Tests for Kinesis4Cats",
-    libraryDependencies ++= Seq(Logback),
-    assembly / assemblyMergeStrategy := {
-      case "module-info.class"                        => MergeStrategy.discard
-      case "AUTHORS"                                  => MergeStrategy.discard
-      case "META-INF/smithy/smithy4s.tracking.smithy" => MergeStrategy.discard
-      case "META-INF/smithy/manifest"                 => MergeStrategy.first
-      case "scala/jdk/CollectionConverters$.class"    => MergeStrategy.first
-      case PathList("google", "protobuf", _ @_*)      => MergeStrategy.first
-      case PathList("codegen-resources", _ @_*)       => MergeStrategy.first
-      case PathList("META-INF", xs @ _*) =>
-        (xs map { _.toLowerCase }) match {
-          case "services" :: xs => MergeStrategy.filterDistinctLines
-          case "resources" :: "webjars" :: xs => MergeStrategy.first
-          case _                              => MergeStrategy.discard
-        }
-      case x => MergeStrategy.defaultMergeStrategy(x)
-    },
-    assembly / mainClass := Some("kinesis4cats.kcl.http4s.TestKCLService")
-  )
-  .jvmPlatform(Seq(Scala213))
-  .dependsOn(`kcl-http4s`, `kcl-localstack`)
-
 lazy val `integration-tests` = projectMatrix
-  .enablePlugins(NoPublishPlugin)
+  .enablePlugins(NoPublishPlugin, DockerImagePlugin)
   .settings(DockerImagePlugin.settings)
   .settings(
     description := "Integration Tests for Kinesis4Cats",
@@ -335,9 +308,29 @@ lazy val `integration-tests` = projectMatrix
   )
   .jvmPlatform(
     Seq(Scala3),
-    Seq(VirtualAxis.jvm),
-    _.settings(Test / fork := true).dependsOn(
-      `kcl-localstack`.jvm(Scala3) % Test,
+    Nil,
+    _.settings(
+      Test / fork := true,
+      assembly / assemblyMergeStrategy := {
+        case "module-info.class"                        => MergeStrategy.discard
+        case "AUTHORS"                                  => MergeStrategy.discard
+        case "META-INF/smithy/smithy4s.tracking.smithy" => MergeStrategy.discard
+        case "META-INF/smithy/manifest"                 => MergeStrategy.first
+        case "scala/jdk/CollectionConverters$.class"    => MergeStrategy.first
+        case PathList("google", "protobuf", _ @_*)      => MergeStrategy.first
+        case PathList("codegen-resources", _ @_*)       => MergeStrategy.first
+        case PathList("META-INF", xs @ _*) =>
+          (xs map { _.toLowerCase }) match {
+            case "services" :: xs => MergeStrategy.filterDistinctLines
+            case "resources" :: "webjars" :: xs => MergeStrategy.first
+            case _                              => MergeStrategy.discard
+          }
+        case x => MergeStrategy.defaultMergeStrategy(x)
+      },
+      assembly / mainClass := Some("kinesis4cats.kcl.http4s.TestKCLService")
+    ).dependsOn(
+      `kcl-http4s`.jvm(Scala3),
+      `kcl-localstack`.jvm(Scala3),
       `kcl-logging-circe`.jvm(Scala3) % Test,
       `kinesis-client-localstack`.jvm(Scala3) % Test,
       `kinesis-client-logging-circe`.jvm(Scala3) % Test,
@@ -348,7 +341,7 @@ lazy val `integration-tests` = projectMatrix
   .nativePlatform(Seq(Scala3))
   .jsPlatform(
     Seq(Scala3),
-    Seq(VirtualAxis.js),
+    Nil,
     _.settings(
       scalaJSLinkerConfig ~= (_.withModuleKind(ModuleKind.CommonJSModule))
     )
@@ -495,11 +488,10 @@ lazy val allProjects = Seq(
   `smithy4s-client-logging-circe`,
   `smithy4s-client-localstack`,
   `integration-tests`,
-  `functional-tests`,
   unidocs
 )
 
-lazy val functionalTestProjects = List(`functional-tests`).map(_.jvm(Scala213))
+lazy val functionalTestProjects = List(`integration-tests`).map(_.jvm(Scala3))
 
 lazy val root =
   tlCrossRootProject
