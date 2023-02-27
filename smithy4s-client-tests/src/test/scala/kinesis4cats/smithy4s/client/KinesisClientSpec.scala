@@ -17,19 +17,24 @@
 package kinesis4cats
 package smithy4s.client
 
+import scala.concurrent.duration._
+
 import _root_.smithy4s.ByteArray
 import _root_.smithy4s.aws.AwsRegion
 import cats.effect._
 import cats.syntax.all._
 import com.amazonaws.kinesis._
-import io.circe.parser._
+import fs2.io.net.tls.TLSContext
+import io.circe.jawn._
 import io.circe.syntax._
-import org.http4s.blaze.client.BlazeClientBuilder
+import org.http4s.ember.client.EmberClientBuilder
 import org.scalacheck.Arbitrary
 
 import kinesis4cats.Utils
+import kinesis4cats.localstack._
 import kinesis4cats.logging.ConsoleLogger
 import kinesis4cats.logging.instances.show._
+import kinesis4cats.models
 import kinesis4cats.models.StreamArn
 import kinesis4cats.smithy4s.client.localstack.LocalstackKinesisClient
 import kinesis4cats.smithy4s.client.logging.instances.show._
@@ -44,9 +49,12 @@ abstract class KinesisClientSpec extends munit.CatsEffectSuite {
   def fixture: SyncIO[FunFixture[KinesisClient[IO]]] =
     ResourceFunFixture(
       for {
-        underlying <- BlazeClientBuilder[IO]
-          .withCheckEndpointAuthentication(false)
-          .resource
+        tlsContext <- TLSContext.Builder.forAsync[IO].insecureResource
+        underlying <- EmberClientBuilder
+          .default[IO]
+          .withTLSContext(tlsContext)
+          .withoutCheckEndpointAuthentication
+          .build
         client <- LocalstackKinesisClient.clientResource[IO](
           underlying,
           IO.pure(region),
@@ -55,9 +63,7 @@ abstract class KinesisClientSpec extends munit.CatsEffectSuite {
       } yield client
     )
 
-  // This is flaky as we seem to be getting non-deterministic failures via SSL connections to Localstack.
-  // Will look into this more later.
-  fixture.test("It should work through all commands".flaky) { client =>
+  fixture.test("It should work through all commands") { client =>
     val streamName =
       s"smithy4s-kinesis-client-spec-${Utils.randomUUIDString}"
     val accountId = "000000000000"
@@ -78,6 +84,7 @@ abstract class KinesisClientSpec extends munit.CatsEffectSuite {
         Some(PositiveIntegerObject(1)),
         Some(StreamModeDetails(StreamMode.PROVISIONED))
       )
+      _ <- IO.sleep(1.second)
       _ <- client
         .addTagsToStream(
           Map(TagKey("foo") -> TagValue("bar")),
@@ -88,16 +95,19 @@ abstract class KinesisClientSpec extends munit.CatsEffectSuite {
           RetentionPeriodHours(48),
           Some(StreamName(streamName))
         )
+      _ <- IO.sleep(1.second)
       _ <- client
         .decreaseStreamRetentionPeriod(
           RetentionPeriodHours(24),
           Some(StreamName(streamName))
         )
+      _ <- IO.sleep(1.second)
       _ <- client
         .registerStreamConsumer(
           StreamARN(streamArn),
           ConsumerName(consumerName)
         )
+      _ <- IO.sleep(1.second)
       _ <- client.describeLimits()
       _ <- client.describeStream(Some(StreamName(streamName)))
       _ <- client
@@ -164,6 +174,7 @@ abstract class KinesisClientSpec extends munit.CatsEffectSuite {
           Some(StreamARN(streamArn)),
           Some(ConsumerName(consumerName))
         )
+      _ <- IO.sleep(1.second)
       tags <- client.listTagsForStream(Some(StreamName(streamName)))
       _ <- client
         .removeTagsFromStream(List(TagKey("foo")), Some(StreamName(streamName)))
@@ -173,18 +184,21 @@ abstract class KinesisClientSpec extends munit.CatsEffectSuite {
           KeyId("12345678-1234-1234-1234-123456789012"),
           Some(StreamName(streamName))
         )
+      _ <- IO.sleep(1.second)
       _ <- client
         .stopStreamEncryption(
           EncryptionType.KMS,
           KeyId("12345678-1234-1234-1234-123456789012"),
           Some(StreamName(streamName))
         )
+      _ <- IO.sleep(1.second)
       _ <- client
         .updateShardCount(
           PositiveIntegerObject(2),
           ScalingType.UNIFORM_SCALING,
           Some(StreamName(streamName))
         )
+      _ <- IO.sleep(1.second)
       shards2response <- client.listShards(Some(StreamName(streamName)))
       shards2 = shards2response.shards.getOrElse(fail("No shards returned"))
       newShards = shards2.takeRight(2)
@@ -195,11 +209,13 @@ abstract class KinesisClientSpec extends munit.CatsEffectSuite {
           shard3.shardId,
           Some(StreamName(streamName))
         )
+      _ <- IO.sleep(1.second)
       _ <- client
         .updateStreamMode(
           StreamARN(streamArn),
           StreamModeDetails(StreamMode.ON_DEMAND)
         )
+      _ <- IO.sleep(1.second)
       _ <- client.deleteStream(Some(StreamName(streamName)))
     } yield {
       assertEquals(List(record1, record2, record3), recordsParsed)

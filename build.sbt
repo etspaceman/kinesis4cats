@@ -1,6 +1,5 @@
 import LibraryDependencies.{Smithy4s => S4S, _}
 import laika.rewrite.link._
-import org.eclipse.jgit.api.MergeCommand.FastForwardMode.Merge
 
 lazy val compat = projectMatrix
   .settings(
@@ -430,17 +429,37 @@ lazy val `smithy4s-client-tests` = projectMatrix
   .settings(
     description := "Integration Tests for the Smithy4s Kinesis Client",
     libraryDependencies ++= Seq(
-      Http4s.blazeClient.value % Test
+      Http4s.emberClient.value % Test
     )
   )
-  .jvmPlatform(Seq(Scala213))
-  // TODO: Enable when ember client issues are fixed
-  // .nativePlatform(Seq(Scala3))
-  // .jsPlatform(last2ScalaVersions)
+  .jvmPlatform(Seq(Scala3))
+  .nativePlatform(Seq(Scala3))
+  .jsPlatform(Seq(Scala3))
   .dependsOn(
     `smithy4s-client-localstack` % Test,
     `smithy4s-client-logging-circe` % Test,
     `kernel-tests` % Test
+  )
+
+lazy val `smithy4s-client-tests-native` = `smithy4s-client-tests`
+  .native(Scala3)
+  .enablePlugins(ScalaNativeBrewedConfigPlugin)
+  .settings(
+    libraryDependencies ++= Seq(Epollcat.value % Test),
+    nativeBrewFormulas += "s2n",
+    Test / envVars ++= Map("S2N_DONT_MLOCK" -> "1")
+  )
+
+lazy val `smithy4s-client-tests-js` = `smithy4s-client-tests`
+  .js(Scala3)
+  .settings(
+    scalaJSLinkerConfig ~= (_.withModuleKind(ModuleKind.CommonJSModule))
+  )
+
+lazy val `smithy4s-client-tests-jvm` = `smithy4s-client-tests`
+  .jvm(Scala3)
+  .settings(
+    libraryDependencies ++= Seq(Http4s.blazeClient.value)
   )
 
 lazy val `smithy4s-client-producer-tests` = projectMatrix

@@ -17,6 +17,8 @@
 package kinesis4cats
 package kpl
 
+import scala.concurrent.duration._
+
 import java.nio.ByteBuffer
 
 import cats.effect.{IO, SyncIO}
@@ -32,11 +34,17 @@ import kinesis4cats.syntax.scalacheck._
 abstract class KPLProducerSpec
     extends munit.CatsEffectSuite
     with munit.CatsEffectFunFixtures {
+
+  override def munitIOTimeout: Duration = 45.seconds
+
   def fixture(
       streamName: String,
       shardCount: Int
   ): SyncIO[FunFixture[KPLProducer[IO]]] = ResourceFunFixture(
-    LocalstackKPLProducer.producerWithStream[IO](streamName, shardCount)
+    LocalstackKPLProducer.producerWithStream[IO](
+      streamName,
+      shardCount
+    )
   )
 
   val streamName = s"kpl-producer-spec-${Utils.randomUUIDString}"

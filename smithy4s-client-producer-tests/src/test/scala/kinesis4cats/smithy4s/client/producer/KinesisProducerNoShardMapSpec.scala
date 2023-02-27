@@ -25,6 +25,7 @@ import org.http4s.blaze.client.BlazeClientBuilder
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 import smithy4s.aws.kernel.AwsRegion
 
+import kinesis4cats.SSL
 import kinesis4cats.Utils
 import kinesis4cats.kcl.CommittableRecord
 import kinesis4cats.kcl.localstack.LocalstackKCLConsumer
@@ -51,7 +52,7 @@ class KinesisProducerNoShardMapSpec
     s"kinesis-client-producer-no-shard-map-spec-${Utils.randomUUIDString}"
 
   def http4sClientResource =
-    BlazeClientBuilder[IO].withCheckEndpointAuthentication(false).resource
+    BlazeClientBuilder[IO].withSslContext(SSL.context).resource
 
   lazy val region = IO.pure(AwsRegion.US_EAST_1)
 
@@ -103,8 +104,7 @@ class KinesisProducerNoShardMapSpec
         )
       deferredWithResults <- LocalstackKCLConsumer.kclConsumerWithResults(
         streamName,
-        appName,
-        resultsQueueSize = 100
+        appName
       )((_: List[CommittableRecord[IO]]) => IO.unit)
       _ <- deferredWithResults.deferred.get.toResource
       producer <- producerResource

@@ -25,6 +25,7 @@ object Kinesis4CatsPlugin extends AutoPlugin {
   import TypelevelSitePlugin.autoImport._
   import TypelevelVersioningPlugin.autoImport._
   import autoImport._
+  import com.armanbilge.sbt.ScalaNativeBrewedGithubActionsPlugin.autoImport._
   import de.heikoseeberger.sbtheader.HeaderPlugin.autoImport._
   import org.scalafmt.sbt.ScalafmtPlugin.autoImport._
   import sbtassembly.AssemblyPlugin.autoImport._
@@ -67,6 +68,7 @@ object Kinesis4CatsPlugin extends AutoPlugin {
     crossScalaVersions := Seq(Scala212, Scala3, Scala213),
     scalaVersion := Scala213,
     tlCiMimaBinaryIssueCheck := tlBaseVersion.value != "0.0",
+    resolvers += "s01 snapshots" at "https://s01.oss.sonatype.org/content/repositories/snapshots/",
     resolvers += "jitpack" at "https://jitpack.io",
     protobufUseSystemProtoc := sys.env.get("CI").nonEmpty,
     githubWorkflowJobSetup ++= List(
@@ -76,6 +78,7 @@ object Kinesis4CatsPlugin extends AutoPlugin {
         params = Map("repo-token" -> "${{ secrets.GITHUB_TOKEN }}")
       )
     ),
+    githubWorkflowBuildPreamble ++= nativeBrewInstallWorkflowSteps.value,
     githubWorkflowBuildMatrixFailFast := Some(false),
     githubWorkflowBuild := {
       val style = (tlCiHeaderCheck.value, tlCiScalafmtCheck.value) match {

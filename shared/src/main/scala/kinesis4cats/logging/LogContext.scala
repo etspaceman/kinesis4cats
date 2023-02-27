@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-package kinesis4cats.logging
+package kinesis4cats
+package logging
 
 import kinesis4cats.Utils
 
