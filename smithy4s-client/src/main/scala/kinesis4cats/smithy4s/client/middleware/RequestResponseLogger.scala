@@ -16,7 +16,7 @@
 
 package kinesis4cats.smithy4s.client.middleware
 
-import cats.effect.kernel.Async
+import cats.effect.Async
 import org.http4s.client.Client
 import org.typelevel.log4cats.StructuredLogger
 

@@ -21,7 +21,7 @@ package fs2
 import scala.concurrent.duration._
 
 import _root_.fs2.Stream
-import cats.effect.kernel.Deferred
+import cats.effect.Deferred
 import cats.effect.{IO, Resource, SyncIO}
 import cats.syntax.all._
 import io.circe.parser._

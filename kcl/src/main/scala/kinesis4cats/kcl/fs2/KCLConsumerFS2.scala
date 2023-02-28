@@ -19,7 +19,7 @@ package kinesis4cats.kcl.fs2
 import scala.concurrent.duration._
 
 import cats.Parallel
-import cats.effect.kernel.Deferred
+import cats.effect.Deferred
 import cats.effect.std.Queue
 import cats.effect.syntax.all._
 import cats.effect.{Async, Ref, Resource}

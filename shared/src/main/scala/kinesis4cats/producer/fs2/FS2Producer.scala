@@ -19,12 +19,10 @@ package fs2
 
 import scala.concurrent.duration._
 
-import _root_.fs2.Stream
+import _root_.fs2.concurrent.Channel
 import cats.data.Ior
 import cats.data.NonEmptyList
-import cats.effect.Async
-import cats.effect.Resource
-import cats.effect.std.Queue
+import cats.effect._
 import cats.effect.syntax.all._
 import cats.syntax.all._
 import org.typelevel.log4cats.StructuredLogger
@@ -53,7 +51,7 @@ abstract class FS2Producer[F[_], PutReq, PutRes](implicit
 
   /** The underlying queue of records to process
     */
-  protected def queue: Queue[F, Option[Record]]
+  protected def channel: Channel[F, Record]
 
   /** A user defined function that can be run against the results of a request
     */
@@ -70,28 +68,45 @@ abstract class FS2Producer[F[_], PutReq, PutRes](implicit
     * @return
     *   F of Unit
     */
-  def put(record: Record): F[Unit] = queue.offer(Some(record))
+  def put(record: Record): F[Unit] = {
+    val ctx = LogContext()
+
+    for {
+      _ <- logger.debug(ctx.context)("Received record to put")
+      res <- channel.send(record)
+      _ <- res.bitraverse(
+        _ =>
+          logger.warn(ctx.context)(
+            "Producer has been shut down and will not accept further requests"
+          ),
+        _ =>
+          logger.debug(ctx.context)(
+            "Successfully put record into processing queue"
+          )
+      )
+    } yield ()
+  }
 
   /** Stop the processing of records
     */
-  private[kinesis4cats] def stop(): F[Unit] = {
+  private[kinesis4cats] def stop(f: Fiber[F, Throwable, Unit]): F[Unit] = {
     val ctx = LogContext()
     for {
       _ <- logger.debug(ctx.context)("Stopping the FS2KinesisProducer")
-      _ <- queue.offer(None)
+      _ <- channel.close
+      _ <- f.join.void.timeoutTo(config.gracefulShutdownWait, f.cancel)
     } yield ()
   }
 
   /** Start the processing of records
     */
-  private[kinesis4cats] def start(): Resource[F, Unit] = {
+  private[kinesis4cats] def start(): F[Unit] = {
     val ctx = LogContext()
+
     for {
       _ <- logger
         .debug(ctx.context)("Starting the FS2KinesisProducer")
-        .toResource
-      _ <- Stream
-        .fromQueueNoneTerminated(queue)
+      _ <- channel.stream
         .groupWithin(config.putMaxChunk, config.putMaxWait)
         .evalMap { x =>
           val c = ctx.addEncoded("batchSize", x.size)
@@ -116,11 +131,11 @@ abstract class FS2Producer[F[_], PutReq, PutRes](implicit
         }
         .compile
         .drain
-        .background
-        .void
     } yield ()
-
   }
+
+  private[kinesis4cats] def resource: Resource[F, Unit] =
+    Resource.make(start().start)(stop).void
 
 }
 
@@ -149,7 +164,8 @@ object FS2Producer {
       putMaxWait: FiniteDuration,
       putMaxRetries: Option[Int],
       putRetryInterval: FiniteDuration,
-      producerConfig: Producer.Config
+      producerConfig: Producer.Config,
+      gracefulShutdownWait: FiniteDuration
   )
 
   object Config {
@@ -159,7 +175,8 @@ object FS2Producer {
       100.millis,
       Some(5),
       0.seconds,
-      Producer.Config.default(streamNameOrArn)
+      Producer.Config.default(streamNameOrArn),
+      30.seconds
     )
   }
 

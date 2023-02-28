@@ -20,8 +20,8 @@ package producer
 import java.time.Instant
 
 import cats.data.NonEmptyList
+import cats.effect.Resource
 import cats.effect._
-import cats.effect.kernel.Resource
 import cats.effect.syntax.all._
 import cats.syntax.all._
 import com.amazonaws.kinesis._

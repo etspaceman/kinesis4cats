@@ -20,7 +20,7 @@ package kcl.fs2.multistream
 import scala.concurrent.duration._
 
 import _root_.fs2.Stream
-import cats.effect.kernel.Deferred
+import cats.effect.Deferred
 import cats.effect.syntax.all._
 import cats.effect.{IO, Resource, SyncIO}
 import cats.syntax.all._

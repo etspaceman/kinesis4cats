@@ -20,7 +20,7 @@ package localstack
 import scala.concurrent.duration._
 
 import cats.effect.Async
-import cats.effect.kernel.Resource
+import cats.effect.Resource
 import cats.effect.syntax.all._
 import cats.syntax.all._
 import com.amazonaws.kinesis._

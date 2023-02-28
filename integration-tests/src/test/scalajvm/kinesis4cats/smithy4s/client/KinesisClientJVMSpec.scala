@@ -16,9 +16,9 @@
 
 package kinesis4cats.smithy4s.client
 
+import cats.effect.Async
 import cats.effect.IO
 import cats.effect.SyncIO
-import cats.effect.kernel.Async
 import com.amazonaws.kinesis.Kinesis
 import org.http4s.blaze.client.BlazeClientBuilder
 
