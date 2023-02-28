@@ -46,11 +46,11 @@ object Kinesis4CatsPlugin extends AutoPlugin {
   }
 
   private val onlyScalaJsCond = Def.setting {
-    primaryJavaOSCond.value + s" && matrix.project == 'rootJS'"
+    primaryJavaOSCond.value + s" && startsWith(matrix.project, 'root-js')"
   }
 
   private val onlyNativeCond = Def.setting {
-    primaryJavaOSCond.value + s" && matrix.project == 'rootNative'"
+    primaryJavaOSCond.value + s" && startsWith(matrix.project, 'root-native')"
   }
 
   private val onlyFailures = Def.setting {
@@ -110,6 +110,16 @@ object Kinesis4CatsPlugin extends AutoPlugin {
           ),
           name = Some("Docker Compose Up"),
           cond = Some(primaryJavaOSCond.value)
+        ),
+        WorkflowStep.Sbt(
+          List("Test/fastLinkJS"),
+          name = Some("Link JS"),
+          cond = Some(onlyScalaJsCond.value)
+        ),
+        WorkflowStep.Sbt(
+          List("Test/nativeLink"),
+          name = Some("Link Native"),
+          cond = Some(onlyNativeCond.value)
         ),
         WorkflowStep.Sbt(
           List(

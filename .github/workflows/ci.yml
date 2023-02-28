@@ -82,6 +82,14 @@ jobs:
         if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-latest'
         run: sbt 'project ${{ matrix.project }}' dockerComposeUp
 
+      - name: Link JS
+        if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-latest' && startsWith(matrix.project, 'root-js')
+        run: sbt 'project ${{ matrix.project }}' Test/fastLinkJS
+
+      - name: Link Native
+        if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-latest' && startsWith(matrix.project, 'root-native')
+        run: sbt 'project ${{ matrix.project }}' Test/nativeLink
+
       - name: Test
         if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-latest'
         run: sbt 'project ${{ matrix.project }}' test
