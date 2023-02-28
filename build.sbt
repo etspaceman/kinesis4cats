@@ -372,28 +372,22 @@ lazy val `integration-tests-jvm-213` = `integration-tests`
   .jvm(Scala213)
   .settings(integrationTestsJvmSettings)
   .dependsOn(
-    integrationTestsJvmDependencies.map(x =>
+    (integrationTestsJvmDependencies.map(x =>
       ClasspathDependency(x.jvm(Scala213).project, None)
-    ): _*
-  )
-  .dependsOn(
-    integrationTestsJvmTestDependencies.map(x =>
-      ClasspathDependency(x.jvm(Scala213).project, Some(Test.id))
-    ): _*
+    ) ++ integrationTestsJvmTestDependencies.map(x =>
+      ClasspathDependency(x.jvm(Scala213).project, Some(Test.name))
+    )): _*
   )
 
 lazy val `integration-tests-jvm-3` = `integration-tests`
   .jvm(Scala3)
   .settings(integrationTestsJvmSettings)
   .dependsOn(
-    integrationTestsJvmDependencies.map(x =>
+    (integrationTestsJvmDependencies.map(x =>
       ClasspathDependency(x.jvm(Scala3).project, None)
-    ): _*
-  )
-  .dependsOn(
-    integrationTestsJvmTestDependencies.map(x =>
-      ClasspathDependency(x.jvm(Scala3).project, Some(Test.id))
-    ): _*
+    ) ++ integrationTestsJvmTestDependencies.map(x =>
+      ClasspathDependency(x.jvm(Scala3).project, Some(Test.name))
+    )): _*
   )
 
 lazy val docs = projectMatrix
