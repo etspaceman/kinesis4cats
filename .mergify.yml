@@ -10,15 +10,33 @@ pull_request_rules:
   conditions:
   - author=scala-steward
   - body~=labels:.*early-semver-patch
-  - status-success=Build and Test (ubuntu-latest, 2.12.17, temurin@17, rootJS)
-  - status-success=Build and Test (ubuntu-latest, 2.12.17, temurin@17, rootJVM)
-  - status-success=Build and Test (ubuntu-latest, 2.12.17, temurin@17, rootNative)
-  - status-success=Build and Test (ubuntu-latest, 3.2.2, temurin@17, rootJS)
-  - status-success=Build and Test (ubuntu-latest, 3.2.2, temurin@17, rootJVM)
-  - status-success=Build and Test (ubuntu-latest, 3.2.2, temurin@17, rootNative)
-  - status-success=Build and Test (ubuntu-latest, 2.13.10, temurin@17, rootJS)
-  - status-success=Build and Test (ubuntu-latest, 2.13.10, temurin@17, rootJVM)
-  - status-success=Build and Test (ubuntu-latest, 2.13.10, temurin@17, rootNative)
+  - status-success=Build and Test (ubuntu-latest, 2.12.17, temurin@17, root-jvm-212)
+  - status-success=Build and Test (ubuntu-latest, 2.12.17, temurin@17, root-jvm-213)
+  - status-success=Build and Test (ubuntu-latest, 2.12.17, temurin@17, root-jvm-3)
+  - status-success=Build and Test (ubuntu-latest, 2.12.17, temurin@17, root-js-212)
+  - status-success=Build and Test (ubuntu-latest, 2.12.17, temurin@17, root-js-213)
+  - status-success=Build and Test (ubuntu-latest, 2.12.17, temurin@17, root-js-3)
+  - status-success=Build and Test (ubuntu-latest, 2.12.17, temurin@17, root-native-212)
+  - status-success=Build and Test (ubuntu-latest, 2.12.17, temurin@17, root-native-213)
+  - status-success=Build and Test (ubuntu-latest, 2.12.17, temurin@17, root-native-3)
+  - status-success=Build and Test (ubuntu-latest, 3.2.2, temurin@17, root-jvm-212)
+  - status-success=Build and Test (ubuntu-latest, 3.2.2, temurin@17, root-jvm-213)
+  - status-success=Build and Test (ubuntu-latest, 3.2.2, temurin@17, root-jvm-3)
+  - status-success=Build and Test (ubuntu-latest, 3.2.2, temurin@17, root-js-212)
+  - status-success=Build and Test (ubuntu-latest, 3.2.2, temurin@17, root-js-213)
+  - status-success=Build and Test (ubuntu-latest, 3.2.2, temurin@17, root-js-3)
+  - status-success=Build and Test (ubuntu-latest, 3.2.2, temurin@17, root-native-212)
+  - status-success=Build and Test (ubuntu-latest, 3.2.2, temurin@17, root-native-213)
+  - status-success=Build and Test (ubuntu-latest, 3.2.2, temurin@17, root-native-3)
+  - status-success=Build and Test (ubuntu-latest, 2.13.10, temurin@17, root-jvm-212)
+  - status-success=Build and Test (ubuntu-latest, 2.13.10, temurin@17, root-jvm-213)
+  - status-success=Build and Test (ubuntu-latest, 2.13.10, temurin@17, root-jvm-3)
+  - status-success=Build and Test (ubuntu-latest, 2.13.10, temurin@17, root-js-212)
+  - status-success=Build and Test (ubuntu-latest, 2.13.10, temurin@17, root-js-213)
+  - status-success=Build and Test (ubuntu-latest, 2.13.10, temurin@17, root-js-3)
+  - status-success=Build and Test (ubuntu-latest, 2.13.10, temurin@17, root-native-212)
+  - status-success=Build and Test (ubuntu-latest, 2.13.10, temurin@17, root-native-213)
+  - status-success=Build and Test (ubuntu-latest, 2.13.10, temurin@17, root-native-3)
   actions:
     merge:
       method: squash
@@ -149,6 +167,86 @@ pull_request_rules:
     label:
       add:
       - kpl-logging-circe
+      remove: []
+- name: Label root PRs
+  conditions:
+  - files~=^root/
+  actions:
+    label:
+      add:
+      - root
+      remove: []
+- name: Label root-js-212 PRs
+  conditions:
+  - files~=^root-js-212/
+  actions:
+    label:
+      add:
+      - root-js-212
+      remove: []
+- name: Label root-js-213 PRs
+  conditions:
+  - files~=^root-js-213/
+  actions:
+    label:
+      add:
+      - root-js-213
+      remove: []
+- name: Label root-js-3 PRs
+  conditions:
+  - files~=^root-js-3/
+  actions:
+    label:
+      add:
+      - root-js-3
+      remove: []
+- name: Label root-jvm-212 PRs
+  conditions:
+  - files~=^root-jvm-212/
+  actions:
+    label:
+      add:
+      - root-jvm-212
+      remove: []
+- name: Label root-jvm-213 PRs
+  conditions:
+  - files~=^root-jvm-213/
+  actions:
+    label:
+      add:
+      - root-jvm-213
+      remove: []
+- name: Label root-jvm-3 PRs
+  conditions:
+  - files~=^root-jvm-3/
+  actions:
+    label:
+      add:
+      - root-jvm-3
+      remove: []
+- name: Label root-native-212 PRs
+  conditions:
+  - files~=^root-native-212/
+  actions:
+    label:
+      add:
+      - root-native-212
+      remove: []
+- name: Label root-native-213 PRs
+  conditions:
+  - files~=^root-native-213/
+  actions:
+    label:
+      add:
+      - root-native-213
+      remove: []
+- name: Label root-native-3 PRs
+  conditions:
+  - files~=^root-native-3/
+  actions:
+    label:
+      add:
+      - root-native-3
       remove: []
 - name: Label shared PRs
   conditions:

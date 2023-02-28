@@ -1,8 +1,6 @@
 import LibraryDependencies.{Smithy4s => S4S, _}
 import laika.rewrite.link._
 
-Global / concurrentRestrictions += Tags.limit(NativeTags.Link, 1)
-
 lazy val compat = projectMatrix
   .settings(
     description := "Code to maintain compatability across major scala versions"
@@ -499,13 +497,130 @@ lazy val allProjects = Seq(
 
 lazy val functionalTestProjects = List(`integration-tests`).map(_.jvm(Scala3))
 
-lazy val root =
-  tlCrossRootProject
-    .settings(
-      DockerComposePlugin.settings(true, functionalTestProjects),
-      name := "kinesis4cats",
-      ThisBuild / mergifyLabelPaths ++= allProjects.map { x =>
-        x.id -> x.base
-      }.toMap
-    )
-    .aggregate(allProjects: _*)
+def commonRootSettings: Seq[Setting[_]] =
+  DockerComposePlugin.settings(true, functionalTestProjects) ++ Seq(
+    name := "kinesis4cats",
+    ThisBuild / mergifyLabelPaths ++= allProjects.map { x =>
+      x.id -> x.base
+    }.toMap
+  )
+
+lazy val root = project
+  .in(file("."))
+  .enablePlugins(NoPublishPlugin)
+  .settings(commonRootSettings)
+  .aggregate(allProjects.flatMap(_.projectRefs): _*)
+
+lazy val `root-jvm-212` = project
+  .enablePlugins(NoPublishPlugin)
+  .settings(commonRootSettings)
+  .aggregate(
+    allProjects.flatMap(
+      _.filterProjects(
+        Seq(VirtualAxis.jvm, VirtualAxis.ScalaVersionAxis(Scala212, "2.12"))
+      ).map(_.project)
+    ): _*
+  )
+
+lazy val `root-jvm-213` = project
+  .enablePlugins(NoPublishPlugin)
+  .settings(commonRootSettings)
+  .aggregate(
+    allProjects.flatMap(
+      _.filterProjects(
+        Seq(VirtualAxis.jvm, VirtualAxis.ScalaVersionAxis(Scala213, "2.13"))
+      ).map(_.project)
+    ): _*
+  )
+
+lazy val `root-jvm-3` = project
+  .enablePlugins(NoPublishPlugin)
+  .settings(commonRootSettings)
+  .aggregate(
+    allProjects.flatMap(
+      _.filterProjects(
+        Seq(VirtualAxis.jvm, VirtualAxis.ScalaVersionAxis(Scala3, "3.2"))
+      ).map(_.project)
+    ): _*
+  )
+
+lazy val `root-js-212` = project
+  .enablePlugins(NoPublishPlugin)
+  .settings(commonRootSettings)
+  .aggregate(
+    allProjects.flatMap(
+      _.filterProjects(
+        Seq(VirtualAxis.js, VirtualAxis.ScalaVersionAxis(Scala212, "2.12"))
+      ).map(_.project)
+    ): _*
+  )
+
+lazy val `root-js-213` = project
+  .enablePlugins(NoPublishPlugin)
+  .settings(commonRootSettings)
+  .aggregate(
+    allProjects.flatMap(
+      _.filterProjects(
+        Seq(VirtualAxis.js, VirtualAxis.ScalaVersionAxis(Scala213, "2.13"))
+      ).map(_.project)
+    ): _*
+  )
+
+lazy val `root-js-3` = project
+  .enablePlugins(NoPublishPlugin)
+  .settings(commonRootSettings)
+  .aggregate(
+    allProjects.flatMap(
+      _.filterProjects(
+        Seq(VirtualAxis.js, VirtualAxis.ScalaVersionAxis(Scala3, "3.2"))
+      ).map(_.project)
+    ): _*
+  )
+
+lazy val `root-native-212` = project
+  .enablePlugins(NoPublishPlugin)
+  .settings(commonRootSettings)
+  .aggregate(
+    allProjects.flatMap(
+      _.filterProjects(
+        Seq(VirtualAxis.native, VirtualAxis.ScalaVersionAxis(Scala212, "2.12"))
+      ).map(_.project)
+    ): _*
+  )
+
+lazy val `root-native-213` = project
+  .enablePlugins(NoPublishPlugin)
+  .settings(commonRootSettings)
+  .aggregate(
+    allProjects.flatMap(
+      _.filterProjects(
+        Seq(VirtualAxis.native, VirtualAxis.ScalaVersionAxis(Scala213, "2.13"))
+      ).map(_.project)
+    ): _*
+  )
+
+lazy val `root-native-3` = project
+  .enablePlugins(NoPublishPlugin)
+  .settings(commonRootSettings)
+  .aggregate(
+    allProjects.flatMap(
+      _.filterProjects(
+        Seq(VirtualAxis.native, VirtualAxis.ScalaVersionAxis(Scala3, "3.2"))
+      ).map(_.project)
+    ): _*
+  )
+
+lazy val rootProjects = List(
+  `root-jvm-212`,
+  `root-jvm-213`,
+  `root-jvm-3`,
+  `root-js-212`,
+  `root-js-213`,
+  `root-js-3`,
+  `root-native-212`,
+  `root-native-213`,
+  `root-native-3`
+).map(_.id)
+
+ThisBuild / githubWorkflowBuildMatrixAdditions += "project" -> rootProjects
+ThisBuild / githubWorkflowBuildSbtStepPreamble += s"project $${{ matrix.project }}"
