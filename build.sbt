@@ -1,6 +1,8 @@
 import LibraryDependencies.{Smithy4s => S4S, _}
 import laika.rewrite.link._
 
+Global / concurrentRestrictions += Tags.limit(NativeTags.Link, 1)
+
 lazy val compat = projectMatrix
   .settings(
     description := "Code to maintain compatability across major scala versions"
