@@ -64,7 +64,7 @@ object Kinesis4CatsPlugin extends AutoPlugin {
     startYear := Some(2023),
     licenses := Seq(License.Apache2),
     developers := List(tlGitHubDev("etspaceman", "Eric Meisel")),
-    crossScalaVersions := Seq(Scala212, Scala3, Scala213),
+    crossScalaVersions := Seq(Scala213),
     scalaVersion := Scala213,
     tlCiMimaBinaryIssueCheck := tlBaseVersion.value != "0.0",
     resolvers += "s01 snapshots" at "https://s01.oss.sonatype.org/content/repositories/snapshots/",
@@ -171,6 +171,10 @@ object Kinesis4CatsPlugin extends AutoPlugin {
       style ++ test ++ scalafix ++ mima ++ doc
     },
     githubWorkflowJavaVersions := Seq(JavaSpec.temurin("17")),
+    githubWorkflowBuildSbtStepPreamble := Seq(
+      s"project $${{ matrix.project }}"
+    ),
+    githubWorkflowArtifactDownloadExtraKeys += "project",
     tlCiScalafixCheck := true,
     mergifyStewardConfig := Some(
       MergifyStewardConfig(action =
