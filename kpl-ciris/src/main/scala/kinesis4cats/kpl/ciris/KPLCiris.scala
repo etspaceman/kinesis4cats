@@ -21,7 +21,7 @@ import scala.concurrent.duration._
 
 import _root_.ciris._
 import cats.effect.Async
-import cats.effect.kernel.Resource
+import cats.effect.Resource
 import cats.syntax.all._
 import com.amazonaws.auth.AWSCredentialsProvider
 import com.amazonaws.regions.Regions

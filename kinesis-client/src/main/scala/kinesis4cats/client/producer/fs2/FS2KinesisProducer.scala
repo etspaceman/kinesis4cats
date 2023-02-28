@@ -18,9 +18,8 @@ package kinesis4cats.client
 package producer
 package fs2
 
-import cats.effect.Async
-import cats.effect.kernel.Resource
-import cats.effect.std.Queue
+import _root_.fs2.concurrent.Channel
+import cats.effect._
 import cats.effect.syntax.all._
 import org.typelevel.log4cats.StructuredLogger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
@@ -36,9 +35,9 @@ import kinesis4cats.producer.fs2.FS2Producer
   *
   * @param config
   *   [[kinesis.producer.fs2.FS2Producer.Config FS2Producer.Config]]
-  * @param queue
-  *   [[cats.effect.std.Queue Queue]] of
-  *   [[kinesis4cats.producer.Record Records]] to produce.
+  * @param channel
+  *   [[https://github.com/typelevel/fs2/blob/main/core/shared/src/main/scala/fs2/concurrent/Channel.scala Channel]]
+  *   of [[kinesis4cats.producer.Record Records]] to produce.
   * @param underlying
   *   [[kinesis4cats.smithy4s.client.producer.KinesisProducer KinesisProducer]]
   * @param callback:
@@ -49,7 +48,7 @@ import kinesis4cats.producer.fs2.FS2Producer
 final class FS2KinesisProducer[F[_]] private[kinesis4cats] (
     override val logger: StructuredLogger[F],
     override val config: FS2Producer.Config,
-    override protected val queue: Queue[F, Option[Record]],
+    override protected val channel: Channel[F, Record],
     override protected val underlying: KinesisProducer[F]
 )(
     override protected val callback: (
@@ -101,11 +100,10 @@ object FS2KinesisProducer {
       config.producerConfig,
       _underlying
     )
-    queue <- Queue.bounded[F, Option[Record]](config.queueSize).toResource
-    producer = new FS2KinesisProducer[F](logger, config, queue, underlying)(
+    channel <- Channel.bounded[F, Record](config.queueSize).toResource
+    producer = new FS2KinesisProducer[F](logger, config, channel, underlying)(
       callback
     )
-    _ <- producer.start()
-    _ <- Resource.onFinalize(producer.stop())
+    _ <- producer.resource
   } yield producer
 }

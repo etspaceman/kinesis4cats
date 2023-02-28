@@ -16,7 +16,7 @@
 
 package kinesis4cats.kcl
 
-import cats.effect.kernel.Deferred
+import cats.effect.Deferred
 import cats.effect.syntax.all._
 import cats.effect.{Async, Ref, Resource}
 import cats.syntax.all._

@@ -19,7 +19,7 @@ package kcl
 
 import scala.concurrent.duration._
 
-import cats.effect.kernel.Deferred
+import cats.effect.Deferred
 import cats.effect.std.Queue
 import cats.effect.{IO, Resource, SyncIO}
 import cats.syntax.all._

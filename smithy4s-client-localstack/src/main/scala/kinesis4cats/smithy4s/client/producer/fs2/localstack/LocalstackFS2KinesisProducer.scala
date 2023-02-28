@@ -19,8 +19,8 @@ package producer
 package fs2
 package localstack
 
+import _root_.fs2.concurrent.Channel
 import cats.effect._
-import cats.effect.std.Queue
 import cats.effect.syntax.all._
 import com.amazonaws.kinesis.PutRecordsOutput
 import org.http4s.client.Client
@@ -91,8 +91,8 @@ object LocalstackFS2KinesisProducer {
       ),
       loggerF(F)
     )
-    queue <- Queue
-      .bounded[F, Option[Record]](producerConfig.queueSize)
+    channel <- Channel
+      .bounded[F, Record](producerConfig.queueSize)
       .toResource
     underlying = new KinesisProducer[F](
       logger,
@@ -103,13 +103,12 @@ object LocalstackFS2KinesisProducer {
     producer = new FS2KinesisProducer[F](
       logger,
       producerConfig,
-      queue,
+      channel,
       underlying
     )(
       callback
     )
-    _ <- producer.start()
-    _ <- Resource.onFinalize(producer.stop())
+    _ <- producer.resource
   } yield producer
 
   /** Creates a [[cats.effect.Resource Resource]] of a
