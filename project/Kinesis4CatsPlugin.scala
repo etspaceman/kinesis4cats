@@ -29,7 +29,6 @@ object Kinesis4CatsPlugin extends AutoPlugin {
   import de.heikoseeberger.sbtheader.HeaderPlugin.autoImport._
   import org.scalafmt.sbt.ScalafmtPlugin.autoImport._
   import sbtassembly.AssemblyPlugin.autoImport._
-  import sbtprotobuf.ProtobufPlugin.autoImport._
   import scalafix.sbt.ScalafixPlugin.autoImport._
 
   private val primaryJavaOSCond = Def.setting {
@@ -47,11 +46,11 @@ object Kinesis4CatsPlugin extends AutoPlugin {
   }
 
   private val onlyScalaJsCond = Def.setting {
-    primaryJavaOSCond.value + s" && matrix.project == 'rootJS'"
+    primaryJavaOSCond.value + s" && startsWith(matrix.project, 'root-js')"
   }
 
   private val onlyNativeCond = Def.setting {
-    primaryJavaOSCond.value + s" && matrix.project == 'rootNative'"
+    primaryJavaOSCond.value + s" && startsWith(matrix.project, 'root-native')"
   }
 
   private val onlyFailures = Def.setting {
@@ -65,19 +64,11 @@ object Kinesis4CatsPlugin extends AutoPlugin {
     startYear := Some(2023),
     licenses := Seq(License.Apache2),
     developers := List(tlGitHubDev("etspaceman", "Eric Meisel")),
-    crossScalaVersions := Seq(Scala212, Scala3, Scala213),
+    crossScalaVersions := Seq(Scala213),
     scalaVersion := Scala213,
     tlCiMimaBinaryIssueCheck := tlBaseVersion.value != "0.0",
     resolvers += "s01 snapshots" at "https://s01.oss.sonatype.org/content/repositories/snapshots/",
     resolvers += "jitpack" at "https://jitpack.io",
-    protobufUseSystemProtoc := sys.env.get("CI").nonEmpty,
-    githubWorkflowJobSetup ++= List(
-      WorkflowStep.Use(
-        UseRef.Public("arduino", "setup-protoc", "v1"),
-        name = Some("Setup protoc"),
-        params = Map("repo-token" -> "${{ secrets.GITHUB_TOKEN }}")
-      )
-    ),
     githubWorkflowBuildPreamble ++= nativeBrewInstallWorkflowSteps.value,
     githubWorkflowBuildMatrixFailFast := Some(false),
     githubWorkflowBuild := {
@@ -112,7 +103,14 @@ object Kinesis4CatsPlugin extends AutoPlugin {
         case (false, false) => Nil // nada
       }
 
-      val links = List(
+      val test = List(
+        WorkflowStep.Sbt(
+          List(
+            "dockerComposeUp"
+          ),
+          name = Some("Docker Compose Up"),
+          cond = Some(primaryJavaOSCond.value)
+        ),
         WorkflowStep.Sbt(
           List("Test/fastLinkJS"),
           name = Some("Link JS"),
@@ -122,13 +120,9 @@ object Kinesis4CatsPlugin extends AutoPlugin {
           List("Test/nativeLink"),
           name = Some("Link Native"),
           cond = Some(onlyNativeCond.value)
-        )
-      )
-
-      val test = List(
+        ),
         WorkflowStep.Sbt(
           List(
-            "dockerComposeUp",
             "test"
           ),
           name = Some("Test"),
@@ -184,9 +178,13 @@ object Kinesis4CatsPlugin extends AutoPlugin {
           )
         else Nil
 
-      style ++ links ++ test ++ scalafix ++ mima ++ doc
+      style ++ test ++ scalafix ++ mima ++ doc
     },
     githubWorkflowJavaVersions := Seq(JavaSpec.temurin("17")),
+    githubWorkflowBuildSbtStepPreamble := Seq(
+      s"project $${{ matrix.project }}"
+    ),
+    githubWorkflowArtifactDownloadExtraKeys += "project",
     tlCiScalafixCheck := true,
     mergifyStewardConfig := Some(
       MergifyStewardConfig(action =
@@ -242,7 +240,8 @@ object Kinesis4CatsPlugin extends AutoPlugin {
     libraryDependencies ++= Seq(
       Cats.core.value,
       Cats.effect.value,
-      Log4Cats.core.value
+      Log4Cats.core.value,
+      FS2.core.value
     ) ++ testDependencies.value.map(_ % Test),
     libraryDependencySchemes += "org.scala-lang.modules" %% "scala-xml" % VersionScheme.Always,
     moduleName := "kinesis4cats-" + name.value,
@@ -309,8 +308,7 @@ object Kinesis4CatsPluginKeys {
       Munit.core.value,
       Munit.catsEffect.value,
       Munit.scalacheck.value,
-      Scalacheck.value,
-      FS2.core.value
+      Scalacheck.value
     )
   )
 

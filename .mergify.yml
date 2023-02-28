@@ -10,15 +10,15 @@ pull_request_rules:
   conditions:
   - author=scala-steward
   - body~=labels:.*early-semver-patch
-  - status-success=Build and Test (ubuntu-latest, 2.12.17, temurin@17, rootJS)
-  - status-success=Build and Test (ubuntu-latest, 2.12.17, temurin@17, rootJVM)
-  - status-success=Build and Test (ubuntu-latest, 2.12.17, temurin@17, rootNative)
-  - status-success=Build and Test (ubuntu-latest, 3.2.2, temurin@17, rootJS)
-  - status-success=Build and Test (ubuntu-latest, 3.2.2, temurin@17, rootJVM)
-  - status-success=Build and Test (ubuntu-latest, 3.2.2, temurin@17, rootNative)
-  - status-success=Build and Test (ubuntu-latest, 2.13.10, temurin@17, rootJS)
-  - status-success=Build and Test (ubuntu-latest, 2.13.10, temurin@17, rootJVM)
-  - status-success=Build and Test (ubuntu-latest, 2.13.10, temurin@17, rootNative)
+  - status-success=Build and Test (ubuntu-latest, 2.13.10, temurin@17, root-jvm-212)
+  - status-success=Build and Test (ubuntu-latest, 2.13.10, temurin@17, root-jvm-213)
+  - status-success=Build and Test (ubuntu-latest, 2.13.10, temurin@17, root-jvm-3)
+  - status-success=Build and Test (ubuntu-latest, 2.13.10, temurin@17, root-js-212)
+  - status-success=Build and Test (ubuntu-latest, 2.13.10, temurin@17, root-js-213)
+  - status-success=Build and Test (ubuntu-latest, 2.13.10, temurin@17, root-js-3)
+  - status-success=Build and Test (ubuntu-latest, 2.13.10, temurin@17, root-native-212)
+  - status-success=Build and Test (ubuntu-latest, 2.13.10, temurin@17, root-native-213)
+  - status-success=Build and Test (ubuntu-latest, 2.13.10, temurin@17, root-native-3)
   actions:
     merge:
       method: squash
@@ -46,6 +46,14 @@ pull_request_rules:
       add:
       - compat
       remove: []
+- name: Label integration-tests PRs
+  conditions:
+  - files~=^integration-tests/
+  actions:
+    label:
+      add:
+      - integration-tests
+      remove: []
 - name: Label kcl PRs
   conditions:
   - files~=^kcl/
@@ -61,22 +69,6 @@ pull_request_rules:
     label:
       add:
       - kcl-ciris
-      remove: []
-- name: Label kcl-fs2 PRs
-  conditions:
-  - files~=^kcl-fs2/
-  actions:
-    label:
-      add:
-      - kcl-fs2
-      remove: []
-- name: Label kcl-fs2-ciris PRs
-  conditions:
-  - files~=^kcl-fs2-ciris/
-  actions:
-    label:
-      add:
-      - kcl-fs2-ciris
       remove: []
 - name: Label kcl-http4s PRs
   conditions:
@@ -102,22 +94,6 @@ pull_request_rules:
       add:
       - kcl-logging-circe
       remove: []
-- name: Label kcl-tests PRs
-  conditions:
-  - files~=^kcl-tests/
-  actions:
-    label:
-      add:
-      - kcl-tests
-      remove: []
-- name: Label kernel-tests PRs
-  conditions:
-  - files~=^kernel-tests/
-  actions:
-    label:
-      add:
-      - kernel-tests
-      remove: []
 - name: Label kinesis-client PRs
   conditions:
   - files~=^kinesis-client/
@@ -125,14 +101,6 @@ pull_request_rules:
     label:
       add:
       - kinesis-client
-      remove: []
-- name: Label kinesis-client-fs2 PRs
-  conditions:
-  - files~=^kinesis-client-fs2/
-  actions:
-    label:
-      add:
-      - kinesis-client-fs2
       remove: []
 - name: Label kinesis-client-localstack PRs
   conditions:
@@ -149,22 +117,6 @@ pull_request_rules:
     label:
       add:
       - kinesis-client-logging-circe
-      remove: []
-- name: Label kinesis-client-producer-tests PRs
-  conditions:
-  - files~=^kinesis-client-producer-tests/
-  actions:
-    label:
-      add:
-      - kinesis-client-producer-tests
-      remove: []
-- name: Label kinesis-client-tests PRs
-  conditions:
-  - files~=^kinesis-client-tests/
-  actions:
-    label:
-      add:
-      - kinesis-client-tests
       remove: []
 - name: Label kpl PRs
   conditions:
@@ -198,13 +150,77 @@ pull_request_rules:
       add:
       - kpl-logging-circe
       remove: []
-- name: Label kpl-tests PRs
+- name: Label root-js-212 PRs
   conditions:
-  - files~=^kpl-tests/
+  - files~=^root-js-212/
   actions:
     label:
       add:
-      - kpl-tests
+      - root-js-212
+      remove: []
+- name: Label root-js-213 PRs
+  conditions:
+  - files~=^root-js-213/
+  actions:
+    label:
+      add:
+      - root-js-213
+      remove: []
+- name: Label root-js-3 PRs
+  conditions:
+  - files~=^root-js-3/
+  actions:
+    label:
+      add:
+      - root-js-3
+      remove: []
+- name: Label root-jvm-212 PRs
+  conditions:
+  - files~=^root-jvm-212/
+  actions:
+    label:
+      add:
+      - root-jvm-212
+      remove: []
+- name: Label root-jvm-213 PRs
+  conditions:
+  - files~=^root-jvm-213/
+  actions:
+    label:
+      add:
+      - root-jvm-213
+      remove: []
+- name: Label root-jvm-3 PRs
+  conditions:
+  - files~=^root-jvm-3/
+  actions:
+    label:
+      add:
+      - root-jvm-3
+      remove: []
+- name: Label root-native-212 PRs
+  conditions:
+  - files~=^root-native-212/
+  actions:
+    label:
+      add:
+      - root-native-212
+      remove: []
+- name: Label root-native-213 PRs
+  conditions:
+  - files~=^root-native-213/
+  actions:
+    label:
+      add:
+      - root-native-213
+      remove: []
+- name: Label root-native-3 PRs
+  conditions:
+  - files~=^root-native-3/
+  actions:
+    label:
+      add:
+      - root-native-3
       remove: []
 - name: Label shared PRs
   conditions:
@@ -230,14 +246,6 @@ pull_request_rules:
       add:
       - shared-ciris
       remove: []
-- name: Label shared-fs2 PRs
-  conditions:
-  - files~=^shared-fs2/
-  actions:
-    label:
-      add:
-      - shared-fs2
-      remove: []
 - name: Label shared-localstack PRs
   conditions:
   - files~=^shared-localstack/
@@ -246,14 +254,6 @@ pull_request_rules:
       add:
       - shared-localstack
       remove: []
-- name: Label shared-tests PRs
-  conditions:
-  - files~=^shared-tests/
-  actions:
-    label:
-      add:
-      - shared-tests
-      remove: []
 - name: Label smithy4s-client PRs
   conditions:
   - files~=^smithy4s-client/
@@ -261,14 +261,6 @@ pull_request_rules:
     label:
       add:
       - smithy4s-client
-      remove: []
-- name: Label smithy4s-client-fs2 PRs
-  conditions:
-  - files~=^smithy4s-client-fs2/
-  actions:
-    label:
-      add:
-      - smithy4s-client-fs2
       remove: []
 - name: Label smithy4s-client-localstack PRs
   conditions:
@@ -285,22 +277,6 @@ pull_request_rules:
     label:
       add:
       - smithy4s-client-logging-circe
-      remove: []
-- name: Label smithy4s-client-producer-tests PRs
-  conditions:
-  - files~=^smithy4s-client-producer-tests/
-  actions:
-    label:
-      add:
-      - smithy4s-client-producer-tests
-      remove: []
-- name: Label smithy4s-client-tests PRs
-  conditions:
-  - files~=^smithy4s-client-tests/
-  actions:
-    label:
-      add:
-      - smithy4s-client-tests
       remove: []
 - name: Label smithy4s-client-transformers PRs
   conditions:

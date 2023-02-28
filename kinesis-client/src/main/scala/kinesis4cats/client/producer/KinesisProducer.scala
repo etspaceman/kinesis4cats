@@ -22,7 +22,7 @@ import scala.jdk.CollectionConverters._
 import java.time.Instant
 
 import cats.data.NonEmptyList
-import cats.effect.Async
+import cats.effect._
 import cats.effect.kernel.Resource
 import cats.effect.syntax.all._
 import cats.syntax.all._
@@ -112,44 +112,49 @@ object KinesisProducer {
       streamNameOrArn: models.StreamNameOrArn
   )(implicit
       F: Async[F]
-  ): F[Either[ShardMapCache.Error, ShardMap]] = client
-    .listShards(
-      ListShardsRequest
-        .builder()
-        .shardFilter(
-          ShardFilter.builder().`type`(ShardFilterType.AT_LATEST).build()
-        )
-        .maybeTransform(streamNameOrArn.streamName)(_.streamName(_))
-        .maybeTransform(streamNameOrArn.streamArn.map(_.streamArn))(
-          _.streamARN(_)
-        )
-        .build()
-    )
-    .attempt
-    .map(
-      _.bimap(
-        ShardMapCache.ListShardsError(_),
-        resp =>
-          ShardMap(
-            resp
-              .shards()
-              .asScala
-              .toList
-              .map(x =>
-                ShardMapRecord(
-                  models.ShardId(
-                    x.shardId()
-                  ),
-                  models.HashKeyRange(
-                    BigInt(x.hashKeyRange().endingHashKey()),
-                    BigInt(x.hashKeyRange().startingHashKey())
-                  )
+  ): F[Either[ShardMapCache.Error, ShardMap]] =
+    F.realTime
+      .map(d => Instant.EPOCH.plusNanos(d.toNanos))
+      .flatMap(now =>
+        client
+          .listShards(
+            ListShardsRequest
+              .builder()
+              .shardFilter(
+                ShardFilter.builder().`type`(ShardFilterType.AT_LATEST).build()
+              )
+              .maybeTransform(streamNameOrArn.streamName)(_.streamName(_))
+              .maybeTransform(streamNameOrArn.streamArn.map(_.streamArn))(
+                _.streamARN(_)
+              )
+              .build()
+          )
+          .attempt
+          .map(
+            _.bimap(
+              ShardMapCache.ListShardsError(_),
+              resp =>
+                ShardMap(
+                  resp
+                    .shards()
+                    .asScala
+                    .toList
+                    .map(x =>
+                      ShardMapRecord(
+                        models.ShardId(
+                          x.shardId()
+                        ),
+                        models.HashKeyRange(
+                          BigInt(x.hashKeyRange().endingHashKey()),
+                          BigInt(x.hashKeyRange().startingHashKey())
+                        )
+                      )
+                    ),
+                  now
                 )
-              ),
-            Instant.now()
+            )
           )
       )
-    )
 
   /** Basic constructor for the
     * [[kinesis4cats.client.producer.KinesisProducer KinesisProducer]]

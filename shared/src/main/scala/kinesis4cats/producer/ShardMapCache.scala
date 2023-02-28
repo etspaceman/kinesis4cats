@@ -19,7 +19,6 @@ package kinesis4cats.producer
 import scala.concurrent.duration._
 
 import java.nio.charset.StandardCharsets
-import java.security.MessageDigest
 import java.time.Instant
 
 import cats.effect.syntax.all._
@@ -27,6 +26,7 @@ import cats.effect.{Async, Ref}
 import cats.syntax.all._
 import org.typelevel.log4cats.StructuredLogger
 
+import kinesis4cats.Utils
 import kinesis4cats.logging.{LogContext, LogEncoder}
 import kinesis4cats.models._
 
@@ -59,8 +59,6 @@ private[kinesis4cats] class ShardMapCache[F[_]] private (
 
   /** Predicts a shard that a record will land on given its partition key
     *
-    * @param digest
-    *   [[https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/security/MessageDigest.html MessageDigest]]
     * @param partitionKey
     *   The partition key for the record
     * @return
@@ -69,10 +67,9 @@ private[kinesis4cats] class ShardMapCache[F[_]] private (
     *   [[kinesis4cats.models.ShardId ShardId]]
     */
   def shardForPartitionKey(
-      digest: MessageDigest,
       partitionKey: String
   ): F[Either[ShardMapCache.Error, ShardId]] =
-    shardMapRef.get.map(_.shardForPartitionKey(digest, partitionKey))
+    shardMapRef.get.map(_.shardForPartitionKey(partitionKey))
 
   /** Refresh the shard cache by running shardMapF
     */
@@ -192,14 +189,11 @@ object ShardMapCache {
 
 final case class ShardMap(shards: List[ShardMapRecord], lastUpdated: Instant) {
   def shardForPartitionKey(
-      digest: MessageDigest,
       partitionKey: String
   ): Either[ShardMapCache.Error, ShardId] = {
-    val hashBytes = digest.digest(partitionKey.getBytes(StandardCharsets.UTF_8))
+    val hashBytes = Utils.md5(partitionKey.getBytes(StandardCharsets.UTF_8))
     val hashKey = BigInt.apply(1, hashBytes)
-    val res = ShardMap.findShard(partitionKey, hashKey, shards)
-    digest.reset()
-    res
+    ShardMap.findShard(partitionKey, hashKey, shards)
   }
 }
 

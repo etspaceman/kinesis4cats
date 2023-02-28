@@ -20,7 +20,7 @@ package producer
 import java.time.Instant
 
 import cats.data.NonEmptyList
-import cats.effect.Async
+import cats.effect._
 import cats.effect.kernel.Resource
 import cats.effect.syntax.all._
 import cats.syntax.all._
@@ -121,30 +121,34 @@ object KinesisProducer {
   )(implicit
       F: Async[F]
   ): F[Either[ShardMapCache.Error, ShardMap]] =
-    getShards(client, streamNameOrArn).attempt
-      .map(
-        _.bimap(
-          ShardMapCache.ListShardsError(_),
-          resp =>
-            ShardMap(
-              resp.shards
-                .map(
-                  _.map(x =>
-                    ShardMapRecord(
-                      models.ShardId(
-                        x.shardId.value
-                      ),
-                      models.HashKeyRange(
-                        BigInt(x.hashKeyRange.endingHashKey.value),
-                        BigInt(x.hashKeyRange.startingHashKey.value)
+    F.realTime
+      .map(d => Instant.EPOCH.plusNanos(d.toNanos))
+      .flatMap(now =>
+        getShards(client, streamNameOrArn).attempt
+          .map(
+            _.bimap(
+              ShardMapCache.ListShardsError(_),
+              resp =>
+                ShardMap(
+                  resp.shards
+                    .map(
+                      _.map(x =>
+                        ShardMapRecord(
+                          models.ShardId(
+                            x.shardId.value
+                          ),
+                          models.HashKeyRange(
+                            BigInt(x.hashKeyRange.endingHashKey.value),
+                            BigInt(x.hashKeyRange.startingHashKey.value)
+                          )
+                        )
                       )
                     )
-                  )
+                    .getOrElse(List.empty),
+                  now
                 )
-                .getOrElse(List.empty),
-              Instant.now()
             )
-        )
+          )
       )
 
   /** Basic constructor for the
