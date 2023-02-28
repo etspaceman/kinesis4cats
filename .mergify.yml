@@ -168,14 +168,6 @@ pull_request_rules:
       add:
       - kpl-logging-circe
       remove: []
-- name: Label root PRs
-  conditions:
-  - files~=^root/
-  actions:
-    label:
-      add:
-      - root
-      remove: []
 - name: Label root-js-212 PRs
   conditions:
   - files~=^root-js-212/
