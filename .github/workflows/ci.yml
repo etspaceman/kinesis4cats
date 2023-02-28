@@ -76,31 +76,31 @@ jobs:
 
       - name: Check headers and formatting
         if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-latest'
-        run: sbt '++ ${{ matrix.scala }}' 'project ${{ matrix.project }}' headerCheckAll fmtCheck
+        run: sbt 'project ${{ matrix.project }}' headerCheckAll fmtCheck
 
       - name: Docker Compose Up
         if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-latest'
-        run: sbt '++ ${{ matrix.scala }}' 'project ${{ matrix.project }}' dockerComposeUp
+        run: sbt 'project ${{ matrix.project }}' dockerComposeUp
 
       - name: Test
         if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-latest'
-        run: sbt '++ ${{ matrix.scala }}' 'project ${{ matrix.project }}' test
+        run: sbt 'project ${{ matrix.project }}' test
 
       - name: Print docker logs and container listing
         if: ${{ failure() }}
-        run: sbt '++ ${{ matrix.scala }}' 'project ${{ matrix.project }}' dockerComposePs dockerComposeLogs
+        run: sbt 'project ${{ matrix.project }}' dockerComposePs dockerComposeLogs
 
       - name: Remove docker containers
         if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-latest'
-        run: sbt '++ ${{ matrix.scala }}' 'project ${{ matrix.project }}' dockerComposeDown
+        run: sbt 'project ${{ matrix.project }}' dockerComposeDown
 
       - name: Check scalafix lints
         if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-latest' && matrix.scala != '3.2.2'
-        run: sbt '++ ${{ matrix.scala }}' 'project ${{ matrix.project }}' fixCheck
+        run: sbt 'project ${{ matrix.project }}' fixCheck
 
       - name: Generate API documentation
         if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-latest'
-        run: sbt '++ ${{ matrix.scala }}' 'project ${{ matrix.project }}' doc
+        run: sbt 'project ${{ matrix.project }}' doc
 
       - name: Make target directories
         if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main')

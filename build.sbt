@@ -623,5 +623,7 @@ lazy val rootProjects = List(
 ).map(_.id)
 
 ThisBuild / githubWorkflowBuildMatrixAdditions += "project" -> rootProjects
-ThisBuild / githubWorkflowBuildSbtStepPreamble += s"project $${{ matrix.project }}"
+ThisBuild / githubWorkflowBuildSbtStepPreamble := Seq(
+  s"project $${{ matrix.project }}"
+)
 ThisBuild / githubWorkflowArtifactDownloadExtraKeys += "project"
