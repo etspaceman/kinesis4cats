@@ -297,6 +297,44 @@ lazy val `smithy4s-client-localstack` = projectMatrix
   .jsPlatform(last2ScalaVersions)
   .dependsOn(`shared-localstack`, `smithy4s-client`)
 
+lazy val integrationTestsJvmSettings: Seq[Setting[_]] = Seq(
+  Test / fork := true,
+  libraryDependencies ++= Seq(
+    Http4s.blazeClient.value % Test,
+    FS2.reactiveStreams % Test
+  ),
+  assembly / assemblyMergeStrategy := {
+    case "module-info.class"                        => MergeStrategy.discard
+    case "AUTHORS"                                  => MergeStrategy.discard
+    case "META-INF/smithy/smithy4s.tracking.smithy" => MergeStrategy.discard
+    case "META-INF/smithy/manifest"                 => MergeStrategy.first
+    case "scala/jdk/CollectionConverters$.class"    => MergeStrategy.first
+    case PathList("google", "protobuf", _ @_*)      => MergeStrategy.first
+    case PathList("codegen-resources", _ @_*)       => MergeStrategy.first
+    case PathList("META-INF", xs @ _*) =>
+      (xs map { _.toLowerCase }) match {
+        case "services" :: xs               => MergeStrategy.filterDistinctLines
+        case "resources" :: "webjars" :: xs => MergeStrategy.first
+        case _                              => MergeStrategy.discard
+      }
+    case x => MergeStrategy.defaultMergeStrategy(x)
+  },
+  assembly / mainClass := Some("kinesis4cats.kcl.http4s.TestKCLService")
+)
+
+lazy val integrationTestsJvmDependencies = List(
+  `kcl-http4s`,
+  `kcl-localstack`
+)
+
+lazy val integrationTestsJvmTestDependencies = List(
+  `kcl-logging-circe`,
+  `kinesis-client-localstack`,
+  `kinesis-client-logging-circe`,
+  `kpl-localstack`,
+  `kpl-logging-circe`
+)
+
 lazy val `integration-tests` = projectMatrix
   .enablePlugins(NoPublishPlugin, DockerImagePlugin)
   .settings(DockerImagePlugin.settings)
@@ -306,42 +344,7 @@ lazy val `integration-tests` = projectMatrix
       Http4s.emberClient.value % Test
     )
   )
-  .jvmPlatform(
-    last2ScalaVersions,
-    Nil,
-    _.settings(
-      Test / fork := true,
-      libraryDependencies ++= Seq(
-        Http4s.blazeClient.value % Test,
-        FS2.reactiveStreams % Test
-      ),
-      assembly / assemblyMergeStrategy := {
-        case "module-info.class"                        => MergeStrategy.discard
-        case "AUTHORS"                                  => MergeStrategy.discard
-        case "META-INF/smithy/smithy4s.tracking.smithy" => MergeStrategy.discard
-        case "META-INF/smithy/manifest"                 => MergeStrategy.first
-        case "scala/jdk/CollectionConverters$.class"    => MergeStrategy.first
-        case PathList("google", "protobuf", _ @_*)      => MergeStrategy.first
-        case PathList("codegen-resources", _ @_*)       => MergeStrategy.first
-        case PathList("META-INF", xs @ _*) =>
-          (xs map { _.toLowerCase }) match {
-            case "services" :: xs => MergeStrategy.filterDistinctLines
-            case "resources" :: "webjars" :: xs => MergeStrategy.first
-            case _                              => MergeStrategy.discard
-          }
-        case x => MergeStrategy.defaultMergeStrategy(x)
-      },
-      assembly / mainClass := Some("kinesis4cats.kcl.http4s.TestKCLService")
-    ).dependsOn(
-      `kcl-http4s`.jvm(Scala3),
-      `kcl-localstack`.jvm(Scala3),
-      `kcl-logging-circe`.jvm(Scala3) % Test,
-      `kinesis-client-localstack`.jvm(Scala3) % Test,
-      `kinesis-client-logging-circe`.jvm(Scala3) % Test,
-      `kpl-localstack`.jvm(Scala3) % Test,
-      `kpl-logging-circe`.jvm(Scala3) % Test
-    )
-  )
+  .jvmPlatform(last2ScalaVersions)
   .nativePlatform(Seq(Scala3))
   .jsPlatform(
     last2ScalaVersions,
@@ -363,6 +366,34 @@ lazy val `integration-tests-native` = `integration-tests`
     libraryDependencies ++= Seq(Epollcat.value % Test),
     nativeBrewFormulas ++= Set("s2n", "openssl"),
     Test / envVars ++= Map("S2N_DONT_MLOCK" -> "1")
+  )
+
+lazy val `integration-tests-jvm-213` = `integration-tests`
+  .jvm(Scala213)
+  .settings(integrationTestsJvmSettings)
+  .dependsOn(
+    integrationTestsJvmDependencies.map(x =>
+      ClasspathDependency(x.jvm(Scala213).project, None)
+    ): _*
+  )
+  .dependsOn(
+    integrationTestsJvmTestDependencies.map(x =>
+      ClasspathDependency(x.jvm(Scala213).project, Some(Test.id))
+    ): _*
+  )
+
+lazy val `integration-tests-jvm-3` = `integration-tests`
+  .jvm(Scala3)
+  .settings(integrationTestsJvmSettings)
+  .dependsOn(
+    integrationTestsJvmDependencies.map(x =>
+      ClasspathDependency(x.jvm(Scala3).project, None)
+    ): _*
+  )
+  .dependsOn(
+    integrationTestsJvmTestDependencies.map(x =>
+      ClasspathDependency(x.jvm(Scala3).project, Some(Test.id))
+    ): _*
   )
 
 lazy val docs = projectMatrix
@@ -495,7 +526,7 @@ lazy val allProjects = Seq(
   unidocs
 )
 
-lazy val functionalTestProjects = List(`integration-tests`).map(_.jvm(Scala3))
+lazy val functionalTestProjects = List(`integration-tests`).map(_.jvm(Scala213))
 
 def commonRootSettings: Seq[Setting[_]] =
   DockerComposePlugin.settings(true, functionalTestProjects) ++ Seq(
