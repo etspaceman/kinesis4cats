@@ -301,7 +301,8 @@ lazy val integrationTestsJvmSettings: Seq[Setting[_]] = Seq(
   Test / fork := true,
   libraryDependencies ++= Seq(
     Http4s.blazeClient.value % Test,
-    FS2.reactiveStreams % Test
+    FS2.reactiveStreams % Test,
+    Logback
   ),
   assembly / assemblyMergeStrategy := {
     case "module-info.class"                        => MergeStrategy.discard

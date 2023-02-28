@@ -15,6 +15,9 @@ object Kinesis4CatsPlugin extends AutoPlugin {
     commands.mkString("; ", "; ", "")
 
   val autoImport: Kinesis4CatsPluginKeys.type = Kinesis4CatsPluginKeys
+
+  import scala.scalanative.sbtplugin.ScalaNativePlugin.autoImport._
+
   import DockerComposePlugin.autoImport._
   import DockerImagePlugin.autoImport._
   import GenerativePlugin.autoImport._
@@ -69,6 +72,7 @@ object Kinesis4CatsPlugin extends AutoPlugin {
     tlCiMimaBinaryIssueCheck := tlBaseVersion.value != "0.0",
     resolvers += "s01 snapshots" at "https://s01.oss.sonatype.org/content/repositories/snapshots/",
     resolvers += "jitpack" at "https://jitpack.io",
+    Global / concurrentRestrictions += Tags.limit(NativeTags.Link, 1),
     githubWorkflowBuildPreamble ++= nativeBrewInstallWorkflowSteps.value,
     githubWorkflowBuildMatrixFailFast := Some(false),
     githubWorkflowBuild := {
