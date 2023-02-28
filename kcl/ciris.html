@@ -77,20 +77,16 @@
         <li class="level2"><a href="../kpl/localstack.html">Localstack</a></li>
         <li class="level1 nav-header">Kinesis Client Library (KCL)</li>
         <li class="level2"><a href="getting-started.html">Getting Started</a></li>
-        <li class="level2"><a href="fs2.html">FS2</a></li>
         <li class="level2"><a href="http4s.html">Http4s</a></li>
         <li class="level2 active"><a href="#">Ciris</a></li>
-        <li class="level2"><a href="ciris-fs2.html">Ciris FS2</a></li>
         <li class="level2"><a href="circe.html">Circe Logging</a></li>
         <li class="level2"><a href="localstack.html">Localstack</a></li>
         <li class="level1 nav-header">Kinesis Client</li>
         <li class="level2"><a href="../client/getting-started.html">Getting Started</a></li>
-        <li class="level2"><a href="../client/fs2.html">FS2</a></li>
         <li class="level2"><a href="../client/circe.html">Circe Logging</a></li>
         <li class="level2"><a href="../client/localstack.html">Localstack</a></li>
         <li class="level1 nav-header">Smithy4s</li>
         <li class="level2"><a href="../smithy4s/getting-started.html">Getting Started</a></li>
-        <li class="level2"><a href="../smithy4s/fs2.html">FS2</a></li>
         <li class="level2"><a href="../smithy4s/circe.html">Circe Logging</a></li>
         <li class="level2"><a href="../smithy4s/localstack.html">Localstack</a></li>
         <li class="level1 nav-header">Localstack</li>
@@ -135,8 +131,8 @@
 
         <ul class="nav-list">
           <li class="level1"><a href="#installation">Installation</a></li>
-          <li class="level1"><a href="#usage">Usage</a></li>
-          <li class="level1"><a href="#configuration">Configuration</a></li>
+          <li class="level1"><a href="#usage-1">Usage</a></li>
+          <li class="level1"><a href="#configuration-1">Configuration</a></li>
           <li class="level2"><a href="#common">Common</a></li>
           <li class="level2"><a href="#checkpoint">Checkpoint</a></li>
           <li class="level2"><a href="#coordinator">Coordinator</a></li>
@@ -146,6 +142,9 @@
           <li class="level2"><a href="#retrieval">Retrieval</a></li>
           <li class="level2"><a href="#processor">Processor</a></li>
           <li class="level2"><a href="#duration">Duration</a></li>
+          <li class="level1"><a href="#fs2-configuration">FS2 Configuration</a></li>
+          <li class="level2"><a href="#usage-2">Usage</a></li>
+          <li class="level2"><a href="#configuration-2">Configuration</a></li>
         </ul>
 
         <p class="footer"></p>
@@ -159,7 +158,7 @@
         <h2 id="installation" class="section">Installation<a class="anchor-link right" href="#installation"><i class="icofont-laika">&#xef71;</i></a></h2>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">libraryDependencies</span><span> += </span><span class="string-literal">&quot;io.github.etspaceman&quot;</span><span> %% </span><span class="string-literal">&quot;kinesis4cats-kcl-ciris&quot;</span><span> % </span><span class="string-literal">&quot;0.0.3&quot;</span></code></pre>
         
-        <h2 id="usage" class="section">Usage<a class="anchor-link right" href="#usage"><i class="icofont-laika">&#xef71;</i></a></h2>
+        <h2 id="usage-1" class="section">Usage<a class="anchor-link right" href="#usage-1"><i class="icofont-laika">&#xef71;</i></a></h2>
         <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">effect</span><span>.</span><span class="identifier">_</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">syntax</span><span>.</span><span class="identifier">all</span><span>.</span><span class="identifier">_</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">software</span><span>.</span><span class="identifier">amazon</span><span>.</span><span class="identifier">awssdk</span><span>.</span><span class="identifier">services</span><span>.</span><span class="identifier">cloudwatch</span><span>.</span><span class="type-name">CloudWatchAsyncClient</span><span>
@@ -193,7 +192,7 @@
     } </span><span class="keyword">yield</span><span> ()
 }</span></code></pre>
         
-        <h2 id="configuration" class="section">Configuration<a class="anchor-link right" href="#configuration"><i class="icofont-laika">&#xef71;</i></a></h2>
+        <h2 id="configuration-1" class="section">Configuration<a class="anchor-link right" href="#configuration-1"><i class="icofont-laika">&#xef71;</i></a></h2>
         <p>The configuration below is intended to only work with single-stream consumers at this time.</p>
         
         <h3 id="common" class="section">Common<a class="anchor-link right" href="#common"><i class="icofont-laika">&#xef71;</i></a></h3>
@@ -759,6 +758,88 @@
             - <code>1 day</code>
             - <code>24 hours</code>
             - <code>24h</code></p>
+        
+        <h2 id="fs2-configuration" class="section">FS2 Configuration<a class="anchor-link right" href="#fs2-configuration"><i class="icofont-laika">&#xef71;</i></a></h2>
+        <p>Standard environment variables and system properties for configuring a <a href="https://github.com/etspaceman/kinesis4cats/blob/main/kcl/src/main/scala/kinesis4cats/kcl/fs2/KCLConsumerFS2.scala">KCLConsumerFS2</a>, via <a href="https://cir.is/">Ciris</a></p>
+        
+        <h3 id="usage-2" class="section">Usage<a class="anchor-link right" href="#usage-2"><i class="icofont-laika">&#xef71;</i></a></h3>
+        <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">effect</span><span>.</span><span class="identifier">_</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">software</span><span>.</span><span class="identifier">amazon</span><span>.</span><span class="identifier">awssdk</span><span>.</span><span class="identifier">services</span><span>.</span><span class="identifier">cloudwatch</span><span>.</span><span class="type-name">CloudWatchAsyncClient</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">software</span><span>.</span><span class="identifier">amazon</span><span>.</span><span class="identifier">awssdk</span><span>.</span><span class="identifier">services</span><span>.</span><span class="identifier">dynamodb</span><span>.</span><span class="type-name">DynamoDbAsyncClient</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">software</span><span>.</span><span class="identifier">amazon</span><span>.</span><span class="identifier">awssdk</span><span>.</span><span class="identifier">services</span><span>.</span><span class="identifier">kinesis</span><span>.</span><span class="type-name">KinesisAsyncClient</span><span>
+
+</span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">kcl</span><span>.</span><span class="identifier">fs2</span><span>.</span><span class="identifier">ciris</span><span>.</span><span class="type-name">KCLCirisFS2</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">kcl</span><span>.</span><span class="identifier">logging</span><span>.</span><span class="identifier">instances</span><span>.</span><span class="identifier">show</span><span>.</span><span class="identifier">_</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">syntax</span><span>.</span><span class="identifier">bytebuffer</span><span>.</span><span class="identifier">_</span><span>
+
+</span><span class="keyword">object</span><span> </span><span class="type-name">MyApp</span><span> </span><span class="keyword">extends</span><span> </span><span class="type-name">ResourceApp</span><span>.</span><span class="type-name">Forever</span><span> {
+    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">run</span><span>(</span><span class="identifier">args</span><span>: </span><span class="type-name">List</span><span>[</span><span class="type-name">String</span><span>]) = </span><span class="keyword">for</span><span> {
+        </span><span class="identifier">kinesisClient</span><span> &lt;- </span><span class="type-name">Resource</span><span>.</span><span class="identifier">fromAutoCloseable</span><span>(</span><span class="type-name">IO</span><span>(</span><span class="type-name">KinesisAsyncClient</span><span>.</span><span class="identifier">builder</span><span>().</span><span class="identifier">build</span><span>()))
+        </span><span class="identifier">dynamoClient</span><span> &lt;- </span><span class="type-name">Resource</span><span>.</span><span class="identifier">fromAutoCloseable</span><span>(</span><span class="type-name">IO</span><span>(</span><span class="type-name">DynamoDbAsyncClient</span><span>.</span><span class="identifier">builder</span><span>().</span><span class="identifier">build</span><span>()))
+        </span><span class="identifier">cloudWatchClient</span><span> &lt;- </span><span class="type-name">Resource</span><span>.</span><span class="identifier">fromAutoCloseable</span><span>(</span><span class="type-name">IO</span><span>(</span><span class="type-name">CloudWatchAsyncClient</span><span>.</span><span class="identifier">builder</span><span>().</span><span class="identifier">build</span><span>()))
+        </span><span class="identifier">consumer</span><span> &lt;- </span><span class="type-name">KCLCirisFS2</span><span>.</span><span class="identifier">consumer</span><span>[</span><span class="type-name">IO</span><span>](</span><span class="identifier">kinesisClient</span><span>, </span><span class="identifier">dynamoClient</span><span>, </span><span class="identifier">cloudWatchClient</span><span>)
+        </span><span class="identifier">_</span><span> &lt;- </span><span class="identifier">consumer</span><span>.</span><span class="identifier">stream</span><span>()
+            .</span><span class="identifier">flatMap</span><span>(</span><span class="identifier">stream</span><span> =&gt;
+                </span><span class="identifier">stream</span><span>
+                .</span><span class="identifier">evalTap</span><span>(</span><span class="identifier">x</span><span> =&gt; </span><span class="type-name">IO</span><span>.</span><span class="identifier">println</span><span>(</span><span class="identifier">x</span><span>.</span><span class="identifier">data</span><span>.</span><span class="identifier">asString</span><span>))
+                .</span><span class="identifier">through</span><span>(</span><span class="identifier">consumer</span><span>.</span><span class="identifier">commitRecords</span><span>)
+                .</span><span class="identifier">compile</span><span>
+                .</span><span class="identifier">resource</span><span>
+                .</span><span class="identifier">drain</span><span>
+            )
+    } </span><span class="keyword">yield</span><span> ()
+}</span></code></pre>
+        
+        <h3 id="configuration-2" class="section">Configuration<a class="anchor-link right" href="#configuration-2"><i class="icofont-laika">&#xef71;</i></a></h3>
+        <p>The configuration below is intended to only work with single-stream consumers at this time.</p>
+        <table>
+          <thead>
+            <tr>
+              <th>Environment Variable</th>
+              <th>System Property</th>
+              <th>Required</th>
+              <th>Default</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>KCL_FS2_QUEUE_SIZE</code></td>
+              <td><code>kcl.fs2.queue.size</code></td>
+              <td>No</td>
+              <td>100</td>
+              <td>Size of the global records queue. If full, backpressure will occur.</td>
+            </tr>
+            <tr>
+              <td><code>KCL_FS2_COMMIT_MAX_CHUNK</code></td>
+              <td><code>kcl.fs2.commit.max.chunk</code></td>
+              <td>No</td>
+              <td>1000</td>
+              <td>Max size of records in the commit queue before commits are made.</td>
+            </tr>
+            <tr>
+              <td><code>KCL_FS2_COMMIT_MAX_WAIT</code></td>
+              <td><code>kcl.fs2.commit.max.wait</code></td>
+              <td>No</td>
+              <td>10 seconds</td>
+              <td>Max interval between commit batch evaluation.</td>
+            </tr>
+            <tr>
+              <td><code>KCL_FS2_COMMIT_MAX_RETRIES</code></td>
+              <td><code>kcl.fs2.commit.max.retries</code></td>
+              <td>No</td>
+              <td>5</td>
+              <td>Max retries for running commits</td>
+            </tr>
+            <tr>
+              <td><code>KCL_FS2_COMMIT_RETRY_INTERVAL</code></td>
+              <td><code>kcl.fs2.commit.retry.interval</code></td>
+              <td>No</td>
+              <td>0 seconds</td>
+              <td>Interval between commit retries</td>
+            </tr>
+          </tbody>
+        </table>
 
         <hr style="margin-top: 30px"/>
         <footer style="font-size: 90%; text-align: center">
