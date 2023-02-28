@@ -307,7 +307,7 @@ lazy val `integration-tests` = projectMatrix
     )
   )
   .jvmPlatform(
-    Seq(Scala3),
+    last2ScalaVersions,
     Nil,
     _.settings(
       Test / fork := true,
@@ -344,7 +344,7 @@ lazy val `integration-tests` = projectMatrix
   )
   .nativePlatform(Seq(Scala3))
   .jsPlatform(
-    Seq(Scala3),
+    last2ScalaVersions,
     Nil,
     _.settings(
       scalaJSLinkerConfig ~= (_.withModuleKind(ModuleKind.CommonJSModule))
@@ -623,4 +623,3 @@ lazy val rootProjects = List(
 ).map(_.id)
 
 ThisBuild / githubWorkflowBuildMatrixAdditions += "project" -> rootProjects
-
