@@ -123,14 +123,16 @@ object Kinesis4CatsPlugin extends AutoPlugin {
         WorkflowStep.Sbt(
           List("Test/nativeLink"),
           name = Some("Link Native"),
-          cond = Some(onlyNativeCond.value)
+          cond = Some(onlyNativeCond.value),
+          env = Map("GENERATE_RESOURCES" -> "false")
         ),
         WorkflowStep.Sbt(
           List(
             "test"
           ),
           name = Some("Test"),
-          cond = Some(primaryJavaOSCond.value)
+          cond = Some(primaryJavaOSCond.value),
+          env = Map("GENERATE_RESOURCES" -> "false")
         ),
         WorkflowStep.Sbt(
           List(

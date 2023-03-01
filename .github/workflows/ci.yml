@@ -88,10 +88,14 @@ jobs:
 
       - name: Link Native
         if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-latest' && startsWith(matrix.project, 'root-native')
+        env:
+          GENERATE_RESOURCES: false
         run: sbt 'project ${{ matrix.project }}' Test/nativeLink
 
       - name: Test
         if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-latest'
+        env:
+          GENERATE_RESOURCES: false
         run: sbt 'project ${{ matrix.project }}' test
 
       - name: Print docker logs and container listing

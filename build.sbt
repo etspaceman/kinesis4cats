@@ -270,7 +270,11 @@ lazy val `smithy4s-client` = projectMatrix
     Compile / smithy4sAllDependenciesAsJars +=
       (`smithy4s-client-transformers`.jvm(
         Scala212
-      ) / Compile / packageBin).value
+      ) / Compile / packageBin).value,
+    (Compile / resourceGenerators) := {
+      if (sys.env.get("GENERATE_RESOURCES").contains("false")) Nil
+      else (Compile / resourceGenerators).value
+    }
   )
   .jvmPlatform(last2ScalaVersions)
   .nativePlatform(Seq(Scala3))
