@@ -275,10 +275,11 @@ lazy val `smithy4s-client` = projectMatrix
     Compile / smithy4sAllDependenciesAsJars +=
       (`smithy4s-client-transformers`.jvm(
         Scala212
-      ) / Compile / packageBin).value
+      ) / Compile / packageBin).value,
+    scalacOptions -= "-deprecation"
   )
-  .jvmPlatform(last2ScalaVersions, Seq(scalacOptions ++= Seq("-deprecation")))
-  .nativePlatform(Seq(Scala3), Seq(scalacOptions ++= Seq("-deprecation")))
+  .jvmPlatform(last2ScalaVersions)
+  .nativePlatform(Seq(Scala3))
   .jsPlatform(last2ScalaVersions)
   .dependsOn(shared)
 
