@@ -33,7 +33,7 @@ import kinesis4cats.logging.{LogContext, LogEncoder}
   * returning F as [[cats.effect.Async Async]] results (instead of
   * CompletableFuture)
   *
-  * Unlike the [[kinesi4cats.client.KinesisClient KinesisClient]], this class
+  * Unlike the [[kinesis4cats.client.KinesisClient KinesisClient]], this class
   * ONLY supports methods that are required for operations in kinesis4cats. This
   * library is not committed to providing full wrappers for DynamoDb
   *
