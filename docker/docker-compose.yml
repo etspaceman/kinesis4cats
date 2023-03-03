@@ -19,6 +19,8 @@ services:
       - "LOG_LEVEL=TRACE"
       - "TEST_STREAM=test-kcl-service-stream"
       - "LOCALSTACK_HOST=localstack"
+      - "DYNAMODB_IN_MEMORY=1"
+      - "DYNAMODB_DELAY_TRANSIENT_STATUSES=0"
     healthcheck:
       test: "curl --fail http://localhost:8080/initialized || exit 1"
       interval: 5s

@@ -219,6 +219,8 @@ lazy val `kinesis-client` = projectMatrix
     description := "Cats tooling for the Java Kinesis Client",
     libraryDependencies ++= Seq(
       Aws.V2.kinesis,
+      Aws.V2.dynamo,
+      Aws.V2.cloudwatch,
       Log4Cats.slf4j
     )
   )
@@ -261,6 +263,9 @@ lazy val `smithy4s-client` = projectMatrix
       Log4Cats.noop.value,
       Smithy.rulesEngine(smithy4s.codegen.BuildInfo.smithyVersion) % Smithy4s,
       S4S.kinesis % Smithy4s
+      // TODO: Uncomment when fixed
+      // S4S.cloudwatch % Smithy4s,
+      // S4S.dynamo % Smithy4s
     ),
     Compile / smithy4sAllowedNamespaces := List(
       "smithy.rules",
@@ -270,7 +275,8 @@ lazy val `smithy4s-client` = projectMatrix
     Compile / smithy4sAllDependenciesAsJars +=
       (`smithy4s-client-transformers`.jvm(
         Scala212
-      ) / Compile / packageBin).value
+      ) / Compile / packageBin).value,
+    scalacOptions -= "-deprecation"
   )
   .jvmPlatform(last2ScalaVersions)
   .nativePlatform(Seq(Scala3))
