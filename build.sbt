@@ -262,14 +262,15 @@ lazy val `smithy4s-client` = projectMatrix
       "com.disneystreaming.smithy4s" %%% "smithy4s-aws-http4s" % smithy4sVersion.value,
       Log4Cats.noop.value,
       Smithy.rulesEngine(smithy4s.codegen.BuildInfo.smithyVersion) % Smithy4s,
-      S4S.kinesis % Smithy4s
-      // TODO: Uncomment when fixed
-      // S4S.cloudwatch % Smithy4s,
-      // S4S.dynamo % Smithy4s
+      S4S.kinesis % Smithy4s,
+      S4S.cloudwatch % Smithy4s,
+      S4S.dynamo % Smithy4s
     ),
     Compile / smithy4sAllowedNamespaces := List(
       "smithy.rules",
-      "com.amazonaws.kinesis"
+      "com.amazonaws.kinesis",
+      "com.amazonaws.dynamodb",
+      "com.amazonaws.cloudwatch"
     ),
     Compile / smithy4sModelTransformers += "KinesisSpecTransformer",
     Compile / smithy4sAllDependenciesAsJars +=

@@ -20,7 +20,7 @@ import cats.effect.Async
 import org.http4s.client.Client
 import org.typelevel.log4cats.StructuredLogger
 
-import kinesis4cats.smithy4s.client.KinesisClient
+import kinesis4cats.smithy4s.client.logging.LogEncoders
 
 /** Combines
   * [[kinesis4cats.smithy4s.client.middleware.RequestLogger RequestLogger]] and
@@ -40,13 +40,13 @@ object RequestResponseLogger {
     * @param F
     *   [[cats.effect.Async Async]]
     * @param LE
-    *   [[kinesis4cats.smithy4s.client.KinesisClient.LogEncoders KinesisClient.LogEncoders]]
+    *   [[kinesis4cats.smithy4s.client.LogEncoders LogEncoders]]
     * @return
     *   [[https://http4s.org/v0.23/docs/client.html Client]] that logs its
     *   requests in debug and trace levels
     */
   def apply[F[_]](logger: StructuredLogger[F])(client: Client[F])(implicit
       F: Async[F],
-      LE: KinesisClient.LogEncoders[F]
+      LE: LogEncoders[F]
   ): Client[F] = ResponseLogger(logger)(RequestLogger(logger)(client))
 }

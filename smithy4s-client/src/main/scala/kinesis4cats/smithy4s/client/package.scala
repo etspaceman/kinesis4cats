@@ -17,7 +17,11 @@
 package kinesis4cats.smithy4s
 
 import com.amazonaws.kinesis.Kinesis
+import com.amazonaws.dynamodb.DynamoDB
+import com.amazonaws.cloudwatch.CloudWatch
 
 package object client {
   type KinesisClient[F[_]] = Kinesis[F]
+  type DynamoClient[F[_]] = DynamoDB[F]
+  type CloudWatchClient[F[_]] = CloudWatch[F]
 }

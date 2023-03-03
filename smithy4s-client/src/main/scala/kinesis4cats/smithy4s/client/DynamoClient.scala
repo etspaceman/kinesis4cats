@@ -19,15 +19,15 @@ package kinesis4cats.smithy4s.client
 import cats.effect.syntax.all._
 import cats.effect.{Async, Resource}
 import cats.syntax.all._
-import com.amazonaws.kinesis._
+import com.amazonaws.dynamodb._
 import org.http4s.client.Client
 import org.typelevel.log4cats.StructuredLogger
 import org.typelevel.log4cats.noop.NoOpLogger
 import smithy4s.aws._
 import smithy4s.aws.http4s._
 
-import kinesis4cats.smithy4s.client.logging.LogEncoders
 import kinesis4cats.smithy4s.client.middleware.RequestResponseLogger
+import kinesis4cats.smithy4s.client.logging.LogEncoders
 
 /** A thin wrapper around
   * [[https://disneystreaming.github.io/smithy4s/docs/overview/intro/ Smithy4s's]]
@@ -43,7 +43,7 @@ import kinesis4cats.smithy4s.client.middleware.RequestResponseLogger
   * [[https://docs.aws.amazon.com/kinesis/latest/APIReference/API_SubscribeToShard.html SubscribeToShard]]
   * is not a currently supported operation.
   */
-object KinesisClient {
+object DynamoClient {
 
   def awsEnv[F[_]](
       client: Client[F],
@@ -69,7 +69,9 @@ object KinesisClient {
     )
   }
 
-  /** Create a KinesisClient [[cats.effect.Resource Resource]]
+
+
+  /** Create a DynamoClient [[cats.effect.Resource Resource]]
     *
     * @param client
     *   [[https://http4s.org/v0.23/docs/client.html Client]] implementation for
@@ -91,7 +93,7 @@ object KinesisClient {
     * @param F
     *   [[cats.effect.Async Async]]
     * @param LE
-    *   [[kinesis4cats.smithy4s.client.KinesisClient.LogEncoders KinesisClient.LogEncoders]]
+    *   [[kinesis4cats.smithy4s.client.DynamoClient.LogEncoders DynamoClient.LogEncoders]]
     * @return
     *   [[cats.effect.Resource Resource]] of a Kinesis Client.
     */
@@ -111,7 +113,7 @@ object KinesisClient {
   )(implicit
       F: Async[F],
       LE: LogEncoders[F]
-  ): Resource[F, KinesisClient[F]] = for {
+  ): Resource[F, DynamoClient[F]] = for {
     logger <- loggerF(F).toResource
     env <- awsEnv(
       RequestResponseLogger(logger)(client),
@@ -119,6 +121,6 @@ object KinesisClient {
       credsF,
       backendF
     )
-    awsClient <- AwsClient.simple(Kinesis.service, env)
+    awsClient <- AwsClient.simple(DynamoDB.service, env)
   } yield awsClient
 }

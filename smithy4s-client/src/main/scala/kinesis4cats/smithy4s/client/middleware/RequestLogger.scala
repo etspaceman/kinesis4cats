@@ -26,6 +26,7 @@ import org.http4s.client.Client
 import org.typelevel.log4cats.StructuredLogger
 
 import kinesis4cats.logging.LogContext
+import kinesis4cats.smithy4s.client.logging.LogEncoders
 
 /** Mostly copied from the Http4s
   * [[https://github.com/http4s/http4s/blob/series/0.23/client/shared/src/main/scala/org/http4s/client/middleware/RequestLogger.scala RequestLogger]].
@@ -52,7 +53,7 @@ object RequestLogger {
     */
   def apply[F[_]](logger: StructuredLogger[F])(client: Client[F])(implicit
       F: Async[F],
-      LE: KinesisClient.LogEncoders[F]
+      LE: LogEncoders[F]
   ): Client[F] = Client { req =>
     import LE._
 
