@@ -34,7 +34,7 @@ import kinesis4cats.client.logging.instances.show._
 import kinesis4cats.models.{AwsRegion, StreamArn}
 import kinesis4cats.syntax.scalacheck._
 
-abstract class KinesisClientSpec extends munit.CatsEffectSuite {
+class KinesisClientSpec extends munit.CatsEffectSuite {
   def fixture: SyncIO[FunFixture[KinesisClient[IO]]] =
     ResourceFunFixture(
       LocalstackKinesisClient.clientResource[IO]()

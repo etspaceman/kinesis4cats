@@ -106,7 +106,13 @@ object LibraryDependencies {
   }
 
   object Smithy4s {
+    val smithySpecVersion = "2023.02.10"
+
     val kinesis =
-      "com.disneystreaming.smithy" % "aws-kinesis-spec" % "2023.02.10"
+      "com.disneystreaming.smithy" % "aws-kinesis-spec" % smithySpecVersion
+    val dynamo =
+      "com.disneystreaming.smithy" % "aws-dynamodb-spec" % smithySpecVersion
+    val cloudwatch =
+      "com.disneystreaming.smithy" % "aws-cloudwatch-spec" % smithySpecVersion
   }
 }

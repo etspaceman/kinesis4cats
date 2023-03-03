@@ -49,6 +49,9 @@ object show {
   implicit val javaBooleanShow: Show[java.lang.Boolean] = x =>
     Show[Boolean].show(x)
 
+  implicit val javaDobuleShow: Show[java.lang.Double] = x =>
+    Show[Double].show(x)
+
   implicit def javaMapShow[A: Show, B: Show]: Show[java.util.Map[A, B]] =
     Show[Map[A, B]].contramap(_.asScala.toMap)
 
