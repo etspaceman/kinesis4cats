@@ -34,19 +34,6 @@ class DynamoClientSpec extends munit.CatsEffectSuite {
 
   val tableName = s"dynamo-client-spec-${Utils.randomUUIDString}"
 
-  /*
-val request = model.CreateTableRequest(
-      tableName = TableName(tableName),
-      keySchema = keySchema,
-      attributeDefinitions = attributeDefinitions,
-      billingMode = Some(settings.tableParameters.billingMode),
-      provisionedThroughput = settings.tableParameters.provisionedThroughput,
-      streamSpecification = settings.tableParameters.streamSpecification,
-      sseSpecification = settings.tableParameters.sse,
-      tags = Option(settings.tableParameters.tags)
-    )
-   */
-
   fixture.test("It should work through all commands") { client =>
     for {
       _ <- client.createTable(
