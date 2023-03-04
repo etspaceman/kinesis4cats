@@ -26,8 +26,8 @@ import org.typelevel.log4cats.noop.NoOpLogger
 import smithy4s.aws._
 import smithy4s.aws.http4s._
 
-import kinesis4cats.smithy4s.client.middleware.RequestResponseLogger
 import kinesis4cats.smithy4s.client.logging.LogEncoders
+import kinesis4cats.smithy4s.client.middleware.RequestResponseLogger
 
 /** A thin wrapper around
   * [[https://disneystreaming.github.io/smithy4s/docs/overview/intro/ Smithy4s's]]
@@ -69,8 +69,6 @@ object DynamoClient {
     )
   }
 
-
-
   /** Create a DynamoClient [[cats.effect.Resource Resource]]
     *
     * @param client
@@ -93,7 +91,7 @@ object DynamoClient {
     * @param F
     *   [[cats.effect.Async Async]]
     * @param LE
-    *   [[kinesis4cats.smithy4s.client.DynamoClient.LogEncoders DynamoClient.LogEncoders]]
+    *   [[kinesis4cats.smithy4s.client.logging.LogEncoders LogEncoders]]
     * @return
     *   [[cats.effect.Resource Resource]] of a Kinesis Client.
     */

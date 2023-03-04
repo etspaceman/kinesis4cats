@@ -40,7 +40,7 @@ object RequestResponseLogger {
     * @param F
     *   [[cats.effect.Async Async]]
     * @param LE
-    *   [[kinesis4cats.smithy4s.client.LogEncoders LogEncoders]]
+    *   [[kinesis4cats.smithy4s.client.logging.LogEncoders LogEncoders]]
     * @return
     *   [[https://http4s.org/v0.23/docs/client.html Client]] that logs its
     *   requests in debug and trace levels

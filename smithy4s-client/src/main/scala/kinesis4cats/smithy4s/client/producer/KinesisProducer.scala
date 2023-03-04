@@ -177,7 +177,7 @@ object KinesisProducer {
     * @param LE
     *   [[kinesis4cats.producer.Producer.LogEncoders Producer.LogEncoders]]
     * @param KLE
-    *   [[kinesis4cats.smithy4s.client.LogEncoders LogEncoders]]
+    *   [[kinesis4cats.smithy4s.client.logging.LogEncoders LogEncoders]]
     * @param SLE
     *   [[kinesis4cats.producer.ShardMapCache.LogEncoders ShardMapCache.LogEncoders]]
     * @return

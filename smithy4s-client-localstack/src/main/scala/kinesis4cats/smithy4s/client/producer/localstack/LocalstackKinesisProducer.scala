@@ -32,6 +32,7 @@ import kinesis4cats.producer.Producer
 import kinesis4cats.producer.ShardMap
 import kinesis4cats.producer.ShardMapCache
 import kinesis4cats.smithy4s.client.localstack.LocalstackKinesisClient
+import kinesis4cats.smithy4s.client.logging.LogEncoders
 
 /** Like KinesisProducer, but also includes the
   * [[kinesis4cats.smithy4s.client.middleware.LocalstackProxy LocalstackProxy]]
@@ -72,7 +73,7 @@ object LocalstackKinesisProducer {
       ) => F[Either[ShardMapCache.Error, ShardMap]]
   )(implicit
       F: Async[F],
-      LE: KinesisClient.LogEncoders[F],
+      LE: LogEncoders[F],
       LELC: LogEncoder[LocalstackConfig],
       SLE: ShardMapCache.LogEncoders,
       PLE: Producer.LogEncoders
@@ -141,7 +142,7 @@ object LocalstackKinesisProducer {
       ) => KinesisProducer.getShardMap(client, streamNameOrArn)(f)
   )(implicit
       F: Async[F],
-      LE: KinesisClient.LogEncoders[F],
+      LE: LogEncoders[F],
       LELC: LogEncoder[LocalstackConfig],
       SLE: ShardMapCache.LogEncoders,
       PLE: Producer.LogEncoders

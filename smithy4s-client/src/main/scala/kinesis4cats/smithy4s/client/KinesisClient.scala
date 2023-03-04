@@ -91,7 +91,7 @@ object KinesisClient {
     * @param F
     *   [[cats.effect.Async Async]]
     * @param LE
-    *   [[kinesis4cats.smithy4s.client.KinesisClient.LogEncoders KinesisClient.LogEncoders]]
+    *   [[kinesis4cats.smithy4s.client.logging.LogEncoders LogEncoders]]
     * @return
     *   [[cats.effect.Resource Resource]] of a Kinesis Client.
     */

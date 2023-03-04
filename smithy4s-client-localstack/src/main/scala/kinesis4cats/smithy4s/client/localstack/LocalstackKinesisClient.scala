@@ -35,6 +35,7 @@ import kinesis4cats.compat.retry._
 import kinesis4cats.localstack.LocalstackConfig
 import kinesis4cats.logging.LogEncoder
 import kinesis4cats.smithy4s.client.KinesisClient
+import kinesis4cats.smithy4s.client.logging.LogEncoders
 import kinesis4cats.smithy4s.client.middleware._
 
 /** Like KinesisClient, but also includes the
@@ -49,7 +50,7 @@ object LocalstackKinesisClient {
       loggerF: Async[F] => F[StructuredLogger[F]]
   )(implicit
       F: Async[F],
-      LE: KinesisClient.LogEncoders[F],
+      LE: LogEncoders[F],
       LELC: LogEncoder[LocalstackConfig]
   ): F[Client[F]] =
     loggerF(F).map(logger => LocalstackProxy[F](config, logger)(client))
@@ -78,7 +79,7 @@ object LocalstackKinesisClient {
       loggerF: Async[F] => F[StructuredLogger[F]]
   )(implicit
       F: Async[F],
-      LE: KinesisClient.LogEncoders[F],
+      LE: LogEncoders[F],
       LELC: LogEncoder[LocalstackConfig]
   ): Resource[F, KinesisClient[F]] = for {
     http4sClient <- localstackHttp4sClient(client, config, loggerF).toResource
@@ -121,7 +122,7 @@ object LocalstackKinesisClient {
         f.pure(NoOpLogger[F](f))
   )(implicit
       F: Async[F],
-      LE: KinesisClient.LogEncoders[F],
+      LE: LogEncoders[F],
       LELC: LogEncoder[LocalstackConfig]
   ): Resource[F, KinesisClient[F]] = LocalstackConfig
     .resource(prefix)
@@ -150,7 +151,7 @@ object LocalstackKinesisClient {
     * @param F
     *   F with an [[cats.effect.Async Async]] instance
     * @param LE
-    *   [[kinesis4cats.smithy4s.client.KinesisClient.LogEncoders LogEncoders]]
+    *   [[kinesis4cats.smithy4s.client.logging.LogEncoders LogEncoders]]
     * @return
     *   [[cats.effect.Resource Resource]] of
     *   [[kinesis4cats.smithy4s.client.KinesisClient KinesisClient]]
@@ -166,7 +167,7 @@ object LocalstackKinesisClient {
       loggerF: Async[F] => F[StructuredLogger[F]]
   )(implicit
       F: Async[F],
-      LE: KinesisClient.LogEncoders[F],
+      LE: LogEncoders[F],
       LELC: LogEncoder[LocalstackConfig]
   ): Resource[F, KinesisClient[F]] = {
     val retryPolicy = constantDelay(describeRetryDuration).join(
@@ -248,7 +249,7 @@ object LocalstackKinesisClient {
     * @param F
     *   F with an [[cats.effect.Async Async]] instance
     * @param LE
-    *   [[kinesis4cats.smithy4s.client.KinesisClient.LogEncoders LogEncoders]]
+    *   [[kinesis4cats.smithy4s.client.logging.LogEncoders LogEncoders]]
     * @return
     *   [[cats.effect.Resource Resource]] of
     *   [[kinesis4cats.smithy4s.client.KinesisClient KinesisClient]]
@@ -265,7 +266,7 @@ object LocalstackKinesisClient {
         f.pure(NoOpLogger(f))
   )(implicit
       F: Async[F],
-      LE: KinesisClient.LogEncoders[F],
+      LE: LogEncoders[F],
       LELC: LogEncoder[LocalstackConfig]
   ): Resource[F, KinesisClient[F]] = for {
     config <- LocalstackConfig.resource(prefix)

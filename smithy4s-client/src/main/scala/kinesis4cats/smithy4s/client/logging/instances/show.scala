@@ -43,7 +43,7 @@ object show {
       .add("status", x.status)
       .build
 
-  implicit def smithy4sClientLogEncoders[F[_]]
-      : LogEncoders[F] = new LogEncoders[F]()
+  implicit def smithy4sClientLogEncoders[F[_]]: LogEncoders[F] =
+    new LogEncoders[F]()
 
 }
