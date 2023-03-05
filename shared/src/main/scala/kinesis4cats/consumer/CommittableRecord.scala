@@ -1,0 +1,42 @@
+/*
+ * Copyright 2023-2023 etspaceman
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package kinesis4cats.consumer
+
+import java.time.Instant
+
+import cats.Order
+
+import kinesis4cats.models._
+
+final case class CommittableRecord(
+    shardId: String,
+    sequenceNumber: ExtendedSequenceNumber,
+    approximateArrivalTimestamp: Instant,
+    data: Array[Byte],
+    partitionKey: String,
+    encryptionType: Option[EncryptionType],
+    explicitHashKey: Option[String],
+    aggregated: Boolean
+)
+
+object CommittableRecord {
+  implicit val committableRecordOrdering: Ordering[CommittableRecord] =
+    Ordering.by(x => (x.shardId, x.sequenceNumber))
+
+  implicit val committableRecordOrder: Order[CommittableRecord] =
+    Order.fromOrdering(committableRecordOrdering)
+}

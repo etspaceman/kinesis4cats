@@ -14,10 +14,13 @@
  * limitations under the License.
  */
 
-package kinesis4cats.consumer.lease
+package kinesis4cats.models
 
-final case class Lease(
-    leaseKey: String,
-    leaseOwner: Option[String],
-    leaseCounter: Long = 0L
-)
+sealed abstract class EncryptionType(val value: String)
+
+object EncryptionType {
+  case object KMS extends EncryptionType("KMS")
+  case object None extends EncryptionType("NONE")
+  case object UnknownToSdkVersion
+      extends EncryptionType("UNKNOWN_TO_SDK_VERSION")
+}

@@ -14,10 +14,8 @@
  * limitations under the License.
  */
 
-package kinesis4cats.consumer.lease
+package kinesis4cats.consumer.logging.instances
 
-final case class Lease(
-    leaseKey: String,
-    leaseOwner: Option[String],
-    leaseCounter: Long = 0L
-)
+object show {
+  
+}
