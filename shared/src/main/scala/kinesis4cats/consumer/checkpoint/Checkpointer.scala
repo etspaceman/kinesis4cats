@@ -19,6 +19,7 @@ package kinesis4cats.consumer.checkpoint
 import scala.concurrent.duration._
 
 import cats.effect.Async
+import cats.effect.std.Semaphore
 import cats.syntax.all._
 import org.typelevel.log4cats.StructuredLogger
 
@@ -95,8 +96,11 @@ object Checkpointer {
       F: Async[F],
       LE: Checkpointer.LogEncoders
   ) extends Checkpointer[F] {
+
+    def semaphore: Semaphore[F]
     override def checkpoint(record: CommittableRecord): F[Unit] =
-      _checkpoint(record).rethrow
+      semaphore.permit.surround(_checkpoint(record).rethrow)
+
   }
 
   final case class Config(
