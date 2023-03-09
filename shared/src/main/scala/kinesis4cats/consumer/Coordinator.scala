@@ -1,4 +1,4 @@
-package kinesis4cats.consumer.lease
+package kinesis4cats.consumer
 
 import cats.effect.Async
 

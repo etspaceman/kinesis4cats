@@ -30,7 +30,9 @@ final case class CommittableRecord(
     partitionKey: String,
     encryptionType: Option[EncryptionType],
     explicitHashKey: Option[String],
-    aggregated: Boolean
+    aggregated: Boolean,
+    nextShardIterator: Option[String],
+    childShards: List[ChildShard]
 )
 
 object CommittableRecord {

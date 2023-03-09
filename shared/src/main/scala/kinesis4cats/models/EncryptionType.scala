@@ -21,6 +21,4 @@ sealed abstract class EncryptionType(val value: String)
 object EncryptionType {
   case object KMS extends EncryptionType("KMS")
   case object None extends EncryptionType("NONE")
-  case object UnknownToSdkVersion
-      extends EncryptionType("UNKNOWN_TO_SDK_VERSION")
 }
