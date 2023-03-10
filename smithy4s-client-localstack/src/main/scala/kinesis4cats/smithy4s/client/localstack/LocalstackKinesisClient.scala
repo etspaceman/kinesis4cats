@@ -36,24 +36,12 @@ import kinesis4cats.localstack.LocalstackConfig
 import kinesis4cats.logging.LogEncoder
 import kinesis4cats.smithy4s.client.KinesisClient
 import kinesis4cats.smithy4s.client.logging.LogEncoders
-import kinesis4cats.smithy4s.client.middleware._
 
 /** Like KinesisClient, but also includes the
   * [[kinesis4cats.smithy4s.client.middleware.LocalstackProxy LocalstackProxy]]
   * middleware, and leverages mock AWS credentials
   */
 object LocalstackKinesisClient {
-
-  def localstackHttp4sClient[F[_]](
-      client: Client[F],
-      config: LocalstackConfig,
-      loggerF: Async[F] => F[StructuredLogger[F]]
-  )(implicit
-      F: Async[F],
-      LE: LogEncoders[F],
-      LELC: LogEncoder[LocalstackConfig]
-  ): F[Client[F]] =
-    loggerF(F).map(logger => LocalstackProxy[F](config, logger)(client))
 
   /** Creates a [[cats.effect.Resource Resource]] of a KinesisClient that is
     * compatible with Localstack
@@ -82,7 +70,9 @@ object LocalstackKinesisClient {
       LE: LogEncoders[F],
       LELC: LogEncoder[LocalstackConfig]
   ): Resource[F, KinesisClient[F]] = for {
-    http4sClient <- localstackHttp4sClient(client, config, loggerF).toResource
+    http4sClient <- Common
+      .localstackHttp4sClient(client, config, loggerF)
+      .toResource
     awsClient <- KinesisClient[F](
       http4sClient,
       region,
