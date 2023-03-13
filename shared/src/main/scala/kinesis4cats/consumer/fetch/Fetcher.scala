@@ -1,21 +1,26 @@
 package kinesis4cats.consumer
 package fetch
 
-import cats.effect.Async
-import cats.effect.Ref
-import cats.effect.std.Supervisor
+import scala.concurrent.duration.FiniteDuration
+
+import cats.effect._
+import cats.effect.syntax.all._
 import cats.syntax.all._
 import fs2.Chunk
 import fs2.Stream
+import fs2.concurrent.Channel
+import fs2.concurrent.SignallingRef
 import org.typelevel.log4cats.StructuredLogger
 
 import kinesis4cats.compat.retry._
 import kinesis4cats.logging.LogContext
-import fs2.concurrent.Channel
+import kinesis4cats.models.ShardId
 
 abstract class Fetcher[F[_]] private[kinesis4cats] {
+  def shardId: ShardId
+
   protected def logger: StructuredLogger[F]
-  protected def channel: Channel[F, CommittableRecord]
+  protected def channel: Channel[F, Chunk[CommittableRecord]]
 }
 
 object Fetcher {
@@ -52,8 +57,9 @@ object Fetcher {
     private def poll(
         iteratorCache: Ref[F, String]
     ): F[List[CommittableRecord]] = {
-      val ctx = LogContext()
+      val ctx = LogContext().addEncoded("shardId", shardId.shardId)
       for {
+        _ <- logger.debug(ctx.context)("Polling data")
         shardIterator <- iteratorCache.get
         records <- retryingOnSomeErrors(
           config.throttledRetryPolicy,
@@ -66,12 +72,27 @@ object Fetcher {
       } yield toCommittableRecords(records)
     }
 
-    override protected def channel: Channel[F, CommittableRecord] = {
-      val ctx = LogContext()
+    /** Stop the processing of records
+      */
+    private[kinesis4cats] def stop(f: Fiber[F, Throwable, Unit]): F[Unit] = {
+      val ctx = LogContext().addEncoded("shardId", shardId.shardId)
+      for {
+        _ <- logger.debug(ctx.context)("Stopping the PollingFetcher")
+        _ <- channel.close
+        _ <- f.join.void.timeoutTo(config.gracefulShutdownWait, f.cancel)
+      } yield ()
+    }
+
+    /** Start the processing of records
+      */
+    private[kinesis4cats] def start(): F[Unit] = {
+      val ctx = LogContext().addEncoded("shardId", shardId.shardId)
 
       for {
-        initialRequeset <- Stream.eval(initialShardIteratorReq)
-        shardIterator <- Stream.eval(
+        _ <- logger
+          .debug(ctx.context)("Starting the PollingFetcher")
+        initialRequeset <- initialShardIteratorReq
+        shardIterator <-
           retryingOnSomeErrors(
             config.throttledRetryPolicy,
             (e: Throwable) => F.delay(isThrottlingError(e)),
@@ -80,15 +101,28 @@ object Fetcher {
                 "Throttling error getting shard iterator, retrying"
               )
           )(getShardIterator(initialRequeset))
-        )
-        iteratorRef <- Stream.eval(Ref.of(toShardIterator(shardIterator)))
+        iteratorRef <- Ref.of(toShardIterator(shardIterator))
+        interruptSignal <- SignallingRef[F, Boolean](false)
         res <- Stream
-          .evalUnChunk(poll(iteratorRef).map(Chunk.seq))
+          .eval(poll(iteratorRef).map(Chunk.seq))
           .prefetchN(config.cachedResponses)
+          .interruptWhen(interruptSignal)
+          .evalMap(x =>
+            channel.send(x).flatMap {
+              _.leftTraverse(_ =>
+                logger.warn(ctx.context)(
+                  "Fetcher has been shut down and will not accept further requests. Shutting down prefetch loop."
+                ) >> interruptSignal.set(true)
+              )
+            }
+          )
+          .compile
+          .drain
       } yield res
-
-      
     }
+
+    private[kinesis4cats] def resource: Resource[F, Unit] =
+      Resource.make(start().start)(stop).void
   }
 
   object Polling {
@@ -99,13 +133,13 @@ object Fetcher {
         bufferSize: Int,
         cachedResponses: Int,
         maxRecordsPerResponse: Int,
-        throttledRetryPolicy: RetryPolicy[F]
+        throttledRetryPolicy: RetryPolicy[F],
+        gracefulShutdownWait: FiniteDuration
     )
   }
 
   abstract class FanOut[F[_]] extends Fetcher[F] {
     def config: Polling.Config[F]
-
 
   }
 
