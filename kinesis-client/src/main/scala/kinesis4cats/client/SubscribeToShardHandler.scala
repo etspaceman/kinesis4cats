@@ -58,6 +58,7 @@ private[kinesis4cats] class SubscribeToShardHandler[F[_]](
   override def exceptionOccurred(throwable: Throwable): Unit =
     dispatcher.unsafeRunSync(
       (Option(throwable.getCause()) match {
+        // These are safe to simply debug, they will be raised if needed in the client
         case Some(x: SdkCancellationException) =>
           logger.debug(LogContext().context)(x.getMessage())
         case _ =>

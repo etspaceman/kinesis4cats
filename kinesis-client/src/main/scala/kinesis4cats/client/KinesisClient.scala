@@ -19,7 +19,6 @@ package kinesis4cats.client
 import java.util.concurrent.CompletableFuture
 
 import cats.effect.std.Dispatcher
-import cats.effect.std.Supervisor
 import cats.effect.syntax.all._
 import cats.effect.{Async, Resource}
 import cats.syntax.all._
@@ -28,6 +27,7 @@ import fs2.interop.reactivestreams._
 import org.typelevel.log4cats.StructuredLogger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 import software.amazon.awssdk.core.async.SdkPublisher
+import software.amazon.awssdk.http.SdkCancellationException
 import software.amazon.awssdk.services.kinesis.KinesisAsyncClient
 import software.amazon.awssdk.services.kinesis.model._
 
@@ -42,6 +42,8 @@ import kinesis4cats.logging.{LogContext, LogEncoder}
   *   [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/kinesis/KinesisAsyncClient.html KinesisAsyncClient]]
   * @param logger
   *   [[org.typelevel.log4cats.StructuredLogger StructuredLogger]] in use
+  * @param dispatcher
+  *   [[cats.effect.std.Dispatcher Dispatcher]] in use
   * @param F
   *   F with a [[cats.effect.Async Async]] instance
   * @param LE
@@ -50,8 +52,7 @@ import kinesis4cats.logging.{LogContext, LogEncoder}
 class KinesisClient[F[_]] private[kinesis4cats] (
     val client: KinesisAsyncClient,
     logger: StructuredLogger[F],
-    dispatcher: Dispatcher[F],
-    supervisor: Supervisor[F]
+    dispatcher: Dispatcher[F]
 )(implicit
     F: Async[F],
     LE: KinesisClient.LogEncoders
@@ -286,8 +287,8 @@ class KinesisClient[F[_]] private[kinesis4cats] (
     for {
       _ <- Stream.eval(requestLogs("subscribeToShard", request, ctx))
       handler <- Stream.eval(SubscribeToShardHandler[F](dispatcher))
-      _ <- Stream.eval(
-        supervisor.supervise(
+      stream <- Stream
+        .eval(
           F.fromCompletableFuture(
             F.delay(client.subscribeToShard(request, handler))
           ).void
@@ -295,40 +296,47 @@ class KinesisClient[F[_]] private[kinesis4cats] (
               handler.deferredComplete.complete(Left(e)).void
             )
         )
-      )
-      publisher <- Stream.eval(handler.deferredPublisher.get)
-      stream <- publisher
-        .toStreamBuffered(1)
+        .either(
+          Stream
+            .eval(handler.deferredPublisher.get)
+            .flatMap(publisher =>
+              publisher
+                .toStreamBuffered(1)
+                .flatMap {
+                  case x: SubscribeToShardEvent => Stream.emit(x)
+                  case _                        => Stream.empty
+                }
+                .evalTap(x =>
+                  for {
+                    _ <- logger
+                      .debug(ctx.context)(s"Received SubscribeToShardEvent")
+                    _ <- logger.trace(
+                      ctx.addEncoded("subscribeToShardEvent", x).context
+                    )(s"Logging SubscribeToShardEvent data")
+                  } yield ()
+                )
+                .interruptWhen(handler.deferredComplete)
+                .onFinalize(
+                  for {
+                    complete <- handler.deferredComplete.tryGet
+                    _ <- complete.traverse {
+                      case Left(e) =>
+                        Option(e.getCause()) match {
+                          case Some(x: SdkCancellationException) =>
+                            logger.debug(ctx.context)(x.getMessage())
+                          case _ =>
+                            F.raiseError[Unit](e)
+                        }
+                      case Right(_) => F.unit
+                    }
+                  } yield ()
+                )
+            )
+        )
         .flatMap {
-          case x: SubscribeToShardEvent => Stream.emit(x)
-          case _                        => Stream.empty
+          case Left(_)  => Stream.empty
+          case Right(x) => Stream.emit(x)
         }
-        .evalTap(x =>
-          for {
-            _ <- logger.debug(ctx.context)(s"Received SubscribeToShardEvent")
-            _ <- logger.trace(
-              ctx.addEncoded("subscribeToShardEvent", x).context
-            )(s"Logging SubscribeToShardEvent data")
-          } yield ()
-        )
-        .interruptWhen(handler.deferredComplete)
-        .onFinalize(
-          for {
-            complete <- handler.deferredComplete.tryGet
-            _ <- complete.traverse {
-              /** SdkCancellationException means that the subscriber (our FS2
-                * stream) has been cancelled. This is common if the subscriber
-                * is using something like `take`, in which it would be cancelled
-                * after the first few elements are received. In these cases, the
-                * `deferredComplete` won't be completed before the cancellation,
-                * so this block won't be run. As such, it is safe to raise any
-                * other error here, as it would be unexpected.
-                */
-              case Left(e)  => F.raiseError[Unit](e)
-              case Right(_) => F.unit
-            }
-          } yield ()
-        )
     } yield stream
   }
 
@@ -367,8 +375,7 @@ object KinesisClient {
     clientResource <- Resource.fromAutoCloseable(F.pure(client))
     logger <- Slf4jLogger.create[F].toResource
     dispatcher <- Dispatcher.parallel[F]
-    supervisor <- Supervisor[F]
-  } yield new KinesisClient[F](clientResource, logger, dispatcher, supervisor)
+  } yield new KinesisClient[F](clientResource, logger, dispatcher)
 
   /** Helper class containing required
     * [[kinesis4cats.logging.LogEncoder LogEncoders]] for the

@@ -20,7 +20,6 @@ package localstack
 import scala.concurrent.duration._
 
 import cats.effect.std.Dispatcher
-import cats.effect.std.Supervisor
 import cats.effect.syntax.all._
 import cats.effect.{Async, Resource}
 import cats.syntax.all._
@@ -55,8 +54,7 @@ object LocalstackKinesisClient {
     underlying <- AwsClients.kinesisClient(config).toResource
     logger <- Slf4jLogger.create[F].toResource
     dispatcher <- Dispatcher.parallel[F]
-    supervisor <- Supervisor[F]
-  } yield new KinesisClient(underlying, logger, dispatcher, supervisor)
+  } yield new KinesisClient(underlying, logger, dispatcher)
 
   /** Builds a [[kinesis4cats.client.KinesisClient KinesisClient]] that is
     * compliant for Localstack usage. Lifecycle is managed as a
