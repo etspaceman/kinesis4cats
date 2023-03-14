@@ -212,7 +212,6 @@ class KinesisClientSpec extends munit.CatsEffectSuite {
             )
             .build()
         )
-        .evalTap(x => IO.println(s"Received SubscribeToShardEvent: $x"))
         .take(3)
         .compile
         .toList
@@ -294,7 +293,7 @@ class KinesisClientSpec extends munit.CatsEffectSuite {
       assertEquals(List(record1, record2, record3), recordsParsed2)
       assert(consumers.consumers().size() === 1)
       assert(consumers2.head.consumers().size() === 1)
-      /*assertEquals(
+      assertEquals(
         streams.streamNames().asScala.toList,
         List(streamName, "test-kcl-service-stream")
       )
@@ -305,7 +304,7 @@ class KinesisClientSpec extends munit.CatsEffectSuite {
       assertEquals(
         streams3.flatMap(_.streamNames().asScala.toList),
         List(streamName, "test-kcl-service-stream")
-      )*/
+      )
       assertEquals(
         tags.tags().asScala.toList.map(x => (x.key(), x.value())),
         List("foo" -> "bar")

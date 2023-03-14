@@ -114,7 +114,7 @@ class KinesisClient[F[_]] private[kinesis4cats] (
     val ctx = LogContext()
     for {
       _ <- Stream.eval(requestLogs(method, request, ctx))
-      response <- fn(client, request).toStreamBuffered(16)
+      response <- fn(client, request).toStreamBuffered(1)
       _ <- Stream.eval(responseLogs(method, "paginated response object", ctx))
     } yield response
   }
@@ -125,7 +125,7 @@ class KinesisClient[F[_]] private[kinesis4cats] (
     val ctx = LogContext()
     for {
       _ <- Stream.eval(requestLogs(method, "no request", ctx))
-      response <- fn(client).toStreamBuffered(16)
+      response <- fn(client).toStreamBuffered(1)
       _ <- Stream.eval(responseLogs(method, "paginated response object", ctx))
     } yield response
   }
@@ -290,20 +290,45 @@ class KinesisClient[F[_]] private[kinesis4cats] (
         supervisor.supervise(
           F.fromCompletableFuture(
             F.delay(client.subscribeToShard(request, handler))
-          )
+          ).void
+            .handleErrorWith(e =>
+              handler.deferredComplete.complete(Left(e)).void
+            )
         )
       )
       publisher <- Stream.eval(handler.deferredPublisher.get)
       stream <- publisher
-        .toStreamBuffered(16)
-        .evalTap(x =>
-          logger.debug(ctx.context)(s"Received SubscribeToShardEvent: $x")
-        )
-        .interruptWhen(handler.deferredComplete)
+        .toStreamBuffered(1)
         .flatMap {
           case x: SubscribeToShardEvent => Stream.emit(x)
           case _                        => Stream.empty
         }
+        .evalTap(x =>
+          for {
+            _ <- logger.debug(ctx.context)(s"Received SubscribeToShardEvent")
+            _ <- logger.trace(
+              ctx.addEncoded("subscribeToShardEvent", x).context
+            )(s"Logging SubscribeToShardEvent data")
+          } yield ()
+        )
+        .interruptWhen(handler.deferredComplete)
+        .onFinalize(
+          for {
+            complete <- handler.deferredComplete.tryGet
+            _ <- complete.traverse {
+              /** SdkCancellationException means that the subscriber (our FS2
+                * stream) has been cancelled. This is common if the subscriber
+                * is using something like `take`, in which it would be cancelled
+                * after the first few elements are received. In these cases, the
+                * `deferredComplete` won't be completed before the cancellation,
+                * so this block won't be run. As such, it is safe to raise any
+                * other error here, as it would be unexpected.
+                */
+              case Left(e)  => F.raiseError[Unit](e)
+              case Right(_) => F.unit
+            }
+          } yield ()
+        )
     } yield stream
   }
 
@@ -477,6 +502,7 @@ object KinesisClient {
       ],
       val updateStreamModeResponseLogEncoder: LogEncoder[
         UpdateStreamModeResponse
-      ]
+      ],
+      val subscribeToShardEventLogEncoder: LogEncoder[SubscribeToShardEvent]
   )
 }

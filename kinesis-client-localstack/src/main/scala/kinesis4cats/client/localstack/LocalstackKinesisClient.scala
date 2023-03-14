@@ -20,6 +20,7 @@ package localstack
 import scala.concurrent.duration._
 
 import cats.effect.std.Dispatcher
+import cats.effect.std.Supervisor
 import cats.effect.syntax.all._
 import cats.effect.{Async, Resource}
 import cats.syntax.all._
@@ -30,7 +31,6 @@ import kinesis4cats.compat.retry.RetryPolicies._
 import kinesis4cats.compat.retry._
 import kinesis4cats.localstack.LocalstackConfig
 import kinesis4cats.localstack.aws.v2.AwsClients
-import cats.effect.std.Supervisor
 
 object LocalstackKinesisClient {
 

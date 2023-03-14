@@ -23,6 +23,7 @@ import cats.syntax.all._
 import org.typelevel.log4cats.StructuredLogger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 import software.amazon.awssdk.core.async.SdkPublisher
+import software.amazon.awssdk.http.SdkCancellationException
 import software.amazon.awssdk.services.kinesis.model.SubscribeToShardEventStream
 import software.amazon.awssdk.services.kinesis.model.SubscribeToShardResponse
 import software.amazon.awssdk.services.kinesis.model.SubscribeToShardResponseHandler
@@ -42,7 +43,7 @@ private[kinesis4cats] class SubscribeToShardHandler[F[_]](
 
   override def responseReceived(response: SubscribeToShardResponse): Unit =
     dispatcher.unsafeRunSync(
-      logger.debug(LogContext().context)(s"Received response $response") >>
+      logger.debug(LogContext().context)(s"Received response") >>
         deferredResponse.complete(response).void
     )
 
@@ -56,9 +57,12 @@ private[kinesis4cats] class SubscribeToShardHandler[F[_]](
 
   override def exceptionOccurred(throwable: Throwable): Unit =
     dispatcher.unsafeRunSync(
-      logger.error(LogContext().context, throwable)(
-        s"Exception received in SubscribeToShardHandler"
-      ) >>
+      (Option(throwable.getCause()) match {
+        case Some(x: SdkCancellationException) =>
+          logger.debug(LogContext().context)(x.getMessage())
+        case _ =>
+          logger.debug(LogContext().context, throwable)(s"Exception occurred")
+      }) >>
         deferredComplete.complete(Left(throwable)).void
     )
 
