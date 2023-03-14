@@ -35,6 +35,12 @@ final class KinesisSpecTransformer extends ProjectionTransformer {
   val putRecordsOutputShapeId =
     ShapeId.fromParts("com.amazonaws.kinesis", "PutRecordsOutput")
 
+  val provisionedThroughputDescriptionShapeId =
+    ShapeId.fromParts(
+      "com.amazonaws.dynamodb",
+      "ProvisionedThroughputDescription"
+    )
+
   val listStreamConsumersOutputNextTokenShapeId =
     ShapeId.fromParts(
       "com.amazonaws.kinesis",
@@ -99,6 +105,30 @@ final class KinesisSpecTransformer extends ProjectionTransformer {
           .map[MemberShape] { x =>
             val (memberName, member) = (x.getKey(), x.getValue())
             if (memberName == "FailedRecordCount")
+              MemberShape
+                .builder()
+                .target(nonNegativeIntegerObjectShape.getId())
+                .id(member.getId())
+                .build()
+            else member
+          }
+          .toList()
+
+      shape
+        .asStructureShape()
+        .get()
+        .toBuilder()
+        .members(members)
+        .build()
+    } else if (shape.toShapeId() == provisionedThroughputDescriptionShapeId) {
+      val members =
+        shape
+          .getAllMembers()
+          .entrySet()
+          .stream()
+          .map[MemberShape] { x =>
+            val (memberName, member) = (x.getKey(), x.getValue())
+            if (memberName == "NumberOfDecreasesToday")
               MemberShape
                 .builder()
                 .target(nonNegativeIntegerObjectShape.getId())

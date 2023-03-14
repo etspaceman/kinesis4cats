@@ -27,6 +27,7 @@ import org.typelevel.log4cats.StructuredLogger
 
 import kinesis4cats.localstack.LocalstackConfig
 import kinesis4cats.logging.{LogContext, LogEncoder}
+import kinesis4cats.smithy4s.client.logging.LogEncoders
 
 /** Middleware for [[https://http4s.org/v0.23/docs/client.html Clients]] that
   * proxies request against the configured Localstack environment
@@ -45,7 +46,7 @@ object LocalstackProxy {
     * @param F
     *   [[cats.effect.Async Async]]
     * @param LE
-    *   [[kinesis4cats.smithy4s.client.KinesisClient.LogEncoders KinesisClient.LogEncoders]]
+    *   [[kinesis4cats.smithy4s.client.logging.LogEncoders LogEncoders]]
     * @param LELC
     *   [[kinesis4cats.logging.LogEncoder]] for
     *   [[kinesis4cats.localstack.LocalstackConfig]]
@@ -58,7 +59,7 @@ object LocalstackProxy {
       logger: StructuredLogger[F]
   )(implicit
       F: Async[F],
-      LE: KinesisClient.LogEncoders[F],
+      LE: LogEncoders[F],
       LELC: LogEncoder[LocalstackConfig]
   ): F[Request[F]] = {
     import LE._
@@ -94,7 +95,7 @@ object LocalstackProxy {
     * @param F
     *   [[cats.effect.Async Async]]
     * @param LE
-    *   [[kinesis4cats.smithy4s.client.KinesisClient.LogEncoders KinesisClient.LogEncoders]]
+    *   [[kinesis4cats.smithy4s.client.logging.LogEncoders LogEncoders]]
     * @param LELC
     *   [[kinesis4cats.logging.LogEncoder]] for
     *   [[kinesis4cats.localstack.LocalstackConfig]]
@@ -105,7 +106,7 @@ object LocalstackProxy {
       client: Client[F]
   )(implicit
       F: Async[F],
-      LE: KinesisClient.LogEncoders[F],
+      LE: LogEncoders[F],
       LELC: LogEncoder[LocalstackConfig]
   ): Client[F] = Client { req =>
     for {
@@ -127,7 +128,7 @@ object LocalstackProxy {
     * @param F
     *   [[cats.effect.Async Async]]
     * @param LE
-    *   [[kinesis4cats.smithy4s.client.KinesisClient.LogEncoders KinesisClient.LogEncoders]]
+    *   [[kinesis4cats.smithy4s.client.logging.LogEncoders LogEncoders]]
     * @param LELC
     *   [[kinesis4cats.logging.LogEncoder]] for
     *   [[kinesis4cats.localstack.LocalstackConfig]]
@@ -138,7 +139,7 @@ object LocalstackProxy {
       client: Client[F]
   )(implicit
       F: Async[F],
-      LE: KinesisClient.LogEncoders[F],
+      LE: LogEncoders[F],
       LELC: LogEncoder[LocalstackConfig]
   ): Client[F] = Client { req =>
     for {

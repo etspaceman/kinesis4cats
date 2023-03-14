@@ -14,14 +14,10 @@
  * limitations under the License.
  */
 
-package kinesis4cats.smithy4s
+package kinesis4cats.smithy4s.client
 
-import com.amazonaws.cloudwatch.CloudWatch
-import com.amazonaws.dynamodb.DynamoDB
-import com.amazonaws.kinesis.Kinesis
+import epollcat.unsafe.EpollRuntime
 
-package object client {
-  type KinesisClient[F[_]] = Kinesis[F]
-  type DynamoClient[F[_]] = DynamoDB[F]
-  type CloudWatchClient[F[_]] = CloudWatch[F]
+class DynamoClientNativeSpec extends DynamoClientSpec {
+  override def munitIORuntime = EpollRuntime.global
 }

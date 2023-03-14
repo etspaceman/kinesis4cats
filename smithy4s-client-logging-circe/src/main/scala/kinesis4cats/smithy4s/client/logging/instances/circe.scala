@@ -15,7 +15,8 @@
  */
 
 package kinesis4cats.smithy4s.client
-package logging.instances
+package logging
+package instances
 
 import io.circe.Encoder
 import org.http4s.circe._
@@ -50,6 +51,6 @@ object circe {
       (x.headers, x.httpVersion, x.status)
     )
 
-  implicit def smithy4sKinesisClientLogEncoders[F[_]]
-      : KinesisClient.LogEncoders[F] = new KinesisClient.LogEncoders[F]()
+  implicit def smithy4sKinesisClientLogEncoders[F[_]]: LogEncoders[F] =
+    new LogEncoders[F]()
 }

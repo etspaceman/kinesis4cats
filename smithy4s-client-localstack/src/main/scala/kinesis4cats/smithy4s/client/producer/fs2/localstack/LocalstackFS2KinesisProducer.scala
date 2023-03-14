@@ -36,6 +36,7 @@ import kinesis4cats.producer.Record
 import kinesis4cats.producer.ShardMapCache
 import kinesis4cats.producer.fs2.FS2Producer
 import kinesis4cats.smithy4s.client.localstack.LocalstackKinesisClient
+import kinesis4cats.smithy4s.client.logging.LogEncoders
 
 /** Like KinesisProducer, but also includes the
   * [[kinesis4cats.smithy4s.client.middleware.LocalstackProxy LocalstackProxy]]
@@ -75,7 +76,7 @@ object LocalstackFS2KinesisProducer {
       callback: (Producer.Res[PutRecordsOutput], Async[F]) => F[Unit]
   )(implicit
       F: Async[F],
-      LE: KinesisClient.LogEncoders[F],
+      LE: LogEncoders[F],
       LELC: LogEncoder[LocalstackConfig],
       SLE: ShardMapCache.LogEncoders,
       PLE: Producer.LogEncoders
@@ -155,7 +156,7 @@ object LocalstackFS2KinesisProducer {
         (_: Producer.Res[PutRecordsOutput], f: Async[F]) => f.unit
   )(implicit
       F: Async[F],
-      LE: KinesisClient.LogEncoders[F],
+      LE: LogEncoders[F],
       LELC: LogEncoder[LocalstackConfig],
       SLE: ShardMapCache.LogEncoders,
       PLE: Producer.LogEncoders
