@@ -23,6 +23,7 @@ import cats.syntax.all._
 import org.typelevel.log4cats.StructuredLogger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 import software.amazon.awssdk.core.async.SdkPublisher
+import software.amazon.awssdk.core.exception.SdkClientException
 import software.amazon.awssdk.http.SdkCancellationException
 import software.amazon.awssdk.services.kinesis.model.SubscribeToShardEventStream
 import software.amazon.awssdk.services.kinesis.model.SubscribeToShardResponse
@@ -61,6 +62,16 @@ private[kinesis4cats] class SubscribeToShardHandler[F[_]](
         // These are safe to simply debug, they will be raised if needed in the client
         case Some(x: SdkCancellationException) =>
           logger.debug(LogContext().context)(x.getMessage())
+        // Non-deterministically this can get a 2nd exception with a nested cancellation exception
+        case Some(x: SdkClientException) =>
+          Option(x.getCause()) match {
+            case Some(x: SdkCancellationException) =>
+              logger.debug(LogContext().context)(x.getMessage())
+            case _ =>
+              logger.debug(LogContext().context, throwable)(
+                s"Exception occurred"
+              )
+          }
         case _ =>
           logger.debug(LogContext().context, throwable)(s"Exception occurred")
       }) >>
