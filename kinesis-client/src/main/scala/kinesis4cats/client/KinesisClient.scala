@@ -18,14 +18,18 @@ package kinesis4cats.client
 
 import java.util.concurrent.CompletableFuture
 
+import cats.effect.std.Dispatcher
 import cats.effect.syntax.all._
 import cats.effect.{Async, Resource}
 import cats.syntax.all._
+import fs2.Stream
+import fs2.interop.reactivestreams._
 import org.typelevel.log4cats.StructuredLogger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
+import software.amazon.awssdk.core.async.SdkPublisher
+import software.amazon.awssdk.http.SdkCancellationException
 import software.amazon.awssdk.services.kinesis.KinesisAsyncClient
 import software.amazon.awssdk.services.kinesis.model._
-import software.amazon.awssdk.services.kinesis.paginators._
 
 import kinesis4cats.logging.{LogContext, LogEncoder}
 
@@ -38,6 +42,8 @@ import kinesis4cats.logging.{LogContext, LogEncoder}
   *   [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/kinesis/KinesisAsyncClient.html KinesisAsyncClient]]
   * @param logger
   *   [[org.typelevel.log4cats.StructuredLogger StructuredLogger]] in use
+  * @param dispatcher
+  *   [[cats.effect.std.Dispatcher Dispatcher]] in use
   * @param F
   *   F with a [[cats.effect.Async Async]] instance
   * @param LE
@@ -45,7 +51,8 @@ import kinesis4cats.logging.{LogContext, LogEncoder}
   */
 class KinesisClient[F[_]] private[kinesis4cats] (
     val client: KinesisAsyncClient,
-    logger: StructuredLogger[F]
+    logger: StructuredLogger[F],
+    dispatcher: Dispatcher[F]
 )(implicit
     F: Async[F],
     LE: KinesisClient.LogEncoders
@@ -88,22 +95,6 @@ class KinesisClient[F[_]] private[kinesis4cats] (
     } yield response
   }
 
-  private def runVoidRequest[A: LogEncoder](
-      method: String,
-      request: A
-  )(fn: (KinesisAsyncClient, A) => CompletableFuture[Void]): F[Unit] = {
-    val ctx = LogContext()
-    for {
-      _ <- requestLogs(method, request, ctx)
-      response <- F
-        .fromCompletableFuture(
-          F.delay(fn(client, request))
-        )
-        .void
-      _ <- responseLogs(method, "no response object", ctx)
-    } yield response
-  }
-
   private def runRequest[A: LogEncoder](
       method: String
   )(fn: KinesisAsyncClient => CompletableFuture[A]): F[A] = {
@@ -120,23 +111,23 @@ class KinesisClient[F[_]] private[kinesis4cats] (
   private def runPaginatedRequest[A: LogEncoder, B](
       method: String,
       request: A
-  )(fn: (KinesisAsyncClient, A) => B): F[B] = {
+  )(fn: (KinesisAsyncClient, A) => SdkPublisher[B]): Stream[F, B] = {
     val ctx = LogContext()
     for {
-      _ <- requestLogs(method, request, ctx)
-      response <- F.delay(fn(client, request))
-      _ <- responseLogs(method, "paginated response object", ctx)
+      _ <- Stream.eval(requestLogs(method, request, ctx))
+      response <- fn(client, request).toStreamBuffered(1)
+      _ <- Stream.eval(responseLogs(method, "paginated response object", ctx))
     } yield response
   }
 
   private def runPaginatedRequest[A](
       method: String
-  )(fn: KinesisAsyncClient => A): F[A] = {
+  )(fn: KinesisAsyncClient => SdkPublisher[A]): Stream[F, A] = {
     val ctx = LogContext()
     for {
-      _ <- requestLogs(method, "no request", ctx)
-      response <- F.delay(fn(client))
-      _ <- responseLogs(method, "paginated response object", ctx)
+      _ <- Stream.eval(requestLogs(method, "no request", ctx))
+      response <- fn(client).toStreamBuffered(1)
+      _ <- Stream.eval(responseLogs(method, "paginated response object", ctx))
     } yield response
   }
 
@@ -229,7 +220,7 @@ class KinesisClient[F[_]] private[kinesis4cats] (
 
   def listStreamConsumersPaginator(
       request: ListStreamConsumersRequest
-  ): F[ListStreamConsumersPublisher] =
+  ): Stream[F, ListStreamConsumersResponse] =
     runPaginatedRequest("listStreamConsumersPaginator", request)(
       _.listStreamConsumersPaginator(_)
     )
@@ -242,12 +233,12 @@ class KinesisClient[F[_]] private[kinesis4cats] (
 
   def listStreamsPaginator(
       request: ListStreamsRequest
-  ): F[ListStreamsPublisher] =
+  ): Stream[F, ListStreamsResponse] =
     runPaginatedRequest("listStreamsPaginator", request)(
       _.listStreamsPaginator(_)
     )
 
-  def listStreamsPaginator(): F[ListStreamsPublisher] =
+  def listStreamsPaginator(): Stream[F, ListStreamsResponse] =
     runPaginatedRequest("listStreamsPaginator")(
       _.listStreamsPaginator()
     )
@@ -290,12 +281,53 @@ class KinesisClient[F[_]] private[kinesis4cats] (
     runRequest("stopStreamEncryption", request)(_.stopStreamEncryption(_))
 
   def subscribeToShard(
-      request: SubscribeToShardRequest,
-      responseHandler: SubscribeToShardResponseHandler
-  ): F[Unit] =
-    runVoidRequest("subscribeToShard", request)(
-      _.subscribeToShard(_, responseHandler)
-    )
+      request: SubscribeToShardRequest
+  ): Stream[F, SubscribeToShardEvent] = {
+    val ctx = LogContext()
+    for {
+      _ <- Stream.eval(requestLogs("subscribeToShard", request, ctx))
+      handler <- Stream.eval(SubscribeToShardHandler[F](dispatcher))
+      _ <- Stream.resource(
+        F.fromCompletableFuture(
+          F.delay(client.subscribeToShard(request, handler))
+        ).void
+          .handleErrorWith(e => handler.deferredComplete.complete(Left(e)).void)
+          .background
+      )
+      publisher <- Stream.eval(handler.deferredPublisher.get)
+      stream <- publisher
+        .toStreamBuffered(1)
+        .flatMap {
+          case x: SubscribeToShardEvent => Stream.emit(x)
+          case _                        => Stream.empty
+        }
+        .evalTap(x =>
+          for {
+            _ <- logger
+              .debug(ctx.context)(s"Received SubscribeToShardEvent")
+            _ <- logger.trace(
+              ctx.addEncoded("subscribeToShardEvent", x).context
+            )(s"Logging SubscribeToShardEvent data")
+          } yield ()
+        )
+        .interruptWhen(handler.deferredComplete)
+        .onFinalize(
+          for {
+            complete <- handler.deferredComplete.tryGet
+            _ <- complete.traverse {
+              case Left(e) =>
+                Option(e.getCause()) match {
+                  case Some(x: SdkCancellationException) =>
+                    logger.debug(ctx.context)(x.getMessage())
+                  case _ =>
+                    F.raiseError[Unit](e)
+                }
+              case Right(_) => F.unit
+            }
+          } yield ()
+        )
+    } yield stream
+  }
 
   def updateShardCount(
       request: UpdateShardCountRequest
@@ -331,7 +363,8 @@ object KinesisClient {
   ): Resource[F, KinesisClient[F]] = for {
     clientResource <- Resource.fromAutoCloseable(F.pure(client))
     logger <- Slf4jLogger.create[F].toResource
-  } yield new KinesisClient[F](clientResource, logger)
+    dispatcher <- Dispatcher.parallel[F]
+  } yield new KinesisClient[F](clientResource, logger, dispatcher)
 
   /** Helper class containing required
     * [[kinesis4cats.logging.LogEncoder LogEncoders]] for the
@@ -465,6 +498,7 @@ object KinesisClient {
       ],
       val updateStreamModeResponseLogEncoder: LogEncoder[
         UpdateStreamModeResponse
-      ]
+      ],
+      val subscribeToShardEventLogEncoder: LogEncoder[SubscribeToShardEvent]
   )
 }

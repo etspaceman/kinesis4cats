@@ -930,6 +930,25 @@ object circe {
       Json.obj(fields.toSeq: _*)
     }
 
+  implicit val sdkEventTypeEncoder
+      : Encoder[kin.SubscribeToShardEventStream.EventType] =
+    Encoder[String].contramap(_.toString())
+
+  implicit val subscribeToShardEventEncoder
+      : Encoder[kin.SubscribeToShardEvent] = x => {
+    val fields: Map[String, Json] = Map
+      .empty[String, Json]
+      .safeAdd("childShards", x.childShards())
+      .safeAdd("continuationSequenceNumber", x.continuationSequenceNumber())
+      .safeAdd("hasChildShards", x.hasChildShards())
+      .safeAdd("hasRecords", x.hasRecords())
+      .safeAdd("millisBehindLatest", x.millisBehindLatest())
+      .safeAdd("records", x.records())
+      .safeAdd("sdkEventType", x.sdkEventType())
+
+    Json.obj(fields.toSeq: _*)
+  }
+
   implicit val kinesisClientLogEncoders: KinesisClient.LogEncoders =
     new KinesisClient.LogEncoders()
 

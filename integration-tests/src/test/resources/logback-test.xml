@@ -5,7 +5,7 @@
     </encoder>
   </appender>
   <logger name="kinesis4cats" level="ERROR"/>
-  <logger name="software.amazon.kinesis" level="ERROR"/>
+  <logger name="software.amazon" level="ERROR"/>
   <appender name="ASYNC" class="ch.qos.logback.classic.AsyncAppender">
     <appender-ref ref="STDOUT" />
   </appender>

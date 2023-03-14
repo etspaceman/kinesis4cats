@@ -19,9 +19,6 @@ import kinesis4cats.client.producer.localstack.LocalstackKinesisProducer
 import kinesis4cats.client.producer.fs2.localstack.LocalstackFS2KinesisProducer
 import kinesis4cats.producer.logging.instances.show._
 
-// Load a KinesisClient as an effect
-LocalstackKinesisClient.client[IO]()
-
 // Load a KinesisClient as a Resource
 LocalstackKinesisClient.clientResource[IO]()
 
