@@ -13,3 +13,4 @@ docker/image/lib/*.jar
 package.json
 package-lock.json
 node_modules/
+*.semanticdb

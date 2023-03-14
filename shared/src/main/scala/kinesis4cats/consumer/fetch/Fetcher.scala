@@ -14,6 +14,7 @@ import org.typelevel.log4cats.StructuredLogger
 
 import kinesis4cats.compat.retry._
 import kinesis4cats.logging.LogContext
+import kinesis4cats.models.ConsumerArn
 import kinesis4cats.models.ShardId
 
 abstract class Fetcher[F[_]] private[kinesis4cats] {
@@ -54,6 +55,8 @@ object Fetcher {
 
     protected def toShardIterator(x: GetShardIteratorRes): String
 
+    protected def isEndOfShard(x: CommittableRecord): Boolean
+
     private def poll(
         iteratorCache: Ref[F, String]
     ): F[List[CommittableRecord]] = {
@@ -90,7 +93,7 @@ object Fetcher {
 
       for {
         _ <- logger
-          .debug(ctx.context)("Starting the PollingFetcher")
+          .debug(ctx.context)("Starting the Polling fetcher")
         initialRequeset <- initialShardIteratorReq
         shardIterator <-
           retryingOnSomeErrors(
@@ -109,10 +112,25 @@ object Fetcher {
           .interruptWhen(interruptSignal)
           .evalMap(x =>
             channel.send(x).flatMap {
-              _.leftTraverse(_ =>
-                logger.warn(ctx.context)(
-                  "Fetcher has been shut down and will not accept further requests. Shutting down prefetch loop."
-                ) >> interruptSignal.set(true)
+              _.bitraverse(
+                _ =>
+                  logger.warn(ctx.context)(
+                    "Fetcher has been shut down and will not accept further requests. Shutting down prefetch loop."
+                  ) >> interruptSignal.set(true),
+                _ =>
+                  x.maximumOption.traverse { r =>
+                    if (isEndOfShard(r))
+                      for {
+                        _ <- logger.warn(ctx.context)(
+                          "Prefetch batch sent downstream. The final record for the shard has been consumed. Shutting down prefetch loop."
+                        )
+                        _ <- channel.close
+                        _ <- interruptSignal.set(true)
+                      } yield ()
+                    else
+                      logger
+                        .debug(ctx.context)("Prefetch batch sent downstream")
+                  }
               )
             }
           )
@@ -126,9 +144,6 @@ object Fetcher {
   }
 
   object Polling {
-    final case class PositionState(
-        position: StartingPosition
-    )
     final case class Config[F[_]](
         bufferSize: Int,
         cachedResponses: Int,
@@ -138,9 +153,37 @@ object Fetcher {
     )
   }
 
-  abstract class FanOut[F[_]] extends Fetcher[F] {
+  abstract class FanOut[
+      F[_],
+      SubscribeToShardReq,
+      SubscribeToShardEv,
+      RegisterConsumerReq
+  ](implicit
+      F: Async[F]
+  ) extends Fetcher[F] {
     def config: Polling.Config[F]
 
+    protected def subscribeToShard(
+        req: SubscribeToShardReq
+    ): Stream[F, SubscribeToShardEv]
+
+    protected def registerConsumerIfNotExists(
+        req: RegisterConsumerReq
+    ): F[ConsumerArn]
+
+    protected def initialRegisterConsumerReq: RegisterConsumerReq
+
+    private[kinesis4cats] def start(): F[Unit] = {
+      val ctx = LogContext().addEncoded("shardId", shardId.shardId)
+
+      for {
+        _ <- logger
+          .debug(ctx.context)("Starting the FanOut fetcher")
+        consumerArn <- registerConsumerIfNotExists(initialRegisterConsumerReq)
+      } yield ()
+
+      F.unit
+    }
   }
 
   object FanOut {
