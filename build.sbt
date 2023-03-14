@@ -221,7 +221,8 @@ lazy val `kinesis-client` = projectMatrix
       Aws.V2.kinesis,
       Aws.V2.dynamo,
       Aws.V2.cloudwatch,
-      Log4Cats.slf4j
+      Log4Cats.slf4j,
+      FS2.reactiveStreams
     )
   )
   .jvmPlatform(allScalaVersions)

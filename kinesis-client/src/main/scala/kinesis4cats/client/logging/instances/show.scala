@@ -657,6 +657,20 @@ object show {
         .add("responseMetadata", x.responseMetadata())
         .build
 
+  implicit val sdkEventTypeShow
+      : Show[kin.SubscribeToShardEventStream.EventType] = Show.fromToString
+
+  implicit val subscribeToShardEventShow: Show[kin.SubscribeToShardEvent] = x =>
+    ShowBuilder("SubscribeToShardEvent")
+      .add("childShards", x.childShards())
+      .add("continuationSequenceNumber", x.continuationSequenceNumber())
+      .add("hasChildShards", x.hasChildShards())
+      .add("hasRecords", x.hasRecords())
+      .add("millisBehindLatest", x.millisBehindLatest())
+      .add("records", x.records())
+      .add("sdkEventType", x.sdkEventType())
+      .build
+
   implicit val kinesisClientLogEncoders: KinesisClient.LogEncoders =
     new KinesisClient.LogEncoders()
 
