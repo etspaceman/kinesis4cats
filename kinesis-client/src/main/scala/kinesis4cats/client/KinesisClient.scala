@@ -287,56 +287,48 @@ class KinesisClient[F[_]] private[kinesis4cats] (
     for {
       _ <- Stream.eval(requestLogs("subscribeToShard", request, ctx))
       handler <- Stream.eval(SubscribeToShardHandler[F](dispatcher))
-      stream <- Stream
-        .eval(
-          F.fromCompletableFuture(
-            F.delay(client.subscribeToShard(request, handler))
-          ).void
-            .handleErrorWith(e =>
-              handler.deferredComplete.complete(Left(e)).void
+      initialize = Stream.eval(
+        F.fromCompletableFuture(
+          F.delay(client.subscribeToShard(request, handler))
+        ).void
+          .handleErrorWith(e => handler.deferredComplete.complete(Left(e)).void)
+      )
+      subscribe = Stream
+        .eval(handler.deferredPublisher.get)
+        .flatMap(publisher =>
+          publisher
+            .toStreamBuffered(1)
+            .flatMap {
+              case x: SubscribeToShardEvent => Stream.emit(x)
+              case _                        => Stream.empty
+            }
+            .evalTap(x =>
+              for {
+                _ <- logger
+                  .debug(ctx.context)(s"Received SubscribeToShardEvent")
+                _ <- logger.trace(
+                  ctx.addEncoded("subscribeToShardEvent", x).context
+                )(s"Logging SubscribeToShardEvent data")
+              } yield ()
             )
-        )
-        .either(
-          Stream
-            .eval(handler.deferredPublisher.get)
-            .flatMap(publisher =>
-              publisher
-                .toStreamBuffered(1)
-                .flatMap {
-                  case x: SubscribeToShardEvent => Stream.emit(x)
-                  case _                        => Stream.empty
-                }
-                .evalTap(x =>
-                  for {
-                    _ <- logger
-                      .debug(ctx.context)(s"Received SubscribeToShardEvent")
-                    _ <- logger.trace(
-                      ctx.addEncoded("subscribeToShardEvent", x).context
-                    )(s"Logging SubscribeToShardEvent data")
-                  } yield ()
-                )
-                .interruptWhen(handler.deferredComplete)
-                .onFinalize(
-                  for {
-                    complete <- handler.deferredComplete.tryGet
-                    _ <- complete.traverse {
-                      case Left(e) =>
-                        Option(e.getCause()) match {
-                          case Some(x: SdkCancellationException) =>
-                            logger.debug(ctx.context)(x.getMessage())
-                          case _ =>
-                            F.raiseError[Unit](e)
-                        }
-                      case Right(_) => F.unit
+            .interruptWhen(handler.deferredComplete)
+            .onFinalize(
+              for {
+                complete <- handler.deferredComplete.tryGet
+                _ <- complete.traverse {
+                  case Left(e) =>
+                    Option(e.getCause()) match {
+                      case Some(x: SdkCancellationException) =>
+                        logger.debug(ctx.context)(x.getMessage())
+                      case _ =>
+                        F.raiseError[Unit](e)
                     }
-                  } yield ()
-                )
+                  case Right(_) => F.unit
+                }
+              } yield ()
             )
         )
-        .flatMap {
-          case Left(_)  => Stream.empty
-          case Right(x) => Stream.emit(x)
-        }
+      stream <- subscribe.concurrently(initialize)
     } yield stream
   }
 
