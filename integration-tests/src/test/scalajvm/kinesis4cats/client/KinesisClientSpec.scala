@@ -21,7 +21,6 @@ import scala.jdk.CollectionConverters._
 
 import cats.effect.{IO, SyncIO}
 import cats.syntax.all._
-import fs2.interop.reactivestreams._
 import io.circe.parser._
 import io.circe.syntax._
 import org.scalacheck.Arbitrary
@@ -180,6 +179,14 @@ class KinesisClientSpec extends munit.CatsEffectSuite {
       recordsParsed <- recordBytes.traverse(bytes =>
         IO.fromEither(decode[TestData](bytes))
       )
+      streams <- client.listStreams()
+      streams2 <- client.listStreamsPaginator().compile.toList
+      streams3 <- client
+        .listStreamsPaginator(
+          ListStreamsRequest.builder().build()
+        )
+        .compile
+        .toList
       consumers <- client.listStreamConsumers(
         ListStreamConsumersRequest.builder().streamARN(streamArn).build()
       )
@@ -187,10 +194,34 @@ class KinesisClientSpec extends munit.CatsEffectSuite {
         .listStreamConsumersPaginator(
           ListStreamConsumersRequest.builder().streamARN(streamArn).build()
         )
-        .flatMap { x =>
-          fromPublisher[IO, ListStreamConsumersResponse](x, 10).compile.toList
-
-        }
+        .compile
+        .toList
+      records2 <- client
+        .subscribeToShard(
+          SubscribeToShardRequest
+            .builder()
+            .consumerARN(
+              consumers.consumers().asScala.toList.head.consumerARN()
+            )
+            .shardId(shard.shardId())
+            .startingPosition(
+              StartingPosition
+                .builder()
+                .`type`(ShardIteratorType.TRIM_HORIZON)
+                .build()
+            )
+            .build()
+        )
+        .evalTap(x => IO.println(s"Received SubscribeToShardEvent: $x"))
+        .take(3)
+        .compile
+        .toList
+      recordBytes2 = records2
+        .flatMap(_.records().asScala.toList)
+        .map(x => new String(x.data().asByteArray()))
+      recordsParsed2 <- recordBytes2.traverse(bytes =>
+        IO.fromEither(decode[TestData](bytes))
+      )
       _ <- client.deregisterStreamConsumer(
         DeregisterStreamConsumerRequest
           .builder()
@@ -260,8 +291,21 @@ class KinesisClientSpec extends munit.CatsEffectSuite {
       )
     } yield {
       assertEquals(List(record1, record2, record3), recordsParsed)
+      assertEquals(List(record1, record2, record3), recordsParsed2)
       assert(consumers.consumers().size() === 1)
       assert(consumers2.head.consumers().size() === 1)
+      /*assertEquals(
+        streams.streamNames().asScala.toList,
+        List(streamName, "test-kcl-service-stream")
+      )
+      assertEquals(
+        streams2.flatMap(_.streamNames().asScala.toList),
+        List(streamName, "test-kcl-service-stream")
+      )
+      assertEquals(
+        streams3.flatMap(_.streamNames().asScala.toList),
+        List(streamName, "test-kcl-service-stream")
+      )*/
       assertEquals(
         tags.tags().asScala.toList.map(x => (x.key(), x.value())),
         List("foo" -> "bar")

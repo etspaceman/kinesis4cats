@@ -19,6 +19,7 @@ package localstack
 
 import scala.concurrent.duration._
 
+import cats.effect.std.Dispatcher
 import cats.effect.syntax.all._
 import cats.effect.{Async, Resource}
 import cats.syntax.all._
@@ -29,48 +30,9 @@ import kinesis4cats.compat.retry.RetryPolicies._
 import kinesis4cats.compat.retry._
 import kinesis4cats.localstack.LocalstackConfig
 import kinesis4cats.localstack.aws.v2.AwsClients
+import cats.effect.std.Supervisor
 
 object LocalstackKinesisClient {
-
-  /** Builds a [[kinesis4cats.client.KinesisClient KinesisClient]] that is
-    * compliant for Localstack usage.
-    *
-    * @param config
-    *   [[kinesis4cats.localstack.LocalstackConfig LocalstackConfig]]
-    * @param F
-    *   F with an [[cats.effect.Async Async]] instance
-    * @param LE
-    *   [[kinesis4cats.client.KinesisClient.LogEncoders LogEncoders]]
-    * @return
-    *   F of [[kinesis4cats.client.KinesisClient KinesisClient]]
-    */
-  def client[F[_]](
-      config: LocalstackConfig
-  )(implicit F: Async[F], LE: KinesisClient.LogEncoders): F[KinesisClient[F]] =
-    for {
-      underlying <- AwsClients.kinesisClient(config)
-      logger <- Slf4jLogger.create[F]
-    } yield new KinesisClient(underlying, logger)
-
-  /** Builds a [[kinesis4cats.client.KinesisClient KinesisClient]] that is
-    * compliant for Localstack usage.
-    *
-    * @param prefix
-    *   Optional prefix for parsing configuration. Default to None
-    * @param F
-    *   F with an [[cats.effect.Async Async]] instance
-    * @param LE
-    *   [[kinesis4cats.client.KinesisClient.LogEncoders LogEncoders]]
-    * @return
-    *   F of [[kinesis4cats.client.KinesisClient KinesisClient]]
-    */
-  def client[F[_]](
-      prefix: Option[String] = None
-  )(implicit F: Async[F], LE: KinesisClient.LogEncoders): F[KinesisClient[F]] =
-    for {
-      underlying <- AwsClients.kinesisClient(prefix)
-      logger <- Slf4jLogger.create[F]
-    } yield new KinesisClient(underlying, logger)
 
   /** Builds a [[kinesis4cats.client.KinesisClient KinesisClient]] that is
     * compliant for Localstack usage. Lifecycle is managed as a
@@ -89,8 +51,12 @@ object LocalstackKinesisClient {
   def clientResource[F[_]](config: LocalstackConfig)(implicit
       F: Async[F],
       LE: KinesisClient.LogEncoders
-  ): Resource[F, KinesisClient[F]] =
-    client[F](config).toResource
+  ): Resource[F, KinesisClient[F]] = for {
+    underlying <- AwsClients.kinesisClient(config).toResource
+    logger <- Slf4jLogger.create[F].toResource
+    dispatcher <- Dispatcher.parallel[F]
+    supervisor <- Supervisor[F]
+  } yield new KinesisClient(underlying, logger, dispatcher, supervisor)
 
   /** Builds a [[kinesis4cats.client.KinesisClient KinesisClient]] that is
     * compliant for Localstack usage. Lifecycle is managed as a
@@ -110,7 +76,7 @@ object LocalstackKinesisClient {
       F: Async[F],
       LE: KinesisClient.LogEncoders
   ): Resource[F, KinesisClient[F]] =
-    client[F](prefix).toResource
+    LocalstackConfig.resource(prefix).flatMap(clientResource[F])
 
   /** A resources that does the following:
     *
