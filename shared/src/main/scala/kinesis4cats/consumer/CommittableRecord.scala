@@ -33,7 +33,9 @@ final case class CommittableRecord(
     aggregated: Boolean,
     nextShardIterator: Option[String],
     childShards: List[ChildShard]
-)
+) {
+  val isEndOfShard: Boolean = childShards.nonEmpty && nextShardIterator.isEmpty
+}
 
 object CommittableRecord {
   implicit val committableRecordOrdering: Ordering[CommittableRecord] =

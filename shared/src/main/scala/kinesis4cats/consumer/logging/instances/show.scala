@@ -16,6 +16,4 @@
 
 package kinesis4cats.consumer.logging.instances
 
-object show {
-  
-}
+object show {}

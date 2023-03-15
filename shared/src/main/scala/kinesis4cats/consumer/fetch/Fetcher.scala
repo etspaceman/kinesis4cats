@@ -1,3 +1,19 @@
+/*
+ * Copyright 2023-2023 etspaceman
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package kinesis4cats.consumer
 package fetch
 
@@ -55,8 +71,6 @@ object Fetcher {
 
     protected def toShardIterator(x: GetShardIteratorRes): String
 
-    protected def isEndOfShard(x: CommittableRecord): Boolean
-
     private def poll(
         iteratorCache: Ref[F, String]
     ): F[List[CommittableRecord]] = {
@@ -80,7 +94,7 @@ object Fetcher {
     private[kinesis4cats] def stop(f: Fiber[F, Throwable, Unit]): F[Unit] = {
       val ctx = LogContext().addEncoded("shardId", shardId.shardId)
       for {
-        _ <- logger.debug(ctx.context)("Stopping the PollingFetcher")
+        _ <- logger.debug(ctx.context)("Stopping the Polling Fetcher")
         _ <- channel.close
         _ <- f.join.void.timeoutTo(config.gracefulShutdownWait, f.cancel)
       } yield ()
@@ -118,19 +132,17 @@ object Fetcher {
                     "Fetcher has been shut down and will not accept further requests. Shutting down prefetch loop."
                   ) >> interruptSignal.set(true),
                 _ =>
-                  x.maximumOption.traverse { r =>
-                    if (isEndOfShard(r))
+                  logger
+                    .debug(ctx.context)("Prefetch batch sent downstream.") >>
+                    x.find(_.isEndOfShard).traverse { _ =>
                       for {
                         _ <- logger.warn(ctx.context)(
-                          "Prefetch batch sent downstream. The final record for the shard has been consumed. Shutting down prefetch loop."
+                          "The final record for the shard has been consumed. Shutting down prefetch loop."
                         )
                         _ <- channel.close
                         _ <- interruptSignal.set(true)
                       } yield ()
-                    else
-                      logger
-                        .debug(ctx.context)("Prefetch batch sent downstream")
-                  }
+                    }
               )
             }
           )
@@ -161,7 +173,8 @@ object Fetcher {
   ](implicit
       F: Async[F]
   ) extends Fetcher[F] {
-    def config: Polling.Config[F]
+    def config: FanOut.Config
+    def currentPosition: Ref[F, StartingPosition]
 
     protected def subscribeToShard(
         req: SubscribeToShardReq
@@ -172,21 +185,81 @@ object Fetcher {
     ): F[ConsumerArn]
 
     protected def initialRegisterConsumerReq: RegisterConsumerReq
+    protected def subscribeToShardReq(
+        consumerArn: ConsumerArn
+    ): F[SubscribeToShardReq]
+
+    protected def asCommittableRecord(x: SubscribeToShardEv): CommittableRecord
+
+    private[kinesis4cats] def stop(f: Fiber[F, Throwable, Unit]): F[Unit] = {
+      val ctx = LogContext().addEncoded("shardId", shardId.shardId)
+      for {
+        _ <- logger.debug(ctx.context)("Stopping the FanOut Fetcher")
+        _ <- channel.close
+        _ <- f.join.void.timeoutTo(config.gracefulShutdownWait, f.cancel)
+      } yield ()
+    }
 
     private[kinesis4cats] def start(): F[Unit] = {
       val ctx = LogContext().addEncoded("shardId", shardId.shardId)
 
-      for {
+      val subscribe = for {
         _ <- logger
           .debug(ctx.context)("Starting the FanOut fetcher")
         consumerArn <- registerConsumerIfNotExists(initialRegisterConsumerReq)
-      } yield ()
+        req <- subscribeToShardReq(consumerArn)
+        interruptSignal <- SignallingRef[F, Boolean](false)
+        res <- subscribeToShard(req)
+          .map(asCommittableRecord)
+          .chunks
+          .evalMap(x =>
+            channel.send(x).flatMap { r =>
+              for {
+                _ <- x.maximumOption.traverse(cr =>
+                  currentPosition.set(
+                    StartingPosition
+                      .AfterSequenceNumber(cr.sequenceNumber.sequenceNumber)
+                  )
+                )
+                res <- r.bitraverse(
+                  _ =>
+                    logger.warn(ctx.context)(
+                      "Fetcher has been shut down and will not accept further requests. Shutting down subscriber."
+                    ) >> interruptSignal.set(true),
+                  _ =>
+                    logger
+                      .debug(ctx.context)("Batch sent downstream.") >>
+                      x.find(_.isEndOfShard).traverse { _ =>
+                        for {
+                          _ <- logger.warn(ctx.context)(
+                            "The final record for the shard has been consumed. Shutting down subscriber."
+                          )
+                          _ <- channel.close
+                          _ <- interruptSignal.set(true)
+                        } yield ()
+                      }
+                )
+              } yield res
+            }
+          )
+          .compile
+          .drain
+      } yield res
 
-      F.unit
+      subscribe.untilM_(currentPosition.get.map {
+        case _: StartingPosition.ShardEnd.type => true
+        case _                                 => false
+      })
     }
+
+    private[kinesis4cats] def resource: Resource[F, Unit] =
+      Resource.make(start().start)(stop).void
   }
 
   object FanOut {
-    final case class Config()
+    final case class Config(
+        bufferSize: Int,
+        gracefulShutdownWait: FiniteDuration
+    )
   }
 }
