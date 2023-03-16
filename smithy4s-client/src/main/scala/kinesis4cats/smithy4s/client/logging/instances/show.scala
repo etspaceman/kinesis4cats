@@ -16,7 +16,8 @@
 
 package kinesis4cats
 package smithy4s.client
-package logging.instances
+package logging
+package instances
 
 import cats.Show
 import org.http4s.{Request, Response}
@@ -42,7 +43,7 @@ object show {
       .add("status", x.status)
       .build
 
-  implicit def smithy4sKinesisClientLogEncoders[F[_]]
-      : KinesisClient.LogEncoders[F] = new KinesisClient.LogEncoders[F]()
+  implicit def smithy4sClientLogEncoders[F[_]]: LogEncoders[F] =
+    new LogEncoders[F]()
 
 }

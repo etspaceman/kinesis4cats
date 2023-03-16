@@ -15,41 +15,35 @@
  */
 
 package kinesis4cats.smithy4s.client
-package producer
 package localstack
 
-import cats.effect._
+import cats.effect.Async
+import cats.effect.Resource
 import cats.effect.syntax.all._
 import org.http4s.client.Client
 import org.typelevel.log4cats.StructuredLogger
 import org.typelevel.log4cats.noop.NoOpLogger
+import smithy4s.aws._
 import smithy4s.aws.kernel.AwsRegion
 
 import kinesis4cats.localstack.LocalstackConfig
 import kinesis4cats.logging.LogEncoder
-import kinesis4cats.models.StreamNameOrArn
-import kinesis4cats.producer.Producer
-import kinesis4cats.producer.ShardMap
-import kinesis4cats.producer.ShardMapCache
-import kinesis4cats.smithy4s.client.localstack.LocalstackKinesisClient
+import kinesis4cats.smithy4s.client.DynamoClient
 import kinesis4cats.smithy4s.client.logging.LogEncoders
 
-/** Like KinesisProducer, but also includes the
+/** Like DynamoClient, but also includes the
   * [[kinesis4cats.smithy4s.client.middleware.LocalstackProxy LocalstackProxy]]
   * middleware, and leverages mock AWS credentials
   */
-object LocalstackKinesisProducer {
+object LocalstackDynamoClient {
 
-  /** Creates a [[cats.effect.Resource Resource]] of a
-    * [[kinesis4cats.smithy4s.client.producer.KinesisProducer KinesisProducer]]
-    * that is compatible with Localstack
+  /** Creates a [[cats.effect.Resource Resource]] of a DynamoClient that is
+    * compatible with Localstack
     *
     * @param client
     *   [[https://http4s.org/v0.23/docs/client.html Client]]
     * @param region
     *   [[https://github.com/disneystreaming/smithy4s/blob/series/0.17/modules/aws-kernel/src/smithy4s/aws/AwsRegion.scala AwsRegion]]
-    * @param producerConfig
-    *   [[kinesis4cats.producer.Producer.Config Producer.Config]]
     * @param config
     *   [[kinesis4cats.localstack.LocalstackConfig LocalstackConfig]]
     * @param loggerF
@@ -60,57 +54,40 @@ object LocalstackKinesisProducer {
     * @return
     *   [[https://github.com/disneystreaming/smithy4s/blob/series/0.17/modules/aws-kernel/src/smithy4s/aws/AwsEnvironment.scala AwsEnvironment]]
     */
-  def resource[F[_]](
+  def clientResource[F[_]](
       client: Client[F],
       region: F[AwsRegion],
-      producerConfig: Producer.Config,
       config: LocalstackConfig,
-      loggerF: Async[F] => F[StructuredLogger[F]],
-      shardMapF: (
-          KinesisClient[F],
-          StreamNameOrArn,
-          Async[F]
-      ) => F[Either[ShardMapCache.Error, ShardMap]]
+      loggerF: Async[F] => F[StructuredLogger[F]]
   )(implicit
       F: Async[F],
       LE: LogEncoders[F],
-      LELC: LogEncoder[LocalstackConfig],
-      SLE: ShardMapCache.LogEncoders,
-      PLE: Producer.LogEncoders
-  ): Resource[F, KinesisProducer[F]] = for {
-    logger <- loggerF(F).toResource
-    underlying <- LocalstackKinesisClient
-      .clientResource[F](client, region, config, loggerF)
-    shardMapCache <- ShardMapCache[F](
-      producerConfig.shardMapCacheConfig,
-      shardMapF(underlying, producerConfig.streamNameOrArn, F),
-      loggerF(F)
+      LELC: LogEncoder[LocalstackConfig]
+  ): Resource[F, DynamoClient[F]] = for {
+    http4sClient <- Common
+      .localstackHttp4sClient(client, config, loggerF)
+      .toResource
+    awsClient <- DynamoClient[F](
+      http4sClient,
+      region,
+      loggerF,
+      (_: SimpleHttpClient[F], f: Async[F]) =>
+        Resource.pure(
+          f.pure(AwsCredentials.Default("mock-key-id", "mock-secret-key", None))
+        )
     )
-    producer = new KinesisProducer[F](
-      logger,
-      shardMapCache,
-      producerConfig,
-      underlying
-    )
-  } yield producer
+  } yield awsClient
 
-  /** Creates a [[cats.effect.Resource Resource]] of a
-    * [[kinesis4cats.smithy4s.client.producer.KinesisProducer KinesisProducer]]
-    * that is compatible with Localstack
+  /** Creates a [[cats.effect.Resource Resource]] of a DynamoClient that is
+    * compatible with Localstack
     *
     * @param client
     *   [[https://http4s.org/v0.23/docs/client.html Client]]
-    * @param streamName
-    *   Name of stream that this producer will produce to
     * @param region
     *   [[https://github.com/disneystreaming/smithy4s/blob/series/0.17/modules/aws-kernel/src/smithy4s/aws/AwsRegion.scala AwsRegion]].
     * @param prefix
     *   Optional string prefix to apply when loading configuration. Default to
     *   None
-    * @param producerConfig
-    *   String => [[kinesis4cats.producer.Producer.Config Producer.Config]]
-    *   function that creates configuration given a stream name. Defaults to
-    *   Producer.Config.default
     * @param loggerF
     *   [[cats.effect.Async Async]] => [[cats.effect.Async Async]] of
     *   [[https://github.com/typelevel/log4cats/blob/main/core/shared/src/main/scala/org/typelevel/log4cats/StructuredLogger.scala StructuredLogger]].
@@ -121,41 +98,17 @@ object LocalstackKinesisProducer {
     * @return
     *   [[https://github.com/disneystreaming/smithy4s/blob/series/0.17/modules/aws-kernel/src/smithy4s/aws/AwsEnvironment.scala AwsEnvironment]]
     */
-  def resource[F[_]](
+  def clientResource[F[_]](
       client: Client[F],
-      streamName: String,
       region: F[AwsRegion],
       prefix: Option[String] = None,
-      producerConfig: String => Producer.Config = streamName =>
-        Producer.Config
-          .default(StreamNameOrArn.Name(streamName)),
       loggerF: Async[F] => F[StructuredLogger[F]] = (f: Async[F]) =>
-        f.pure(NoOpLogger[F](f)),
-      shardMapF: (
-          KinesisClient[F],
-          StreamNameOrArn,
-          Async[F]
-      ) => F[Either[ShardMapCache.Error, ShardMap]] = (
-          client: KinesisClient[F],
-          streamNameOrArn: StreamNameOrArn,
-          f: Async[F]
-      ) => KinesisProducer.getShardMap(client, streamNameOrArn)(f)
+        f.pure(NoOpLogger[F](f))
   )(implicit
       F: Async[F],
       LE: LogEncoders[F],
-      LELC: LogEncoder[LocalstackConfig],
-      SLE: ShardMapCache.LogEncoders,
-      PLE: Producer.LogEncoders
-  ): Resource[F, KinesisProducer[F]] = LocalstackConfig
-    .resource[F](prefix)
-    .flatMap(
-      resource[F](
-        client,
-        region,
-        producerConfig(streamName),
-        _,
-        loggerF,
-        shardMapF
-      )
-    )
+      LELC: LogEncoder[LocalstackConfig]
+  ): Resource[F, DynamoClient[F]] = LocalstackConfig
+    .resource(prefix)
+    .flatMap(clientResource(client, region, _, loggerF))
 }

@@ -33,6 +33,7 @@ import smithy4s.aws.kernel.AwsRegion
 
 import kinesis4cats.producer._
 import kinesis4cats.producer.fs2.FS2Producer
+import kinesis4cats.smithy4s.client.logging.LogEncoders
 
 /** A buffered Kinesis producer which will produce batches of data at a
   * configurable rate.
@@ -95,7 +96,7 @@ object FS2KinesisProducer {
     * @param LE
     *   [[kinesis4cats.producer.Producer.LogEncoders Producer.LogEncoders]]
     * @param KLE
-    *   [[kinesis4cats.smithy4s.client.KinesisClient.LogEncoders KinesisClient.LogEncoders]]
+    *   [[kinesis4cats.smithy4s.client.logging.LogEncoders LogEncoders]]
     * @param SLE
     *   [[kinesis4cats.producer.ShardMapCache.LogEncoders ShardMapCache.LogEncoders]]
     * @return
@@ -119,7 +120,7 @@ object FS2KinesisProducer {
   )(implicit
       F: Async[F],
       LE: Producer.LogEncoders,
-      KLE: KinesisClient.LogEncoders[F],
+      KLE: LogEncoders[F],
       SLE: ShardMapCache.LogEncoders
   ): Resource[F, FS2KinesisProducer[F]] = for {
     logger <- loggerF(F).toResource

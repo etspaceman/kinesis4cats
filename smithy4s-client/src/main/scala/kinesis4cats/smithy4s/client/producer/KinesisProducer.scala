@@ -36,6 +36,7 @@ import smithy4s.aws.kernel.AwsRegion
 
 import kinesis4cats.models
 import kinesis4cats.producer.{Record => Rec, _}
+import kinesis4cats.smithy4s.client.logging.LogEncoders
 
 /** A [[kinesis4cats.producer.Producer Producer]] implementation that leverages
   * the [[kinesis4cats.smithy4s.client.KinesisClient KinesisClient]]
@@ -176,7 +177,7 @@ object KinesisProducer {
     * @param LE
     *   [[kinesis4cats.producer.Producer.LogEncoders Producer.LogEncoders]]
     * @param KLE
-    *   [[kinesis4cats.smithy4s.client.KinesisClient.LogEncoders KinesisClient.LogEncoders]]
+    *   [[kinesis4cats.smithy4s.client.logging.LogEncoders LogEncoders]]
     * @param SLE
     *   [[kinesis4cats.producer.ShardMapCache.LogEncoders ShardMapCache.LogEncoders]]
     * @return
@@ -198,7 +199,7 @@ object KinesisProducer {
   )(implicit
       F: Async[F],
       LE: Producer.LogEncoders,
-      KLE: KinesisClient.LogEncoders[F],
+      KLE: LogEncoders[F],
       SLE: ShardMapCache.LogEncoders
   ): Resource[F, KinesisProducer[F]] = for {
     logger <- loggerF(F).toResource

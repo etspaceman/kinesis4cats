@@ -14,14 +14,17 @@
  * limitations under the License.
  */
 
-package kinesis4cats.smithy4s
+package kinesis4cats.smithy4s.client.logging
 
-import com.amazonaws.cloudwatch.CloudWatch
-import com.amazonaws.dynamodb.DynamoDB
-import com.amazonaws.kinesis.Kinesis
+import org.http4s.{Request, Response}
 
-package object client {
-  type KinesisClient[F[_]] = Kinesis[F]
-  type DynamoClient[F[_]] = DynamoDB[F]
-  type CloudWatchClient[F[_]] = CloudWatch[F]
-}
+import kinesis4cats.logging.LogEncoder
+
+/** Helper class containing required
+  * [[kinesis4cats.logging.LogEncoder LogEncoders]] for the
+  * [[kinesis4cats.smithy4s.client.DynamoClient DynamoClient]]
+  */
+final class LogEncoders[F[_]](implicit
+    val http4sRequestLogEncoder: LogEncoder[Request[F]],
+    val http4sResponseLogEncoder: LogEncoder[Response[F]]
+)
