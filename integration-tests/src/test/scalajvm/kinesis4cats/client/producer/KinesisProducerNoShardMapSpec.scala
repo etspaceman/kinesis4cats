@@ -21,6 +21,7 @@ import cats.effect.syntax.all._
 import cats.syntax.all._
 import software.amazon.awssdk.services.kinesis.model.PutRecordsRequest
 import software.amazon.awssdk.services.kinesis.model.PutRecordsResponse
+import software.amazon.kinesis.processor.SingleStreamTracker
 
 import kinesis4cats.Utils
 import kinesis4cats.client.KinesisClient
@@ -77,7 +78,7 @@ class KinesisProducerNoShardMapSpec
     for {
       _ <- LocalstackKinesisClient.streamResource[IO](streamName, shardCount)
       deferredWithResults <- LocalstackKCLConsumer.kclConsumerWithResults(
-        streamName,
+        new SingleStreamTracker(streamName),
         appName
       )((_: List[CommittableRecord[IO]]) => IO.unit)
       _ <- deferredWithResults.deferred.get.toResource

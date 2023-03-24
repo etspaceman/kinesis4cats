@@ -136,7 +136,7 @@ object KCLConsumerFS2MultiSpec {
         Map(streamArn1 -> position, streamArn2 -> position)
       )
       .toResource
-    consumer <- LocalstackKCLConsumerFS2.kclMultiConsumer[IO](
+    consumer <- LocalstackKCLConsumerFS2.kclConsumer[IO](
       tracker,
       appName
     )

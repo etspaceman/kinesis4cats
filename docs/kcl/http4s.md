@@ -20,6 +20,7 @@ import com.comcast.ip4s._
 import software.amazon.awssdk.services.cloudwatch.CloudWatchAsyncClient
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient
 import software.amazon.awssdk.services.kinesis.KinesisAsyncClient
+import software.amazon.kinesis.processor.SingleStreamTracker
 
 import kinesis4cats.kcl._
 import kinesis4cats.kcl.http4s.KCLService
@@ -41,7 +42,7 @@ object MyApp extends ResourceApp.Forever {
             kinesisClient, 
             dynamoClient, 
             cloudWatchClient, 
-            "my-stream", 
+            new SingleStreamTracker("my-stream"), 
             "my-app-name"
         )((records: List[CommittableRecord[IO]]) => 
             records.traverse_(r => IO.println(r.data.asString))

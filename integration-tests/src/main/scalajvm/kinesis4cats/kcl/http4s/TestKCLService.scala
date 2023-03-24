@@ -19,6 +19,7 @@ package http4s
 
 import cats.effect.{IO, Resource, ResourceApp}
 import com.comcast.ip4s._
+import software.amazon.kinesis.processor.SingleStreamTracker
 
 import kinesis4cats.Utils
 import kinesis4cats.ciris.CirisReader
@@ -30,7 +31,7 @@ object TestKCLService extends ResourceApp.Forever {
   override def run(args: List[String]): Resource[IO, Unit] = for {
     streamName <- CirisReader.read[String](List("test", "stream")).resource[IO]
     configAndResults <- LocalstackKCLConsumer.kclConfigWithResults[IO](
-      streamName,
+      new SingleStreamTracker(streamName),
       s"test-kcl-service-spec-${Utils.randomUUIDString}"
     )((_: List[CommittableRecord[IO]]) => IO.unit)
     consumer = new KCLConsumer[IO](configAndResults.kclConfig)

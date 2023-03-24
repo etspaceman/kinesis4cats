@@ -125,10 +125,8 @@ object eq {
   }
 
   implicit val retrievalConfigEq: Eq[RetrievalConfig] = (x, y) =>
-    x.appStreamTracker() == y.appStreamTracker() &&
+    x.streamTracker() == y.streamTracker() &&
       x.applicationName() === y.applicationName() &&
-      x.initialPositionInStreamExtended() === y
-        .initialPositionInStreamExtended() &&
       x.listShardsBackoffTimeInMillis() === y.listShardsBackoffTimeInMillis() &&
       x.maxListShardsRetryAttempts() === y.maxListShardsRetryAttempts() &&
       x.retrievalSpecificConfig() === y.retrievalSpecificConfig()

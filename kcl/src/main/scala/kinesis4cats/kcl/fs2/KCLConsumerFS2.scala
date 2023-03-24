@@ -35,13 +35,13 @@ import software.amazon.kinesis.coordinator._
 import software.amazon.kinesis.leases.LeaseManagementConfig
 import software.amazon.kinesis.lifecycle.LifecycleConfig
 import software.amazon.kinesis.metrics.MetricsConfig
+import software.amazon.kinesis.processor.StreamTracker
 import software.amazon.kinesis.retrieval.RetrievalConfig
 
 import kinesis4cats.Utils
 import kinesis4cats.compat.retry.RetryPolicies._
 import kinesis4cats.compat.retry._
 import kinesis4cats.kcl.WorkerListeners._
-import kinesis4cats.kcl.multistream.MultiStreamTracker
 import kinesis4cats.kcl.{CommittableRecord, KCLConsumer, RecordProcessor}
 
 /** Wrapper offering for the
@@ -271,8 +271,10 @@ object KCLConsumerFS2 {
     *   [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/dynamodb/DynamoDbAsyncClient.html DynamoDbAsyncClient]]
     * @param cloudWatchClient
     *   [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/cloudwatch/CloudWatchClient.html CloudWatchClient]]
-    * @param streamName
-    *   Name of the Kinesis stream to consume from
+    * @param streamTracker
+    *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/processor/StreamTracker.java StreamTracker]]
+    *   to use, which defines the name of the stream(s) and the initial position
+    *   within them
     * @param appName
     *   Name of the application. Usually also the dynamo table name for
     *   checkpoints
@@ -307,7 +309,7 @@ object KCLConsumerFS2 {
       kinesisClient: KinesisAsyncClient,
       dynamoClient: DynamoDbAsyncClient,
       cloudWatchClient: CloudWatchAsyncClient,
-      streamName: String,
+      streamTracker: StreamTracker,
       appName: String,
       fs2Config: FS2Config = FS2Config.default,
       workerId: String = Utils.randomUUIDString,
@@ -326,86 +328,7 @@ object KCLConsumerFS2 {
       kinesisClient,
       dynamoClient,
       cloudWatchClient,
-      streamName,
-      appName,
-      fs2Config,
-      workerId,
-      processConfig
-    )(tfn)
-    .map(new KCLConsumerFS2[F](_))
-
-  /** Constructor for the [[kinesis4cats.kcl.fs2.KCLConsumerFS2 KCLConsumerFS2]]
-    * that leverages the
-    * [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/common/ConfigsBuilder.java ConfigsBuilder]]
-    * from the KCL. This is a simpler entry-point for creating the
-    * configuration, and provides a transform function to add any custom
-    * configuration that was not covered by the default. This constructor
-    * specifically leverages the
-    * [[kinesis4cats.kcl.multistream.MultiStreamTracker MultiStreamTracker]] to
-    * allow for consumption from multiple streams.
-    *
-    * @param kinesisClient
-    *   [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/kinesis/KinesisAsyncClient.html KinesisAsyncClient]]
-    * @param dynamoClient
-    *   [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/dynamodb/DynamoDbAsyncClient.html DynamoDbAsyncClient]]
-    * @param cloudWatchClient
-    *   [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/cloudwatch/CloudWatchClient.html CloudWatchClient]]
-    * @param tracker
-    *   [[kinesis4cats.kcl.multistream.MultiStreamTracker MultiStreamTracker]]
-    * @param appName
-    *   Name of the application. Usually also the dynamo table name for
-    *   checkpoints
-    * @param queueSize
-    *   Size of the underlying queue for the FS2 stream. If the queue fills up,
-    *   backpressure on the processors will occur. Default 100
-    * @param commitMaxChunk
-    *   Max records to be received in the commitRecords [[fs2.Pipe Pipe]] before
-    *   a commit is run. Default is 1000
-    * @param commitMaxWait
-    *   Max duration to wait in commitRecords [[fs2.Pipe Pipe]] before a commit
-    *   is run. Default is 10 seconds
-    * @param workerId
-    *   Unique identifier for a single instance of this consumer. Default is a
-    *   random UUID.
-    * @param processConfig
-    *   [[kinesis4cats.kcl.KCLConsumer.ProcessConfig KCLConsumer.ProcessConfig]]
-    * @param tfn
-    *   Function to update the
-    *   [[kinesis4cats.kcl.KCLConsumer.Config KCLConsumer.Config]]. Useful for
-    *   overriding defaults.
-    * @param F
-    *   [[cats.effect.Async Async]] instance
-    * @param encoders
-    *   [[kinesis4cats.kcl.RecordProcessor.LogEncoders RecordProcessor.LogEncoders]]
-    *   for encoding structured logs
-    * @return
-    *   [[cats.effect.Resource Resource]] containing the
-    *   [[kinesis4cats.kcl.fs2.KCLConsumerFS2.Config KCLConsumerFS2.Config]]
-    */
-  def configsBuilderMultiStream[F[_]](
-      kinesisClient: KinesisAsyncClient,
-      dynamoClient: DynamoDbAsyncClient,
-      cloudWatchClient: CloudWatchAsyncClient,
-      tracker: MultiStreamTracker,
-      appName: String,
-      fs2Config: FS2Config = FS2Config.default,
-      workerId: String = Utils.randomUUIDString,
-      processConfig: KCLConsumer.ProcessConfig = defaultProcessConfig
-  )(
-      tfn: kinesis4cats.kcl.KCLConsumer.Config[
-        F
-      ] => kinesis4cats.kcl.KCLConsumer.Config[F] =
-        (x: kinesis4cats.kcl.KCLConsumer.Config[F]) => x
-  )(implicit
-      F: Async[F],
-      P: Parallel[F],
-      encoders: RecordProcessor.LogEncoders
-  ): Resource[F, KCLConsumerFS2[F]] = Config
-    .configsBuilderMultiStream(
-      kinesisClient,
-      dynamoClient,
-      cloudWatchClient,
-      tracker,
+      streamTracker,
       appName,
       fs2Config,
       workerId,
@@ -521,8 +444,10 @@ object KCLConsumerFS2 {
       *   [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/dynamodb/DynamoDbAsyncClient.html DynamoDbAsyncClient]]
       * @param cloudWatchClient
       *   [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/cloudwatch/CloudWatchClient.html CloudWatchClient]]
-      * @param streamName
-      *   Name of the Kinesis stream to consume from
+      * @param streamTracker
+      *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/processor/StreamTracker.java StreamTracker]]
+      *   to use, which defines the name of the stream(s) and the initial
+      *   position within them
       * @param appName
       *   Name of the application. Usually also the dynamo table name for
       *   checkpoints
@@ -548,7 +473,7 @@ object KCLConsumerFS2 {
         kinesisClient: KinesisAsyncClient,
         dynamoClient: DynamoDbAsyncClient,
         cloudWatchClient: CloudWatchAsyncClient,
-        streamName: String,
+        streamTracker: StreamTracker,
         appName: String,
         fs2Config: KCLConsumerFS2.FS2Config = KCLConsumerFS2.FS2Config.default,
         workerId: String = Utils.randomUUIDString,
@@ -570,92 +495,7 @@ object KCLConsumerFS2 {
           kinesisClient,
           dynamoClient,
           cloudWatchClient,
-          streamName,
-          appName,
-          workerId,
-          processConfig
-        )(callback(queue))(tfn)
-    } yield Config(underlying, queue, fs2Config)
-
-    /** Constructor for the
-      * [[kinesis4cats.kcl.fs2.KCLConsumerFS2.Config KCLConsumerFS2.Config]]
-      * that leverages the
-      * [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/common/ConfigsBuilder.java ConfigsBuilder]]
-      * from the KCL. This is a simpler entry-point for creating the
-      * configuration, and provides a transform function to add any custom
-      * configuration that was not covered by the default. This constructor
-      * specifically leverages the
-      * [[kinesis4cats.kcl.multistream.MultiStreamTracker MultiStreamTracker]]
-      * to allow for consumption from multiple streams.
-      *
-      * @param kinesisClient
-      *   [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/kinesis/KinesisAsyncClient.html KinesisAsyncClient]]
-      * @param dynamoClient
-      *   [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/dynamodb/DynamoDbAsyncClient.html DynamoDbAsyncClient]]
-      * @param cloudWatchClient
-      *   [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/cloudwatch/CloudWatchClient.html CloudWatchClient]]
-      * @param tracker
-      *   [[kinesis4cats.kcl.multistream.MultiStreamTracker MultiStreamTracker]]
-      * @param appName
-      *   Name of the application. Usually also the dynamo table name for
-      *   checkpoints
-      * @param queueSize
-      *   Size of the underlying queue for the FS2 stream. If the queue fills
-      *   up, backpressure on the processors will occur. Default 100
-      * @param commitMaxChunk
-      *   Max records to be received in the commitRecords [[fs2.Pipe Pipe]]
-      *   before a commit is run. Default is 1000
-      * @param commitMaxWait
-      *   Max duration to wait in commitRecords [[fs2.Pipe Pipe]] before a
-      *   commit is run. Default is 10 seconds
-      * @param commitMaxRetries
-      *   Max number of retries for a commit operation
-      * @param commitRetryInterval
-      * @param workerId
-      *   Unique identifier for a single instance of this consumer. Default is a
-      *   random UUID.
-      * @param processConfig
-      *   [[kinesis4cats.kcl.KCLConsumer.ProcessConfig KCLConsumer.ProcessConfig]]
-      * @param tfn
-      *   Function to update the
-      *   [[kinesis4cats.kcl.KCLConsumer.Config KCLConsumer.Config]]. Useful for
-      *   overriding defaults.
-      * @param F
-      *   [[cats.effect.Async Async]] instance
-      * @param encoders
-      *   [[kinesis4cats.kcl.RecordProcessor.LogEncoders RecordProcessor.LogEncoders]]
-      *   for encoding structured logs
-      * @return
-      *   [[cats.effect.Resource Resource]] containing the
-      *   [[kinesis4cats.kcl.fs2.KCLConsumerFS2.Config KCLConsumerFS2.Config]]
-      */
-    def configsBuilderMultiStream[F[_]](
-        kinesisClient: KinesisAsyncClient,
-        dynamoClient: DynamoDbAsyncClient,
-        cloudWatchClient: CloudWatchAsyncClient,
-        tracker: MultiStreamTracker,
-        appName: String,
-        fs2Config: FS2Config,
-        workerId: String = Utils.randomUUIDString,
-        processConfig: KCLConsumer.ProcessConfig = defaultProcessConfig
-    )(
-        tfn: kinesis4cats.kcl.KCLConsumer.Config[
-          F
-        ] => kinesis4cats.kcl.KCLConsumer.Config[F] =
-          (x: kinesis4cats.kcl.KCLConsumer.Config[F]) => x
-    )(implicit
-        F: Async[F],
-        encoders: RecordProcessor.LogEncoders
-    ): Resource[F, Config[F]] = for {
-      queue <- Queue
-        .bounded[F, CommittableRecord[F]](fs2Config.queueSize)
-        .toResource
-      underlying <- kinesis4cats.kcl.KCLConsumer.Config
-        .configsBuilderMultiStream(
-          kinesisClient,
-          dynamoClient,
-          cloudWatchClient,
-          tracker,
+          streamTracker,
           appName,
           workerId,
           processConfig

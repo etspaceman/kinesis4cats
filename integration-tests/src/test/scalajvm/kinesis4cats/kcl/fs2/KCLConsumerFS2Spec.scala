@@ -29,6 +29,7 @@ import io.circe.syntax._
 import org.scalacheck.Arbitrary
 import software.amazon.awssdk.core.SdkBytes
 import software.amazon.awssdk.services.kinesis.model.PutRecordRequest
+import software.amazon.kinesis.processor.SingleStreamTracker
 
 import kinesis4cats.Utils
 import kinesis4cats.client.KinesisClient
@@ -89,7 +90,7 @@ object KCLConsumerFS2Spec {
   ): Resource[IO, Resources[IO]] = for {
     client <- LocalstackKinesisClient.streamResource[IO](streamName, shardCount)
     consumer <- LocalstackKCLConsumerFS2.kclConsumer[IO](
-      streamName,
+      new SingleStreamTracker(streamName),
       appName
     )
     streamAndDeferred <- consumer.streamWithDeferredListener()
