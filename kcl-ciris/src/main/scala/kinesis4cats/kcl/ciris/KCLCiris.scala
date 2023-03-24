@@ -35,6 +35,7 @@ import software.amazon.kinesis.leases._
 import software.amazon.kinesis.leases.dynamodb.TableCreatorCallback
 import software.amazon.kinesis.lifecycle._
 import software.amazon.kinesis.metrics._
+import software.amazon.kinesis.processor.SingleStreamTracker
 import software.amazon.kinesis.retrieval.fanout.FanOutConfig
 import software.amazon.kinesis.retrieval.polling.PollingConfig
 import software.amazon.kinesis.retrieval.{AggregatorUtil, RetrievalConfig}
@@ -1255,10 +1256,16 @@ object KCLCiris {
         List("kcl", "retrieval", "max", "list", "shards", "retry", "attempts"),
         prefix
       )
-    } yield new RetrievalConfig(kinesisClient, streamName, appName)
+    } yield new RetrievalConfig(
+      kinesisClient,
+      new SingleStreamTracker(
+        StreamIdentifier.singleStreamInstance(streamName),
+        position
+      ),
+      appName
+    )
       .retrievalSpecificConfig(retrievalConfig)
       .retrievalFactory(retrievalConfig.retrievalFactory())
-      .initialPositionInStreamExtended(position)
       .maybeTransform(listShardsBackoffTime)(
         _.listShardsBackoffTimeInMillis(_)
       )

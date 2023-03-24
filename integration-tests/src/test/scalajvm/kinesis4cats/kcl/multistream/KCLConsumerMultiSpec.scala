@@ -133,7 +133,7 @@ object KCLConsumerMultiSpec {
         Map(streamArn1 -> position, streamArn2 -> position)
       )
       .toResource
-    deferredWithResults <- LocalstackKCLConsumer.kclMultiConsumerWithResults(
+    deferredWithResults <- LocalstackKCLConsumer.kclConsumerWithResults(
       tracker,
       appName
     )((_: List[CommittableRecord[IO]]) => IO.unit)

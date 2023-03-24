@@ -27,6 +27,8 @@ import software.amazon.kinesis.leases.LeaseManagementConfig
 import software.amazon.kinesis.lifecycle.LifecycleConfig
 import software.amazon.kinesis.metrics.MetricsConfig
 import software.amazon.kinesis.processor.MultiStreamTracker
+import software.amazon.kinesis.processor.SingleStreamTracker
+import software.amazon.kinesis.processor.StreamTracker
 import software.amazon.kinesis.retrieval._
 import software.amazon.kinesis.retrieval.fanout.FanOutConfig
 import software.amazon.kinesis.retrieval.polling.PollingConfig
@@ -182,17 +184,25 @@ object show {
 
   implicit val mutliStreamTrackerShow: Show[MultiStreamTracker] = x =>
     ShowBuilder("MultiStreamTracker")
-      .add("", x.streamConfigList().asScala.toList)
+      .add("streamConfigList", x.streamConfigList().asScala.toList)
+      .add("isMultiStream", x.isMultiStream())
       .build
+
+  implicit val singleStreamTrackerShow: Show[SingleStreamTracker] = x =>
+    ShowBuilder("SingleStreamTracker")
+      .add("streamConfigList", x.streamConfigList().asScala.toList)
+      .add("isMultiStream", x.isMultiStream())
+      .build
+
+  implicit val streamTrackerShow: Show[StreamTracker] = {
+    case x: MultiStreamTracker  => mutliStreamTrackerShow.show(x)
+    case x: SingleStreamTracker => singleStreamTrackerShow.show(x)
+  }
 
   implicit val retrievalConfigShow: Show[RetrievalConfig] = x =>
     ShowBuilder("RetrievalConfig")
-      .add("appStreamTracker", x.appStreamTracker())
+      .add("streamTracker", x.streamTracker())
       .add("applicationName", x.applicationName())
-      .add(
-        "initialPositionInStreamExtended",
-        x.initialPositionInStreamExtended().toString()
-      )
       .add("listShardsBackoffTimeInMillis", x.listShardsBackoffTimeInMillis())
       .add("maxListShardsRetryAttempts", x.maxListShardsRetryAttempts())
       .add("retrievalSpecificConfig", x.retrievalSpecificConfig())

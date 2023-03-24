@@ -26,6 +26,7 @@ import software.amazon.kinesis.coordinator.CoordinatorConfig
 import software.amazon.kinesis.leases.LeaseManagementConfig
 import software.amazon.kinesis.lifecycle.LifecycleConfig
 import software.amazon.kinesis.metrics.{MetricsConfig, MetricsLevel}
+import software.amazon.kinesis.processor.SingleStreamTracker
 import software.amazon.kinesis.retrieval.RetrievalConfig
 import software.amazon.kinesis.retrieval.fanout.FanOutConfig
 import software.amazon.kinesis.retrieval.polling.PollingConfig
@@ -255,7 +256,12 @@ class KCLCirisSpec extends munit.CatsEffectSuite {
         .load[IO](kinesisClient, prefix = Some("polling.prop"))
       pollingExpected = new RetrievalConfig(
         kinesisClient,
-        BuildInfo.pollingKclStreamName,
+        new SingleStreamTracker(
+          StreamIdentifier.singleStreamInstance(BuildInfo.pollingKclStreamName),
+          InitialPositionInStreamExtended.newInitialPosition(
+            InitialPositionInStream.valueOf(BuildInfo.pollingKclInitialPosition)
+          )
+        ),
         BuildInfo.pollingKclAppName
       )
         .retrievalSpecificConfig(
@@ -290,11 +296,6 @@ class KCLCirisSpec extends munit.CatsEffectSuite {
                 .asJava
             )
         )
-        .initialPositionInStreamExtended(
-          InitialPositionInStreamExtended.newInitialPosition(
-            InitialPositionInStream.valueOf(BuildInfo.pollingKclInitialPosition)
-          )
-        )
         .safeTransform(
           BuildInfo.pollingKclRetrievalListShardsBackoffTime.asMillisUnsafe
         )(
@@ -308,7 +309,12 @@ class KCLCirisSpec extends munit.CatsEffectSuite {
 
       fanoutExpected = new RetrievalConfig(
         kinesisClient,
-        BuildInfo.fanoutKclStreamName,
+        new SingleStreamTracker(
+          StreamIdentifier.singleStreamInstance(BuildInfo.fanoutKclStreamName),
+          InitialPositionInStreamExtended.newInitialPosition(
+            InitialPositionInStream.valueOf(BuildInfo.fanoutKclInitialPosition)
+          )
+        ),
         BuildInfo.fanoutKclAppName
       )
         .retrievalSpecificConfig(
@@ -339,11 +345,6 @@ class KCLCirisSpec extends munit.CatsEffectSuite {
             .safeTransform(
               BuildInfo.fanoutKclRetrievalFanoutRetryBackoff.asMillisUnsafe
             )(_.retryBackoffMillis(_))
-        )
-        .initialPositionInStreamExtended(
-          InitialPositionInStreamExtended.newInitialPosition(
-            InitialPositionInStream.valueOf(BuildInfo.fanoutKclInitialPosition)
-          )
         )
         .safeTransform(
           BuildInfo.fanoutKclRetrievalListShardsBackoffTime.asMillisUnsafe

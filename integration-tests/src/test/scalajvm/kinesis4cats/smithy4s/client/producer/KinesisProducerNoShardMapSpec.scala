@@ -24,6 +24,8 @@ import com.amazonaws.kinesis.PutRecordsOutput
 import org.http4s.blaze.client.BlazeClientBuilder
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 import smithy4s.aws.kernel.AwsRegion
+import software.amazon.kinesis.common._
+import software.amazon.kinesis.processor.SingleStreamTracker
 
 import kinesis4cats.SSL
 import kinesis4cats.Utils
@@ -103,7 +105,12 @@ class KinesisProducerNoShardMapSpec
           loggerF = (f: Async[IO]) => Slf4jLogger.create[IO](f, implicitly)
         )
       deferredWithResults <- LocalstackKCLConsumer.kclConsumerWithResults(
-        streamName,
+        new SingleStreamTracker(
+          StreamIdentifier.singleStreamInstance(streamName),
+          InitialPositionInStreamExtended.newInitialPosition(
+            InitialPositionInStream.TRIM_HORIZON
+          )
+        ),
         appName
       )((_: List[CommittableRecord[IO]]) => IO.unit)
       _ <- deferredWithResults.deferred.get.toResource

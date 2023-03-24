@@ -16,6 +16,7 @@ import cats.syntax.all._
 import software.amazon.awssdk.services.cloudwatch.CloudWatchAsyncClient
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient
 import software.amazon.awssdk.services.kinesis.KinesisAsyncClient
+import software.amazon.kinesis.processor.SingleStreamTracker
 
 import kinesis4cats.kcl._
 import kinesis4cats.kcl.logging.instances.show._
@@ -36,7 +37,7 @@ object MyApp extends ResourceApp.Forever {
             kinesisClient, 
             dynamoClient, 
             cloudWatchClient, 
-            "my-stream", 
+            new SingleStreamTracker("my-stream"), 
             "my-app-name"
         )((records: List[CommittableRecord[IO]]) => 
             records.traverse_(r => IO.println(r.data.asString))
@@ -88,7 +89,7 @@ object MyApp extends ResourceApp.Forever {
             kinesisClient,
             Map(streamArn1 -> position, streamArn2 -> position)
         ).toResource
-        consumer <- KCLConsumer.configsBuilderMultiStream[IO](
+        consumer <- KCLConsumer.configsBuilder[IO](
             kinesisClient.client, 
             dynamoClient, 
             cloudWatchClient, 
@@ -113,6 +114,7 @@ import cats.effect._
 import software.amazon.awssdk.services.cloudwatch.CloudWatchAsyncClient
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient
 import software.amazon.awssdk.services.kinesis.KinesisAsyncClient
+import software.amazon.kinesis.processor.SingleStreamTracker
 
 import kinesis4cats.kcl.fs2.KCLConsumerFS2
 import kinesis4cats.kcl.logging.instances.show._
@@ -133,7 +135,7 @@ object MyApp extends ResourceApp.Forever {
             kinesisClient, 
             dynamoClient, 
             cloudWatchClient, 
-            "my-stream", 
+            new SingleStreamTracker("my-stream"), 
             "my-app-name"
         )()
         _ <- consumer
