@@ -20,6 +20,7 @@ import cats.effect._
 import cats.effect.syntax.all._
 import software.amazon.awssdk.services.kinesis.model.PutRecordsRequest
 import software.amazon.awssdk.services.kinesis.model.PutRecordsResponse
+import software.amazon.kinesis.common._
 import software.amazon.kinesis.processor.SingleStreamTracker
 
 import kinesis4cats.Utils
@@ -60,7 +61,12 @@ class KinesisProducerSpec
     for {
       _ <- LocalstackKinesisClient.streamResource[IO](streamName, shardCount)
       deferredWithResults <- LocalstackKCLConsumer.kclConsumerWithResults(
-        new SingleStreamTracker(streamName),
+        new SingleStreamTracker(
+          StreamIdentifier.singleStreamInstance(streamName),
+          InitialPositionInStreamExtended.newInitialPosition(
+            InitialPositionInStream.TRIM_HORIZON
+          )
+        ),
         appName
       )((_: List[CommittableRecord[IO]]) => IO.unit)
       _ <- deferredWithResults.deferred.get.toResource

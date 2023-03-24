@@ -22,7 +22,6 @@ import cats.Parallel
 import cats.effect.std.Queue
 import cats.effect.syntax.all._
 import cats.effect.{Async, Resource}
-import software.amazon.kinesis.common._
 import software.amazon.kinesis.processor.StreamTracker
 
 import kinesis4cats.Utils
@@ -62,7 +61,6 @@ object LocalstackKCLConsumerFS2 {
       streamTracker: StreamTracker,
       appName: String,
       workerId: String,
-      position: InitialPositionInStreamExtended,
       processConfig: KCLConsumer.ProcessConfig
   )(implicit
       F: Async[F],
@@ -74,7 +72,6 @@ object LocalstackKCLConsumerFS2 {
       streamTracker,
       appName,
       workerId,
-      position,
       processConfig
     )(KCLConsumerFS2.callback(queue))
   } yield KCLConsumerFS2
@@ -111,10 +108,6 @@ object LocalstackKCLConsumerFS2 {
       appName: String,
       prefix: Option[String] = None,
       workerId: String = Utils.randomUUIDString,
-      position: InitialPositionInStreamExtended =
-        InitialPositionInStreamExtended.newInitialPosition(
-          InitialPositionInStream.TRIM_HORIZON
-        ),
       processConfig: KCLConsumer.ProcessConfig =
         KCLConsumerFS2.defaultProcessConfig
   )(implicit
@@ -127,7 +120,6 @@ object LocalstackKCLConsumerFS2 {
       streamTracker,
       appName,
       workerId,
-      position,
       processConfig
     )
   } yield result
@@ -164,7 +156,6 @@ object LocalstackKCLConsumerFS2 {
       streamTracker: StreamTracker,
       appName: String,
       workerId: String,
-      position: InitialPositionInStreamExtended,
       processConfig: KCLConsumer.ProcessConfig
   )(implicit
       F: Async[F],
@@ -176,7 +167,6 @@ object LocalstackKCLConsumerFS2 {
       streamTracker,
       appName,
       workerId,
-      position,
       processConfig
     ).map(
       new KCLConsumerFS2[F](_)
@@ -216,10 +206,6 @@ object LocalstackKCLConsumerFS2 {
       appName: String,
       prefix: Option[String] = None,
       workerId: String = Utils.randomUUIDString,
-      position: InitialPositionInStreamExtended =
-        InitialPositionInStreamExtended.newInitialPosition(
-          InitialPositionInStream.TRIM_HORIZON
-        ),
       processConfig: KCLConsumer.ProcessConfig =
         KCLConsumerFS2.defaultProcessConfig
   )(implicit
@@ -233,7 +219,6 @@ object LocalstackKCLConsumerFS2 {
       streamTracker,
       appName,
       workerId,
-      position,
       processConfig
     )
   } yield result

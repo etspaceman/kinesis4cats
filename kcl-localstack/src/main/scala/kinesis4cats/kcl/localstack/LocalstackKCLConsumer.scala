@@ -22,7 +22,6 @@ import cats.effect.syntax.all._
 import cats.effect.{Async, Deferred, Resource}
 import cats.syntax.all._
 import software.amazon.kinesis.checkpoint.CheckpointConfig
-import software.amazon.kinesis.common._
 import software.amazon.kinesis.coordinator.CoordinatorConfig
 import software.amazon.kinesis.leases.LeaseManagementConfig
 import software.amazon.kinesis.lifecycle.LifecycleConfig
@@ -79,7 +78,6 @@ object LocalstackKCLConsumer {
       streamTracker: StreamTracker,
       appName: String,
       workerId: String,
-      position: InitialPositionInStreamExtended,
       processConfig: KCLConsumer.ProcessConfig
   )(cb: List[CommittableRecord[F]] => F[Unit])(implicit
       F: Async[F],
@@ -88,17 +86,29 @@ object LocalstackKCLConsumer {
     kinesisClient <- AwsClients.kinesisClientResource(config)
     cloudwatchClient <- AwsClients.cloudwatchClientResource(config)
     dynamoClient <- AwsClients.dynamoClientResource(config)
-    retrievalConfig = new PollingConfig(kinesisClient)
+    initialLeaseManagementConfig = new LeaseManagementConfig(
+      appName,
+      dynamoClient,
+      kinesisClient,
+      workerId
+    ).shardSyncIntervalMillis(1000L)
+    retrievalConfig =
+      if (streamTracker.isMultiStream()) new PollingConfig(kinesisClient)
+      else
+        new PollingConfig(
+          streamTracker.streamConfigList.get(0).streamIdentifier.streamName,
+          kinesisClient
+        )
     result <- KCLConsumer.Config.create[F](
       new CheckpointConfig(),
       new CoordinatorConfig(appName).parentShardPollIntervalMillis(1000L),
-      new LeaseManagementConfig(
-        appName,
-        dynamoClient,
-        kinesisClient,
-        workerId
-      ).initialPositionInStream(position)
-        .shardSyncIntervalMillis(1000L),
+      if (streamTracker.isMultiStream()) initialLeaseManagementConfig
+      else
+        initialLeaseManagementConfig.initialPositionInStream(
+          streamTracker.streamConfigList
+            .get(0)
+            .initialPositionInStreamExtended()
+        ),
       new LifecycleConfig(),
       new MetricsConfig(cloudwatchClient, appName),
       new RetrievalConfig(kinesisClient, streamTracker, appName)
@@ -140,10 +150,6 @@ object LocalstackKCLConsumer {
       appName: String,
       prefix: Option[String] = None,
       workerId: String = Utils.randomUUIDString,
-      position: InitialPositionInStreamExtended =
-        InitialPositionInStreamExtended.newInitialPosition(
-          InitialPositionInStream.TRIM_HORIZON
-        ),
       processConfig: KCLConsumer.ProcessConfig =
         KCLConsumer.ProcessConfig.default
   )(cb: List[CommittableRecord[F]] => F[Unit])(implicit
@@ -156,7 +162,6 @@ object LocalstackKCLConsumer {
       streamTracker,
       appName,
       workerId,
-      position,
       processConfig
     )(cb)
   } yield result
@@ -196,7 +201,6 @@ object LocalstackKCLConsumer {
       streamTracker: StreamTracker,
       appName: String,
       workerId: String,
-      position: InitialPositionInStreamExtended,
       processConfig: KCLConsumer.ProcessConfig,
       resultsQueueSize: Int
   )(cb: List[CommittableRecord[F]] => F[Unit])(implicit
@@ -211,7 +215,6 @@ object LocalstackKCLConsumer {
       streamTracker,
       appName,
       workerId,
-      position,
       processConfig
     )((recs: List[CommittableRecord[F]]) =>
       resultsQueue.tryOfferN(recs) >> cb(recs)
@@ -254,10 +257,6 @@ object LocalstackKCLConsumer {
       appName: String,
       prefix: Option[String] = None,
       workerId: String = Utils.randomUUIDString,
-      position: InitialPositionInStreamExtended =
-        InitialPositionInStreamExtended.newInitialPosition(
-          InitialPositionInStream.TRIM_HORIZON
-        ),
       processConfig: KCLConsumer.ProcessConfig =
         KCLConsumer.ProcessConfig.default,
       resultsQueueSize: Int = 50
@@ -271,7 +270,6 @@ object LocalstackKCLConsumer {
       streamTracker,
       appName,
       workerId,
-      position,
       processConfig,
       resultsQueueSize
     )(cb)
@@ -312,7 +310,6 @@ object LocalstackKCLConsumer {
       streamTracker: StreamTracker,
       appName: String,
       workerId: String,
-      position: InitialPositionInStreamExtended,
       processConfig: KCLConsumer.ProcessConfig
   )(cb: List[CommittableRecord[F]] => F[Unit])(implicit
       F: Async[F],
@@ -323,7 +320,6 @@ object LocalstackKCLConsumer {
       streamTracker,
       appName,
       workerId,
-      position,
       processConfig
     )(cb)
     consumer = new KCLConsumer(config)
@@ -367,10 +363,6 @@ object LocalstackKCLConsumer {
       appName: String,
       prefix: Option[String] = None,
       workerId: String = Utils.randomUUIDString,
-      position: InitialPositionInStreamExtended =
-        InitialPositionInStreamExtended.newInitialPosition(
-          InitialPositionInStream.TRIM_HORIZON
-        ),
       processConfig: KCLConsumer.ProcessConfig =
         KCLConsumer.ProcessConfig.default
   )(cb: List[CommittableRecord[F]] => F[Unit])(implicit
@@ -383,7 +375,6 @@ object LocalstackKCLConsumer {
       streamTracker,
       appName,
       workerId,
-      position,
       processConfig
     )(cb)
   } yield result
@@ -426,7 +417,6 @@ object LocalstackKCLConsumer {
       streamTracker: StreamTracker,
       appName: String,
       workerId: String,
-      position: InitialPositionInStreamExtended,
       processConfig: KCLConsumer.ProcessConfig,
       resultsQueueSize: Int
   )(cb: List[CommittableRecord[F]] => F[Unit])(implicit
@@ -438,7 +428,6 @@ object LocalstackKCLConsumer {
       streamTracker,
       appName,
       workerId,
-      position,
       processConfig,
       resultsQueueSize
     )(cb)
@@ -486,10 +475,6 @@ object LocalstackKCLConsumer {
       appName: String,
       prefix: Option[String] = None,
       workerId: String = Utils.randomUUIDString,
-      position: InitialPositionInStreamExtended =
-        InitialPositionInStreamExtended.newInitialPosition(
-          InitialPositionInStream.TRIM_HORIZON
-        ),
       processConfig: KCLConsumer.ProcessConfig =
         KCLConsumer.ProcessConfig.default,
       resultsQueueSize: Int = 50
@@ -502,7 +487,6 @@ object LocalstackKCLConsumer {
       appName,
       prefix,
       workerId,
-      position,
       processConfig,
       resultsQueueSize
     )(cb)

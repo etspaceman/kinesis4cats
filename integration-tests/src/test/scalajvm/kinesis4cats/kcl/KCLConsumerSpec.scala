@@ -28,6 +28,7 @@ import io.circe.syntax._
 import org.scalacheck.Arbitrary
 import software.amazon.awssdk.core.SdkBytes
 import software.amazon.awssdk.services.kinesis.model.PutRecordRequest
+import software.amazon.kinesis.common._
 import software.amazon.kinesis.processor.SingleStreamTracker
 
 import kinesis4cats.Utils
@@ -93,7 +94,12 @@ object KCLConsumerSpec {
   ): Resource[IO, Resources[IO]] = for {
     client <- LocalstackKinesisClient.streamResource[IO](streamName, shardCount)
     deferredWithResults <- LocalstackKCLConsumer.kclConsumerWithResults(
-      new SingleStreamTracker(streamName),
+      new SingleStreamTracker(
+        StreamIdentifier.singleStreamInstance(streamName),
+        InitialPositionInStreamExtended.newInitialPosition(
+          InitialPositionInStream.TRIM_HORIZON
+        )
+      ),
       appName
     )((_: List[CommittableRecord[IO]]) => IO.unit)
   } yield Resources(
