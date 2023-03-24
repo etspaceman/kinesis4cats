@@ -154,6 +154,7 @@
 </span><span class="keyword">import</span><span> </span><span class="identifier">software</span><span>.</span><span class="identifier">amazon</span><span>.</span><span class="identifier">awssdk</span><span>.</span><span class="identifier">services</span><span>.</span><span class="identifier">cloudwatch</span><span>.</span><span class="type-name">CloudWatchAsyncClient</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">software</span><span>.</span><span class="identifier">amazon</span><span>.</span><span class="identifier">awssdk</span><span>.</span><span class="identifier">services</span><span>.</span><span class="identifier">dynamodb</span><span>.</span><span class="type-name">DynamoDbAsyncClient</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">software</span><span>.</span><span class="identifier">amazon</span><span>.</span><span class="identifier">awssdk</span><span>.</span><span class="identifier">services</span><span>.</span><span class="identifier">kinesis</span><span>.</span><span class="type-name">KinesisAsyncClient</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">software</span><span>.</span><span class="identifier">amazon</span><span>.</span><span class="identifier">kinesis</span><span>.</span><span class="identifier">processor</span><span>.</span><span class="type-name">SingleStreamTracker</span><span>
 
 </span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">kcl</span><span>.</span><span class="identifier">_</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">kcl</span><span>.</span><span class="identifier">logging</span><span>.</span><span class="identifier">instances</span><span>.</span><span class="identifier">show</span><span>.</span><span class="identifier">_</span><span>
@@ -174,7 +175,7 @@
             </span><span class="identifier">kinesisClient</span><span>, 
             </span><span class="identifier">dynamoClient</span><span>, 
             </span><span class="identifier">cloudWatchClient</span><span>, 
-            </span><span class="string-literal">&quot;my-stream&quot;</span><span>, 
+            </span><span class="keyword">new</span><span> </span><span class="type-name">SingleStreamTracker</span><span>(</span><span class="string-literal">&quot;my-stream&quot;</span><span>), 
             </span><span class="string-literal">&quot;my-app-name&quot;</span><span>
         )((</span><span class="identifier">records</span><span>: </span><span class="type-name">List</span><span>[</span><span class="type-name">CommittableRecord</span><span>[</span><span class="type-name">IO</span><span>]]) =&gt; 
             </span><span class="identifier">records</span><span>.</span><span class="identifier">traverse_</span><span>(</span><span class="identifier">r</span><span> =&gt; </span><span class="type-name">IO</span><span>.</span><span class="identifier">println</span><span>(</span><span class="identifier">r</span><span>.</span><span class="identifier">data</span><span>.</span><span class="identifier">asString</span><span>))
@@ -221,7 +222,7 @@
             </span><span class="identifier">kinesisClient</span><span>,
             </span><span class="type-name">Map</span><span>(</span><span class="identifier">streamArn1</span><span> -&gt; </span><span class="identifier">position</span><span>, </span><span class="identifier">streamArn2</span><span> -&gt; </span><span class="identifier">position</span><span>)
         ).</span><span class="identifier">toResource</span><span>
-        </span><span class="identifier">consumer</span><span> &lt;- </span><span class="type-name">KCLConsumer</span><span>.</span><span class="identifier">configsBuilderMultiStream</span><span>[</span><span class="type-name">IO</span><span>](
+        </span><span class="identifier">consumer</span><span> &lt;- </span><span class="type-name">KCLConsumer</span><span>.</span><span class="identifier">configsBuilder</span><span>[</span><span class="type-name">IO</span><span>](
             </span><span class="identifier">kinesisClient</span><span>.</span><span class="identifier">client</span><span>, 
             </span><span class="identifier">dynamoClient</span><span>, 
             </span><span class="identifier">cloudWatchClient</span><span>, 
@@ -242,6 +243,7 @@
 </span><span class="keyword">import</span><span> </span><span class="identifier">software</span><span>.</span><span class="identifier">amazon</span><span>.</span><span class="identifier">awssdk</span><span>.</span><span class="identifier">services</span><span>.</span><span class="identifier">cloudwatch</span><span>.</span><span class="type-name">CloudWatchAsyncClient</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">software</span><span>.</span><span class="identifier">amazon</span><span>.</span><span class="identifier">awssdk</span><span>.</span><span class="identifier">services</span><span>.</span><span class="identifier">dynamodb</span><span>.</span><span class="type-name">DynamoDbAsyncClient</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">software</span><span>.</span><span class="identifier">amazon</span><span>.</span><span class="identifier">awssdk</span><span>.</span><span class="identifier">services</span><span>.</span><span class="identifier">kinesis</span><span>.</span><span class="type-name">KinesisAsyncClient</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">software</span><span>.</span><span class="identifier">amazon</span><span>.</span><span class="identifier">kinesis</span><span>.</span><span class="identifier">processor</span><span>.</span><span class="type-name">SingleStreamTracker</span><span>
 
 </span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">kcl</span><span>.</span><span class="identifier">fs2</span><span>.</span><span class="type-name">KCLConsumerFS2</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">kcl</span><span>.</span><span class="identifier">logging</span><span>.</span><span class="identifier">instances</span><span>.</span><span class="identifier">show</span><span>.</span><span class="identifier">_</span><span>
@@ -262,7 +264,7 @@
             </span><span class="identifier">kinesisClient</span><span>, 
             </span><span class="identifier">dynamoClient</span><span>, 
             </span><span class="identifier">cloudWatchClient</span><span>, 
-            </span><span class="string-literal">&quot;my-stream&quot;</span><span>, 
+            </span><span class="keyword">new</span><span> </span><span class="type-name">SingleStreamTracker</span><span>(</span><span class="string-literal">&quot;my-stream&quot;</span><span>), 
             </span><span class="string-literal">&quot;my-app-name&quot;</span><span>
         )()
         </span><span class="identifier">_</span><span> &lt;- </span><span class="identifier">consumer</span><span>
