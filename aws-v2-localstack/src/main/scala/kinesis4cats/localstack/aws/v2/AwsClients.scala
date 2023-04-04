@@ -146,6 +146,140 @@ object AwsClients {
   ): Resource[F, KinesisAsyncClient] =
     kinesisClient[F](prefix).toResource
 
+  /** Creates a stream and awaits for the status to be ready
+    *
+    * @param client
+    *   [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/kinesis/KinesisAsyncClient.html KinesisAsyncClient]]
+    *   to use
+    * @param streamName
+    *   Stream name
+    * @param shardCount
+    *   Shard count for stream
+    * @param describeRetries
+    *   How many times to retry DescribeStreamSummary when checking the stream
+    *   status
+    * @param describeRetryDuration
+    *   How long to delay between retries of the DescribeStreamSummary call
+    * @param F
+    *   F with an [[cats.effect.Async Async]] instance
+    * @return
+    */
+  def createStream[F[_]](
+      client: KinesisAsyncClient,
+      streamName: String,
+      shardCount: Int,
+      describeRetries: Int,
+      describeRetryDuration: FiniteDuration
+  )(implicit F: Async[F]): F[Unit] = {
+    val retryPolicy = constantDelay(describeRetryDuration).join(
+      limitRetries(describeRetries)
+    )
+    for {
+      _ <- F.fromCompletableFuture(
+        F.delay(
+          client.createStream(
+            CreateStreamRequest
+              .builder()
+              .streamName(streamName)
+              .shardCount(shardCount)
+              .streamModeDetails(
+                StreamModeDetails
+                  .builder()
+                  .streamMode(StreamMode.PROVISIONED)
+                  .build()
+              )
+              .build()
+          )
+        )
+      )
+      _ <- retryingOnFailuresAndAllErrors(
+        retryPolicy,
+        (x: DescribeStreamSummaryResponse) =>
+          F.pure(
+            x.streamDescriptionSummary()
+              .streamStatus() == StreamStatus.ACTIVE
+          ),
+        noop[F, DescribeStreamSummaryResponse],
+        noop[F, Throwable]
+      )(
+        F.fromCompletableFuture(
+          F.delay(
+            client.describeStreamSummary(
+              DescribeStreamSummaryRequest
+                .builder()
+                .streamName(streamName)
+                .build()
+            )
+          )
+        )
+      )
+    } yield ()
+  }
+
+  /** Deletes a stream and awaits for the stream deletion to be finalized
+    *
+    * @param client
+    *   [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/kinesis/KinesisAsyncClient.html KinesisAsyncClient]]
+    *   to use
+    * @param streamName
+    *   Stream name
+    * @param describeRetries
+    *   How many times to retry DescribeStreamSummary when checking the stream
+    *   status
+    * @param describeRetryDuration
+    *   How long to delay between retries of the DescribeStreamSummary call
+    * @param F
+    *   F with an [[cats.effect.Async Async]] instance
+    * @return
+    */
+  def deleteStream[F[_]](
+      client: KinesisAsyncClient,
+      streamName: String,
+      describeRetries: Int,
+      describeRetryDuration: FiniteDuration
+  )(implicit F: Async[F]): F[Unit] = {
+    val retryPolicy = constantDelay(describeRetryDuration).join(
+      limitRetries(describeRetries)
+    )
+    for {
+      _ <- F.fromCompletableFuture(
+        F.delay(
+          client.deleteStream(
+            DeleteStreamRequest.builder().streamName(streamName).build()
+          )
+        )
+      )
+      _ <- retryingOnFailuresAndSomeErrors(
+        retryPolicy,
+        (x: Either[Throwable, DescribeStreamSummaryResponse]) =>
+          F.pure(
+            x.swap.exists {
+              case _: ResourceNotFoundException => true
+              case _                            => false
+            }
+          ),
+        (e: Throwable) =>
+          e match {
+            case _: ResourceNotFoundException => F.pure(false)
+            case _                            => F.pure(true)
+          },
+        noop[F, Either[Throwable, DescribeStreamSummaryResponse]],
+        noop[F, Throwable]
+      )(
+        F.fromCompletableFuture(
+          F.delay(
+            client.describeStreamSummary(
+              DescribeStreamSummaryRequest
+                .builder()
+                .streamName(streamName)
+                .build()
+            )
+          )
+        ).attempt
+      )
+    } yield ()
+  }
+
   /** A resource that does the following:
     *
     *   - Builds a
@@ -183,88 +317,16 @@ object AwsClients {
       F: Async[F]
   ): Resource[F, KinesisAsyncClient] = for {
     client <- kinesisClientResource(config)
-    retryPolicy = constantDelay(describeRetryDuration).join(
-      limitRetries(describeRetries)
-    )
     result <- Resource.make(
-      for {
-        _ <- F.fromCompletableFuture(
-          F.delay(
-            client.createStream(
-              CreateStreamRequest
-                .builder()
-                .streamName(streamName)
-                .shardCount(shardCount)
-                .streamModeDetails(
-                  StreamModeDetails
-                    .builder()
-                    .streamMode(StreamMode.PROVISIONED)
-                    .build()
-                )
-                .build()
-            )
-          )
-        )
-        _ <- retryingOnFailuresAndAllErrors(
-          retryPolicy,
-          (x: DescribeStreamSummaryResponse) =>
-            F.pure(
-              x.streamDescriptionSummary()
-                .streamStatus() == StreamStatus.ACTIVE
-            ),
-          noop[F, DescribeStreamSummaryResponse],
-          noop[F, Throwable]
-        )(
-          F.fromCompletableFuture(
-            F.delay(
-              client.describeStreamSummary(
-                DescribeStreamSummaryRequest
-                  .builder()
-                  .streamName(streamName)
-                  .build()
-              )
-            )
-          )
-        )
-      } yield client
+      createStream(
+        client,
+        streamName,
+        shardCount,
+        describeRetries,
+        describeRetryDuration
+      ).as(client)
     )(client =>
-      for {
-        _ <- F.fromCompletableFuture(
-          F.delay(
-            client.deleteStream(
-              DeleteStreamRequest.builder().streamName(streamName).build()
-            )
-          )
-        )
-        _ <- retryingOnFailuresAndSomeErrors(
-          retryPolicy,
-          (x: Either[Throwable, DescribeStreamSummaryResponse]) =>
-            F.pure(
-              x.swap.exists {
-                case _: ResourceNotFoundException => true
-                case _                            => false
-              }
-            ),
-          (e: Throwable) =>
-            e match {
-              case _: ResourceNotFoundException => F.pure(false)
-              case _                            => F.pure(true)
-            },
-          noop[F, Either[Throwable, DescribeStreamSummaryResponse]],
-          noop[F, Throwable]
-        )(
-          F.fromCompletableFuture(
-            F.delay(
-              client.describeStreamSummary(
-                DescribeStreamSummaryRequest
-                  .builder()
-                  .streamName(streamName)
-                  .build()
-              )
-            )
-          ).attempt
-        )
-      } yield ()
+      deleteStream(client, streamName, describeRetries, describeRetryDuration)
     )
   } yield result
 
