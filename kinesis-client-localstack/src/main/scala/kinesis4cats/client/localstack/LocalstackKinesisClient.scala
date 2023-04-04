@@ -24,10 +24,7 @@ import cats.effect.syntax.all._
 import cats.effect.{Async, Resource}
 import cats.syntax.all._
 import org.typelevel.log4cats.slf4j.Slf4jLogger
-import software.amazon.awssdk.services.kinesis.model._
 
-import kinesis4cats.compat.retry.RetryPolicies._
-import kinesis4cats.compat.retry._
 import kinesis4cats.localstack.LocalstackConfig
 import kinesis4cats.localstack.aws.v2.AwsClients
 
@@ -115,74 +112,24 @@ object LocalstackKinesisClient {
       LE: KinesisClient.LogEncoders
   ): Resource[F, KinesisClient[F]] = for {
     client <- clientResource(config)
-    retryPolicy = constantDelay(describeRetryDuration).join(
-      limitRetries(describeRetries)
-    )
     result <- Resource.make(
-      for {
-        _ <- client.createStream(
-          CreateStreamRequest
-            .builder()
-            .streamName(streamName)
-            .shardCount(shardCount)
-            .streamModeDetails(
-              StreamModeDetails
-                .builder()
-                .streamMode(StreamMode.PROVISIONED)
-                .build()
-            )
-            .build()
+      AwsClients
+        .createStream(
+          client.client,
+          streamName,
+          shardCount,
+          describeRetries,
+          describeRetryDuration
         )
-        _ <- retryingOnFailuresAndAllErrors(
-          retryPolicy,
-          (x: DescribeStreamSummaryResponse) =>
-            F.pure(
-              x.streamDescriptionSummary()
-                .streamStatus() == StreamStatus.ACTIVE
-            ),
-          noop[F, DescribeStreamSummaryResponse],
-          noop[F, Throwable]
-        )(
-          client.describeStreamSummary(
-            DescribeStreamSummaryRequest
-              .builder()
-              .streamName(streamName)
-              .build()
-          )
-        )
-      } yield client
+        .as(client)
     )(client =>
-      for {
-        _ <- client.deleteStream(
-          DeleteStreamRequest.builder().streamName(streamName).build()
+      AwsClients
+        .deleteStream(
+          client.client,
+          streamName,
+          describeRetries,
+          describeRetryDuration
         )
-        _ <- retryingOnFailuresAndSomeErrors(
-          retryPolicy,
-          (x: Either[Throwable, DescribeStreamSummaryResponse]) =>
-            F.pure(
-              x.swap.exists {
-                case _: ResourceNotFoundException => true
-                case _                            => false
-              }
-            ),
-          (e: Throwable) =>
-            e match {
-              case _: ResourceNotFoundException => F.pure(false)
-              case _                            => F.pure(true)
-            },
-          noop[F, Either[Throwable, DescribeStreamSummaryResponse]],
-          noop[F, Throwable]
-        )(
-          client
-            .describeStreamSummary(
-              DescribeStreamSummaryRequest
-                .builder()
-                .streamName(streamName)
-                .build()
-            )
-            .attempt
-        )
-      } yield ()
     )
   } yield result
 
