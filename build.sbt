@@ -12,7 +12,7 @@ lazy val compat = projectMatrix
 lazy val shared = projectMatrix
   .settings(
     description := "Common shared utilities",
-    libraryDependencies ++= testDependencies.value ++ Seq(
+    libraryDependencies ++= testDependencies.value.map(_ % Test) ++ Seq(
       "com.thesamet.scalapb" %%% "scalapb-runtime" % scalapb.compiler.Version.scalapbVersion,
       ScalaJS.javaTime.value,
       Log4Cats.noop.value % Test
