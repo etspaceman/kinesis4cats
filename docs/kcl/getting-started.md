@@ -24,24 +24,14 @@ import kinesis4cats.syntax.bytebuffer._
 
 object MyApp extends ResourceApp.Forever {
     override def run(args: List[String]) = for {
-        kinesisClient <- Resource.fromAutoCloseable(
-            IO(KinesisAsyncClient.builder().build())
+        consumer <- KCLConsumer.builder[IO](
+            appName = "my-app-name"
+            streamTracker = new SingleStreamTracker("my-stream"),
         )
-        dynamoClient <- Resource.fromAutoCloseable(
-            IO(DynamoDbAsyncClient.builder().build())
-        )
-        cloudWatchClient <- Resource.fromAutoCloseable(
-            IO(CloudWatchAsyncClient.builder().build())
-        )
-        consumer <- KCLConsumer.configsBuilder[IO](
-            kinesisClient, 
-            dynamoClient, 
-            cloudWatchClient, 
-            new SingleStreamTracker("my-stream"), 
-            "my-app-name"
-        )((records: List[CommittableRecord[IO]]) => 
+        .withCallback((records: List[CommittableRecord[IO]]) =>
             records.traverse_(r => IO.println(r.data.asString))
-        )()
+        )
+        .build()
         _ <- consumer.run()
     } yield ()
 }
@@ -90,12 +80,12 @@ object MyApp extends ResourceApp.Forever {
             Map(streamArn1 -> position, streamArn2 -> position)
         ).toResource
         consumer <- KCLConsumer.configsBuilder[IO](
-            kinesisClient.client, 
-            dynamoClient, 
-            cloudWatchClient, 
-            tracker, 
+            kinesisClient.client,
+            dynamoClient,
+            cloudWatchClient,
+            tracker,
             "my-app-name"
-        )((records: List[CommittableRecord[IO]]) => 
+        )((records: List[CommittableRecord[IO]]) =>
             records.traverse_(r => IO.println(r.data.asString))
         )()
         _ <- consumer.run()
@@ -132,10 +122,10 @@ object MyApp extends ResourceApp.Forever {
             IO(CloudWatchAsyncClient.builder().build())
         )
         consumer <- KCLConsumerFS2.configsBuilder[IO](
-            kinesisClient, 
-            dynamoClient, 
-            cloudWatchClient, 
-            new SingleStreamTracker("my-stream"), 
+            kinesisClient,
+            dynamoClient,
+            cloudWatchClient,
+            new SingleStreamTracker("my-stream"),
             "my-app-name"
         )()
         _ <- consumer

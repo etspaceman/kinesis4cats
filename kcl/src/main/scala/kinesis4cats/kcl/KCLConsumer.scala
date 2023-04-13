@@ -16,7 +16,10 @@
 
 package kinesis4cats.kcl
 
+import cats.Applicative
 import cats.effect.Deferred
+import cats.effect.kernel.Sync
+import cats.effect.std.UUIDGen
 import cats.effect.syntax.all._
 import cats.effect.{Async, Ref, Resource}
 import cats.syntax.all._
@@ -174,6 +177,84 @@ object KCLConsumer {
       processConfig
     )(cb)
     .map(new KCLConsumer[F](_))
+
+  def builder[F[_]: Async](
+      appName: String,
+      streamTracker: StreamTracker
+  ): KCLConsumerBuilder[F] =
+    new KCLConsumerBuilder[F](
+      appName = appName,
+      streamTracker = streamTracker,
+      mkWorkerId = UUIDGen[F].randomUUID.map(_.toString),
+      kinesisClientResource = Resource
+        .fromAutoCloseable(
+          Sync[F].delay(KinesisAsyncClient.builder().build())
+        ),
+      dynamoClientResource = Resource.fromAutoCloseable(
+        Sync[F].delay(DynamoDbAsyncClient.builder().build())
+      ),
+      cloudWatchClientResource = Resource.fromAutoCloseable(
+        Sync[F].delay(CloudWatchAsyncClient.builder().build())
+      ),
+      callback = Function.const(Applicative[F].unit),
+      config = identity
+    )
+
+  final case class KCLConsumerBuilder[F[_]: Async] private[KCLConsumer] (
+      private val appName: String,
+      private val streamTracker: StreamTracker,
+      private val mkWorkerId: F[String],
+      private val kinesisClientResource: Resource[F, KinesisAsyncClient],
+      private val dynamoClientResource: Resource[F, DynamoDbAsyncClient],
+      private val cloudWatchClientResource: Resource[F, CloudWatchAsyncClient],
+      private val callback: List[CommittableRecord[F]] => F[Unit],
+      private val config: Config[F] => Config[F]
+  ) {
+    def withKinesisClient(
+        kinesisClient: KinesisAsyncClient
+    ): KCLConsumerBuilder[F] =
+      copy(kinesisClientResource = Resource.pure(kinesisClient))
+
+    def withDynamoClient(
+        dynamoClient: DynamoDbAsyncClient
+    ): KCLConsumerBuilder[F] =
+      copy(dynamoClientResource = Resource.pure(dynamoClient))
+
+    def withCloudWatchClient(
+        cloudWatchClient: CloudWatchAsyncClient
+    ): KCLConsumerBuilder[F] =
+      copy(cloudWatchClientResource = Resource.pure(cloudWatchClient))
+
+    def withWorkerId(workerId: String): KCLConsumerBuilder[F] =
+      copy(mkWorkerId = Applicative[F].pure(workerId))
+
+    def withCallback(
+        cb: List[CommittableRecord[F]] => F[Unit]
+    ): KCLConsumerBuilder[F] =
+      copy(callback = cb)
+
+    def configure(f: Config[F] => Config[F]): KCLConsumerBuilder[F] =
+      copy(config = f)
+
+    def build(implicit
+        encoders: RecordProcessor.LogEncoders
+    ): Resource[F, KCLConsumer[F]] = for {
+      workerId <- Resource.eval(mkWorkerId)
+      kinesisClient <- kinesisClientResource
+      dynamoClient <- dynamoClientResource
+      cloudWatchClient <- cloudWatchClientResource
+      c <- configsBuilder(
+        appName = appName,
+        workerId = workerId,
+        streamTracker = streamTracker,
+        kinesisClient = kinesisClient,
+        dynamoClient = dynamoClient,
+        cloudWatchClient = cloudWatchClient
+      )(callback)(config)
+    } yield c
+  }
+
+  // todo remove?
 
   /** Constructor for the [[kinesis4cats.kcl.KCLConsumer KCLConsumer]] that
     * leverages the
