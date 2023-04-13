@@ -2,8 +2,6 @@ import LibraryDependencies.{Smithy4s => S4S, _}
 import laika.rewrite.link._
 import sbt.internal.ProjectMatrix
 
-Global / onChangedBuildSource := ReloadOnSourceChanges
-
 def module(mx: ProjectMatrix): ProjectMatrix =
   mx.in(mx.base.getParentFile() / "modules" / mx.base.getName())
 
