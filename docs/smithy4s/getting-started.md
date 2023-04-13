@@ -9,7 +9,7 @@ This module intends to be a native Scala implementation of a Kinesis Client usin
 Some known issues:
 
 - [SubscribeToShard](https://docs.aws.amazon.com/kinesis/latest/APIReference/API_SubscribeToShard.html) will not work properly as it uses the http2 protocl.
-- Updates to the smithy file(s) in this module are not intended to be backwards compatible. 
+- Updates to the smithy file(s) in this module are not intended to be backwards compatible.
 
 ## Installation
 
@@ -34,8 +34,8 @@ object MyApp extends IOApp {
     override def run(args: List[String]) = (for {
         underlying <- BlazeClientBuilder[IO].resource
         client <- KinesisClient[IO](
-            underlying, 
-            IO.pure(AwsRegion.US_EAST_1), 
+            underlying,
+            IO.pure(AwsRegion.US_EAST_1),
             loggerF = (_: Async[IO]) => Slf4jLogger.create[IO]
         )
     } yield client).use(client =>
@@ -53,15 +53,15 @@ object MyApp extends IOApp {
 
 ## Producer
 
-kinesis4cats offers a @:source(shared.src.main.scala.kinesis4cats.producer.Producer) interface that handles the following:
+kinesis4cats offers a @:source(modules.shared.src.main.scala.kinesis4cats.producer.Producer) interface that handles the following:
 
-- Maintains a @:source(shared.src.main.scala.kinesis4cats.producer.ShardMapCache), which will routinely track the open shards for a Kinesis stream. It is used to predict which shard a record will be produced to.
+- Maintains a @:source(modules.shared.src.main.scala.kinesis4cats.producer.ShardMapCache), which will routinely track the open shards for a Kinesis stream. It is used to predict which shard a record will be produced to.
 - Aggregates records using the [KPL Aggregation Format](https://docs.aws.amazon.com/streams/latest/dev/kinesis-kpl-concepts.html#kinesis-kpl-concepts-aggretation) (if configured)
 - Batches records against known Kinesis limits (or a user-defined set of configuration).
 - Produces records to Kinesis
 - Provides an Error interface for users to interact with failed records (e.g. retrying failures)
 
-This module provides an implementation of that interface, backed by the @:source(smithy4s-client.src.main.scala.kinesis4cats.smithy4s.client.KinesisClient).
+This module provides an implementation of that interface, backed by the @:source(modules.smithy4s-client.src.main.scala.kinesis4cats.smithy4s.client.KinesisClient).
 
 
 ```scala mdoc:compile-only
@@ -115,7 +115,7 @@ object MyApp extends IOApp {
 
 ## FS2
 
-This package provides a [KPL-like](https://github.com/awslabs/amazon-kinesis-producer) producer via implementing @:source(shared.src.main.scala.kinesis4cats.producer.fs2.FS2Producer). This interface receives records from a user, enqueues them into a Queue and puts them as batches to Kinesis on a configured interval. This leverages all of the functionality of the @:source(shared.src.main.scala.kinesis4cats.producer.Producer) interface, including batching, aggregation and retries. 
+This package provides a [KPL-like](https://github.com/awslabs/amazon-kinesis-producer) producer via implementing @:source(modules.shared.src.main.scala.kinesis4cats.producer.fs2.FS2Producer). This interface receives records from a user, enqueues them into a Queue and puts them as batches to Kinesis on a configured interval. This leverages all of the functionality of the @:source(modules.shared.src.main.scala.kinesis4cats.producer.Producer) interface, including batching, aggregation and retries.
 
 ### Usage
 
@@ -133,7 +133,7 @@ import kinesis4cats.producer._
 import kinesis4cats.models.StreamNameOrArn
 
 object MyApp extends IOApp {
-    override def run(args: List[String]) = 
+    override def run(args: List[String]) =
         BlazeClientBuilder[IO].resource.flatMap(client =>
             FS2KinesisProducer[IO](
                 FS2Producer.Config.default(StreamNameOrArn.Name("my-stream")),

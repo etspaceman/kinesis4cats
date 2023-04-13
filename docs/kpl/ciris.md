@@ -1,6 +1,6 @@
 # Ciris
 
-Standard environment variables and system properties for configuring a @:source(kpl.src.main.scala.kinesis4cats.kpl.KPLProducer), via [Ciris](https://cir.is/)
+Standard environment variables and system properties for configuring a @:source(modules.kpl.src.main.scala.kinesis4cats.kpl.KPLProducer), via [Ciris](https://cir.is/)
 
 ## Installation
 

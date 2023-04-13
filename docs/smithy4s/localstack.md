@@ -1,6 +1,6 @@
 # Localstack
 
-The ability to provide a @:source(smithy4s-client.src.main.scala.kinesis4cats.smithy4s.client.KinesisClient) that is compliant with Localstack
+The ability to provide a @:source(modules.smithy4s-client.src.main.scala.kinesis4cats.smithy4s.client.KinesisClient) that is compliant with Localstack
 
 ## Installation
 

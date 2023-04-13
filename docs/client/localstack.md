@@ -1,6 +1,6 @@
 # Localstack
 
-The ability to provide a @:source(kinesis-client.src.main.scala.kinesis4cats.client.KinesisClient) that is compliant with Localstack
+The ability to provide a @:source(modules.kinesis-client.src.main.scala.kinesis4cats.client.KinesisClient) that is compliant with Localstack
 
 ## Installation
 

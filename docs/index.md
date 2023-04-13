@@ -6,7 +6,7 @@
 
 ## Project Goals
 
-kinesis4cats is intended to give Scala developers a rich ecosystem of tooling when developing [Kinesis](https://aws.amazon.com/kinesis/) applications, leveraging the [typelevel](https://typelevel.org/) ecosystem. 
+kinesis4cats is intended to give Scala developers a rich ecosystem of tooling when developing [Kinesis](https://aws.amazon.com/kinesis/) applications, leveraging the [typelevel](https://typelevel.org/) ecosystem.
 
 ## Logging
 
@@ -20,4 +20,4 @@ This library takes structured logging seriously, and offers it as a first class 
 - DEBUG: Informational, high-frequency logs (e.g. request logging)
 - TRACE: Data / class bodies
 
-Each offering leverages @:source(shared.src.main.scala.kinesis4cats.logging.LogEncoder) instances to structure the logs that you see. There are [Show](https://typelevel.org/cats/typeclasses/show.html) instances available to import out-of-the-box, which attempts to create a toString-like representation of the structures. That can be useful for most people, but if you are looking to introduce more searchability, using a JSON offering can be very beneficial. There are [Circe](https://circe.github.io/circe/) modules for these instances that users can leverage for this purpose.
+Each offering leverages @:source(modules.shared.src.main.scala.kinesis4cats.logging.LogEncoder) instances to structure the logs that you see. There are [Show](https://typelevel.org/cats/typeclasses/show.html) instances available to import out-of-the-box, which attempts to create a toString-like representation of the structures. That can be useful for most people, but if you are looking to introduce more searchability, using a JSON offering can be very beneficial. There are [Circe](https://circe.github.io/circe/) modules for these instances that users can leverage for this purpose.

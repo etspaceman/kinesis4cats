@@ -1,6 +1,6 @@
 # Ciris
 
-Standard environment variables and system properties for configuring a @:source(kcl.src.main.scala.kinesis4cats.kcl.KCLConsumer), via [Ciris](https://cir.is/)
+Standard environment variables and system properties for configuring a @:source(modules.kcl.src.main.scala.kinesis4cats.kcl.KCLConsumer), via [Ciris](https://cir.is/)
 
 ## Installation
 
@@ -34,11 +34,11 @@ object MyApp extends ResourceApp.Forever {
             IO(CloudWatchAsyncClient.builder().build())
         )
         consumer <- KCLCiris.consumer[IO](
-            kinesisClient, 
-            dynamoClient, 
+            kinesisClient,
+            dynamoClient,
             cloudWatchClient
-        ){ case records: List[CommittableRecord[IO]] => 
-            records.traverse_(r => IO.println(r.data.asString)) 
+        ){ case records: List[CommittableRecord[IO]] =>
+            records.traverse_(r => IO.println(r.data.asString))
         }
         _ <- consumer.run()
     } yield ()
@@ -186,7 +186,7 @@ For example, if you wanted to set the duration to a day, you could use:
 
 ## FS2 Configuration
 
-Standard environment variables and system properties for configuring a @:source(kcl.src.main.scala.kinesis4cats.kcl.fs2.KCLConsumerFS2), via [Ciris](https://cir.is/)
+Standard environment variables and system properties for configuring a @:source(modules.kcl.src.main.scala.kinesis4cats.kcl.fs2.KCLConsumerFS2), via [Ciris](https://cir.is/)
 
 ### Usage
 

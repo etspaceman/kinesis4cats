@@ -1,6 +1,6 @@
 # Http4s
 
-Provides a coupling of a @:source(kcl.src.main.scala.kinesis4cats.kcl.KCLConsumer) with an [Http4s](https://http4s.org/) server, that services two routes:
+Provides a coupling of a @:source(modules.kcl.src.main.scala.kinesis4cats.kcl.KCLConsumer) with an [Http4s](https://http4s.org/) server, that services two routes:
 
 - healthcheck (determines whether the http server is up)
 - initialized (determines whether the KCL is up)
@@ -39,12 +39,12 @@ object MyApp extends ResourceApp.Forever {
             IO(CloudWatchAsyncClient.builder().build())
         )
         consumer <- KCLConsumer.configsBuilder[IO](
-            kinesisClient, 
-            dynamoClient, 
-            cloudWatchClient, 
-            new SingleStreamTracker("my-stream"), 
+            kinesisClient,
+            dynamoClient,
+            cloudWatchClient,
+            new SingleStreamTracker("my-stream"),
             "my-app-name"
-        )((records: List[CommittableRecord[IO]]) => 
+        )((records: List[CommittableRecord[IO]]) =>
             records.traverse_(r => IO.println(r.data.asString))
         )()
         _ <- KCLService.server[IO](consumer, port"8080", host"0.0.0.0")
