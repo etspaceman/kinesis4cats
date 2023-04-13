@@ -1,7 +1,13 @@
 import LibraryDependencies.{Smithy4s => S4S, _}
 import laika.rewrite.link._
+import sbt.internal.ProjectMatrix
 
-lazy val compat = projectMatrix
+Global / onChangedBuildSource := ReloadOnSourceChanges
+
+def module(mx: ProjectMatrix): ProjectMatrix =
+  mx.in(mx.base.getParentFile() / "modules" / mx.base.getName())
+
+lazy val compat = module(projectMatrix)
   .settings(
     description := "Code to maintain compatability across major scala versions"
   )
@@ -9,7 +15,7 @@ lazy val compat = projectMatrix
   .nativePlatform(allScalaVersions)
   .jsPlatform(allScalaVersions)
 
-lazy val shared = projectMatrix
+lazy val shared = module(projectMatrix)
   .settings(
     description := "Common shared utilities",
     libraryDependencies ++= testDependencies.value.map(_ % Test) ++ Seq(
@@ -55,7 +61,7 @@ lazy val `shared-native-3` = shared
   .enablePlugins(ScalaNativeBrewedConfigPlugin)
   .settings(nativeBrewFormulas += "openssl")
 
-lazy val `shared-circe` = projectMatrix
+lazy val `shared-circe` = module(projectMatrix)
   .settings(
     description := "Common shared utilities for Circe",
     libraryDependencies ++= Seq(
@@ -68,7 +74,7 @@ lazy val `shared-circe` = projectMatrix
   .jsPlatform(allScalaVersions)
   .dependsOn(shared)
 
-lazy val `shared-ciris` = projectMatrix
+lazy val `shared-ciris` = module(projectMatrix)
   .settings(
     description := "Common shared utilities for Ciris",
     libraryDependencies ++= Seq(Ciris.core.value)
@@ -78,7 +84,7 @@ lazy val `shared-ciris` = projectMatrix
   .jsPlatform(allScalaVersions)
   .dependsOn(shared)
 
-lazy val `shared-localstack` = projectMatrix
+lazy val `shared-localstack` = module(projectMatrix)
   .settings(
     description := "Common utilities for the localstack test-kits"
   )
@@ -87,7 +93,7 @@ lazy val `shared-localstack` = projectMatrix
   .jsPlatform(allScalaVersions)
   .dependsOn(shared, `shared-ciris`, `shared-circe`)
 
-lazy val `aws-v2-localstack` = projectMatrix
+lazy val `aws-v2-localstack` = module(projectMatrix)
   .settings(
     description := "A test-kit for working with Kinesis and Localstack, via the V2 AWS SDK",
     libraryDependencies ++= Seq(
@@ -99,7 +105,7 @@ lazy val `aws-v2-localstack` = projectMatrix
   .jvmPlatform(allScalaVersions)
   .dependsOn(`shared-localstack`)
 
-lazy val `aws-v1-localstack` = projectMatrix
+lazy val `aws-v1-localstack` = module(projectMatrix)
   .settings(
     description := "A test-kit for working with Kinesis and Localstack, via the V1 AWS SDK",
     libraryDependencies ++= Seq(
@@ -111,7 +117,7 @@ lazy val `aws-v1-localstack` = projectMatrix
   .jvmPlatform(allScalaVersions)
   .dependsOn(`shared-localstack`)
 
-lazy val kcl = projectMatrix
+lazy val kcl = module(projectMatrix)
   .settings(
     description := "Cats tooling for the Kinesis Client Library (KCL)",
     libraryDependencies ++= Seq(
@@ -123,7 +129,7 @@ lazy val kcl = projectMatrix
   .jvmPlatform(allScalaVersions)
   .dependsOn(shared, `kinesis-client`)
 
-lazy val `kcl-http4s` = projectMatrix
+lazy val `kcl-http4s` = module(projectMatrix)
   .enablePlugins(Smithy4sCodegenPlugin)
   .settings(
     description := "Http4s interfaces for the KCL",
@@ -137,7 +143,7 @@ lazy val `kcl-http4s` = projectMatrix
   .jvmPlatform(allScalaVersions)
   .dependsOn(kcl)
 
-lazy val `kcl-ciris` = projectMatrix
+lazy val `kcl-ciris` = module(projectMatrix)
   .settings(BuildInfoPlugin.buildInfoDefaultSettings)
   .settings(BuildInfoPlugin.buildInfoScopedSettings(Test))
   .settings(
@@ -153,7 +159,7 @@ lazy val `kcl-ciris` = projectMatrix
   .jvmPlatform(allScalaVersions)
   .dependsOn(kcl, `shared-ciris`, `kcl-localstack` % Test)
 
-lazy val `kcl-logging-circe` = projectMatrix
+lazy val `kcl-logging-circe` = module(projectMatrix)
   .settings(
     description := "JSON structured logging instances for the KCL, via Circe"
   )
@@ -165,14 +171,14 @@ lazy val `kcl-logging-circe` = projectMatrix
     `kcl-localstack` % Test
   )
 
-lazy val `kcl-localstack` = projectMatrix
+lazy val `kcl-localstack` = module(projectMatrix)
   .settings(
     description := "A test-kit for working with Kinesis and Localstack, via the KCL"
   )
   .jvmPlatform(allScalaVersions)
   .dependsOn(`aws-v2-localstack`, kcl)
 
-lazy val kpl = projectMatrix
+lazy val kpl = module(projectMatrix)
   .settings(
     description := "Cats tooling for the Kinesis Producer Library (KPL)",
     libraryDependencies ++= Seq(
@@ -184,7 +190,7 @@ lazy val kpl = projectMatrix
   .jvmPlatform(allScalaVersions)
   .dependsOn(shared)
 
-lazy val `kpl-ciris` = projectMatrix
+lazy val `kpl-ciris` = module(projectMatrix)
   .settings(BuildInfoPlugin.buildInfoDefaultSettings)
   .settings(BuildInfoPlugin.buildInfoScopedSettings(Test))
   .settings(
@@ -200,21 +206,21 @@ lazy val `kpl-ciris` = projectMatrix
   .jvmPlatform(allScalaVersions)
   .dependsOn(kpl, `shared-ciris`)
 
-lazy val `kpl-logging-circe` = projectMatrix
+lazy val `kpl-logging-circe` = module(projectMatrix)
   .settings(
     description := "JSON structured logging instances for the KPL, via Circe"
   )
   .jvmPlatform(allScalaVersions)
   .dependsOn(kpl, `shared-circe`)
 
-lazy val `kpl-localstack` = projectMatrix
+lazy val `kpl-localstack` = module(projectMatrix)
   .settings(
     description := "A test-kit for working with Kinesis and Localstack, via the KPL"
   )
   .jvmPlatform(allScalaVersions)
   .dependsOn(`aws-v1-localstack`, kpl)
 
-lazy val `kinesis-client` = projectMatrix
+lazy val `kinesis-client` = module(projectMatrix)
   .settings(
     description := "Cats tooling for the Java Kinesis Client",
     libraryDependencies ++= Seq(
@@ -228,7 +234,7 @@ lazy val `kinesis-client` = projectMatrix
   .jvmPlatform(allScalaVersions)
   .dependsOn(shared)
 
-lazy val `kinesis-client-logging-circe` = projectMatrix
+lazy val `kinesis-client-logging-circe` = module(projectMatrix)
   .settings(
     description := "JSON structured logging instances for the Java Kinesis Client, via Circe"
   )
@@ -239,14 +245,14 @@ lazy val `kinesis-client-logging-circe` = projectMatrix
     `aws-v2-localstack` % Test
   )
 
-lazy val `kinesis-client-localstack` = projectMatrix
+lazy val `kinesis-client-localstack` = module(projectMatrix)
   .settings(
     description := "A test-kit for working with Kinesis and Localstack, via the Kinesis Client project"
   )
   .jvmPlatform(allScalaVersions)
   .dependsOn(`aws-v2-localstack`, `kinesis-client`)
 
-lazy val `smithy4s-client-transformers` = projectMatrix
+lazy val `smithy4s-client-transformers` = module(projectMatrix)
   .settings(
     description := "Transformers for the smithy4s-client project",
     libraryDependencies ++= Seq(
@@ -255,7 +261,7 @@ lazy val `smithy4s-client-transformers` = projectMatrix
   )
   .jvmPlatform(List(Scala212))
 
-lazy val `smithy4s-client` = projectMatrix
+lazy val `smithy4s-client` = module(projectMatrix)
   .enablePlugins(Smithy4sCodegenPlugin)
   .settings(
     description := "Cats tooling for the Smithy4s Kinesis Client",
@@ -284,7 +290,7 @@ lazy val `smithy4s-client` = projectMatrix
   .jsPlatform(last2ScalaVersions)
   .dependsOn(shared)
 
-lazy val `smithy4s-client-logging-circe` = projectMatrix
+lazy val `smithy4s-client-logging-circe` = module(projectMatrix)
   .enablePlugins(Smithy4sCodegenPlugin)
   .settings(
     description := "JSON structured logging instances for the Smithy4s Kinesis Client, via Circe",
@@ -295,7 +301,7 @@ lazy val `smithy4s-client-logging-circe` = projectMatrix
   .jsPlatform(last2ScalaVersions)
   .dependsOn(`shared-circe`, `smithy4s-client`)
 
-lazy val `smithy4s-client-localstack` = projectMatrix
+lazy val `smithy4s-client-localstack` = module(projectMatrix)
   .settings(
     description := "A test-kit for working with Kinesis and Localstack, via the Smithy4s Client project"
   )
@@ -343,7 +349,7 @@ lazy val integrationTestsJvmTestDependencies = List(
   `kpl-logging-circe`
 )
 
-lazy val `integration-tests` = projectMatrix
+lazy val `integration-tests` = module(projectMatrix)
   .enablePlugins(NoPublishPlugin, DockerImagePlugin)
   .settings(DockerImagePlugin.settings)
   .settings(
