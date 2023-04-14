@@ -124,7 +124,6 @@ lazy val kcl = projectMatrix
   .dependsOn(shared, `kinesis-client`)
 
 lazy val `kcl-http4s` = projectMatrix
-  .enablePlugins(Smithy4sCodegenPlugin)
   .settings(
     description := "Http4s interfaces for the KCL",
     libraryDependencies ++= Seq(
@@ -277,6 +276,7 @@ lazy val `smithy4s-client` = projectMatrix
       (`smithy4s-client-transformers`.jvm(
         Scala212
       ) / Compile / packageBin).value,
+    Compile / smithy4sSmithyLibrary := false,
     scalacOptions -= "-deprecation"
   )
   .jvmPlatform(last2ScalaVersions)
@@ -285,7 +285,6 @@ lazy val `smithy4s-client` = projectMatrix
   .dependsOn(shared)
 
 lazy val `smithy4s-client-logging-circe` = projectMatrix
-  .enablePlugins(Smithy4sCodegenPlugin)
   .settings(
     description := "JSON structured logging instances for the Smithy4s Kinesis Client, via Circe",
     libraryDependencies ++= Seq(Http4s.circe.value)
