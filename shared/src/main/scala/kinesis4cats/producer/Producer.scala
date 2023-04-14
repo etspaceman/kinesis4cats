@@ -25,9 +25,11 @@ import cats.effect.syntax.all._
 import cats.syntax.all._
 import org.typelevel.log4cats.StructuredLogger
 
+import kinesis4cats.compat.retry._
 import kinesis4cats.logging.{LogContext, LogEncoder}
 import kinesis4cats.models.StreamNameOrArn
 import kinesis4cats.producer.batching.Batcher
+import cats.effect.kernel.Ref
 
 /** An interface that gives users the ability to efficiently batch and produce
   * records. A producer has a ShardMapCache, and uses it to predict the shard
@@ -115,7 +117,7 @@ abstract class Producer[F[_], PutReq, PutRes](implicit
     */
   def put(
       records: NonEmptyList[Record]
-  ): F[Ior[Producer.Error, NonEmptyList[PutRes]]] = {
+  ): F[Producer.Res[PutRes]] = {
     val ctx = LogContext()
 
     for {
@@ -168,6 +170,16 @@ abstract class Producer[F[_], PutReq, PutRes](implicit
         )
         .map(_.flatMap(_.sequence))
     } yield res
+  }
+
+  def put2(records: NonEmptyList[Record]): F[Producer.Res[PutRes]] = {
+
+  }
+
+  def _put2(recordsRef: Ref[Producer.RetryState]) {
+    val ctx = LogContext()
+
+    retr
   }
 
   /** Runs the put method in a retry loop, retrying any records that failed to
@@ -236,8 +248,13 @@ abstract class Producer[F[_], PutReq, PutRes](implicit
 
 object Producer {
 
+  final private case class RetryState[A](inputRecords: NonEmptyList[Record], res: Option[Res[A]])
+
   type Res[A] = Ior[Producer.Error, NonEmptyList[A]]
-  type Errs = Ior[NonEmptyList[InvalidRecord], NonEmptyList[FailedRecord]]
+  type Errs = Ior[
+    NonEmptyList[InvalidRecord], 
+    Either[Throwable, NonEmptyList[FailedRecord]]
+    ]
 
   /** [[kinesis4cats.logging.LogEncoder LogEncoder]] instances for the
     * [[kinesis4cats.producer.Producer]]
@@ -281,7 +298,8 @@ object Producer {
       shardMapCacheConfig: ShardMapCache.Config,
       batcherConfig: Batcher.Config,
       streamNameOrArn: StreamNameOrArn,
-      raiseOnExhaustedRetries: Boolean
+      raiseOnExhaustedRetries: Boolean,
+      retryPolicy: RetryPolicy
   )
 
   object Config {
@@ -450,5 +468,4 @@ object Producer {
     final case class InvalidExplicitHashKey(explicitHashKey: Option[String])
         extends InvalidRecord
   }
-
 }
