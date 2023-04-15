@@ -124,6 +124,7 @@ lazy val kcl = projectMatrix
   .dependsOn(shared, `kinesis-client`)
 
 lazy val `kcl-http4s` = projectMatrix
+  .enablePlugins(Smithy4sCodegenPlugin)
   .settings(
     description := "Http4s interfaces for the KCL",
     libraryDependencies ++= Seq(
@@ -131,7 +132,8 @@ lazy val `kcl-http4s` = projectMatrix
       "com.disneystreaming.smithy4s" %%% "smithy4s-http4s" % smithy4sVersion.value,
       "com.disneystreaming.smithy4s" %%% "smithy4s-http4s-swagger" % smithy4sVersion.value,
       Http4s.emberServer.value
-    )
+    ),
+    Compile / smithy4sSmithyLibrary := false
   )
   .jvmPlatform(allScalaVersions)
   .dependsOn(kcl)
