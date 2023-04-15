@@ -182,9 +182,33 @@ object KinesisProducer {
       LE: Producer.LogEncoders,
       KLE: KinesisClient.LogEncoders,
       SLE: ShardMapCache.LogEncoders
+  ): Resource[F, KinesisProducer[F]] =
+    KinesisClient[F](_underlying).flatMap(apply(config, _))
+
+  /** Basic constructor for the
+    * [[kinesis4cats.client.producer.KinesisProducer KinesisProducer]]
+    *
+    * @param config
+    *   [[kinesis4cats.producer.Producer.Config Producer.Config]]
+    * @param underlying
+    *   [[kinesis4cats.client.KinesisClient KinesisClient]] instance
+    * @param F
+    *   [[cats.effect.Async Async]]
+    * @param LE
+    *   [[kinesis4cats.producer.Producer.LogEncoders Producer.LogEncoders]]
+    * @param SLE
+    *   [[kinesis4cats.producer.ShardMapCache.LogEncoders ShardMapCache.LogEncoders]]
+    * @return
+    *   [[cats.effect.Resource Resource]] of
+    *   [[kinesis4cats.client.producer.KinesisProducer KinesisProducer]]
+    */
+  def apply[F[_]](config: Producer.Config, underlying: KinesisClient[F])(
+      implicit
+      F: Async[F],
+      LE: Producer.LogEncoders,
+      SLE: ShardMapCache.LogEncoders
   ): Resource[F, KinesisProducer[F]] = for {
     logger <- Slf4jLogger.create[F].toResource
-    underlying <- KinesisClient[F](_underlying)
     shardMapCache <- ShardMapCache[F](
       config.shardMapCacheConfig,
       getShardMap(underlying, config.streamNameOrArn),
