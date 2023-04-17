@@ -213,7 +213,7 @@ abstract class Producer[F[_], PutReq, PutRes](implicit
       _ <-
         if (finalRes.left.exists(e => e.errors.exists(_.right.nonEmpty))) {
           if (config.raiseOnExhaustedRetries)
-            finalRes.leftTraverse(F.raiseError[Unit])
+            finalRes.leftTraverse(F.raiseError[Unit]).void
           else {
             logger
               .warn(ctx.context)(
