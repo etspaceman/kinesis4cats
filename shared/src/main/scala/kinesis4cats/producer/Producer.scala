@@ -286,8 +286,8 @@ object Producer {
     *   [[kinesis4cats.producer.Producer.Error Producer.Error]] is detected in
     *   the final batch of retried put requests
     * @param retryPolicy
-    *   [[kinesis4cats.compat.retry.RetryPolicy RetryPolicy]] for retrying put
-    *   requests
+    *   [[https://github.com/etspaceman/kinesis4cats/blob/main/compat/src/main/scala/kinesis4cats/compat/retry/RetryPolicy.scala RetryPolicy]]
+    *   for retrying put requests
     */
   final case class Config[F[_]](
       warnOnShardCacheMisses: Boolean,
