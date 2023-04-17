@@ -224,7 +224,7 @@ abstract class Producer[F[_], PutReq, PutRes](implicit
       _ <- ref.update(current =>
         Producer.RetryState(
           current.inputRecords,
-          current.res.map(x => x.combine(finalRes))
+          current.res.fold(Some(finalRes))(x => Some(x.combine(finalRes)))
         )
       )
       res <- ref.get.flatMap(x =>
