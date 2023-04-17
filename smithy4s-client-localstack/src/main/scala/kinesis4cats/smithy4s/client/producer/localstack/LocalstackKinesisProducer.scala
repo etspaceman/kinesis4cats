@@ -18,6 +18,7 @@ package kinesis4cats.smithy4s.client
 package producer
 package localstack
 
+import cats.Applicative
 import cats.effect._
 import cats.effect.syntax.all._
 import org.http4s.client.Client
@@ -62,7 +63,7 @@ object LocalstackKinesisProducer {
   def resource[F[_]](
       client: Client[F],
       region: F[AwsRegion],
-      producerConfig: Producer.Config,
+      producerConfig: Producer.Config[F],
       config: LocalstackConfig,
       loggerF: Async[F] => F[StructuredLogger[F]],
       shardMapF: (
@@ -125,9 +126,10 @@ object LocalstackKinesisProducer {
       streamName: String,
       region: F[AwsRegion],
       prefix: Option[String] = None,
-      producerConfig: String => Producer.Config = streamName =>
-        Producer.Config
-          .default(StreamNameOrArn.Name(streamName)),
+      producerConfig: (String, Applicative[F]) => Producer.Config[F] =
+        (streamName: String, f: Applicative[F]) =>
+          Producer.Config
+            .default[F](StreamNameOrArn.Name(streamName))(f),
       loggerF: Async[F] => F[StructuredLogger[F]] = (f: Async[F]) =>
         f.pure(NoOpLogger[F](f)),
       shardMapF: (
@@ -151,7 +153,7 @@ object LocalstackKinesisProducer {
       resource[F](
         client,
         region,
-        producerConfig(streamName),
+        producerConfig(streamName, F),
         _,
         loggerF,
         shardMapF

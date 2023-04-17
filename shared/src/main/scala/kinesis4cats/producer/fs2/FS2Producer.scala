@@ -20,6 +20,7 @@ package fs2
 import scala.concurrent.duration._
 
 import _root_.fs2.concurrent.Channel
+import cats.Applicative
 import cats.data.Ior
 import cats.data.NonEmptyList
 import cats.effect._
@@ -30,9 +31,9 @@ import org.typelevel.log4cats.StructuredLogger
 import kinesis4cats.logging.LogContext
 import kinesis4cats.models.StreamNameOrArn
 
-/** An interface that runs a [[kinesis4cats.producer.Producer Producer's]]
-  * putWithRetry method in the background against a stream of records, offered
-  * by the user. This is intended to be used in the same way that the
+/** An interface that runs a [[kinesis4cats.producer.Producer Producer's]] put
+  * method in the background against a stream of records, offered by the user.
+  * This is intended to be used in the same way that the
   * [[https://github.com/awslabs/amazon-kinesis-producer KPL]].
   *
   * @param F
@@ -116,11 +117,7 @@ abstract class FS2Producer[F[_], PutReq, PutRes](implicit
                 "Received batch to process"
               )
               _ <- underlying
-                .putWithRetry(
-                  records,
-                  config.putMaxRetries,
-                  config.putRetryInterval
-                )
+                .put(records)
                 .flatMap(callback(_, implicitly))
                 .void
               _ <- logger.debug(c.context)(
@@ -169,13 +166,15 @@ object FS2Producer {
   )
 
   object Config {
-    def default[F[_]](streamNameOrArn: StreamNameOrArn): Config[F] = Config[F](
+    def default[F[_]](
+        streamNameOrArn: StreamNameOrArn
+    )(implicit F: Applicative[F]): Config[F] = Config[F](
       1000,
       500,
       100.millis,
       Some(5),
       0.seconds,
-      Producer.Config.default(streamNameOrArn),
+      Producer.Config.default[F](streamNameOrArn),
       30.seconds
     )
   }

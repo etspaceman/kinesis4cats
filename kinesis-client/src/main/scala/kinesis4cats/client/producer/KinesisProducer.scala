@@ -56,7 +56,7 @@ import kinesis4cats.syntax.id._
 final class KinesisProducer[F[_]] private[kinesis4cats] (
     override val logger: StructuredLogger[F],
     override val shardMapCache: ShardMapCache[F],
-    override val config: Producer.Config,
+    override val config: Producer.Config[F],
     underlying: KinesisClient[F]
 )(implicit
     F: Async[F],
@@ -176,7 +176,7 @@ object KinesisProducer {
     *   [[cats.effect.Resource Resource]] of
     *   [[kinesis4cats.client.producer.KinesisProducer KinesisProducer]]
     */
-  def apply[F[_]](config: Producer.Config, _underlying: KinesisAsyncClient)(
+  def apply[F[_]](config: Producer.Config[F], _underlying: KinesisAsyncClient)(
       implicit
       F: Async[F],
       LE: Producer.LogEncoders,
@@ -202,7 +202,7 @@ object KinesisProducer {
     *   [[cats.effect.Resource Resource]] of
     *   [[kinesis4cats.client.producer.KinesisProducer KinesisProducer]]
     */
-  def apply[F[_]](config: Producer.Config, underlying: KinesisClient[F])(
+  def apply[F[_]](config: Producer.Config[F], underlying: KinesisClient[F])(
       implicit
       F: Async[F],
       LE: Producer.LogEncoders,

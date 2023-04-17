@@ -16,8 +16,6 @@
 
 package kinesis4cats.producer
 
-import scala.concurrent.duration._
-
 import java.time.Instant
 
 import cats.Eq
@@ -30,6 +28,7 @@ import cats.syntax.all._
 import org.typelevel.log4cats.StructuredLogger
 import org.typelevel.log4cats.noop.NoOpLogger
 
+import kinesis4cats.compat.retry._
 import kinesis4cats.instances.eq._
 import kinesis4cats.models.HashKeyRange
 import kinesis4cats.models.ShardId
@@ -128,7 +127,7 @@ class ProducerSpec extends munit.CatsEffectSuite {
       NonEmptyList.of(response1, response2, response3, response4, response5)
     )
 
-    producer.putWithRetry(data, Some(5), 0.seconds).map { res =>
+    producer.put(data).map { res =>
       assert(res === expected)
     }
   }
@@ -137,7 +136,7 @@ class ProducerSpec extends munit.CatsEffectSuite {
 class MockProducer(
     val logger: StructuredLogger[IO],
     val shardMapCache: ShardMapCache[IO],
-    val config: Producer.Config
+    val config: Producer.Config[IO]
 ) extends Producer[IO, MockPutRequest, MockPutResponse] {
 
   var requests: Int = 0 // scalafix:ok
@@ -197,7 +196,9 @@ object MockProducer {
       ),
       IO.pure(logger)
     )
-    defaultConfig = Producer.Config.default(StreamNameOrArn.Name("foo"))
+    defaultConfig = Producer.Config
+      .default[IO](StreamNameOrArn.Name("foo"))
+      .copy(retryPolicy = RetryPolicies.limitRetries[IO](5))
   } yield new MockProducer(
     logger,
     shardMapCache,

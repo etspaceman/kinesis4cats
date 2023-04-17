@@ -18,6 +18,7 @@ package kinesis4cats.client.producer
 package fs2
 package localstack
 
+import cats.Applicative
 import cats.effect._
 import software.amazon.awssdk.services.kinesis.model.PutRecordsResponse
 
@@ -55,7 +56,7 @@ object LocalstackFS2KinesisProducer {
     *   [[kinesis4cats.client.producer.fs2.FS2KinesisProducer FS2KinesisProducer]]
     */
   def resource[F[_]](
-      producerConfig: FS2Producer.Config,
+      producerConfig: FS2Producer.Config[F],
       config: LocalstackConfig,
       callback: (Producer.Res[PutRecordsResponse], Async[F]) => F[Unit]
   )(implicit
@@ -104,8 +105,9 @@ object LocalstackFS2KinesisProducer {
   def resource[F[_]](
       streamName: String,
       prefix: Option[String] = None,
-      producerConfig: String => FS2Producer.Config = (streamName: String) =>
-        FS2Producer.Config.default(StreamNameOrArn.Name(streamName)),
+      producerConfig: (String, Applicative[F]) => FS2Producer.Config[F] =
+        (streamName: String, f: Applicative[F]) =>
+          FS2Producer.Config.default[F](StreamNameOrArn.Name(streamName))(f),
       callback: (Producer.Res[PutRecordsResponse], Async[F]) => F[Unit] =
         (_: Producer.Res[PutRecordsResponse], f: Async[F]) => f.unit
   )(implicit
@@ -115,5 +117,5 @@ object LocalstackFS2KinesisProducer {
       PLE: Producer.LogEncoders
   ): Resource[F, FS2KinesisProducer[F]] = LocalstackConfig
     .resource[F](prefix)
-    .flatMap(resource[F](producerConfig(streamName), _, callback))
+    .flatMap(resource[F](producerConfig(streamName, F), _, callback))
 }
