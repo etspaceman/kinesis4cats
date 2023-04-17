@@ -98,16 +98,6 @@ object MyApp extends IOApp {
                             Record("my-data-3".getBytes(), "some-partition-key-3"),
                         )
                     )
-                    // Retries failed records with a configured limit and duration.
-                    _ <- producer.putWithRetry(
-                        NonEmptyList.of(
-                            Record("my-data".getBytes(), "some-partition-key"),
-                            Record("my-data-2".getBytes(), "some-partition-key-2"),
-                            Record("my-data-3".getBytes(), "some-partition-key-3"),
-                        ),
-                        Some(5),
-                        1.second
-                    )
                 } yield ExitCode.Success
         )
 }
