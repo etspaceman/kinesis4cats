@@ -123,10 +123,10 @@ object KCLCiris {
       taskExecutionListener: Option[TaskExecutionListener] = None,
       metricsFactory: Option[MetricsFactory] = None,
       glueSchemaRegistryDeserializer: Option[GlueSchemaRegistryDeserializer] =
-        None
+        None,
+      encoders: RecordProcessor.LogEncoders = RecordProcessor.LogEncoders.show
   )(cb: List[CommittableRecord[F]] => F[Unit])(implicit
-      F: Async[F],
-      LE: RecordProcessor.LogEncoders
+      F: Async[F]
   ): Resource[F, KCLConsumer[F]] = kclConfig[F](
     kinesisClient,
     dynamoClient,
@@ -143,7 +143,8 @@ object KCLCiris {
     aggregatorUtil,
     taskExecutionListener,
     metricsFactory,
-    glueSchemaRegistryDeserializer
+    glueSchemaRegistryDeserializer,
+    encoders
   )(cb).map(new KCLConsumer[F](_))
 
   /** Reads environment variables and system properties to load a
@@ -190,7 +191,7 @@ object KCLCiris {
     *   Kinesis
     * @param F
     *   [[cats.effect.Async Async]] instance
-    * @param LE
+    * @param encoders
     *   [[kinesis4cats.kcl.RecordProcessor.LogEncoders RecordProcessor.LogEncoders]]
     *   for encoding structured logs
     * @return
@@ -214,10 +215,10 @@ object KCLCiris {
       taskExecutionListener: Option[TaskExecutionListener] = None,
       metricsFactory: Option[MetricsFactory] = None,
       glueSchemaRegistryDeserializer: Option[GlueSchemaRegistryDeserializer] =
-        None
+        None,
+      encoders: RecordProcessor.LogEncoders = RecordProcessor.LogEncoders.show
   )(cb: List[CommittableRecord[F]] => F[Unit])(implicit
-      F: Async[F],
-      LE: RecordProcessor.LogEncoders
+      F: Async[F]
   ): Resource[F, KCLConsumer.Config[F]] = for {
     checkpointConfig <- Checkpoint.resource[F]
     coordinatorConfig <- Coordinator.resource[F](
@@ -250,7 +251,8 @@ object KCLCiris {
       lifecycleConfig,
       metricsConfig,
       retrievalConfig,
-      processConfig
+      processConfig,
+      encoders
     )(cb)
   } yield config
 

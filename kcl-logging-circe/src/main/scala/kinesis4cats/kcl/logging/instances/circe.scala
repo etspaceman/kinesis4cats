@@ -21,7 +21,6 @@ import com.amazonaws.services.schemaregistry.common.Schema
 import io.circe.{Encoder, Json}
 import software.amazon.awssdk.services.kinesis.model._
 import software.amazon.kinesis.lifecycle.events._
-import software.amazon.kinesis.lifecycle.{ShutdownInput, ShutdownReason}
 import software.amazon.kinesis.retrieval.KinesisClientRecord
 import software.amazon.kinesis.retrieval.kpl.ExtendedSequenceNumber
 
@@ -33,114 +32,107 @@ import kinesis4cats.logging.syntax.circe._
   */
 object circe {
 
-  implicit val encryptionTypeEncoder: Encoder[EncryptionType] =
-    Encoder[String].contramap(_.name)
+  val recordProcessor: RecordProcessor.LogEncoders = {
+    implicit val encryptionTypeEncoder: Encoder[EncryptionType] =
+      Encoder[String].contramap(_.name)
 
-  implicit val schemaEncoder: Encoder[Schema] = x => {
-    val fields: Map[String, Json] =
-      Map
-        .empty[String, Json]
-        .safeAdd("dataFormat", x.getDataFormat())
-        .safeAdd("schemaDefinition", x.getSchemaDefinition())
-        .safeAdd("schemaName", x.getSchemaName())
-
-    Json.obj(fields.toSeq: _*)
-  }
-
-  implicit val hashKeyRangeEncoder: Encoder[HashKeyRange] = x => {
-    val fields: Map[String, Json] =
-      Map
-        .empty[String, Json]
-        .safeAdd("endingHashKey", x.endingHashKey())
-        .safeAdd("startingHashKey", x.startingHashKey())
-
-    Json.obj(fields.toSeq: _*)
-  }
-
-  implicit val childShardEncoder: Encoder[ChildShard] = x => {
-    val fields: Map[String, Json] =
-      Map
-        .empty[String, Json]
-        .safeAdd("hasParentShards", x.hasParentShards())
-        .safeAdd("hashKeyRange", x.hashKeyRange())
-        .safeAdd("parentShards", x.parentShards())
-        .safeAdd("shardId", x.shardId())
-
-    Json.obj(fields.toSeq: _*)
-  }
-
-  implicit val extendedSequenceNumberEncoder: Encoder[ExtendedSequenceNumber] =
-    x => {
+    implicit val schemaEncoder: Encoder[Schema] = x => {
       val fields: Map[String, Json] =
         Map
           .empty[String, Json]
-          .safeAdd("sequenceNumber", x.sequenceNumber())
-          .safeAdd("subSequenceNumber", x.subSequenceNumber())
+          .safeAdd("dataFormat", x.getDataFormat())
+          .safeAdd("schemaDefinition", x.getSchemaDefinition())
+          .safeAdd("schemaName", x.getSchemaName())
 
       Json.obj(fields.toSeq: _*)
     }
 
-  implicit val shutdownReasonEncoder: Encoder[ShutdownReason] =
-    Encoder[String].contramap(_.name)
+    implicit val hashKeyRangeEncoder: Encoder[HashKeyRange] = x => {
+      val fields: Map[String, Json] =
+        Map
+          .empty[String, Json]
+          .safeAdd("endingHashKey", x.endingHashKey())
+          .safeAdd("startingHashKey", x.startingHashKey())
 
-  implicit val initializationInputEncoder: Encoder[InitializationInput] = x => {
-    val fields: Map[String, Json] =
-      Map
-        .empty[String, Json]
-        .safeAdd("shardId", x.shardId())
-        .safeAdd("extendedSequenceNumber", x.extendedSequenceNumber())
-        .safeAdd(
-          "pendingCheckpointSequenceNumber",
-          x.pendingCheckpointSequenceNumber()
-        )
+      Json.obj(fields.toSeq: _*)
+    }
 
-    Json.obj(fields.toSeq: _*)
-  }
+    implicit val childShardEncoder: Encoder[ChildShard] = x => {
+      val fields: Map[String, Json] =
+        Map
+          .empty[String, Json]
+          .safeAdd("hasParentShards", x.hasParentShards())
+          .safeAdd("hashKeyRange", x.hashKeyRange())
+          .safeAdd("parentShards", x.parentShards())
+          .safeAdd("shardId", x.shardId())
 
-  implicit val processRecordsInputEncoder: Encoder[ProcessRecordsInput] = x => {
-    val fields: Map[String, Json] =
-      Map
-        .empty[String, Json]
-        .safeAdd("cacheEntryTime", x.cacheEntryTime())
-        .safeAdd("cacheExitTime", x.cacheExitTime())
-        .safeAdd("childShards", x.childShards())
-        .safeAdd("isAtShardEnd", x.isAtShardEnd())
-        .safeAdd("millisBehindLatest", x.millisBehindLatest())
-        .safeAdd("timeSpentInCache", x.timeSpentInCache())
+      Json.obj(fields.toSeq: _*)
+    }
 
-    Json.obj(fields.toSeq: _*)
-  }
+    implicit val extendedSequenceNumberEncoder
+        : Encoder[ExtendedSequenceNumber] =
+      x => {
+        val fields: Map[String, Json] =
+          Map
+            .empty[String, Json]
+            .safeAdd("sequenceNumber", x.sequenceNumber())
+            .safeAdd("subSequenceNumber", x.subSequenceNumber())
 
-  implicit val shutdownInputEncoder: Encoder[ShutdownInput] = x => {
-    val fields: Map[String, Json] =
-      Map
-        .empty[String, Json]
-        .safeAdd("shutdownReason", x.shutdownReason())
+        Json.obj(fields.toSeq: _*)
+      }
 
-    Json.obj(fields.toSeq: _*)
-  }
+    implicit val initializationInputEncoder: Encoder[InitializationInput] = x =>
+      {
+        val fields: Map[String, Json] =
+          Map
+            .empty[String, Json]
+            .safeAdd("shardId", x.shardId())
+            .safeAdd("extendedSequenceNumber", x.extendedSequenceNumber())
+            .safeAdd(
+              "pendingCheckpointSequenceNumber",
+              x.pendingCheckpointSequenceNumber()
+            )
 
-  implicit val kinesisClientRecordEncoder: Encoder[KinesisClientRecord] = x => {
-    val fields: Map[String, Json] =
-      Map
-        .empty[String, Json]
-        .safeAdd("aggregated", x.aggregated())
-        .safeAdd(
-          "approximateArrivalTimestamp",
-          x.approximateArrivalTimestamp()
-        )
-        .safeAdd("encryptionType", x.encryptionType())
-        .safeAdd("explicitHashKey", x.explicitHashKey())
-        .safeAdd("partitionKey", x.partitionKey())
-        .safeAdd("schema", x.schema())
-        .safeAdd("sequenceNumber", x.sequenceNumber())
-        .safeAdd("subSequenceNumber", x.subSequenceNumber())
-        .safeAdd("data", x.data())
+        Json.obj(fields.toSeq: _*)
+      }
 
-    Json.obj(fields.toSeq: _*)
-  }
+    implicit val processRecordsInputEncoder: Encoder[ProcessRecordsInput] = x =>
+      {
+        val fields: Map[String, Json] =
+          Map
+            .empty[String, Json]
+            .safeAdd("cacheEntryTime", x.cacheEntryTime())
+            .safeAdd("cacheExitTime", x.cacheExitTime())
+            .safeAdd("childShards", x.childShards())
+            .safeAdd("isAtShardEnd", x.isAtShardEnd())
+            .safeAdd("millisBehindLatest", x.millisBehindLatest())
+            .safeAdd("timeSpentInCache", x.timeSpentInCache())
 
-  implicit val recordProcessorLogEncoders: RecordProcessor.LogEncoders =
+        Json.obj(fields.toSeq: _*)
+      }
+
+    implicit val kinesisClientRecordEncoder: Encoder[KinesisClientRecord] = x =>
+      {
+        val fields: Map[String, Json] =
+          Map
+            .empty[String, Json]
+            .safeAdd("aggregated", x.aggregated())
+            .safeAdd(
+              "approximateArrivalTimestamp",
+              x.approximateArrivalTimestamp()
+            )
+            .safeAdd("encryptionType", x.encryptionType())
+            .safeAdd("explicitHashKey", x.explicitHashKey())
+            .safeAdd("partitionKey", x.partitionKey())
+            .safeAdd("schema", x.schema())
+            .safeAdd("sequenceNumber", x.sequenceNumber())
+            .safeAdd("subSequenceNumber", x.subSequenceNumber())
+            .safeAdd("data", x.data())
+
+        Json.obj(fields.toSeq: _*)
+      }
+
     new RecordProcessor.LogEncoders
+  }
 
 }

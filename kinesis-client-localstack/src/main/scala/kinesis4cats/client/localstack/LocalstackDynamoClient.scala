@@ -34,18 +34,19 @@ object LocalstackDynamoClient {
     *   [[kinesis4cats.localstack.LocalstackConfig LocalstackConfig]]
     * @param F
     *   F with an [[cats.effect.Async Async]] instance
-    * @param LE
+    * @param encoders
     *   [[kinesis4cats.client.DynamoClient.LogEncoders LogEncoders]]
     * @return
     *   F of [[kinesis4cats.client.DynamoClient DynamoClient]]
     */
   def client[F[_]](
-      config: LocalstackConfig
-  )(implicit F: Async[F], LE: DynamoClient.LogEncoders): F[DynamoClient[F]] =
+      config: LocalstackConfig,
+      encoders: DynamoClient.LogEncoders
+  )(implicit F: Async[F]): F[DynamoClient[F]] =
     for {
       underlying <- AwsClients.dynamoClient(config)
       logger <- Slf4jLogger.create[F]
-    } yield new DynamoClient(underlying, logger)
+    } yield new DynamoClient(underlying, logger, encoders)
 
   /** Builds a [[kinesis4cats.client.DynamoClient DynamoClient]] that is
     * compliant for Localstack usage.
@@ -54,18 +55,20 @@ object LocalstackDynamoClient {
     *   Optional prefix for parsing configuration. Default to None
     * @param F
     *   F with an [[cats.effect.Async Async]] instance
-    * @param LE
-    *   [[kinesis4cats.client.DynamoClient.LogEncoders LogEncoders]]
+    * @param encoders
+    *   [[kinesis4cats.client.DynamoClient.LogEncoders LogEncoders]]. Defaults
+    *   to show instances
     * @return
     *   F of [[kinesis4cats.client.DynamoClient DynamoClient]]
     */
   def client[F[_]](
-      prefix: Option[String] = None
-  )(implicit F: Async[F], LE: DynamoClient.LogEncoders): F[DynamoClient[F]] =
+      prefix: Option[String] = None,
+      encoders: DynamoClient.LogEncoders = DynamoClient.LogEncoders.show
+  )(implicit F: Async[F]): F[DynamoClient[F]] =
     for {
       underlying <- AwsClients.dynamoClient(prefix)
       logger <- Slf4jLogger.create[F]
-    } yield new DynamoClient(underlying, logger)
+    } yield new DynamoClient(underlying, logger, encoders)
 
   /** Builds a [[kinesis4cats.client.DynamoClient DynamoClient]] that is
     * compliant for Localstack usage. Lifecycle is managed as a
@@ -75,17 +78,19 @@ object LocalstackDynamoClient {
     *   [[kinesis4cats.localstack.LocalstackConfig LocalstackConfig]]
     * @param F
     *   F with an [[cats.effect.Async Async]] instance
-    * @param LE
+    * @param encoders
     *   [[kinesis4cats.client.DynamoClient.LogEncoders LogEncoders]]
     * @return
     *   [[cats.effect.Resource Resource]] of
     *   [[kinesis4cats.client.DynamoClient DynamoClient]]
     */
-  def clientResource[F[_]](config: LocalstackConfig)(implicit
-      F: Async[F],
-      LE: DynamoClient.LogEncoders
+  def clientResource[F[_]](
+      config: LocalstackConfig,
+      encoders: DynamoClient.LogEncoders
+  )(implicit
+      F: Async[F]
   ): Resource[F, DynamoClient[F]] =
-    client[F](config).toResource
+    client[F](config, encoders).toResource
 
   /** Builds a [[kinesis4cats.client.DynamoClient DynamoClient]] that is
     * compliant for Localstack usage. Lifecycle is managed as a
@@ -93,6 +98,9 @@ object LocalstackDynamoClient {
     *
     * @param prefix
     *   Optional prefix for parsing configuration. Default to None
+    * @param encoders
+    *   [[kinesis4cats.client.DynamoClient.LogEncoders LogEncoders]]. Defaults
+    *   to show instances
     * @param F
     *   F with an [[cats.effect.Async Async]] instance
     * @return
@@ -100,10 +108,10 @@ object LocalstackDynamoClient {
     *   [[kinesis4cats.client.DynamoClient DynamoClient]]
     */
   def clientResource[F[_]](
-      prefix: Option[String] = None
+      prefix: Option[String] = None,
+      encoders: DynamoClient.LogEncoders = DynamoClient.LogEncoders.show
   )(implicit
-      F: Async[F],
-      LE: DynamoClient.LogEncoders
+      F: Async[F]
   ): Resource[F, DynamoClient[F]] =
-    client[F](prefix).toResource
+    client[F](prefix, encoders).toResource
 }

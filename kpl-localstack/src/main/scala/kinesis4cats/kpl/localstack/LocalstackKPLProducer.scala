@@ -58,16 +58,19 @@ object LocalstackKPLProducer {
     *   [[kinesis4cats.localstack.LocalstackConfig LocalstackConfig]]
     * @param F
     *   [[cats.effect.Async Async]]
-    * @param LE
+    * @param encoders
     *   [[kinesis4cats.kpl.KPLProducer.LogEncoders KPLProducer.LogEncoders]]
     * @return
     *   [[kinesis4cats.kpl.KPLProducer KPLProducer]] as a
     *   [[cats.effect.Resource Resource]]
     */
-  def producer[F[_]](config: LocalstackConfig)(implicit
-      F: Async[F],
-      LE: KPLProducer.LogEncoders
-  ): Resource[F, KPLProducer[F]] = KPLProducer[F](kplConfig(config))
+  def producer[F[_]](
+      config: LocalstackConfig,
+      encoders: KPLProducer.LogEncoders
+  )(implicit
+      F: Async[F]
+  ): Resource[F, KPLProducer[F]] =
+    KPLProducer[F](kplConfig(config), encoders = encoders)
 
   /** Creates a [[kinesis4cats.kpl.KPLProducer KPLProducer]] that is compliant
     * with Localstack
@@ -76,17 +79,20 @@ object LocalstackKPLProducer {
     *   Optional prefix for parsing configuration. Default to None
     * @param F
     *   [[cats.effect.Async Async]]
-    * @param LE
-    *   [[kinesis4cats.kpl.KPLProducer.LogEncoders KPLProducer.LogEncoders]]
+    * @param encoders
+    *   [[kinesis4cats.kpl.KPLProducer.LogEncoders KPLProducer.LogEncoders]].
+    *   Default to show
     * @return
     *   [[kinesis4cats.kpl.KPLProducer KPLProducer]] as a
     *   [[cats.effect.Resource Resource]]
     */
-  def producer[F[_]](prefix: Option[String] = None)(implicit
-      F: Async[F],
-      LE: KPLProducer.LogEncoders
+  def producer[F[_]](
+      prefix: Option[String] = None,
+      encoders: KPLProducer.LogEncoders = KPLProducer.LogEncoders.show
+  )(implicit
+      F: Async[F]
   ): Resource[F, KPLProducer[F]] =
-    LocalstackConfig.resource[F](prefix).flatMap(producer(_))
+    LocalstackConfig.resource[F](prefix).flatMap(producer(_, encoders))
 
   /** A resources that does the following:
     *
@@ -119,10 +125,10 @@ object LocalstackKPLProducer {
       streamName: String,
       shardCount: Int,
       describeRetries: Int,
-      describeRetryDuration: FiniteDuration
+      describeRetryDuration: FiniteDuration,
+      encoders: KPLProducer.LogEncoders
   )(implicit
-      F: Async[F],
-      LE: KPLProducer.LogEncoders
+      F: Async[F]
   ): Resource[F, KPLProducer[F]] = AwsClients
     .kinesisStreamResource[F](
       config,
@@ -131,7 +137,7 @@ object LocalstackKPLProducer {
       describeRetries,
       describeRetryDuration
     )
-    .flatMap(_ => producer(config))
+    .flatMap(_ => producer(config, encoders))
 
   /** A resource that does the following:
     *
@@ -165,10 +171,10 @@ object LocalstackKPLProducer {
       shardCount: Int,
       prefix: Option[String] = None,
       describeRetries: Int = 5,
-      describeRetryDuration: FiniteDuration = 500.millis
+      describeRetryDuration: FiniteDuration = 500.millis,
+      encoders: KPLProducer.LogEncoders = KPLProducer.LogEncoders.show
   )(implicit
-      F: Async[F],
-      LE: KPLProducer.LogEncoders
+      F: Async[F]
   ): Resource[F, KPLProducer[F]] = AwsClients
     .kinesisStreamResource[F](
       streamName,
@@ -177,5 +183,5 @@ object LocalstackKPLProducer {
       describeRetries,
       describeRetryDuration
     )
-    .flatMap(_ => producer(prefix))
+    .flatMap(_ => producer(prefix, encoders))
 }

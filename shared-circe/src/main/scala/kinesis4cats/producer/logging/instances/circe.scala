@@ -19,7 +19,6 @@ package producer
 package logging.instances
 
 import io.circe.Encoder
-import io.circe.syntax._
 
 import kinesis4cats.logging.instances.circe._
 import kinesis4cats.models._
@@ -29,35 +28,31 @@ import kinesis4cats.models._
   * of log structures using [[https://circe.github.io/circe/ Circe]]
   */
 object circe {
-  implicit val shardIdEncoder: Encoder[ShardId] =
-    Encoder[String].contramap(_.shardId)
 
-  implicit val recordEncoder: Encoder[Record] =
-    Encoder.forProduct3("data", "partitionKey", "explicitHashKey")(x =>
-      (x.data, x.partitionKey, x.explicitHashKey)
-    )
+  val shardmap: ShardMapCache.LogEncoders = {
+    implicit val hashKeyRangeEncoder: Encoder[HashKeyRange] =
+      Encoder.forProduct2("endingHashKey", "startingHashKey")(x =>
+        (x.endingHashKey, x.startingHashKey)
+      )
 
-  implicit val hashKeyRangeEncoder: Encoder[HashKeyRange] =
-    Encoder.forProduct2("endingHashKey", "startingHashKey")(x =>
-      (x.endingHashKey, x.startingHashKey)
-    )
+    implicit val shardMapRecordEncoder: Encoder[ShardMapRecord] =
+      Encoder.forProduct2("shardId", "hashKeyRange")(x =>
+        (x.shardId, x.hashKeyRange)
+      )
 
-  implicit val shardMapRecordEncoder: Encoder[ShardMapRecord] =
-    Encoder.forProduct2("shardId", "hashKeyRange")(x =>
-      (x.shardId, x.hashKeyRange)
-    )
+    implicit val shardMapEncoder: Encoder[ShardMap] =
+      Encoder.forProduct2("lastUpdated", "shards")(x =>
+        (x.lastUpdated, x.shards)
+      )
 
-  implicit val shardMapEncoder: Encoder[ShardMap] =
-    Encoder.forProduct2("lastUpdated", "shards")(x => (x.lastUpdated, x.shards))
-
-  implicit val streamNameOrArnEncoder: Encoder[StreamNameOrArn] = {
-    case StreamNameOrArn.Name(streamName) => streamName.asJson
-    case StreamNameOrArn.Arn(arn)         => arn.streamArn.asJson
+    new ShardMapCache.LogEncoders()
   }
 
-  implicit val shardMapCacheLogEncoders: ShardMapCache.LogEncoders =
-    new ShardMapCache.LogEncoders()
-
-  implicit val producerLogEncoders: Producer.LogEncoders =
+  val producer: Producer.LogEncoders = {
+    implicit val recordEncoder: Encoder[Record] =
+      Encoder.forProduct3("data", "partitionKey", "explicitHashKey")(x =>
+        (x.data, x.partitionKey, x.explicitHashKey)
+      )
     new Producer.LogEncoders()
+  }
 }

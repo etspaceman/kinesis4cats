@@ -57,11 +57,11 @@ final class KinesisProducer[F[_]] private[kinesis4cats] (
     override val logger: StructuredLogger[F],
     override val shardMapCache: ShardMapCache[F],
     override val config: Producer.Config,
-    underlying: KinesisClient[F]
+    underlying: KinesisClient[F],
+    encoders: Producer.LogEncoders
 )(implicit
-    F: Async[F],
-    LE: Producer.LogEncoders
-) extends Producer[F, PutRecordsRequest, PutRecordsResponse] {
+    F: Async[F]
+) extends Producer[F, PutRecordsRequest, PutRecordsResponse](encoders) {
 
   override protected def putImpl(
       req: PutRecordsRequest
@@ -176,14 +176,20 @@ object KinesisProducer {
     *   [[cats.effect.Resource Resource]] of
     *   [[kinesis4cats.client.producer.KinesisProducer KinesisProducer]]
     */
-  def apply[F[_]](config: Producer.Config, _underlying: KinesisAsyncClient)(
-      implicit
-      F: Async[F],
-      LE: Producer.LogEncoders,
-      KLE: KinesisClient.LogEncoders,
-      SLE: ShardMapCache.LogEncoders
+  def instance[F[_]](
+      config: Producer.Config,
+      _underlying: KinesisAsyncClient,
+      encoders: Producer.LogEncoders = Producer.LogEncoders.show,
+      shardMapEncoders: ShardMapCache.LogEncoders =
+        ShardMapCache.LogEncoders.show,
+      kinesisClientEncoders: KinesisClient.LogEncoders =
+        KinesisClient.LogEncoders.show
+  )(implicit
+      F: Async[F]
   ): Resource[F, KinesisProducer[F]] =
-    KinesisClient[F](_underlying).flatMap(apply(config, _))
+    KinesisClient[F](_underlying, kinesisClientEncoders).flatMap(
+      apply(config, _, encoders, shardMapEncoders)
+    )
 
   /** Basic constructor for the
     * [[kinesis4cats.client.producer.KinesisProducer KinesisProducer]]
@@ -202,18 +208,28 @@ object KinesisProducer {
     *   [[cats.effect.Resource Resource]] of
     *   [[kinesis4cats.client.producer.KinesisProducer KinesisProducer]]
     */
-  def apply[F[_]](config: Producer.Config, underlying: KinesisClient[F])(
-      implicit
-      F: Async[F],
-      LE: Producer.LogEncoders,
-      SLE: ShardMapCache.LogEncoders
+  def apply[F[_]](
+      config: Producer.Config,
+      underlying: KinesisClient[F],
+      encoders: Producer.LogEncoders = Producer.LogEncoders.show,
+      shardMapEncoders: ShardMapCache.LogEncoders =
+        ShardMapCache.LogEncoders.show
+  )(implicit
+      F: Async[F]
   ): Resource[F, KinesisProducer[F]] = for {
     logger <- Slf4jLogger.create[F].toResource
     shardMapCache <- ShardMapCache[F](
       config.shardMapCacheConfig,
       getShardMap(underlying, config.streamNameOrArn),
-      Slf4jLogger.create[F].widen
+      Slf4jLogger.create[F].widen,
+      shardMapEncoders
     )
-    producer = new KinesisProducer[F](logger, shardMapCache, config, underlying)
+    producer = new KinesisProducer[F](
+      logger,
+      shardMapCache,
+      config,
+      underlying,
+      encoders
+    )
   } yield producer
 }

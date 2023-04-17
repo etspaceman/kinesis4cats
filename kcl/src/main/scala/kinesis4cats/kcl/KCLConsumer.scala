@@ -159,10 +159,10 @@ object KCLConsumer {
       lifecycleConfig: LifecycleConfig,
       metricsConfig: MetricsConfig,
       retrievalConfig: RetrievalConfig,
-      processConfig: ProcessConfig = ProcessConfig.default
+      processConfig: ProcessConfig = ProcessConfig.default,
+      encoders: RecordProcessor.LogEncoders = RecordProcessor.LogEncoders.show
   )(cb: List[CommittableRecord[F]] => F[Unit])(implicit
-      F: Async[F],
-      encoders: RecordProcessor.LogEncoders
+      F: Async[F]
   ): Resource[F, KCLConsumer[F]] = Config
     .create(
       checkpointConfig,
@@ -171,7 +171,8 @@ object KCLConsumer {
       lifecycleConfig,
       metricsConfig,
       retrievalConfig,
-      processConfig
+      processConfig,
+      encoders
     )(cb)
     .map(new KCLConsumer[F](_))
 
@@ -225,14 +226,14 @@ object KCLConsumer {
       streamTracker: StreamTracker,
       appName: String,
       workerId: String = Utils.randomUUIDString,
-      processConfig: ProcessConfig = ProcessConfig.default
+      processConfig: ProcessConfig = ProcessConfig.default,
+      encoders: RecordProcessor.LogEncoders = RecordProcessor.LogEncoders.show
   )(
       cb: List[CommittableRecord[F]] => F[Unit]
   )(
       tfn: Config[F] => Config[F] = (x: Config[F]) => x
   )(implicit
-      F: Async[F],
-      encoders: RecordProcessor.LogEncoders
+      F: Async[F]
   ): Resource[F, KCLConsumer[F]] = Config
     .configsBuilder(
       kinesisClient,
@@ -241,7 +242,8 @@ object KCLConsumer {
       streamTracker,
       appName,
       workerId,
-      processConfig
+      processConfig,
+      encoders
     )(cb)(tfn)
     .map(new KCLConsumer[F](_))
 
@@ -348,17 +350,18 @@ object KCLConsumer {
         lifecycleConfig: LifecycleConfig,
         metricsConfig: MetricsConfig,
         retrievalConfig: RetrievalConfig,
-        processConfig: ProcessConfig = ProcessConfig.default
+        processConfig: ProcessConfig = ProcessConfig.default,
+        encoders: RecordProcessor.LogEncoders = RecordProcessor.LogEncoders.show
     )(cb: List[CommittableRecord[F]] => F[Unit])(implicit
-        F: Async[F],
-        encoders: RecordProcessor.LogEncoders
+        F: Async[F]
     ): Resource[F, Config[F]] =
       for {
         deferredException <- Resource.eval(Deferred[F, Throwable])
         processorFactory <- RecordProcessor.Factory[F](
           processConfig.recordProcessorConfig,
           deferredException,
-          processConfig.raiseOnError
+          processConfig.raiseOnError,
+          encoders
         )(cb)
       } yield Config(
         checkpointConfig,
@@ -428,20 +431,21 @@ object KCLConsumer {
         streamTracker: StreamTracker,
         appName: String,
         workerId: String = Utils.randomUUIDString,
-        processConfig: ProcessConfig = ProcessConfig.default
+        processConfig: ProcessConfig = ProcessConfig.default,
+        encoders: RecordProcessor.LogEncoders = RecordProcessor.LogEncoders.show
     )(
         cb: List[CommittableRecord[F]] => F[Unit]
     )(
         tfn: Config[F] => Config[F] = (x: Config[F]) => x
     )(implicit
-        F: Async[F],
-        encoders: RecordProcessor.LogEncoders
+        F: Async[F]
     ): Resource[F, Config[F]] = for {
       deferredException <- Resource.eval(Deferred[F, Throwable])
       processorFactory <- RecordProcessor.Factory[F](
         processConfig.recordProcessorConfig,
         deferredException,
-        processConfig.raiseOnError
+        processConfig.raiseOnError,
+        encoders
       )(cb)
       confBuilder = new ConfigsBuilder(
         streamTracker,

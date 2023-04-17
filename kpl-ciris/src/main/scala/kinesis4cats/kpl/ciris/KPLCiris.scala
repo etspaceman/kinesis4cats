@@ -508,7 +508,7 @@ object KPLCiris {
     *   Optional prefix to apply to configuration loaders. Default None
     * @param F
     *   [[cats.effect.Async Async]]
-    * @param LE
+    * @param encoders
     *   [[kinesis4cats.kpl.KPLProducer.LogEncoders KPLProducer.LogEncoders]]
     * @return
     *   [[cats.effect.Resource Resource]] containing
@@ -519,10 +519,10 @@ object KPLCiris {
       metricsCredentialsProvider: Option[AWSCredentialsProvider] = None,
       glueSchemaRegistryCredentialsProvider: Option[AwsCredentialsProvider] =
         None,
-      prefix: Option[String] = None
+      prefix: Option[String] = None,
+      encoders: KPLProducer.LogEncoders = KPLProducer.LogEncoders.show
   )(implicit
-      F: Async[F],
-      LE: KPLProducer.LogEncoders
+      F: Async[F]
   ): Resource[F, KPLProducer[F]] = for {
     kplConfig <- kplConfigResource[F](
       credentialsProvider,
@@ -530,6 +530,6 @@ object KPLCiris {
       glueSchemaRegistryCredentialsProvider,
       prefix
     )
-    kpl <- KPLProducer[F](kplConfig)
+    kpl <- KPLProducer[F](kplConfig, encoders = encoders)
   } yield kpl
 }

@@ -240,11 +240,11 @@ object KCLConsumerFS2 {
       metricsConfig: MetricsConfig,
       retrievalConfig: RetrievalConfig,
       fs2Config: FS2Config = FS2Config.default,
-      processConfig: KCLConsumer.ProcessConfig = defaultProcessConfig
+      processConfig: KCLConsumer.ProcessConfig = defaultProcessConfig,
+      encoders: RecordProcessor.LogEncoders = RecordProcessor.LogEncoders.show
   )(implicit
       F: Async[F],
-      P: Parallel[F],
-      encoders: RecordProcessor.LogEncoders
+      P: Parallel[F]
   ): Resource[F, KCLConsumerFS2[F]] = Config
     .create(
       checkpointConfig,
@@ -254,7 +254,8 @@ object KCLConsumerFS2 {
       metricsConfig,
       retrievalConfig,
       fs2Config,
-      processConfig
+      processConfig,
+      encoders
     )
     .map(new KCLConsumerFS2[F](_))
 
@@ -313,7 +314,8 @@ object KCLConsumerFS2 {
       appName: String,
       fs2Config: FS2Config = FS2Config.default,
       workerId: String = Utils.randomUUIDString,
-      processConfig: KCLConsumer.ProcessConfig = defaultProcessConfig
+      processConfig: KCLConsumer.ProcessConfig = defaultProcessConfig,
+      encoders: RecordProcessor.LogEncoders = RecordProcessor.LogEncoders.show
   )(
       tfn: kinesis4cats.kcl.KCLConsumer.Config[
         F
@@ -321,8 +323,7 @@ object KCLConsumerFS2 {
         (x: kinesis4cats.kcl.KCLConsumer.Config[F]) => x
   )(implicit
       F: Async[F],
-      P: Parallel[F],
-      encoders: RecordProcessor.LogEncoders
+      P: Parallel[F]
   ): Resource[F, KCLConsumerFS2[F]] = Config
     .configsBuilder(
       kinesisClient,
@@ -332,7 +333,8 @@ object KCLConsumerFS2 {
       appName,
       fs2Config,
       workerId,
-      processConfig
+      processConfig,
+      encoders
     )(tfn)
     .map(new KCLConsumerFS2[F](_))
 
@@ -410,11 +412,9 @@ object KCLConsumerFS2 {
         metricsConfig: MetricsConfig,
         retrievalConfig: RetrievalConfig,
         fs2Config: FS2Config,
-        processConfig: KCLConsumer.ProcessConfig = defaultProcessConfig
-    )(implicit
-        F: Async[F],
-        encoders: RecordProcessor.LogEncoders
-    ): Resource[F, Config[F]] = for {
+        processConfig: KCLConsumer.ProcessConfig = defaultProcessConfig,
+        encoders: RecordProcessor.LogEncoders = RecordProcessor.LogEncoders.show
+    )(implicit F: Async[F]): Resource[F, Config[F]] = for {
       queue <- Queue
         .bounded[F, CommittableRecord[F]](fs2Config.queueSize)
         .toResource
@@ -426,7 +426,8 @@ object KCLConsumerFS2 {
           lifecycleConfig,
           metricsConfig,
           retrievalConfig,
-          processConfig
+          processConfig,
+          encoders
         )(callback(queue))
     } yield Config(underlying, queue, fs2Config)
 
@@ -477,15 +478,15 @@ object KCLConsumerFS2 {
         appName: String,
         fs2Config: KCLConsumerFS2.FS2Config = KCLConsumerFS2.FS2Config.default,
         workerId: String = Utils.randomUUIDString,
-        processConfig: KCLConsumer.ProcessConfig = defaultProcessConfig
+        processConfig: KCLConsumer.ProcessConfig = defaultProcessConfig,
+        encoders: RecordProcessor.LogEncoders = RecordProcessor.LogEncoders.show
     )(
         tfn: kinesis4cats.kcl.KCLConsumer.Config[
           F
         ] => kinesis4cats.kcl.KCLConsumer.Config[F] =
           (x: kinesis4cats.kcl.KCLConsumer.Config[F]) => x
     )(implicit
-        F: Async[F],
-        encoders: RecordProcessor.LogEncoders
+        F: Async[F]
     ): Resource[F, Config[F]] = for {
       queue <- Queue
         .bounded[F, CommittableRecord[F]](fs2Config.queueSize)
@@ -498,7 +499,8 @@ object KCLConsumerFS2 {
           streamTracker,
           appName,
           workerId,
-          processConfig
+          processConfig,
+          encoders
         )(callback(queue))(tfn)
     } yield Config(underlying, queue, fs2Config)
   }
