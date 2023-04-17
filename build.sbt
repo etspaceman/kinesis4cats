@@ -132,7 +132,8 @@ lazy val `kcl-http4s` = projectMatrix
       "com.disneystreaming.smithy4s" %%% "smithy4s-http4s" % smithy4sVersion.value,
       "com.disneystreaming.smithy4s" %%% "smithy4s-http4s-swagger" % smithy4sVersion.value,
       Http4s.emberServer.value
-    )
+    ),
+    Compile / smithy4sSmithyLibrary := false
   )
   .jvmPlatform(allScalaVersions)
   .dependsOn(kcl)
@@ -277,6 +278,7 @@ lazy val `smithy4s-client` = projectMatrix
       (`smithy4s-client-transformers`.jvm(
         Scala212
       ) / Compile / packageBin).value,
+    Compile / smithy4sSmithyLibrary := false,
     scalacOptions -= "-deprecation"
   )
   .jvmPlatform(last2ScalaVersions)
@@ -285,7 +287,6 @@ lazy val `smithy4s-client` = projectMatrix
   .dependsOn(shared)
 
 lazy val `smithy4s-client-logging-circe` = projectMatrix
-  .enablePlugins(Smithy4sCodegenPlugin)
   .settings(
     description := "JSON structured logging instances for the Smithy4s Kinesis Client, via Circe",
     libraryDependencies ++= Seq(Http4s.circe.value)
