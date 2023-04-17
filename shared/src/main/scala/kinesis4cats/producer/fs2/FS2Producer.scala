@@ -47,7 +47,7 @@ abstract class FS2Producer[F[_], PutReq, PutRes](implicit
 ) {
 
   def logger: StructuredLogger[F]
-  def config: FS2Producer.Config
+  def config: FS2Producer.Config[F]
 
   /** The underlying queue of records to process
     */
@@ -158,18 +158,18 @@ object FS2Producer {
     * @param producerConfig
     *   [[kinesis4cats.producer.Producer.Config Producer.Config]]
     */
-  final case class Config(
+  final case class Config[F[_]](
       queueSize: Int,
       putMaxChunk: Int,
       putMaxWait: FiniteDuration,
       putMaxRetries: Option[Int],
       putRetryInterval: FiniteDuration,
-      producerConfig: Producer.Config,
+      producerConfig: Producer.Config[F],
       gracefulShutdownWait: FiniteDuration
   )
 
   object Config {
-    def default(streamNameOrArn: StreamNameOrArn): Config = Config(
+    def default[F[_]](streamNameOrArn: StreamNameOrArn): Config[F] = Config[F](
       1000,
       500,
       100.millis,
