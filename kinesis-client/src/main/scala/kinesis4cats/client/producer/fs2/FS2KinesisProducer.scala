@@ -47,7 +47,7 @@ import kinesis4cats.producer.fs2.FS2Producer
   */
 final class FS2KinesisProducer[F[_]] private[kinesis4cats] (
     override val logger: StructuredLogger[F],
-    override val config: FS2Producer.Config,
+    override val config: FS2Producer.Config[F],
     override protected val channel: Channel[F, Record],
     override protected val underlying: KinesisProducer[F]
 )(
@@ -85,7 +85,7 @@ object FS2KinesisProducer {
     *   [[kinesis4cats.client.producer.fs2.FS2KinesisProducer FS2KinesisProducer]]
     */
   def instance[F[_]](
-      config: FS2Producer.Config,
+      config: FS2Producer.Config[F],
       _underlying: KinesisAsyncClient,
       callback: (Producer.Res[PutRecordsResponse], Async[F]) => F[Unit] =
         (_: Producer.Res[PutRecordsResponse], f: Async[F]) => f.unit,

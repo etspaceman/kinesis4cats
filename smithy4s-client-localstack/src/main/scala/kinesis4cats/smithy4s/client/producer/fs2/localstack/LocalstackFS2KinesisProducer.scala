@@ -20,6 +20,7 @@ package fs2
 package localstack
 
 import _root_.fs2.concurrent.Channel
+import cats.Applicative
 import cats.effect._
 import cats.effect.syntax.all._
 import com.amazonaws.kinesis.PutRecordsOutput
@@ -69,7 +70,7 @@ object LocalstackFS2KinesisProducer {
   def resource[F[_]](
       client: Client[F],
       region: F[AwsRegion],
-      producerConfig: FS2Producer.Config,
+      producerConfig: FS2Producer.Config[F],
       config: LocalstackConfig,
       loggerF: Async[F] => F[StructuredLogger[F]],
       callback: (Producer.Res[PutRecordsOutput], Async[F]) => F[Unit],
@@ -148,9 +149,10 @@ object LocalstackFS2KinesisProducer {
       streamName: String,
       region: F[AwsRegion],
       prefix: Option[String] = None,
-      producerConfig: String => FS2Producer.Config = streamName =>
-        FS2Producer.Config
-          .default(StreamNameOrArn.Name(streamName)),
+      producerConfig: (String, Applicative[F]) => FS2Producer.Config[F] =
+        (streamName: String, f: Applicative[F]) =>
+          FS2Producer.Config
+            .default[F](StreamNameOrArn.Name(streamName))(f),
       loggerF: Async[F] => F[StructuredLogger[F]] = (f: Async[F]) =>
         f.pure(NoOpLogger[F](f)),
       callback: (Producer.Res[PutRecordsOutput], Async[F]) => F[Unit] =
@@ -169,7 +171,7 @@ object LocalstackFS2KinesisProducer {
       resource[F](
         client,
         region,
-        producerConfig(streamName),
+        producerConfig(streamName, F),
         _,
         loggerF,
         callback,
