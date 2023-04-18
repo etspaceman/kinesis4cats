@@ -231,16 +231,6 @@
                             </span><span class="type-name">Record</span><span>(</span><span class="string-literal">&quot;my-data-3&quot;</span><span>.</span><span class="identifier">getBytes</span><span>(), </span><span class="string-literal">&quot;some-partition-key-3&quot;</span><span>),
                         )
                     )
-                    </span><span class="comment">// Retries failed records with a configured limit and duration.
-</span><span>                    </span><span class="identifier">_</span><span> &lt;- </span><span class="identifier">producer</span><span>.</span><span class="identifier">putWithRetry</span><span>(
-                        </span><span class="type-name">NonEmptyList</span><span>.</span><span class="identifier">of</span><span>(
-                            </span><span class="type-name">Record</span><span>(</span><span class="string-literal">&quot;my-data&quot;</span><span>.</span><span class="identifier">getBytes</span><span>(), </span><span class="string-literal">&quot;some-partition-key&quot;</span><span>),
-                            </span><span class="type-name">Record</span><span>(</span><span class="string-literal">&quot;my-data-2&quot;</span><span>.</span><span class="identifier">getBytes</span><span>(), </span><span class="string-literal">&quot;some-partition-key-2&quot;</span><span>),
-                            </span><span class="type-name">Record</span><span>(</span><span class="string-literal">&quot;my-data-3&quot;</span><span>.</span><span class="identifier">getBytes</span><span>(), </span><span class="string-literal">&quot;some-partition-key-3&quot;</span><span>),
-                        ),
-                        </span><span class="type-name">Some</span><span>(</span><span class="number-literal">5</span><span>),
-                        </span><span class="number-literal">1</span><span>.</span><span class="identifier">second</span><span>
-                    )
                 } </span><span class="keyword">yield</span><span> </span><span class="type-name">ExitCode</span><span>.</span><span class="type-name">Success</span><span>
         )
 }</span></code></pre>
