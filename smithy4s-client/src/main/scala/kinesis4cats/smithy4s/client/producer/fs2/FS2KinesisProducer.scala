@@ -53,7 +53,7 @@ import kinesis4cats.producer.fs2.FS2Producer
   */
 final class FS2KinesisProducer[F[_]] private[kinesis4cats] (
     override val logger: StructuredLogger[F],
-    override val config: FS2Producer.Config,
+    override val config: FS2Producer.Config[F],
     override protected val channel: Channel[F, Record],
     override protected val underlying: KinesisProducer[F]
 )(
@@ -103,7 +103,7 @@ object FS2KinesisProducer {
     *   [[kinesis4cats.smithy4s.client.producer.KinesisProducer KinesisProducer]]
     */
   def apply[F[_]](
-      config: FS2Producer.Config,
+      config: FS2Producer.Config[F],
       client: Client[F],
       region: F[AwsRegion],
       loggerF: Async[F] => F[StructuredLogger[F]] = (f: Async[F]) =>

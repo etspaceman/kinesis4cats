@@ -57,7 +57,7 @@ import kinesis4cats.producer.{Record => Rec, _}
 final class KinesisProducer[F[_]] private[kinesis4cats] (
     override val logger: StructuredLogger[F],
     override val shardMapCache: ShardMapCache[F],
-    override val config: Producer.Config,
+    override val config: Producer.Config[F],
     underlying: KinesisClient[F]
 )(implicit
     F: Async[F],
@@ -184,7 +184,7 @@ object KinesisProducer {
     *   [[kinesis4cats.smithy4s.client.producer.KinesisProducer KinesisProducer]]
     */
   def apply[F[_]](
-      config: Producer.Config,
+      config: Producer.Config[F],
       client: Client[F],
       region: F[AwsRegion],
       loggerF: Async[F] => F[StructuredLogger[F]] = (f: Async[F]) =>

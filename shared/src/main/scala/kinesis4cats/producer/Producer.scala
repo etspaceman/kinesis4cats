@@ -18,13 +18,16 @@ package kinesis4cats.producer
 
 import scala.concurrent.duration.FiniteDuration
 
+import cats.Applicative
 import cats.Semigroup
 import cats.data.{Ior, NonEmptyList}
 import cats.effect.Async
+import cats.effect.kernel.Ref
 import cats.effect.syntax.all._
 import cats.syntax.all._
 import org.typelevel.log4cats.StructuredLogger
 
+import kinesis4cats.compat.retry._
 import kinesis4cats.logging.{LogContext, LogEncoder}
 import kinesis4cats.models.StreamNameOrArn
 import kinesis4cats.producer.batching.Batcher
@@ -53,8 +56,10 @@ abstract class Producer[F[_], PutReq, PutRes](implicit
   import LE._
 
   def logger: StructuredLogger[F]
+
   def shardMapCache: ShardMapCache[F]
-  def config: Producer.Config
+
+  def config: Producer.Config[F]
 
   private lazy val batcher: Batcher = new Batcher(config.batcherConfig)
 
@@ -70,7 +75,7 @@ abstract class Producer[F[_], PutReq, PutRes](implicit
   /** Transforms a a [[cats.data.NonEmptyList NonEmptyList]] of
     * [[kinesis4cats.producer.Record Records]] into the underlying put request
     *
-    * @param req
+    * @param records
     *   a [[cats.data.NonEmptyList NonEmptyList]] of
     *   [[kinesis4cats.producer.Record Records]]
     * @return
@@ -83,7 +88,7 @@ abstract class Producer[F[_], PutReq, PutRes](implicit
     * records and returns any errored records. Useful for retrying any records
     * that failed
     *
-    * @param req
+    * @param records
     *   a [[cats.data.NonEmptyList NonEmptyList]] of
     *   [[kinesis4cats.producer.Record Records]]
     * @param resp
@@ -97,25 +102,9 @@ abstract class Producer[F[_], PutReq, PutRes](implicit
       resp: PutRes
   ): Option[NonEmptyList[Producer.FailedRecord]]
 
-  /** This function is responsible for:
-    *   - Predicting the shard that a record will land on
-    *   - Batching records against Kinesis limits for shards / streams
-    *   - Putting batches to Kinesis
-    *
-    * @param records
-    *   a [[cats.data.NonEmptyList NonEmptyList]] of
-    *   [[kinesis4cats.producer.Record Records]]
-    * @return
-    *   [[cats.data.Ior Ior]] with the following:
-    *   - left: a [[kinesis4cats.producer.Producer.Error Producer.Error]], which
-    *     represents records that were too large to be put on kinesis as well as
-    *     records that were not produced successfully in the batch request.
-    *   - right: a [[cats.data.NonEmptyList NonEmptyList]] of the underlying put
-    *     responses
-    */
-  def put(
+  private def _put(
       records: NonEmptyList[Record]
-  ): F[Ior[Producer.Error, NonEmptyList[PutRes]]] = {
+  ): F[Producer.Res[PutRes]] = {
     val ctx = LogContext()
 
     for {
@@ -149,7 +138,7 @@ abstract class Producer[F[_], PutReq, PutRes](implicit
               .parTraverseN(config.shardParallelism) { shardBatch =>
                 for {
                   resp <- putImpl(asPutRequest(shardBatch))
-                  res = failedRecords(shardBatch, resp)
+                  res = failedRecords(records, resp)
                     .map(Producer.Error.putFailures)
                     .fold(
                       Ior.right[Producer.Error, PutRes](resp)
@@ -170,16 +159,15 @@ abstract class Producer[F[_], PutReq, PutRes](implicit
     } yield res
   }
 
-  /** Runs the put method in a retry loop, retrying any records that failed to
-    * produce in the previous try.
+  /** This function is responsible for:
+    *   - Predicting the shard that a record will land on
+    *   - Batching records against Kinesis limits for shards / streams
+    *   - Putting batches to Kinesis
+    *   - Retrying failures per the configured RetryPolicy
     *
     * @param records
     *   a [[cats.data.NonEmptyList NonEmptyList]] of
     *   [[kinesis4cats.producer.Record Records]]
-    * @param retries
-    *   Number of retries to attempt after an initial failure.
-    * @param retryDuration
-    *   Amount of time to wait between retries.
     * @return
     *   [[cats.data.Ior Ior]] with the following:
     *   - left: a [[kinesis4cats.producer.Producer.Error Producer.Error]], which
@@ -188,65 +176,88 @@ abstract class Producer[F[_], PutReq, PutRes](implicit
     *   - right: a [[cats.data.NonEmptyList NonEmptyList]] of the underlying put
     *     responses
     */
-  def putWithRetry(
-      records: NonEmptyList[Record],
-      retries: Option[Int],
-      retryDuration: FiniteDuration
-  ): F[Producer.Res[PutRes]] = {
+  def put(records: NonEmptyList[Record]): F[Producer.Res[PutRes]] = {
     val ctx = LogContext()
-      .addEncoded("retriesRemaining", retries.fold("Infinite")(_.toString()))
-      .addEncoded("retryDuration", retryDuration)
-    put(records).flatMap {
-      case x if x.isRight                                     => F.pure(x)
-      case x if x.left.exists(e => e.errors.exists(_.isLeft)) => F.pure(x)
-      case x if retries.exists(_ <= 0) =>
-        if (config.raiseOnExhaustedRetries) {
-          x.leftTraverse(F.raiseError)
-        } else {
-          logger
-            .warn(ctx.context)(
-              "All retries have been exhausted, and the final retry detected errors"
+
+    for {
+      ref <- Ref.of(Producer.RetryState[PutRes](records, None))
+      finalRes <- retryingOnFailuresAndAllErrors(
+        config.retryPolicy,
+        (x: Producer.Res[PutRes]) =>
+          F.pure(x.isRight || x.left.exists(e => e.errors.exists(_.isLeft))),
+        (x: Producer.Res[PutRes], details: RetryDetails) =>
+          for {
+            failedRecords <- F.fromOption(
+              x.left.flatMap { e =>
+                e.errors.flatMap(errors => errors.right)
+              },
+              new RuntimeException(
+                "Failed records empty, this should never happen"
+              )
             )
-            .as(x)
-        }
-      case x =>
-        logger
-          .debug(ctx.context)("Failures detected, retrying failed records")
-          .flatMap { _ =>
-            for {
-              _ <- F.sleep(retryDuration)
-              failedRecords <- F.fromOption(
-                x.left.flatMap { e =>
-                  e.errors.flatMap(errors => errors.right)
-                },
-                new RuntimeException(
-                  "Failed records empty, this should never happen"
-                )
-              )
-              res <- putWithRetry(
+            _ <- logger.debug(ctx.addEncoded("retryDetails", details).context)(
+              s"Failures with ${failedRecords.size} records detected, retrying failed records"
+            )
+            _ <- ref.update(current =>
+              Producer.RetryState(
                 failedRecords.map(_.record),
-                retries.map(_ - 1),
-                retryDuration
+                current.res.fold(Some(x))(y => Some(y.combine(x)))
               )
-            } yield x.combine(res)
+            )
+          } yield (),
+        (e: Throwable, details: RetryDetails) =>
+          logger.error(ctx.addEncoded("retryDetails", details).context, e)(
+            "Exception when putting records, retrying"
+          )
+      )(ref.get.flatMap(x => _put(x.inputRecords)))
+      _ <-
+        if (finalRes.left.exists(e => e.errors.exists(_.right.nonEmpty))) {
+          if (config.raiseOnExhaustedRetries)
+            finalRes.leftTraverse(F.raiseError[Unit]).void
+          else {
+            logger
+              .warn(ctx.context)(
+                "All retries have been exhausted, and the final retry detected errors"
+              )
           }
-    }
+        } else F.unit
+      res <- ref.modify { current =>
+        val result = current.res.fold(finalRes)(x => x.combine(finalRes))
+        (
+          Producer.RetryState(
+            current.inputRecords,
+            Some(result)
+          ),
+          result
+        )
+      }
+    } yield res
   }
 }
 
 object Producer {
 
+  final private case class RetryState[A](
+      inputRecords: NonEmptyList[Record],
+      res: Option[Res[A]]
+  )
+
   type Res[A] = Ior[Producer.Error, NonEmptyList[A]]
-  type Errs = Ior[NonEmptyList[InvalidRecord], NonEmptyList[FailedRecord]]
+  type Errs = Ior[
+    NonEmptyList[InvalidRecord],
+    NonEmptyList[FailedRecord]
+  ]
 
   /** [[kinesis4cats.logging.LogEncoder LogEncoder]] instances for the
     * [[kinesis4cats.producer.Producer]]
     *
-    * @param putReqeustLogEncoder
+    * @param recordLogEncoder
+    * @param finiteDurationEncoder
     */
   final class LogEncoders(implicit
       val recordLogEncoder: LogEncoder[Record],
-      val finiteDurationEncoder: LogEncoder[FiniteDuration]
+      val finiteDurationEncoder: LogEncoder[FiniteDuration],
+      val retryDetailsEncoder: LogEncoder[RetryDetails]
   )
 
   /** Configuration for the [[kinesis4cats.producer.Producer Producer]]
@@ -272,8 +283,11 @@ object Producer {
     *   If true, an exception will be raised if a
     *   [[kinesis4cats.producer.Producer.Error Producer.Error]] is detected in
     *   the final batch of retried put requests
+    * @param retryPolicy
+    *   [[https://github.com/etspaceman/kinesis4cats/blob/main/compat/src/main/scala/kinesis4cats/compat/retry/RetryPolicy.scala RetryPolicy]]
+    *   for retrying put requests
     */
-  final case class Config(
+  final case class Config[F[_]](
       warnOnShardCacheMisses: Boolean,
       warnOnBatchFailures: Boolean,
       shardParallelism: Int,
@@ -281,7 +295,8 @@ object Producer {
       shardMapCacheConfig: ShardMapCache.Config,
       batcherConfig: Batcher.Config,
       streamNameOrArn: StreamNameOrArn,
-      raiseOnExhaustedRetries: Boolean
+      raiseOnExhaustedRetries: Boolean,
+      retryPolicy: RetryPolicy[F]
   )
 
   object Config {
@@ -295,15 +310,18 @@ object Producer {
       * @return
       *   [[kinesis4cats.producer.Producer.Config Producer.Config]]
       */
-    def default(streamNameOrArn: StreamNameOrArn) = Config(
-      true,
-      true,
-      8,
-      false,
-      ShardMapCache.Config.default,
-      Batcher.Config.default,
-      streamNameOrArn,
-      false
+    def default[F[_]](
+        streamNameOrArn: StreamNameOrArn
+    )(implicit F: Applicative[F]): Config[F] = Config[F](
+      warnOnShardCacheMisses = true,
+      warnOnBatchFailures = true,
+      shardParallelism = 8,
+      raiseOnFailures = false,
+      shardMapCacheConfig = ShardMapCache.Config.default,
+      batcherConfig = Batcher.Config.default,
+      streamNameOrArn = streamNameOrArn,
+      raiseOnExhaustedRetries = false,
+      retryPolicy = RetryPolicies.alwaysGiveUp[F]
     )
   }
 
@@ -323,11 +341,12 @@ object Producer {
     private[kinesis4cats] def add(that: Error): Error = Error(
       errors.combine(that.errors)
     )
-    override def getMessage(): String = errors match {
+
+    override def getMessage: String = errors match {
       case Some(Ior.Both(a, b)) =>
-        Error.ivalidRecordsMessage(a) + "\n\nAND\n\n" + Error
+        Error.invalidRecordsMessage(a) + "\n\nAND\n\n" + Error
           .putFailuresMessage(b)
-      case Some(Ior.Left(a))  => Error.ivalidRecordsMessage(a)
+      case Some(Ior.Left(a))  => Error.invalidRecordsMessage(a)
       case Some(Ior.Right(b)) => Error.putFailuresMessage(b)
       case None => s"Batcher returned no results at all, this is unexpected"
     }
@@ -335,10 +354,9 @@ object Producer {
 
   object Error {
     implicit val producerErrorSemigroup: Semigroup[Error] =
-      new Semigroup[Error] {
-        override def combine(x: Error, y: Error): Error = x.add(y)
-      }
-    private def ivalidRecordsMessage(
+      (x: Error, y: Error) => x.add(y)
+
+    private def invalidRecordsMessage(
         records: NonEmptyList[InvalidRecord]
     ): String = {
       val prefix = s"${records.length} records were invalid."
@@ -450,5 +468,4 @@ object Producer {
     final case class InvalidExplicitHashKey(explicitHashKey: Option[String])
         extends InvalidRecord
   }
-
 }

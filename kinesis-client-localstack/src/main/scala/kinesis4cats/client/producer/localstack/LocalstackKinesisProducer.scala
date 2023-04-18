@@ -16,6 +16,7 @@
 
 package kinesis4cats.client.producer.localstack
 
+import cats.Applicative
 import cats.effect._
 import cats.effect.syntax.all._
 import cats.syntax.all._
@@ -53,7 +54,7 @@ object LocalstackKinesisProducer {
     *   [[kinesis4cats.client.producer.KinesisProducer KinesisProducer]]
     */
   def resource[F[_]](
-      producerConfig: Producer.Config,
+      producerConfig: Producer.Config[F],
       config: LocalstackConfig,
       shardMapF: (
           KinesisClient[F],
@@ -112,8 +113,9 @@ object LocalstackKinesisProducer {
   def resource[F[_]](
       streamName: String,
       prefix: Option[String] = None,
-      producerConfig: String => Producer.Config = (streamName: String) =>
-        Producer.Config.default(StreamNameOrArn.Name(streamName)),
+      producerConfig: (String, Applicative[F]) => Producer.Config[F] =
+        (streamName: String, f: Applicative[F]) =>
+          Producer.Config.default[F](StreamNameOrArn.Name(streamName))(f),
       shardMapF: (
           KinesisClient[F],
           StreamNameOrArn,
@@ -130,5 +132,5 @@ object LocalstackKinesisProducer {
       PLE: Producer.LogEncoders
   ): Resource[F, KinesisProducer[F]] = LocalstackConfig
     .resource[F](prefix)
-    .flatMap(resource[F](producerConfig(streamName), _, shardMapF))
+    .flatMap(resource[F](producerConfig(streamName, F), _, shardMapF))
 }

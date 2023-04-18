@@ -25,7 +25,7 @@ services:
       test: "curl --fail http://localhost:8080/initialized || exit 1"
       interval: 5s
       timeout: 5s
-      retries: 10
+      retries: 20
     ports:
       - "8080:8080"
     depends_on:
