@@ -32,7 +32,6 @@ import org.scalacheck.Arbitrary
 
 import kinesis4cats.Utils
 import kinesis4cats.logging.ConsoleLogger
-import kinesis4cats.logging.instances.show._
 import kinesis4cats.models.StreamArn
 import kinesis4cats.smithy4s.client.localstack.LocalstackKinesisClient
 import kinesis4cats.syntax.scalacheck._

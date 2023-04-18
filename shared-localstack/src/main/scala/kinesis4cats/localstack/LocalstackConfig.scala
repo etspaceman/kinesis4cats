@@ -26,6 +26,7 @@ import io.circe.Encoder
 import kinesis4cats.ShowBuilder
 import kinesis4cats.ciris.CirisReader
 import kinesis4cats.instances.ciris._
+import kinesis4cats.logging.LogEncoder
 import kinesis4cats.models.AwsRegion
 
 /** Configuration loading for
@@ -270,4 +271,22 @@ object LocalstackConfig {
   def resource[F[_]: Async](
       prefix: Option[String] = None
   ): Resource[F, LocalstackConfig] = read(prefix).resource[F]
+
+  final class LogEncoders(implicit
+      val localstackConfigLogEncoder: LogEncoder[LocalstackConfig]
+  )
+
+  object LogEncoders {
+    val show = {
+      import kinesis4cats.logging.instances.show._
+
+      new LogEncoders()
+    }
+
+    val circe = {
+      import kinesis4cats.logging.instances.circe._
+
+      new LogEncoders()
+    }
+  }
 }

@@ -26,7 +26,7 @@ import org.typelevel.ci._
 import org.typelevel.log4cats.StructuredLogger
 
 import kinesis4cats.localstack.LocalstackConfig
-import kinesis4cats.logging.{LogContext, LogEncoder}
+import kinesis4cats.logging.LogContext
 
 /** Middleware for [[https://http4s.org/v0.23/docs/client.html Clients]] that
   * proxies request against the configured Localstack environment
@@ -44,11 +44,10 @@ object LocalstackProxy {
     *   [[org.typelevel.log4cats.StructuredLogger StructuredLogger]]
     * @param F
     *   [[cats.effect.Async Async]]
-    * @param encoders
+    * @param kinesisClientEncoders
     *   [[kinesis4cats.smithy4s.client.KinesisClient.LogEncoders KinesisClient.LogEncoders]]
-    * @param LELC
-    *   [[kinesis4cats.logging.LogEncoder]] for
-    *   [[kinesis4cats.localstack.LocalstackConfig]]
+    * @param localstackConfigEncoders
+    *   [[kinesis4cats.localstack.LocalstackConfig.LogEncoders LocalstackConfig.LogEncoders]]
     * @return
     *   [[cats.effect.Async Async]] of a proxied [[org.http4s.Request Request]]
     */
@@ -56,12 +55,11 @@ object LocalstackProxy {
       config: LocalstackConfig,
       req: Request[F],
       logger: StructuredLogger[F],
-      encoders: KinesisClient.LogEncoders[F]
-  )(implicit
-      F: Async[F],
-      LELC: LogEncoder[LocalstackConfig]
-  ): F[Request[F]] = {
-    import encoders._
+      kinesisClientEncoders: KinesisClient.LogEncoders[F],
+      localstackConfigEncoders: LocalstackConfig.LogEncoders
+  )(implicit F: Async[F]): F[Request[F]] = {
+    import kinesisClientEncoders._
+    import localstackConfigEncoders._
     val newReq = req
       .withUri(
         req.uri.copy(authority =
@@ -93,26 +91,31 @@ object LocalstackProxy {
     *   [[org.typelevel.log4cats.StructuredLogger StructuredLogger]]
     * @param F
     *   [[cats.effect.Async Async]]
-    * @param encoders
-    *   [[kinesis4cats.smithy4s.client.KinesisClient.LogEncoders KinesisClient.LogEncoders]]/
-    * @param LELC
-    *   [[kinesis4cats.logging.LogEncoder]] for
-    *   [[kinesis4cats.localstack.LocalstackConfig]]
+    * @param kinesisClientEncoders
+    *   [[kinesis4cats.smithy4s.client.KinesisClient.LogEncoders KinesisClient.LogEncoders]]
+    * @param localstackConfigEncoders
+    *   [[kinesis4cats.localstack.LocalstackConfig.LogEncoders LocalstackConfig.LogEncoders]]
     * @return
     *   [[cats.effect.Async Async]] of a proxied [[org.http4s.Request Request]]
     */
   def apply[F[_]](
       config: LocalstackConfig,
       logger: StructuredLogger[F],
-      encoders: KinesisClient.LogEncoders[F]
+      kinesisClientEncoders: KinesisClient.LogEncoders[F],
+      localstackConfigEncoders: LocalstackConfig.LogEncoders
   )(
       client: Client[F]
   )(implicit
-      F: Async[F],
-      LELC: LogEncoder[LocalstackConfig]
+      F: Async[F]
   ): Client[F] = Client { req =>
     for {
-      proxied <- proxyUri(config, req, logger, encoders).toResource
+      proxied <- proxyUri(
+        config,
+        req,
+        logger,
+        kinesisClientEncoders,
+        localstackConfigEncoders
+      ).toResource
       res <- client.run(proxied)
     } yield res
   }
@@ -129,28 +132,34 @@ object LocalstackProxy {
     *   None
     * @param F
     *   [[cats.effect.Async Async]]
-    * @param encoders
-    *   [[kinesis4cats.smithy4s.client.KinesisClient.LogEncoders KinesisClient.LogEncoders]]/
-    *   Default to show instances
-    * @param LELC
-    *   [[kinesis4cats.logging.LogEncoder]] for
-    *   [[kinesis4cats.localstack.LocalstackConfig]]
+    * @param kinesisClientEncoders
+    *   [[kinesis4cats.smithy4s.client.KinesisClient.LogEncoders KinesisClient.LogEncoders]]
+    * @param localstackConfigEncoders
+    *   [[kinesis4cats.localstack.LocalstackConfig.LogEncoders LocalstackConfig.LogEncoders]]
     * @return
     *   [[cats.effect.Async Async]] of a proxied [[org.http4s.Request Request]]
     */
   def apply[F[_]](
       logger: StructuredLogger[F],
       prefix: Option[String] = None,
-      encoders: KinesisClient.LogEncoders[F] = KinesisClient.LogEncoders.show[F]
+      kinesisClientEncoders: KinesisClient.LogEncoders[F] =
+        KinesisClient.LogEncoders.show[F],
+      localstackConfigEncoders: LocalstackConfig.LogEncoders =
+        LocalstackConfig.LogEncoders.show
   )(
       client: Client[F]
   )(implicit
-      F: Async[F],
-      LELC: LogEncoder[LocalstackConfig]
+      F: Async[F]
   ): Client[F] = Client { req =>
     for {
       config <- LocalstackConfig.resource[F](prefix)
-      proxied <- proxyUri(config, req, logger, encoders).toResource
+      proxied <- proxyUri(
+        config,
+        req,
+        logger,
+        kinesisClientEncoders,
+        localstackConfigEncoders
+      ).toResource
       res <- client.run(proxied)
     } yield res
   }

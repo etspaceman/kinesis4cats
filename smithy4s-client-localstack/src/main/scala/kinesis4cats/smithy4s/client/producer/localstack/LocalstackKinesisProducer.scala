@@ -27,7 +27,6 @@ import org.typelevel.log4cats.noop.NoOpLogger
 import smithy4s.aws.kernel.AwsRegion
 
 import kinesis4cats.localstack.LocalstackConfig
-import kinesis4cats.logging.LogEncoder
 import kinesis4cats.models.StreamNameOrArn
 import kinesis4cats.producer.Producer
 import kinesis4cats.producer.ShardMap
@@ -73,14 +72,19 @@ object LocalstackKinesisProducer {
       ) => F[Either[ShardMapCache.Error, ShardMap]],
       encoders: Producer.LogEncoders,
       shardMapEncoders: ShardMapCache.LogEncoders,
-      kinesisClientEncoders: KinesisClient.LogEncoders[F]
-  )(implicit
-      F: Async[F],
-      LELC: LogEncoder[LocalstackConfig]
-  ): Resource[F, KinesisProducer[F]] = for {
+      kinesisClientEncoders: KinesisClient.LogEncoders[F],
+      localstackConfigEncoders: LocalstackConfig.LogEncoders
+  )(implicit F: Async[F]): Resource[F, KinesisProducer[F]] = for {
     logger <- loggerF(F).toResource
     underlying <- LocalstackKinesisClient
-      .clientResource[F](client, region, config, loggerF, kinesisClientEncoders)
+      .clientResource[F](
+        client,
+        region,
+        config,
+        loggerF,
+        kinesisClientEncoders,
+        localstackConfigEncoders
+      )
     shardMapCache <- ShardMapCache[F](
       producerConfig.shardMapCacheConfig,
       shardMapF(underlying, producerConfig.streamNameOrArn, F),
@@ -147,11 +151,10 @@ object LocalstackKinesisProducer {
       shardMapEncoders: ShardMapCache.LogEncoders =
         ShardMapCache.LogEncoders.show,
       kinesisClientEncoders: KinesisClient.LogEncoders[F] =
-        KinesisClient.LogEncoders.show[F]
-  )(implicit
-      F: Async[F],
-      LELC: LogEncoder[LocalstackConfig]
-  ): Resource[F, KinesisProducer[F]] = LocalstackConfig
+        KinesisClient.LogEncoders.show[F],
+      localstackConfigEncoders: LocalstackConfig.LogEncoders =
+        LocalstackConfig.LogEncoders.show
+  )(implicit F: Async[F]): Resource[F, KinesisProducer[F]] = LocalstackConfig
     .resource[F](prefix)
     .flatMap(
       resource[F](
@@ -163,7 +166,8 @@ object LocalstackKinesisProducer {
         shardMapF,
         encoders,
         shardMapEncoders,
-        kinesisClientEncoders
+        kinesisClientEncoders,
+        localstackConfigEncoders
       )
     )
 }

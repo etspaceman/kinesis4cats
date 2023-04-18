@@ -24,7 +24,6 @@ import org.http4s.blaze.client.BlazeClientBuilder
 
 import kinesis4cats.SSL
 import kinesis4cats.logging.ConsoleLogger
-import kinesis4cats.logging.instances.show._
 import kinesis4cats.smithy4s.client.localstack.LocalstackKinesisClient
 
 class KinesisClientJVMSpec extends KinesisClientSpec {

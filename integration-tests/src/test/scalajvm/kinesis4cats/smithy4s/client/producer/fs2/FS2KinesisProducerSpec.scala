@@ -30,7 +30,6 @@ import kinesis4cats.SSL
 import kinesis4cats.Utils
 import kinesis4cats.kcl.CommittableRecord
 import kinesis4cats.kcl.localstack.LocalstackKCLConsumer
-import kinesis4cats.logging.instances.show._
 import kinesis4cats.producer.fs2.FS2Producer
 import kinesis4cats.producer.fs2.FS2ProducerSpec
 import kinesis4cats.smithy4s.client.localstack.LocalstackKinesisClient
