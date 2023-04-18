@@ -221,18 +221,16 @@ abstract class Producer[F[_], PutReq, PutRes](implicit
               )
           }
         } else F.unit
-      _ <- ref.update(current =>
-        Producer.RetryState(
-          current.inputRecords,
-          current.res.fold(Some(finalRes))(x => Some(x.combine(finalRes)))
+      res <- ref.modify { current =>
+        val result = current.res.fold(finalRes)(x => x.combine(finalRes))
+        (
+          Producer.RetryState(
+            current.inputRecords,
+            Some(result)
+          ),
+          result
         )
-      )
-      res <- ref.get.flatMap(x =>
-        F.fromOption(
-          x.res,
-          new RuntimeException("Result is empty, this should never happen")
-        )
-      )
+      }
     } yield res
   }
 }
@@ -315,15 +313,15 @@ object Producer {
     def default[F[_]](
         streamNameOrArn: StreamNameOrArn
     )(implicit F: Applicative[F]): Config[F] = Config[F](
-      true,
-      true,
-      8,
-      false,
-      ShardMapCache.Config.default,
-      Batcher.Config.default,
-      streamNameOrArn,
-      false,
-      RetryPolicies.alwaysGiveUp[F]
+      warnOnShardCacheMisses = true,
+      warnOnBatchFailures = true,
+      shardParallelism = 8,
+      raiseOnFailures = false,
+      shardMapCacheConfig = ShardMapCache.Config.default,
+      batcherConfig = Batcher.Config.default,
+      streamNameOrArn = streamNameOrArn,
+      raiseOnExhaustedRetries = false,
+      retryPolicy = RetryPolicies.alwaysGiveUp[F]
     )
   }
 
