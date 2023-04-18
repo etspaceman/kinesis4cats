@@ -46,13 +46,15 @@ object LocalstackKinesisClient {
   def localstackHttp4sClient[F[_]](
       client: Client[F],
       config: LocalstackConfig,
-      loggerF: Async[F] => F[StructuredLogger[F]]
+      loggerF: Async[F] => F[StructuredLogger[F]],
+      encoders: KinesisClient.LogEncoders[F]
   )(implicit
       F: Async[F],
-      LE: KinesisClient.LogEncoders[F],
       LELC: LogEncoder[LocalstackConfig]
   ): F[Client[F]] =
-    loggerF(F).map(logger => LocalstackProxy[F](config, logger)(client))
+    loggerF(F).map(logger =>
+      LocalstackProxy[F](config, logger, encoders)(client)
+    )
 
   /** Creates a [[cats.effect.Resource Resource]] of a KinesisClient that is
     * compatible with Localstack
@@ -66,6 +68,8 @@ object LocalstackKinesisClient {
     * @param loggerF
     *   [[cats.effect.Async Async]] => [[cats.effect.Async Async]] of
     *   [[https://github.com/typelevel/log4cats/blob/main/core/shared/src/main/scala/org/typelevel/log4cats/StructuredLogger.scala StructuredLogger]].
+    * @param encoders
+    *   [[kinesis4cats.smithy4s.client.KinesisClient.LogEncoders LogEncoders]]
     * @param F
     *   [[cats.effect.Async Async]]
     * @return
@@ -75,13 +79,18 @@ object LocalstackKinesisClient {
       client: Client[F],
       region: F[AwsRegion],
       config: LocalstackConfig,
-      loggerF: Async[F] => F[StructuredLogger[F]]
+      loggerF: Async[F] => F[StructuredLogger[F]],
+      encoders: KinesisClient.LogEncoders[F]
   )(implicit
       F: Async[F],
-      LE: KinesisClient.LogEncoders[F],
       LELC: LogEncoder[LocalstackConfig]
   ): Resource[F, KinesisClient[F]] = for {
-    http4sClient <- localstackHttp4sClient(client, config, loggerF).toResource
+    http4sClient <- localstackHttp4sClient(
+      client,
+      config,
+      loggerF,
+      encoders
+    ).toResource
     awsClient <- KinesisClient[F](
       http4sClient,
       region,
@@ -108,6 +117,8 @@ object LocalstackKinesisClient {
     *   [[https://github.com/typelevel/log4cats/blob/main/core/shared/src/main/scala/org/typelevel/log4cats/StructuredLogger.scala StructuredLogger]].
     *   Default is
     *   [[https://github.com/typelevel/log4cats/blob/main/noop/shared/src/main/scala/org/typelevel/log4cats/noop/NoOpLogger.scala NoOpLogger]]
+    * @param encoders
+    *   [[kinesis4cats.smithy4s.client.KinesisClient.LogEncoders LogEncoders]]
     * @param F
     *   [[cats.effect.Async Async]]
     * @return
@@ -118,14 +129,14 @@ object LocalstackKinesisClient {
       region: F[AwsRegion],
       prefix: Option[String] = None,
       loggerF: Async[F] => F[StructuredLogger[F]] = (f: Async[F]) =>
-        f.pure(NoOpLogger[F](f))
+        f.pure(NoOpLogger[F](f)),
+      encoders: KinesisClient.LogEncoders[F] = KinesisClient.LogEncoders.show[F]
   )(implicit
       F: Async[F],
-      LE: KinesisClient.LogEncoders[F],
       LELC: LogEncoder[LocalstackConfig]
   ): Resource[F, KinesisClient[F]] = LocalstackConfig
     .resource(prefix)
-    .flatMap(clientResource(client, region, _, loggerF))
+    .flatMap(clientResource(client, region, _, loggerF, encoders))
 
   /** A resources that does the following:
     *
@@ -149,7 +160,7 @@ object LocalstackKinesisClient {
     *   How long to delay between retries of the DescribeStreamSummary call
     * @param F
     *   F with an [[cats.effect.Async Async]] instance
-    * @param LE
+    * @param encoders
     *   [[kinesis4cats.smithy4s.client.KinesisClient.LogEncoders LogEncoders]]
     * @return
     *   [[cats.effect.Resource Resource]] of
@@ -163,17 +174,17 @@ object LocalstackKinesisClient {
       shardCount: Int,
       describeRetries: Int,
       describeRetryDuration: FiniteDuration,
-      loggerF: Async[F] => F[StructuredLogger[F]]
+      loggerF: Async[F] => F[StructuredLogger[F]],
+      encoders: KinesisClient.LogEncoders[F]
   )(implicit
       F: Async[F],
-      LE: KinesisClient.LogEncoders[F],
       LELC: LogEncoder[LocalstackConfig]
   ): Resource[F, KinesisClient[F]] = {
     val retryPolicy = constantDelay(describeRetryDuration).join(
       limitRetries(describeRetries)
     )
 
-    clientResource[F](http4sClient, region, config, loggerF).flatMap {
+    clientResource[F](http4sClient, region, config, loggerF, encoders).flatMap {
       case client: KinesisClient[F] =>
         Resource.make[F, KinesisClient[F]](
           for {
@@ -247,8 +258,9 @@ object LocalstackKinesisClient {
     *   Default to 500 ms
     * @param F
     *   F with an [[cats.effect.Async Async]] instance
-    * @param LE
+    * @param encoders
     *   [[kinesis4cats.smithy4s.client.KinesisClient.LogEncoders LogEncoders]]
+    *   Defaults to show instances
     * @return
     *   [[cats.effect.Resource Resource]] of
     *   [[kinesis4cats.smithy4s.client.KinesisClient KinesisClient]]
@@ -262,10 +274,10 @@ object LocalstackKinesisClient {
       describeRetries: Int = 5,
       describeRetryDuration: FiniteDuration = 500.millis,
       loggerF: Async[F] => F[StructuredLogger[F]] = (f: Async[F]) =>
-        f.pure(NoOpLogger(f))
+        f.pure(NoOpLogger(f)),
+      encoders: KinesisClient.LogEncoders[F] = KinesisClient.LogEncoders.show[F]
   )(implicit
       F: Async[F],
-      LE: KinesisClient.LogEncoders[F],
       LELC: LogEncoder[LocalstackConfig]
   ): Resource[F, KinesisClient[F]] = for {
     config <- LocalstackConfig.resource(prefix)
@@ -277,7 +289,8 @@ object LocalstackKinesisClient {
       shardCount,
       describeRetries,
       describeRetryDuration,
-      loggerF
+      loggerF,
+      encoders
     )
   } yield result
 }

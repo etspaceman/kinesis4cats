@@ -166,12 +166,15 @@ object KinesisProducer {
     *   instance
     * @param F
     *   [[cats.effect.Async Async]]
-    * @param LE
-    *   [[kinesis4cats.producer.Producer.LogEncoders Producer.LogEncoders]]
-    * @param KLE
-    *   [[kinesis4cats.client.KinesisClient.LogEncoders KinesisClient.LogEncoders]]
-    * @param SLE
+    * @param encoders
+    *   [[kinesis4cats.producer.Producer.LogEncoders Producer.LogEncoders]].
+    *   Default to show instances
+    * @param shardMapEncoders
     *   [[kinesis4cats.producer.ShardMapCache.LogEncoders ShardMapCache.LogEncoders]]
+    *   Default to show instances
+    * @param kinesisClientEncoders
+    *   [[kinesis4cats.client.KinesisClient.LogEncoders KinesisClient.LogEncoders]]
+    *   Default to show instances
     * @return
     *   [[cats.effect.Resource Resource]] of
     *   [[kinesis4cats.client.producer.KinesisProducer KinesisProducer]]
@@ -200,10 +203,12 @@ object KinesisProducer {
     *   [[kinesis4cats.client.KinesisClient KinesisClient]] instance
     * @param F
     *   [[cats.effect.Async Async]]
-    * @param LE
-    *   [[kinesis4cats.producer.Producer.LogEncoders Producer.LogEncoders]]
-    * @param SLE
+    * @param encoders
+    *   [[kinesis4cats.producer.Producer.LogEncoders Producer.LogEncoders]].
+    *   Default to show instances
+    * @param shardMapEncoders
     *   [[kinesis4cats.producer.ShardMapCache.LogEncoders ShardMapCache.LogEncoders]]
+    *   Default to show instances
     * @return
     *   [[cats.effect.Resource Resource]] of
     *   [[kinesis4cats.client.producer.KinesisProducer KinesisProducer]]

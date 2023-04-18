@@ -24,7 +24,6 @@ import software.amazon.kinesis.processor.SingleStreamTracker
 
 import kinesis4cats.kcl._
 import kinesis4cats.kcl.http4s.KCLService
-import kinesis4cats.kcl.logging.instances.show._
 import kinesis4cats.syntax.bytebuffer._
 
 object MyApp extends ResourceApp.Forever {

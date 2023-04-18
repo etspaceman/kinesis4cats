@@ -27,29 +27,32 @@ import kinesis4cats.logging.instances.circe._
   * string encoding of log structures using [[io.circe.Encoder Encoder]]
   */
 object circe {
-  implicit val headersCirceEncoder: Encoder[Headers] =
-    Encoder[List[(String, String)]]
-      .contramap(_.headers.map(x => x.name.toString -> x.value))
 
-  implicit val httpVersionEncoder: Encoder[HttpVersion] =
-    Encoder.forProduct2("major", "minor")(x => (x.major, x.minor))
+  def kinesisClient[F[_]]: KinesisClient.LogEncoders[F] = {
+    implicit val headersCirceEncoder: Encoder[Headers] =
+      Encoder[List[(String, String)]]
+        .contramap(_.headers.map(x => x.name.toString -> x.value))
 
-  implicit val methodEncoder: Encoder[Method] =
-    Encoder[String].contramap(_.name)
+    implicit val httpVersionEncoder: Encoder[HttpVersion] =
+      Encoder.forProduct2("major", "minor")(x => (x.major, x.minor))
 
-  implicit val statusEncoder: Encoder[Status] =
-    Encoder.forProduct2("code", "reason")(x => (x.code, x.reason))
+    implicit val methodEncoder: Encoder[Method] =
+      Encoder[String].contramap(_.name)
 
-  implicit def requestCirceEncoder[F[_]]: Encoder[Request[F]] =
-    Encoder.forProduct4("headers", "httpVersion", "method", "uri")(x =>
-      (x.headers, x.httpVersion, x.method, x.uri)
-    )
+    implicit val statusEncoder: Encoder[Status] =
+      Encoder.forProduct2("code", "reason")(x => (x.code, x.reason))
 
-  implicit def responseCirceEncoder[F[_]]: Encoder[Response[F]] =
-    Encoder.forProduct3("headers", "httpVersion", "status")(x =>
-      (x.headers, x.httpVersion, x.status)
-    )
+    implicit val requestCirceEncoder: Encoder[Request[F]] =
+      Encoder.forProduct4("headers", "httpVersion", "method", "uri")(x =>
+        (x.headers, x.httpVersion, x.method, x.uri)
+      )
 
-  implicit def smithy4sKinesisClientLogEncoders[F[_]]
-      : KinesisClient.LogEncoders[F] = new KinesisClient.LogEncoders[F]()
+    implicit val responseCirceEncoder: Encoder[Response[F]] =
+      Encoder.forProduct3("headers", "httpVersion", "status")(x =>
+        (x.headers, x.httpVersion, x.status)
+      )
+
+    new KinesisClient.LogEncoders[F]()
+  }
+
 }

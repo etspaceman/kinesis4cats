@@ -19,7 +19,6 @@ import software.amazon.awssdk.services.kinesis.KinesisAsyncClient
 import software.amazon.kinesis.processor.SingleStreamTracker
 
 import kinesis4cats.kcl._
-import kinesis4cats.kcl.logging.instances.show._
 import kinesis4cats.syntax.bytebuffer._
 
 object MyApp extends ResourceApp.Forever {
@@ -63,11 +62,9 @@ import software.amazon.awssdk.services.kinesis.KinesisAsyncClient
 import software.amazon.kinesis.common._
 
 import kinesis4cats.client._
-import kinesis4cats.client.logging.instances.show._
 import kinesis4cats.models._
 import kinesis4cats.kcl._
 import kinesis4cats.kcl.multistream._
-import kinesis4cats.kcl.logging.instances.show._
 import kinesis4cats.syntax.bytebuffer._
 
 object MyApp extends ResourceApp.Forever {
@@ -117,7 +114,6 @@ import software.amazon.awssdk.services.kinesis.KinesisAsyncClient
 import software.amazon.kinesis.processor.SingleStreamTracker
 
 import kinesis4cats.kcl.fs2.KCLConsumerFS2
-import kinesis4cats.kcl.logging.instances.show._
 import kinesis4cats.syntax.bytebuffer._
 
 object MyApp extends ResourceApp.Forever {

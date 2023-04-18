@@ -69,27 +69,29 @@ object LocalstackKinesisProducer {
           KinesisClient[F],
           StreamNameOrArn,
           Async[F]
-      ) => F[Either[ShardMapCache.Error, ShardMap]]
+      ) => F[Either[ShardMapCache.Error, ShardMap]],
+      encoders: Producer.LogEncoders,
+      shardMapEncoders: ShardMapCache.LogEncoders,
+      kinesisClientEncoders: KinesisClient.LogEncoders[F]
   )(implicit
       F: Async[F],
-      LE: KinesisClient.LogEncoders[F],
-      LELC: LogEncoder[LocalstackConfig],
-      SLE: ShardMapCache.LogEncoders,
-      PLE: Producer.LogEncoders
+      LELC: LogEncoder[LocalstackConfig]
   ): Resource[F, KinesisProducer[F]] = for {
     logger <- loggerF(F).toResource
     underlying <- LocalstackKinesisClient
-      .clientResource[F](client, region, config, loggerF)
+      .clientResource[F](client, region, config, loggerF, kinesisClientEncoders)
     shardMapCache <- ShardMapCache[F](
       producerConfig.shardMapCacheConfig,
       shardMapF(underlying, producerConfig.streamNameOrArn, F),
-      loggerF(F)
+      loggerF(F),
+      shardMapEncoders
     )
     producer = new KinesisProducer[F](
       logger,
       shardMapCache,
       producerConfig,
-      underlying
+      underlying,
+      encoders
     )
   } yield producer
 
@@ -138,13 +140,15 @@ object LocalstackKinesisProducer {
           client: KinesisClient[F],
           streamNameOrArn: StreamNameOrArn,
           f: Async[F]
-      ) => KinesisProducer.getShardMap(client, streamNameOrArn)(f)
+      ) => KinesisProducer.getShardMap(client, streamNameOrArn)(f),
+      encoders: Producer.LogEncoders = Producer.LogEncoders.show,
+      shardMapEncoders: ShardMapCache.LogEncoders =
+        ShardMapCache.LogEncoders.show,
+      kinesisClientEncoders: KinesisClient.LogEncoders[F] =
+        KinesisClient.LogEncoders.show[F]
   )(implicit
       F: Async[F],
-      LE: KinesisClient.LogEncoders[F],
-      LELC: LogEncoder[LocalstackConfig],
-      SLE: ShardMapCache.LogEncoders,
-      PLE: Producer.LogEncoders
+      LELC: LogEncoder[LocalstackConfig]
   ): Resource[F, KinesisProducer[F]] = LocalstackConfig
     .resource[F](prefix)
     .flatMap(
@@ -154,7 +158,10 @@ object LocalstackKinesisProducer {
         producerConfig(streamName),
         _,
         loggerF,
-        shardMapF
+        shardMapF,
+        encoders,
+        shardMapEncoders,
+        kinesisClientEncoders
       )
     )
 }

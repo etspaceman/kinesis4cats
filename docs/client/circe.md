@@ -11,5 +11,11 @@ libraryDependencies += "io.github.etspaceman" %% "kinesis4cats-client-logging-ci
 ## Usage
 
 ```scala mdoc:compile-only
-import kinesis4cats.client.logging.instances.circe._
+import cats.effect._
+import software.amazon.awssdk.services.kinesis.KinesisAsyncClient
+
+import kinesis4cats.client.KinesisClient
+import kinesis4cats.client.logging.instances.circe
+
+KinesisClient[IO](KinesisAsyncClient.builder().build(), circe.kinesisClient)
 ```

@@ -106,8 +106,8 @@ object LocalstackKinesisProducer {
     *   [[kinesis4cats.producer.ShardMapCache.LogEncoders ShardMapCache.LogEncoders]]
     *   Default to show instances
     * @param kinesisClientEncoders
-    *   [[kinesis4cats.client.KinesisClient.LogEncoders LogEncoders]]
-    *   Default to show instances
+    *   [[kinesis4cats.client.KinesisClient.LogEncoders LogEncoders]] Default to
+    *   show instances
     * @return
     *   [[cats.effect.Resource Resource]] of
     *   [[kinesis4cats.client.producer.KinesisProducer KinesisProducer]]

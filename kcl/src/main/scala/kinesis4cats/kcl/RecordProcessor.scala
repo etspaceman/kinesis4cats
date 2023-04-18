@@ -20,12 +20,15 @@ package kcl
 import scala.concurrent.duration._
 import scala.jdk.CollectionConverters._
 
+import cats.Show
 import cats.effect._
 import cats.effect.std.Dispatcher
 import cats.effect.syntax.all._
 import cats.syntax.all._
+import com.amazonaws.services.schemaregistry.common.Schema
 import org.typelevel.log4cats.StructuredLogger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
+import software.amazon.awssdk.services.kinesis.model._
 import software.amazon.kinesis.common.StreamIdentifier
 import software.amazon.kinesis.lifecycle.events._
 import software.amazon.kinesis.processor._
@@ -35,9 +38,6 @@ import software.amazon.kinesis.retrieval.kpl.ExtendedSequenceNumber
 import kinesis4cats.compat.retry.RetryPolicies._
 import kinesis4cats.compat.retry._
 import kinesis4cats.logging.{LogContext, LogEncoder}
-import cats.Show
-import software.amazon.awssdk.services.kinesis.model._
-import com.amazonaws.services.schemaregistry.common.Schema
 
 /** An implementation of the
   * [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/processor/ShardRecordProcessor.java ShardRecordProcessor]]

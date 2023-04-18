@@ -49,8 +49,10 @@ object ResponseLogger {
     *   [[https://http4s.org/v0.23/docs/client.html Client]] that logs its
     *   requests in debug and trace levels
     */
-  def apply[F[_]](logger: StructuredLogger[F],
-      encoders: KinesisClient.LogEncoders[F] = KinesisClient.LogEncoders.show[F])(client: Client[F])(implicit
+  def apply[F[_]](
+      logger: StructuredLogger[F],
+      encoders: KinesisClient.LogEncoders[F] = KinesisClient.LogEncoders.show[F]
+  )(client: Client[F])(implicit
       F: Async[F]
   ): Client[F] = {
     import encoders._

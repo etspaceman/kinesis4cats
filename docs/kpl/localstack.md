@@ -13,7 +13,6 @@ libraryDependencies += "io.github.etspaceman" %% "kinesis4cats-kpl-localstack" %
 ```scala mdoc:compile-only
 import cats.effect.IO
 
-import kinesis4cats.kpl.logging.instances.show._
 import kinesis4cats.kpl.localstack.LocalstackKPLProducer
 
 // Load a KPLProducer as a resource

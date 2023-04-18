@@ -28,7 +28,6 @@ import smithy4s.aws._
 import smithy4s.ByteArray
 
 import kinesis4cats.smithy4s.client.KinesisClient
-import kinesis4cats.smithy4s.client.logging.instances.show._
 
 object MyApp extends IOApp {
     override def run(args: List[String]) = (for {
@@ -65,18 +64,13 @@ This module provides an implementation of that interface, backed by the @:source
 
 
 ```scala mdoc:compile-only
-import scala.concurrent.duration._
-
 import cats.data.NonEmptyList
 import cats.effect._
-import cats.syntax.all._
 import org.http4s.blaze.client.BlazeClientBuilder
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 import smithy4s.aws._
 
-import kinesis4cats.smithy4s.client.logging.instances.show._
 import kinesis4cats.smithy4s.client.producer.KinesisProducer
-import kinesis4cats.producer.logging.instances.show._
 import kinesis4cats.producer._
 import kinesis4cats.models.StreamNameOrArn
 
@@ -98,16 +92,6 @@ object MyApp extends IOApp {
                             Record("my-data-3".getBytes(), "some-partition-key-3"),
                         )
                     )
-                    // Retries failed records with a configured limit and duration.
-                    _ <- producer.putWithRetry(
-                        NonEmptyList.of(
-                            Record("my-data".getBytes(), "some-partition-key"),
-                            Record("my-data-2".getBytes(), "some-partition-key-2"),
-                            Record("my-data-3".getBytes(), "some-partition-key-3"),
-                        ),
-                        Some(5),
-                        1.second
-                    )
                 } yield ExitCode.Success
         )
 }
@@ -125,9 +109,7 @@ import org.http4s.blaze.client.BlazeClientBuilder
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 import smithy4s.aws._
 
-import kinesis4cats.smithy4s.client.logging.instances.show._
 import kinesis4cats.smithy4s.client.producer.fs2.FS2KinesisProducer
-import kinesis4cats.producer.logging.instances.show._
 import kinesis4cats.producer.fs2._
 import kinesis4cats.producer._
 import kinesis4cats.models.StreamNameOrArn

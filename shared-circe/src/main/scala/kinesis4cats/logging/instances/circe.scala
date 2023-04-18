@@ -27,8 +27,8 @@ import io.circe.{Encoder, KeyEncoder}
 import kinesis4cats.compat.retry._
 import kinesis4cats.logging.LogEncoder
 import kinesis4cats.models.ShardId
-import kinesis4cats.syntax.bytebuffer._
 import kinesis4cats.models.StreamNameOrArn
+import kinesis4cats.syntax.bytebuffer._
 
 /** [[kinesis4cats.logging.LogEncoder LogEncoder]] instances for JSON encoding
   * of log structures using [[https://circe.github.io/circe/ Circe]]

@@ -14,7 +14,6 @@ libraryDependencies += "io.github.etspaceman" %% "kinesis4cats-kpl-ciris" % "@VE
 import cats.effect.IO
 
 import kinesis4cats.kpl.ciris.KPLCiris
-import kinesis4cats.kpl.logging.instances.show._
 
 KPLCiris.kpl[IO]()
 ```

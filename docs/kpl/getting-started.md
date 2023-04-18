@@ -17,7 +17,6 @@ import cats.effect._
 import com.amazonaws.services.kinesis.producer._
 
 import kinesis4cats.kpl.KPLProducer
-import kinesis4cats.kpl.logging.instances.show._
 
 object MyApp extends IOApp {
     override def run(args: List[String]) = {

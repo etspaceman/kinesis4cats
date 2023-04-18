@@ -92,12 +92,15 @@ object FS2KinesisProducer {
     *   underlying
     * @param F
     *   [[cats.effect.Async Async]]
-    * @param LE
-    *   [[kinesis4cats.producer.Producer.LogEncoders Producer.LogEncoders]]
-    * @param KLE
-    *   [[kinesis4cats.smithy4s.client.KinesisClient.LogEncoders KinesisClient.LogEncoders]]
-    * @param SLE
+    * @param encoders
+    *   [[kinesis4cats.producer.Producer.LogEncoders Producer.LogEncoders]].
+    *   Default to show instances
+    * @param shardMapEncoders
     *   [[kinesis4cats.producer.ShardMapCache.LogEncoders ShardMapCache.LogEncoders]]
+    *   Default to show instances
+    * @param kinesisClientEncoders
+    *   [[kinesis4cats.smithy4s.client.KinesisClient.LogEncoders KinesisClient.LogEncoders]]
+    *   Default to show instances
     * @return
     *   [[cats.effect.Resource Resource]] of
     *   [[kinesis4cats.smithy4s.client.producer.KinesisProducer KinesisProducer]]
@@ -115,12 +118,14 @@ object FS2KinesisProducer {
         (x: SimpleHttpClient[F], f: Async[F]) =>
           AwsCredentialsProvider.default[F](x)(f),
       callback: (Producer.Res[PutRecordsOutput], Async[F]) => F[Unit] =
-        (_: Producer.Res[PutRecordsOutput], f: Async[F]) => f.unit
+        (_: Producer.Res[PutRecordsOutput], f: Async[F]) => f.unit,
+      encoders: Producer.LogEncoders = Producer.LogEncoders.show,
+      shardMapEncoders: ShardMapCache.LogEncoders =
+        ShardMapCache.LogEncoders.show,
+      kinesisClientEncoders: KinesisClient.LogEncoders[F] =
+        KinesisClient.LogEncoders.show[F]
   )(implicit
-      F: Async[F],
-      LE: Producer.LogEncoders,
-      KLE: KinesisClient.LogEncoders[F],
-      SLE: ShardMapCache.LogEncoders
+      F: Async[F]
   ): Resource[F, FS2KinesisProducer[F]] = for {
     logger <- loggerF(F).toResource
     underlying <- KinesisProducer(
@@ -128,7 +133,10 @@ object FS2KinesisProducer {
       client,
       region,
       loggerF,
-      credsF
+      credsF,
+      encoders,
+      shardMapEncoders,
+      kinesisClientEncoders
     )
     channel <- Channel.bounded[F, Record](config.queueSize).toResource
     producer = new FS2KinesisProducer[F](logger, config, channel, underlying)(

@@ -16,7 +16,6 @@ import cats.syntax.all._
 import software.amazon.kinesis.processor.SingleStreamTracker
 
 import kinesis4cats.kcl._
-import kinesis4cats.kcl.logging.instances.show._
 import kinesis4cats.kcl.localstack.LocalstackKCLConsumer
 import kinesis4cats.syntax.bytebuffer._
 
@@ -45,7 +44,6 @@ LocalstackKCLConsumer.kclConsumerWithResults[IO](
 import cats.effect.IO
 import software.amazon.kinesis.processor.SingleStreamTracker
 
-import kinesis4cats.kcl.logging.instances.show._
 import kinesis4cats.kcl.fs2.localstack.LocalstackKCLConsumerFS2
 
 // Runs a KCLConsumerFS2 as a Resource, which contains FS2 Streaming methods.
