@@ -20,10 +20,10 @@ import software.amazon.awssdk.services.kinesis.KinesisAsyncClient
 import software.amazon.kinesis.common._
 
 import kinesis4cats.client._
-import kinesis4cats.client.logging.instances.circe.{kinesisClient => circeKinesisClient}
+import kinesis4cats.client.logging.instances.circe._
 import kinesis4cats.models._
 import kinesis4cats.kcl._
-import kinesis4cats.kcl.logging.instances.circe.{recordProcessor => circeRecordProcessor}
+import kinesis4cats.kcl.logging.instances.circe._
 import kinesis4cats.kcl.multistream._
 import kinesis4cats.syntax.bytebuffer._
 
@@ -31,7 +31,7 @@ object MyApp extends ResourceApp.Forever {
     override def run(args: List[String]) = for {
         kinesisClient <- KinesisClient[IO](
             KinesisAsyncClient.builder().build(),
-            circeKinesisClient
+            encoders = kinesisClientCirceEncoders
         )
         dynamoClient <- Resource.fromAutoCloseable(
             IO(DynamoDbAsyncClient.builder().build())
@@ -53,7 +53,7 @@ object MyApp extends ResourceApp.Forever {
             cloudWatchClient, 
             tracker, 
             "my-app-name",
-            encoders = circeRecordProcessor
+            encoders = kclCirceEncoders
         )((records: List[CommittableRecord[IO]]) => 
             records.traverse_(r => IO.println(r.data.asString))
         )()

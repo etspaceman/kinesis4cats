@@ -29,18 +29,20 @@ import software.amazon.awssdk.services.cloudwatch.{model => cw}
 import software.amazon.awssdk.services.dynamodb.{model => ddb}
 import software.amazon.awssdk.services.kinesis.{model => kin}
 
+import kinesis4cats.client.producer.KinesisProducer
 import kinesis4cats.logging.instances.circe._
 import kinesis4cats.logging.syntax.circe._
+import kinesis4cats.producer.logging.instances.circe._
 
 /** KinesisClient [[kinesis4cats.logging.LogEncoder LogEncoder]] instances for
   * string encoding of log structures using [[cats.Show Show]]
   */
 object circe {
 
-  implicit val sdkBytesEncoder: Encoder[SdkBytes] =
+  private implicit val sdkBytesEncoder: Encoder[SdkBytes] =
     Encoder[ByteBuffer].contramap(_.asByteBuffer())
 
-  val kinesisClient: KinesisClient.LogEncoders = {
+  val kinesisClientCirceEncoders: KinesisClient.LogEncoders = {
     implicit val kinesisResponseMetadataEncoder
         : Encoder[kin.KinesisResponseMetadata] = x => {
       val fields: Map[String, Json] =
@@ -961,7 +963,7 @@ object circe {
     new KinesisClient.LogEncoders()
   }
 
-  val dynamoClient: DynamoClient.LogEncoders = {
+  val dynamoClientCirceEncoders: DynamoClient.LogEncoders = {
     implicit val attributeDefinitionEncoder: Encoder[ddb.AttributeDefinition] =
       x => {
         val fields: Map[String, Json] = Map
@@ -1574,7 +1576,7 @@ object circe {
     new DynamoClient.LogEncoders()
   }
 
-  val cloudwatchClient: CloudWatchClient.LogEncoders = {
+  val cloudwatchClientCirceEncoders: CloudWatchClient.LogEncoders = {
     implicit val dimensionEncoder: Encoder[cw.Dimension] = x => {
       val fields: Map[String, Json] = Map
         .empty[String, Json]
@@ -1636,5 +1638,11 @@ object circe {
 
     new CloudWatchClient.LogEncoders()
   }
+
+  val kinesisProducerCirceEncoders: KinesisProducer.LogEncoders =
+    new KinesisProducer.LogEncoders(
+      kinesisClientCirceEncoders,
+      producerCirceEncoders
+    )
 
 }

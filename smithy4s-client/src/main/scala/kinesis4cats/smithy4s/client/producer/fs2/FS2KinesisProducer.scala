@@ -93,13 +93,7 @@ object FS2KinesisProducer {
     * @param F
     *   [[cats.effect.Async Async]]
     * @param encoders
-    *   [[kinesis4cats.producer.Producer.LogEncoders Producer.LogEncoders]].
-    *   Default to show instances
-    * @param shardMapEncoders
-    *   [[kinesis4cats.producer.ShardMapCache.LogEncoders ShardMapCache.LogEncoders]]
-    *   Default to show instances
-    * @param kinesisClientEncoders
-    *   [[kinesis4cats.smithy4s.client.KinesisClient.LogEncoders KinesisClient.LogEncoders]]
+    *   [[kinesis4cats.smiithy4s.client.producer.KinesisProducer.LogEncoders KinesisProducer.LogEncoders]].
     *   Default to show instances
     * @return
     *   [[cats.effect.Resource Resource]] of
@@ -119,11 +113,8 @@ object FS2KinesisProducer {
           AwsCredentialsProvider.default[F](x)(f),
       callback: (Producer.Res[PutRecordsOutput], Async[F]) => F[Unit] =
         (_: Producer.Res[PutRecordsOutput], f: Async[F]) => f.unit,
-      encoders: Producer.LogEncoders = Producer.LogEncoders.show,
-      shardMapEncoders: ShardMapCache.LogEncoders =
-        ShardMapCache.LogEncoders.show,
-      kinesisClientEncoders: KinesisClient.LogEncoders[F] =
-        KinesisClient.LogEncoders.show[F]
+      encoders: KinesisProducer.LogEncoders[F] =
+        KinesisProducer.LogEncoders.show[F]
   )(implicit
       F: Async[F]
   ): Resource[F, FS2KinesisProducer[F]] = for {
@@ -134,9 +125,7 @@ object FS2KinesisProducer {
       region,
       loggerF,
       credsF,
-      encoders,
-      shardMapEncoders,
-      kinesisClientEncoders
+      encoders
     )
     channel <- Channel.bounded[F, Record](config.queueSize).toResource
     producer = new FS2KinesisProducer[F](logger, config, channel, underlying)(

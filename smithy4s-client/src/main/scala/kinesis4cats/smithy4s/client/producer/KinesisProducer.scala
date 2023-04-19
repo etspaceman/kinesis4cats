@@ -104,6 +104,16 @@ final class KinesisProducer[F[_]] private[kinesis4cats] (
 
 object KinesisProducer {
 
+  final class LogEncoders[F[_]](
+      val kinesisClientLogEncoders: KinesisClient.LogEncoders[F],
+      val producerLogEncoders: Producer.LogEncoders
+  )
+
+  object LogEncoders {
+    def show[F[_]]: LogEncoders[F] =
+      new LogEncoders(KinesisClient.LogEncoders.show, Producer.LogEncoders.show)
+  }
+
   private def getShards[F[_]](
       client: KinesisClient[F],
       streamNameOrArn: models.StreamNameOrArn
@@ -173,13 +183,7 @@ object KinesisProducer {
     * @param F
     *   [[cats.effect.Async Async]]
     * @param encoders
-    *   [[kinesis4cats.producer.Producer.LogEncoders Producer.LogEncoders]].
-    *   Default to show instances
-    * @param shardMapEncoders
-    *   [[kinesis4cats.producer.ShardMapCache.LogEncoders ShardMapCache.LogEncoders]]
-    *   Default to show instances
-    * @param kinesisClientEncoders
-    *   [[kinesis4cats.smithy4s.client.KinesisClient.LogEncoders KinesisClient.LogEncoders]]
+    *   [[kinesis4cats.smiithy4s.client.producer.KinesisProducer.LogEncoders KinesisProducer.LogEncoders]].
     *   Default to show instances
     * @return
     *   [[cats.effect.Resource Resource]] of
@@ -197,11 +201,8 @@ object KinesisProducer {
       ) => Resource[F, F[AwsCredentials]] =
         (x: SimpleHttpClient[F], f: Async[F]) =>
           AwsCredentialsProvider.default[F](x)(f),
-      encoders: Producer.LogEncoders = Producer.LogEncoders.show,
-      shardMapEncoders: ShardMapCache.LogEncoders =
-        ShardMapCache.LogEncoders.show,
-      kinesisClientEncoders: KinesisClient.LogEncoders[F] =
-        KinesisClient.LogEncoders.show[F]
+      encoders: KinesisProducer.LogEncoders[F] =
+        KinesisProducer.LogEncoders.show[F]
   )(implicit
       F: Async[F]
   ): Resource[F, KinesisProducer[F]] = for {
@@ -211,20 +212,20 @@ object KinesisProducer {
       region,
       loggerF,
       credsF,
-      encoders = kinesisClientEncoders
+      encoders = encoders.kinesisClientLogEncoders
     )
     shardMapCache <- ShardMapCache[F](
       config.shardMapCacheConfig,
       getShardMap(underlying, config.streamNameOrArn),
       loggerF(F),
-      shardMapEncoders
+      encoders.producerLogEncoders.shardMapLogEncoders
     )
     producer = new KinesisProducer[F](
       logger,
       shardMapCache,
       config,
       underlying,
-      encoders
+      encoders.producerLogEncoders
     )
   } yield producer
 }

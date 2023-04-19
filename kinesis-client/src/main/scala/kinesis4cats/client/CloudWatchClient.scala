@@ -46,7 +46,7 @@ import kinesis4cats.logging.{LogContext, LogEncoder}
   * @param F
   *   F with a [[cats.effect.Async Async]] instance
   * @param LE
-  *   [[kinesis4cats.client.CloudWatchClientLogEncoders CloudWatchClientLogEncoders]]
+  *   [[kinesis4cats.client.CloudWatchClient.LogEncoders CloudWatchClient.LogEncoders]]
   */
 class CloudWatchClient[F[_]] private[kinesis4cats] (
     val client: CloudWatchAsyncClient,

@@ -51,7 +51,7 @@ import kinesis4cats.logging.{LogContext, LogEncoder}
   * @param F
   *   F with a [[cats.effect.Async Async]] instance
   * @param encoders
-  *   [[kinesis4cats.client.DynamoClientLogEncoders DynamoClientLogEncoders]]
+  *   [[kinesis4cats.client.DynamoClient.LogEncoders DynamoClient.LogEncoders]]
   */
 class DynamoClient[F[_]] private[kinesis4cats] (
     val client: DynamoDbAsyncClient,

@@ -257,7 +257,8 @@ object Producer {
     * @param recordLogEncoder
     * @param finiteDurationEncoder
     */
-  final class LogEncoders(implicit
+  final class LogEncoders(val shardMapLogEncoders: ShardMapCache.LogEncoders)(
+      implicit
       val recordLogEncoder: LogEncoder[Record],
       val finiteDurationEncoder: LogEncoder[FiniteDuration],
       val retryDetailsEncoder: LogEncoder[RetryDetails]
@@ -274,7 +275,7 @@ object Producer {
           .add("explicitHashKey", x.explicitHashKey)
           .build
 
-      new LogEncoders()
+      new LogEncoders(ShardMapCache.LogEncoders.show)
 
     }
   }

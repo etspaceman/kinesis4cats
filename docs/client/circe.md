@@ -15,7 +15,7 @@ import cats.effect._
 import software.amazon.awssdk.services.kinesis.KinesisAsyncClient
 
 import kinesis4cats.client.KinesisClient
-import kinesis4cats.client.logging.instances.circe
+import kinesis4cats.client.logging.instances.circe._
 
-KinesisClient[IO](KinesisAsyncClient.builder().build(), circe.kinesisClient)
+KinesisClient[IO](KinesisAsyncClient.builder().build(), kinesisClientCirceEncoders)
 ```

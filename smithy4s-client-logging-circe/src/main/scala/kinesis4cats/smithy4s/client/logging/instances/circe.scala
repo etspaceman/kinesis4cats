@@ -22,13 +22,15 @@ import org.http4s.circe._
 import org.http4s.{Headers, HttpVersion, Method, Request, Response, Status}
 
 import kinesis4cats.logging.instances.circe._
+import kinesis4cats.producer.logging.instances.circe._
+import kinesis4cats.smithy4s.client.producer.KinesisProducer
 
 /** Smithy4s Client [[kinesis4cats.logging.LogEncoder LogEncoder]] instances for
   * string encoding of log structures using [[io.circe.Encoder Encoder]]
   */
 object circe {
 
-  def kinesisClient[F[_]]: KinesisClient.LogEncoders[F] = {
+  def kinesisClientCirceEncoders[F[_]]: KinesisClient.LogEncoders[F] = {
     implicit val headersCirceEncoder: Encoder[Headers] =
       Encoder[List[(String, String)]]
         .contramap(_.headers.map(x => x.name.toString -> x.value))
@@ -54,5 +56,11 @@ object circe {
 
     new KinesisClient.LogEncoders[F]()
   }
+
+  def kinesisProducerCirceEncoders[F[_]]: KinesisProducer.LogEncoders[F] =
+    new KinesisProducer.LogEncoders(
+      kinesisClientCirceEncoders[F],
+      producerCirceEncoders
+    )
 
 }

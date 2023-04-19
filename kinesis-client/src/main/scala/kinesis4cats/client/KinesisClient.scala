@@ -52,7 +52,7 @@ import kinesis4cats.logging.{LogContext, LogEncoder}
   * @param F
   *   F with a [[cats.effect.Async Async]] instance
   * @param LE
-  *   [[kinesis4cats.client.KinesisClientLogEncoders KinesisClientLogEncoders]]
+  *   [[kinesis4cats.client.KinesisClient.LogEncoders KinesisClient.LogEncoders]]
   */
 class KinesisClient[F[_]] private[kinesis4cats] (
     val client: KinesisAsyncClient,

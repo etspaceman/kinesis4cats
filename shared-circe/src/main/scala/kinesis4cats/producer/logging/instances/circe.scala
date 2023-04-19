@@ -29,7 +29,7 @@ import kinesis4cats.models._
   */
 object circe {
 
-  val shardmap: ShardMapCache.LogEncoders = {
+  val shardMapCirceEncoders: ShardMapCache.LogEncoders = {
     implicit val hashKeyRangeEncoder: Encoder[HashKeyRange] =
       Encoder.forProduct2("endingHashKey", "startingHashKey")(x =>
         (x.endingHashKey, x.startingHashKey)
@@ -48,11 +48,11 @@ object circe {
     new ShardMapCache.LogEncoders()
   }
 
-  val producer: Producer.LogEncoders = {
+  val producerCirceEncoders: Producer.LogEncoders = {
     implicit val recordEncoder: Encoder[Record] =
       Encoder.forProduct3("data", "partitionKey", "explicitHashKey")(x =>
         (x.data, x.partitionKey, x.explicitHashKey)
       )
-    new Producer.LogEncoders()
+    new Producer.LogEncoders(shardMapCirceEncoders)
   }
 }

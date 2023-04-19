@@ -32,7 +32,7 @@ import kinesis4cats.logging.syntax.circe._
   */
 object circe {
 
-  val recordProcessor: RecordProcessor.LogEncoders = {
+  val kclCirceEncoders: RecordProcessor.LogEncoders = {
     implicit val encryptionTypeEncoder: Encoder[EncryptionType] =
       Encoder[String].contramap(_.name)
 

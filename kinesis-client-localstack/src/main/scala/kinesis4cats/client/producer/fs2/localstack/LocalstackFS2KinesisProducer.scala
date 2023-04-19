@@ -22,12 +22,10 @@ import cats.Applicative
 import cats.effect._
 import software.amazon.awssdk.services.kinesis.model.PutRecordsResponse
 
-import kinesis4cats.client.KinesisClient
 import kinesis4cats.localstack.LocalstackConfig
 import kinesis4cats.localstack.aws.v2.AwsClients
 import kinesis4cats.models.StreamNameOrArn
 import kinesis4cats.producer.Producer
-import kinesis4cats.producer.ShardMapCache
 import kinesis4cats.producer.fs2.FS2Producer
 
 object LocalstackFS2KinesisProducer {
@@ -46,11 +44,7 @@ object LocalstackFS2KinesisProducer {
     * @param F
     *   F with an [[cats.effect.Async Async]] instance
     * @param encoders
-    *   [[kinesis4cats.producer.Producer.LogEncoders Producer.LogEncoders]].
-    * @param shardMapEncoders
-    *   [[kinesis4cats.producer.ShardMapCache.LogEncoders ShardMapCache.LogEncoders]]
-    * @param kinesisClientEncoders
-    *   [[kinesis4cats.client.KinesisClient.LogEncoders LogEncoders]]
+    *   [[kinesis4cats.smithy4s.client.producer.KinesisProducer.LogEncoders KinesisProducer.LogEncoders]].
     * @return
     *   [[cats.effect.Resource Resource]] of
     *   [[kinesis4cats.client.producer.fs2.FS2KinesisProducer FS2KinesisProducer]]
@@ -59,9 +53,7 @@ object LocalstackFS2KinesisProducer {
       producerConfig: FS2Producer.Config[F],
       config: LocalstackConfig,
       callback: (Producer.Res[PutRecordsResponse], Async[F]) => F[Unit],
-      encoders: Producer.LogEncoders,
-      shardMapEncoders: ShardMapCache.LogEncoders,
-      kinesisClientEncoders: KinesisClient.LogEncoders
+      encoders: KinesisProducer.LogEncoders
   )(implicit F: Async[F]): Resource[F, FS2KinesisProducer[F]] = AwsClients
     .kinesisClientResource[F](config)
     .flatMap(underlying =>
@@ -69,9 +61,7 @@ object LocalstackFS2KinesisProducer {
         producerConfig,
         underlying,
         callback,
-        encoders,
-        shardMapEncoders,
-        kinesisClientEncoders
+        encoders
       )
     )
 
@@ -94,14 +84,7 @@ object LocalstackFS2KinesisProducer {
     * @param F
     *   F with an [[cats.effect.Async Async]] instance
     * @param encoders
-    *   [[kinesis4cats.producer.Producer.LogEncoders Producer.LogEncoders]].
-    *   Default to show instances
-    * @param shardMapEncoders
-    *   [[kinesis4cats.producer.ShardMapCache.LogEncoders ShardMapCache.LogEncoders]]
-    *   Default to show instances
-    * @param kinesisClientEncoders
-    *   [[kinesis4cats.client.KinesisClient.LogEncoders LogEncoders]] Default to
-    *   show instances
+    *   [[kinesis4cats.smithy4s.client.producer.KinesisProducer.LogEncoders KinesisProducer.LogEncoders]].
     * @return
     *   [[cats.effect.Resource Resource]] of
     *   [[kinesis4cats.client.producer.fs2.FS2KinesisProducer FS2KinesisProducer]]
@@ -114,11 +97,7 @@ object LocalstackFS2KinesisProducer {
           FS2Producer.Config.default[F](StreamNameOrArn.Name(streamName))(f),
       callback: (Producer.Res[PutRecordsResponse], Async[F]) => F[Unit] =
         (_: Producer.Res[PutRecordsResponse], f: Async[F]) => f.unit,
-      encoders: Producer.LogEncoders = Producer.LogEncoders.show,
-      shardMapEncoders: ShardMapCache.LogEncoders =
-        ShardMapCache.LogEncoders.show,
-      kinesisClientEncoders: KinesisClient.LogEncoders =
-        KinesisClient.LogEncoders.show
+      encoders: KinesisProducer.LogEncoders = KinesisProducer.LogEncoders.show
   )(implicit F: Async[F]): Resource[F, FS2KinesisProducer[F]] = LocalstackConfig
     .resource[F](prefix)
     .flatMap(
@@ -126,9 +105,7 @@ object LocalstackFS2KinesisProducer {
         producerConfig(streamName, F),
         _,
         callback,
-        encoders,
-        shardMapEncoders,
-        kinesisClientEncoders
+        encoders
       )
     )
 }
