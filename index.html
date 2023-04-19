@@ -157,7 +157,7 @@
           <li>DEBUG: Informational, high-frequency logs (e.g. request logging)</li>
           <li>TRACE: Data / class bodies</li>
         </ul>
-        <p>Each offering leverages <a href="https://github.com/etspaceman/kinesis4cats/blob/main/shared/src/main/scala/kinesis4cats/logging/LogEncoder.scala">LogEncoder</a> instances to structure the logs that you see. There are <a href="https://typelevel.org/cats/typeclasses/show.html">Show</a> instances available to import out-of-the-box, which attempts to create a toString-like representation of the structures. That can be useful for most people, but if you are looking to introduce more searchability, using a JSON offering can be very beneficial. There are <a href="https://circe.github.io/circe/">Circe</a> modules for these instances that users can leverage for this purpose.</p>
+        <p>Each offering leverages <a href="https://github.com/etspaceman/kinesis4cats/blob/main/shared/src/main/scala/kinesis4cats/logging/LogEncoder.scala">LogEncoder</a> instances to structure the logs that you see. There are <a href="https://typelevel.org/cats/typeclasses/show.html">Show</a> instances available to use out-of-the-box, which attempts to create a toString-like representation of the structures. That can be useful for most people, but if you are looking to introduce more searchability, using a JSON offering can be very beneficial. There are <a href="https://circe.github.io/circe/">Circe</a> modules for these instances that users can leverage for this purpose.</p>
 
         <hr style="margin-top: 30px"/>
         <footer style="font-size: 90%; text-align: center">
