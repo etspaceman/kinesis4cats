@@ -44,7 +44,7 @@ object LocalstackKinesisProducer {
     * @param F
     *   F with an [[cats.effect.Async Async]] instance
     * @param encoders
-    *   [[kinesis4cats.smithy4s.client.producer.KinesisProducer.LogEncoders KinesisProducer.LogEncoders]].
+    *   [[kinesis4cats.client.producer.KinesisProducer.LogEncoders KinesisProducer.LogEncoders]].
     * @return
     *   [[cats.effect.Resource Resource]] of
     *   [[kinesis4cats.client.producer.KinesisProducer KinesisProducer]]
@@ -98,7 +98,7 @@ object LocalstackKinesisProducer {
     * @param F
     *   F with an [[cats.effect.Async Async]] instance
     * @param encoders
-    *   [[kinesis4cats.smithy4s.client.producer.KinesisProducer.LogEncoders KinesisProducer.LogEncoders]].
+    *   [[kinesis4cats.client.producer.KinesisProducer.LogEncoders KinesisProducer.LogEncoders]].
     * @return
     *   [[cats.effect.Resource Resource]] of
     *   [[kinesis4cats.client.producer.KinesisProducer KinesisProducer]]

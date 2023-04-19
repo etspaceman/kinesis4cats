@@ -93,7 +93,7 @@ object FS2KinesisProducer {
     * @param F
     *   [[cats.effect.Async Async]]
     * @param encoders
-    *   [[kinesis4cats.smiithy4s.client.producer.KinesisProducer.LogEncoders KinesisProducer.LogEncoders]].
+    *   [[kinesis4cats.smithy4s.client.producer.KinesisProducer.LogEncoders KinesisProducer.LogEncoders]].
     *   Default to show instances
     * @return
     *   [[cats.effect.Resource Resource]] of

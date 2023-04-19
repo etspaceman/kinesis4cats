@@ -177,7 +177,7 @@ object KinesisProducer {
     * @param F
     *   [[cats.effect.Async Async]]
     * @param encoders
-    *   [[kinesis4cats.client.producer.KiensisProducer.LogEncoders KiensisProducer.LogEncoders]].
+    *   [[kinesis4cats.client.producer.KinesisProducer.LogEncoders KinesisProducer.LogEncoders]].
     *   Default to show instances
     * @return
     *   [[cats.effect.Resource Resource]] of
