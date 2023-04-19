@@ -14,13 +14,15 @@
  * limitations under the License.
  */
 
-package kinesis4cats.producer
+package kinesis4cats
+package producer
 
 import scala.concurrent.duration._
 
 import java.nio.charset.StandardCharsets
 import java.time.Instant
 
+import cats.Show
 import cats.effect.syntax.all._
 import cats.effect.{Async, Ref}
 import cats.syntax.all._
@@ -43,19 +45,17 @@ import kinesis4cats.models._
   *   F that supplies a new [[kinesis4cats.producer.ShardMap ShardMap]]
   * @param F
   *   [[cats.effect.Async Async]]
-  * @param LE
+  * @param encoders
   *   [[kinesis4cats.producer.ShardMapCache.LogEncoders ShardMapCache.LogEncoders]]
   */
 private[kinesis4cats] class ShardMapCache[F[_]] private (
     config: ShardMapCache.Config,
     logger: StructuredLogger[F],
     shardMapRef: Ref[F, ShardMap],
-    shardMapF: F[Either[ShardMapCache.Error, ShardMap]]
-)(implicit
-    F: Async[F],
-    LE: ShardMapCache.LogEncoders
-) {
-  import LE._
+    shardMapF: F[Either[ShardMapCache.Error, ShardMap]],
+    encoders: ShardMapCache.LogEncoders
+)(implicit F: Async[F]) {
+  import encoders._
 
   /** Predicts a shard that a record will land on given its partition key
     *
@@ -122,21 +122,22 @@ object ShardMapCache {
     *   F of [[org.typelevel.log4cats.StructuredLogger StructuredLogger]]
     * @param F
     *   [[cats.effect.Async Async]]
-    * @param LE
-    *   [[kinesis4cats.producer.ShardMapCache.LogEncoders ShardMapCache.LogEncoders]]
+    * @param encoders
+    *   [[kinesis4cats.producer.ShardMapCache.LogEncoders ShardMapCache.LogEncoders]].
+    *   Defaults to show instances
     * @return
     */
   def apply[F[_]](
       config: Config,
       shardMapF: F[Either[Error, ShardMap]],
-      loggerF: F[StructuredLogger[F]]
+      loggerF: F[StructuredLogger[F]],
+      encoders: ShardMapCache.LogEncoders = LogEncoders.show
   )(implicit
-      F: Async[F],
-      LE: ShardMapCache.LogEncoders
+      F: Async[F]
   ) = for {
     logger <- loggerF.toResource
     ref <- Ref.of[F, ShardMap](ShardMap.empty).toResource
-    service = new ShardMapCache[F](config, logger, ref, shardMapF)
+    service = new ShardMapCache[F](config, logger, ref, shardMapF, encoders)
     _ <- service.start()
   } yield service
 
@@ -148,6 +149,32 @@ object ShardMapCache {
     *   [[kinesis4cats.producer.ShardMap]]
     */
   final class LogEncoders(implicit val shardMapLogEncoder: LogEncoder[ShardMap])
+
+  object LogEncoders {
+    val show: LogEncoders = {
+      import kinesis4cats.logging.instances.show._
+
+      implicit val hashKeyRangeShow: Show[HashKeyRange] = x =>
+        ShowBuilder("HashKeyRange")
+          .add("endingHashKey", x.endingHashKey)
+          .add("startingHashKey", x.startingHashKey)
+          .build
+
+      implicit val shardMapRecordShow: Show[ShardMapRecord] = x =>
+        ShowBuilder("ShardMapRecord")
+          .add("shardId", x.shardId)
+          .add("hashKeyRange", x.hashKeyRange)
+          .build
+
+      implicit val shardMapShow: Show[ShardMap] = x =>
+        ShowBuilder("ShardMap")
+          .add("lastUpdated", x.lastUpdated)
+          .add("shards", x.shards)
+          .build
+
+      new LogEncoders()
+    }
+  }
 
   /** Configuration for the ShardMapCache
     *

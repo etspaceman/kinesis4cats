@@ -24,9 +24,7 @@ import org.http4s.blaze.client.BlazeClientBuilder
 
 import kinesis4cats.SSL
 import kinesis4cats.logging.ConsoleLogger
-import kinesis4cats.logging.instances.show._
 import kinesis4cats.smithy4s.client.localstack.LocalstackKinesisClient
-import kinesis4cats.smithy4s.client.logging.instances.show._
 
 class KinesisClientJVMSpec extends KinesisClientSpec {
   override def fixture: SyncIO[FunFixture[Kinesis[IO]]] =

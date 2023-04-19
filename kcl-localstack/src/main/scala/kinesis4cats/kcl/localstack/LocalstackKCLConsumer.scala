@@ -68,7 +68,7 @@ object LocalstackKCLConsumer {
     *   User-defined callback function for processing records
     * @param F
     *   [[cats.effect.Async Async]]
-    * @param LE
+    * @param encoders
     *   [[kinesis4cats.kcl.RecordProcessor.LogEncoders RecordProcessor.LogEncoders]]
     * @return
     *   [[kinesis4cats.kcl.KCLConsumer.Config KCLConsumer.Config]]
@@ -78,11 +78,11 @@ object LocalstackKCLConsumer {
       streamTracker: StreamTracker,
       appName: String,
       workerId: String,
-      processConfig: KCLConsumer.ProcessConfig
-  )(cb: List[CommittableRecord[F]] => F[Unit])(implicit
-      F: Async[F],
-      LE: RecordProcessor.LogEncoders
-  ): Resource[F, KCLConsumer.Config[F]] = for {
+      processConfig: KCLConsumer.ProcessConfig,
+      encoders: RecordProcessor.LogEncoders
+  )(
+      cb: List[CommittableRecord[F]] => F[Unit]
+  )(implicit F: Async[F]): Resource[F, KCLConsumer.Config[F]] = for {
     kinesisClient <- AwsClients.kinesisClientResource(config)
     cloudwatchClient <- AwsClients.cloudwatchClientResource(config)
     dynamoClient <- AwsClients.dynamoClientResource(config)
@@ -114,7 +114,8 @@ object LocalstackKCLConsumer {
       new RetrievalConfig(kinesisClient, streamTracker, appName)
         .retrievalSpecificConfig(retrievalConfig)
         .retrievalFactory(retrievalConfig.retrievalFactory()),
-      processConfig = processConfig
+      processConfig = processConfig,
+      encoders
     )(cb)
   } yield result
 
@@ -140,7 +141,7 @@ object LocalstackKCLConsumer {
     *   User-defined callback function for processing records
     * @param F
     *   [[cats.effect.Async Async]]
-    * @param LE
+    * @param encoders
     *   [[kinesis4cats.kcl.RecordProcessor.LogEncoders RecordProcessor.LogEncoders]]
     * @return
     *   [[kinesis4cats.kcl.KCLConsumer.Config KCLConsumer.Config]]
@@ -151,10 +152,10 @@ object LocalstackKCLConsumer {
       prefix: Option[String] = None,
       workerId: String = Utils.randomUUIDString,
       processConfig: KCLConsumer.ProcessConfig =
-        KCLConsumer.ProcessConfig.default
+        KCLConsumer.ProcessConfig.default,
+      encoders: RecordProcessor.LogEncoders = RecordProcessor.LogEncoders.show
   )(cb: List[CommittableRecord[F]] => F[Unit])(implicit
-      F: Async[F],
-      LE: RecordProcessor.LogEncoders
+      F: Async[F]
   ): Resource[F, KCLConsumer.Config[F]] = for {
     config <- LocalstackConfig.resource(prefix)
     result <- kclConfig(
@@ -162,7 +163,8 @@ object LocalstackKCLConsumer {
       streamTracker,
       appName,
       workerId,
-      processConfig
+      processConfig,
+      encoders
     )(cb)
   } yield result
 
@@ -191,7 +193,7 @@ object LocalstackKCLConsumer {
     *   after the records are enqueued into the results queue
     * @param F
     *   [[cats.effect.Async Async]]
-    * @param LE
+    * @param encoders
     *   [[kinesis4cats.kcl.RecordProcessor.LogEncoders RecordProcessor.LogEncoders]]
     * @return
     *   [[kinesis4cats.kcl.localstack.LocalstackKCLConsumer.ConfigWithResults ConfigWithResults]]
@@ -202,10 +204,10 @@ object LocalstackKCLConsumer {
       appName: String,
       workerId: String,
       processConfig: KCLConsumer.ProcessConfig,
-      resultsQueueSize: Int
+      resultsQueueSize: Int,
+      encoders: RecordProcessor.LogEncoders
   )(cb: List[CommittableRecord[F]] => F[Unit])(implicit
-      F: Async[F],
-      LE: RecordProcessor.LogEncoders
+      F: Async[F]
   ): Resource[F, ConfigWithResults[F]] = for {
     resultsQueue <- Queue
       .bounded[F, CommittableRecord[F]](resultsQueueSize)
@@ -215,7 +217,8 @@ object LocalstackKCLConsumer {
       streamTracker,
       appName,
       workerId,
-      processConfig
+      processConfig,
+      encoders
     )((recs: List[CommittableRecord[F]]) =>
       resultsQueue.tryOfferN(recs) >> cb(recs)
     )
@@ -247,7 +250,7 @@ object LocalstackKCLConsumer {
     *   after the records are enqueued into the results queue
     * @param F
     *   [[cats.effect.Async Async]]
-    * @param LE
+    * @param encoders
     *   [[kinesis4cats.kcl.RecordProcessor.LogEncoders RecordProcessor.LogEncoders]]
     * @return
     *   [[kinesis4cats.kcl.localstack.LocalstackKCLConsumer.ConfigWithResults ConfigWithResults]]
@@ -259,10 +262,10 @@ object LocalstackKCLConsumer {
       workerId: String = Utils.randomUUIDString,
       processConfig: KCLConsumer.ProcessConfig =
         KCLConsumer.ProcessConfig.default,
-      resultsQueueSize: Int = 50
+      resultsQueueSize: Int = 50,
+      encoders: RecordProcessor.LogEncoders = RecordProcessor.LogEncoders.show
   )(cb: List[CommittableRecord[F]] => F[Unit])(implicit
-      F: Async[F],
-      LE: RecordProcessor.LogEncoders
+      F: Async[F]
   ): Resource[F, ConfigWithResults[F]] = for {
     config <- LocalstackConfig.resource(prefix)
     result <- kclConfigWithResults(
@@ -271,7 +274,8 @@ object LocalstackKCLConsumer {
       appName,
       workerId,
       processConfig,
-      resultsQueueSize
+      resultsQueueSize,
+      encoders
     )(cb)
   } yield result
 
@@ -298,7 +302,7 @@ object LocalstackKCLConsumer {
     *   User-defined callback function for processing records
     * @param F
     *   [[cats.effect.Async Async]]
-    * @param LE
+    * @param encoders
     *   [[kinesis4cats.kcl.RecordProcessor.LogEncoders RecordProcessor.LogEncoders]]
     * @return
     *   [[cats.effect.Deferred Deferred]] in a
@@ -310,17 +314,18 @@ object LocalstackKCLConsumer {
       streamTracker: StreamTracker,
       appName: String,
       workerId: String,
-      processConfig: KCLConsumer.ProcessConfig
+      processConfig: KCLConsumer.ProcessConfig,
+      encoders: RecordProcessor.LogEncoders
   )(cb: List[CommittableRecord[F]] => F[Unit])(implicit
-      F: Async[F],
-      LE: RecordProcessor.LogEncoders
+      F: Async[F]
   ): Resource[F, Deferred[F, Unit]] = for {
     config <- kclConfig(
       config,
       streamTracker,
       appName,
       workerId,
-      processConfig
+      processConfig,
+      encoders
     )(cb)
     consumer = new KCLConsumer(config)
     deferred <- consumer.runWithDeferredListener()
@@ -351,7 +356,7 @@ object LocalstackKCLConsumer {
     *   User-defined callback function for processing records
     * @param F
     *   [[cats.effect.Async Async]]
-    * @param LE
+    * @param encoders
     *   [[kinesis4cats.kcl.RecordProcessor.LogEncoders RecordProcessor.LogEncoders]]
     * @return
     *   [[cats.effect.Deferred Deferred]] in a
@@ -364,10 +369,10 @@ object LocalstackKCLConsumer {
       prefix: Option[String] = None,
       workerId: String = Utils.randomUUIDString,
       processConfig: KCLConsumer.ProcessConfig =
-        KCLConsumer.ProcessConfig.default
+        KCLConsumer.ProcessConfig.default,
+      encoders: RecordProcessor.LogEncoders = RecordProcessor.LogEncoders.show
   )(cb: List[CommittableRecord[F]] => F[Unit])(implicit
-      F: Async[F],
-      LE: RecordProcessor.LogEncoders
+      F: Async[F]
   ): Resource[F, Deferred[F, Unit]] = for {
     config <- LocalstackConfig.resource(prefix)
     result <- kclConsumer(
@@ -375,7 +380,8 @@ object LocalstackKCLConsumer {
       streamTracker,
       appName,
       workerId,
-      processConfig
+      processConfig,
+      encoders
     )(cb)
   } yield result
 
@@ -405,7 +411,7 @@ object LocalstackKCLConsumer {
     *   User-defined callback function for processing records
     * @param F
     *   [[cats.effect.Async Async]]
-    * @param LE
+    * @param encoders
     *   [[kinesis4cats.kcl.RecordProcessor.LogEncoders RecordProcessor.LogEncoders]]
     * @return
     *   [[kinesis4cats.kcl.localstack.LocalstackKCLConsumer.DeferredWithResults DeferredWithResults]]
@@ -418,10 +424,10 @@ object LocalstackKCLConsumer {
       appName: String,
       workerId: String,
       processConfig: KCLConsumer.ProcessConfig,
-      resultsQueueSize: Int
+      resultsQueueSize: Int,
+      encoders: RecordProcessor.LogEncoders
   )(cb: List[CommittableRecord[F]] => F[Unit])(implicit
-      F: Async[F],
-      LE: RecordProcessor.LogEncoders
+      F: Async[F]
   ): Resource[F, DeferredWithResults[F]] = for {
     configWithResults <- kclConfigWithResults(
       config,
@@ -429,7 +435,8 @@ object LocalstackKCLConsumer {
       appName,
       workerId,
       processConfig,
-      resultsQueueSize
+      resultsQueueSize,
+      encoders
     )(cb)
     consumer = new KCLConsumer(configWithResults.kclConfig)
     deferred <- consumer.runWithDeferredListener()
@@ -463,7 +470,7 @@ object LocalstackKCLConsumer {
     *   User-defined callback function for processing records
     * @param F
     *   [[cats.effect.Async Async]]
-    * @param LE
+    * @param encoders
     *   [[kinesis4cats.kcl.RecordProcessor.LogEncoders RecordProcessor.LogEncoders]]
     * @return
     *   [[kinesis4cats.kcl.localstack.LocalstackKCLConsumer.DeferredWithResults DeferredWithResults]]
@@ -477,10 +484,10 @@ object LocalstackKCLConsumer {
       workerId: String = Utils.randomUUIDString,
       processConfig: KCLConsumer.ProcessConfig =
         KCLConsumer.ProcessConfig.default,
-      resultsQueueSize: Int = 50
+      resultsQueueSize: Int = 50,
+      encoders: RecordProcessor.LogEncoders = RecordProcessor.LogEncoders.show
   )(cb: List[CommittableRecord[F]] => F[Unit])(implicit
-      F: Async[F],
-      LE: RecordProcessor.LogEncoders
+      F: Async[F]
   ): Resource[F, DeferredWithResults[F]] = for {
     configWithResults <- kclConfigWithResults(
       streamTracker,
@@ -488,7 +495,8 @@ object LocalstackKCLConsumer {
       prefix,
       workerId,
       processConfig,
-      resultsQueueSize
+      resultsQueueSize,
+      encoders
     )(cb)
     consumer = new KCLConsumer(configWithResults.kclConfig)
     deferred <- consumer.runWithDeferredListener()

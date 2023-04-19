@@ -33,7 +33,6 @@ import kinesis4cats.instances.eq._
 import kinesis4cats.models.HashKeyRange
 import kinesis4cats.models.ShardId
 import kinesis4cats.models.StreamNameOrArn
-import kinesis4cats.producer.logging.instances.show._
 
 class ProducerSpec extends munit.CatsEffectSuite {
   def fixture: SyncIO[FunFixture[MockProducer]] = ResourceFunFixture(
@@ -136,8 +135,9 @@ class ProducerSpec extends munit.CatsEffectSuite {
 class MockProducer(
     val logger: StructuredLogger[IO],
     val shardMapCache: ShardMapCache[IO],
-    val config: Producer.Config[IO]
-) extends Producer[IO, MockPutRequest, MockPutResponse] {
+    val config: Producer.Config[IO],
+    encoders: Producer.LogEncoders
+) extends Producer[IO, MockPutRequest, MockPutResponse](encoders) {
 
   var requests: Int = 0 // scalafix:ok
 
@@ -204,7 +204,8 @@ object MockProducer {
     shardMapCache,
     defaultConfig.copy(batcherConfig =
       defaultConfig.batcherConfig.copy(aggregate = false)
-    )
+    ),
+    Producer.LogEncoders.show
   )
 }
 

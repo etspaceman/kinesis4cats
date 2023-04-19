@@ -25,14 +25,11 @@ import software.amazon.kinesis.processor.SingleStreamTracker
 
 import kinesis4cats.Utils
 import kinesis4cats.client.localstack.LocalstackKinesisClient
-import kinesis4cats.client.logging.instances.show._
 import kinesis4cats.client.producer.fs2.localstack.LocalstackFS2KinesisProducer
 import kinesis4cats.kcl.CommittableRecord
 import kinesis4cats.kcl.localstack.LocalstackKCLConsumer
-import kinesis4cats.kcl.logging.instances.show._
 import kinesis4cats.producer.fs2.FS2Producer
 import kinesis4cats.producer.fs2.FS2ProducerSpec
-import kinesis4cats.producer.logging.instances.show._
 import kinesis4cats.syntax.bytebuffer._
 
 class KinesisFS2ProducerSpec

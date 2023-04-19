@@ -19,7 +19,6 @@ import software.amazon.awssdk.services.kinesis.KinesisAsyncClient
 
 import kinesis4cats.kcl._
 import kinesis4cats.kcl.ciris.KCLCiris
-import kinesis4cats.kcl.logging.instances.show._
 import kinesis4cats.syntax.bytebuffer._
 
 object MyApp extends ResourceApp.Forever {
@@ -197,7 +196,6 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient
 import software.amazon.awssdk.services.kinesis.KinesisAsyncClient
 
 import kinesis4cats.kcl.fs2.ciris.KCLCirisFS2
-import kinesis4cats.kcl.logging.instances.show._
 import kinesis4cats.syntax.bytebuffer._
 
 object MyApp extends ResourceApp.Forever {

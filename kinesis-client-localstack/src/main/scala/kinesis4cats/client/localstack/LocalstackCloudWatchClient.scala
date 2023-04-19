@@ -34,21 +34,21 @@ object LocalstackCloudWatchClient {
     *   [[kinesis4cats.localstack.LocalstackConfig LocalstackConfig]]
     * @param F
     *   F with an [[cats.effect.Async Async]] instance
-    * @param LE
+    * @param encoders
     *   [[kinesis4cats.client.CloudWatchClient.LogEncoders LogEncoders]]
     * @return
     *   F of [[kinesis4cats.client.CloudWatchClient CloudWatchClient]]
     */
   def client[F[_]](
-      config: LocalstackConfig
+      config: LocalstackConfig,
+      encoders: CloudWatchClient.LogEncoders
   )(implicit
-      F: Async[F],
-      LE: CloudWatchClient.LogEncoders
+      F: Async[F]
   ): F[CloudWatchClient[F]] =
     for {
       underlying <- AwsClients.cloudwatchClient(config)
       logger <- Slf4jLogger.create[F]
-    } yield new CloudWatchClient(underlying, logger)
+    } yield new CloudWatchClient(underlying, logger, encoders)
 
   /** Builds a [[kinesis4cats.client.CloudWatchClient CloudWatchClient]] that is
     * compliant for Localstack usage.
@@ -57,21 +57,19 @@ object LocalstackCloudWatchClient {
     *   Optional prefix for parsing configuration. Default to None
     * @param F
     *   F with an [[cats.effect.Async Async]] instance
-    * @param LE
+    * @param encoders
     *   [[kinesis4cats.client.CloudWatchClient.LogEncoders LogEncoders]]
     * @return
     *   F of [[kinesis4cats.client.CloudWatchClient CloudWatchClient]]
     */
   def client[F[_]](
-      prefix: Option[String] = None
-  )(implicit
-      F: Async[F],
-      LE: CloudWatchClient.LogEncoders
-  ): F[CloudWatchClient[F]] =
+      prefix: Option[String] = None,
+      encoders: CloudWatchClient.LogEncoders = CloudWatchClient.LogEncoders.show
+  )(implicit F: Async[F]): F[CloudWatchClient[F]] =
     for {
       underlying <- AwsClients.cloudwatchClient(prefix)
       logger <- Slf4jLogger.create[F]
-    } yield new CloudWatchClient(underlying, logger)
+    } yield new CloudWatchClient(underlying, logger, encoders)
 
   /** Builds a [[kinesis4cats.client.CloudWatchClient CloudWatchClient]] that is
     * compliant for Localstack usage. Lifecycle is managed as a
@@ -81,17 +79,19 @@ object LocalstackCloudWatchClient {
     *   [[kinesis4cats.localstack.LocalstackConfig LocalstackConfig]]
     * @param F
     *   F with an [[cats.effect.Async Async]] instance
-    * @param LE
+    * @param encoders
     *   [[kinesis4cats.client.CloudWatchClient.LogEncoders LogEncoders]]
     * @return
     *   [[cats.effect.Resource Resource]] of
     *   [[kinesis4cats.client.CloudWatchClient CloudWatchClient]]
     */
-  def clientResource[F[_]](config: LocalstackConfig)(implicit
-      F: Async[F],
-      LE: CloudWatchClient.LogEncoders
+  def clientResource[F[_]](
+      config: LocalstackConfig,
+      encoders: CloudWatchClient.LogEncoders
+  )(implicit
+      F: Async[F]
   ): Resource[F, CloudWatchClient[F]] =
-    client[F](config).toResource
+    client[F](config, encoders).toResource
 
   /** Builds a [[kinesis4cats.client.CloudWatchClient CloudWatchClient]] that is
     * compliant for Localstack usage. Lifecycle is managed as a
@@ -106,10 +106,8 @@ object LocalstackCloudWatchClient {
     *   [[kinesis4cats.client.CloudWatchClient CloudWatchClient]]
     */
   def clientResource[F[_]](
-      prefix: Option[String] = None
-  )(implicit
-      F: Async[F],
-      LE: CloudWatchClient.LogEncoders
-  ): Resource[F, CloudWatchClient[F]] =
-    client[F](prefix).toResource
+      prefix: Option[String] = None,
+      encoders: CloudWatchClient.LogEncoders = CloudWatchClient.LogEncoders.show
+  )(implicit F: Async[F]): Resource[F, CloudWatchClient[F]] =
+    client[F](prefix, encoders).toResource
 }

@@ -16,12 +16,9 @@ import org.http4s.blaze.client.BlazeClientBuilder
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 import smithy4s.aws._
 
-import kinesis4cats.logging.instances.show._
 import kinesis4cats.smithy4s.client.localstack.LocalstackKinesisClient
-import kinesis4cats.smithy4s.client.logging.instances.show._
 import kinesis4cats.smithy4s.client.producer.localstack.LocalstackKinesisProducer
 import kinesis4cats.smithy4s.client.producer.fs2.localstack.LocalstackFS2KinesisProducer
-import kinesis4cats.producer.logging.instances.show._
 // Load a KinesisClient as a Resource
 val kinesisClientResource = for {
     underlying <- BlazeClientBuilder[IO]

@@ -35,9 +35,7 @@ import software.amazon.kinesis.processor.SingleStreamTracker
 import kinesis4cats.Utils
 import kinesis4cats.client.KinesisClient
 import kinesis4cats.client.localstack.LocalstackKinesisClient
-import kinesis4cats.client.logging.instances.show._
 import kinesis4cats.kcl.fs2.localstack.LocalstackKCLConsumerFS2
-import kinesis4cats.kcl.logging.instances.show._
 import kinesis4cats.syntax.bytebuffer._
 import kinesis4cats.syntax.scalacheck._
 

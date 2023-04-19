@@ -30,7 +30,6 @@ import org.typelevel.log4cats.noop.NoOpLogger
 import smithy4s.aws.kernel.AwsRegion
 
 import kinesis4cats.localstack.LocalstackConfig
-import kinesis4cats.logging.LogEncoder
 import kinesis4cats.models.StreamNameOrArn
 import kinesis4cats.producer.Producer
 import kinesis4cats.producer.Record
@@ -73,24 +72,30 @@ object LocalstackFS2KinesisProducer {
       producerConfig: FS2Producer.Config[F],
       config: LocalstackConfig,
       loggerF: Async[F] => F[StructuredLogger[F]],
-      callback: (Producer.Res[PutRecordsOutput], Async[F]) => F[Unit]
-  )(implicit
-      F: Async[F],
-      LE: KinesisClient.LogEncoders[F],
-      LELC: LogEncoder[LocalstackConfig],
-      SLE: ShardMapCache.LogEncoders,
-      PLE: Producer.LogEncoders
-  ): Resource[F, FS2KinesisProducer[F]] = for {
+      callback: (Producer.Res[PutRecordsOutput], Async[F]) => F[Unit],
+      encoders: Producer.LogEncoders,
+      shardMapEncoders: ShardMapCache.LogEncoders,
+      kinesisClientEncoders: KinesisClient.LogEncoders[F],
+      localstackConfigEncoders: LocalstackConfig.LogEncoders
+  )(implicit F: Async[F]): Resource[F, FS2KinesisProducer[F]] = for {
     logger <- loggerF(F).toResource
     _underlying <- LocalstackKinesisClient
-      .clientResource[F](client, region, config, loggerF)
+      .clientResource[F](
+        client,
+        region,
+        config,
+        loggerF,
+        kinesisClientEncoders,
+        localstackConfigEncoders
+      )
     shardMapCache <- ShardMapCache[F](
       producerConfig.producerConfig.shardMapCacheConfig,
       KinesisProducer.getShardMap(
         _underlying,
         producerConfig.producerConfig.streamNameOrArn
       ),
-      loggerF(F)
+      loggerF(F),
+      shardMapEncoders
     )
     channel <- Channel
       .bounded[F, Record](producerConfig.queueSize)
@@ -99,7 +104,8 @@ object LocalstackFS2KinesisProducer {
       logger,
       shardMapCache,
       producerConfig.producerConfig,
-      _underlying
+      _underlying,
+      encoders
     )
     producer = new FS2KinesisProducer[F](
       logger,
@@ -154,14 +160,15 @@ object LocalstackFS2KinesisProducer {
       loggerF: Async[F] => F[StructuredLogger[F]] = (f: Async[F]) =>
         f.pure(NoOpLogger[F](f)),
       callback: (Producer.Res[PutRecordsOutput], Async[F]) => F[Unit] =
-        (_: Producer.Res[PutRecordsOutput], f: Async[F]) => f.unit
-  )(implicit
-      F: Async[F],
-      LE: KinesisClient.LogEncoders[F],
-      LELC: LogEncoder[LocalstackConfig],
-      SLE: ShardMapCache.LogEncoders,
-      PLE: Producer.LogEncoders
-  ): Resource[F, FS2KinesisProducer[F]] = LocalstackConfig
+        (_: Producer.Res[PutRecordsOutput], f: Async[F]) => f.unit,
+      encoders: Producer.LogEncoders = Producer.LogEncoders.show,
+      shardMapEncoders: ShardMapCache.LogEncoders =
+        ShardMapCache.LogEncoders.show,
+      kinesisClientEncoders: KinesisClient.LogEncoders[F] =
+        KinesisClient.LogEncoders.show[F],
+      localstackConfigEncoders: LocalstackConfig.LogEncoders =
+        LocalstackConfig.LogEncoders.show
+  )(implicit F: Async[F]): Resource[F, FS2KinesisProducer[F]] = LocalstackConfig
     .resource[F](prefix)
     .flatMap(
       resource[F](
@@ -170,7 +177,11 @@ object LocalstackFS2KinesisProducer {
         producerConfig(streamName, F),
         _,
         loggerF,
-        callback
+        callback,
+        encoders,
+        shardMapEncoders,
+        kinesisClientEncoders,
+        localstackConfigEncoders
       )
     )
 }

@@ -14,10 +14,12 @@
  * limitations under the License.
  */
 
-package kinesis4cats.client
+package kinesis4cats
+package client
 
 import java.util.concurrent.CompletableFuture
 
+import cats.Show
 import cats.effect.syntax.all._
 import cats.effect.{Async, Resource}
 import cats.syntax.all._
@@ -44,15 +46,13 @@ import kinesis4cats.logging.{LogContext, LogEncoder}
   * @param F
   *   F with a [[cats.effect.Async Async]] instance
   * @param LE
-  *   [[kinesis4cats.client.CloudWatchClientLogEncoders CloudWatchClientLogEncoders]]
+  *   [[kinesis4cats.client.CloudWatchClient.LogEncoders CloudWatchClient.LogEncoders]]
   */
 class CloudWatchClient[F[_]] private[kinesis4cats] (
     val client: CloudWatchAsyncClient,
-    logger: StructuredLogger[F]
-)(implicit
-    F: Async[F],
-    LE: CloudWatchClient.LogEncoders
-) {
+    logger: StructuredLogger[F],
+    encoders: CloudWatchClient.LogEncoders
+)(implicit F: Async[F]) {
 
   private def requestLogs[A: LogEncoder](
       method: String,
@@ -91,7 +91,7 @@ class CloudWatchClient[F[_]] private[kinesis4cats] (
     } yield response
   }
 
-  import LE._
+  import encoders._
 
   def putMetricData(
       request: PutMetricDataRequest
@@ -108,21 +108,22 @@ object CloudWatchClient {
     *   [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/kinesis/CloudWatchAsyncClient.html CloudWatchAsyncClient]]
     * @param F
     *   F with an [[cats.effect.Async Async]] instance
-    * @param LE
-    *   [[kinesis4cats.client.CloudWatchClient.LogEncoders LogEncoders]]
+    * @param encoders
+    *   [[kinesis4cats.client.CloudWatchClient.LogEncoders LogEncoders]].
+    *   Defaults to show instances
     * @return
     *   [[cats.effect.Resource Resource]] containing a
     *   [[kinesis4cats.client.CloudWatchClient]]
     */
   def apply[F[_]](
-      client: CloudWatchAsyncClient
+      client: CloudWatchAsyncClient,
+      encoders: CloudWatchClient.LogEncoders = CloudWatchClient.LogEncoders.show
   )(implicit
-      F: Async[F],
-      LE: LogEncoders
+      F: Async[F]
   ): Resource[F, CloudWatchClient[F]] = for {
     clientResource <- Resource.fromAutoCloseable(F.pure(client))
     logger <- Slf4jLogger.create[F].toResource
-  } yield new CloudWatchClient[F](clientResource, logger)
+  } yield new CloudWatchClient[F](clientResource, logger, encoders)
 
   /** Helper class containing required
     * [[kinesis4cats.logging.LogEncoder LogEncoders]] for the
@@ -136,4 +137,53 @@ object CloudWatchClient {
         PutMetricDataResponse
       ]
   )
+
+  object LogEncoders {
+    val show: LogEncoders = {
+      import kinesis4cats.logging.instances.show._
+
+      implicit val dimensionShow: Show[Dimension] = x =>
+        ShowBuilder("Dimension")
+          .add("name", x.name())
+          .add("value", x.value())
+          .build
+
+      implicit val statisticSetShow: Show[StatisticSet] = x =>
+        ShowBuilder("StatisticSet")
+          .add("maximum", x.maximum())
+          .add("minimum", x.minimum())
+          .add("sampleCount", x.sampleCount())
+          .add("sum", x.sum())
+          .build
+
+      implicit val metricDatumShow: Show[MetricDatum] = x =>
+        ShowBuilder("MetricDatum")
+          .add("counts", x.counts())
+          .add("dimensions", x.dimensions())
+          .add("hasCounts", x.hasCounts())
+          .add("hasDimensions", x.hasDimensions())
+          .add("hasValues", x.hasValues())
+          .add("metricName", x.metricName())
+          .add("statisticValues", x.statisticValues())
+          .add("storageResolution", x.storageResolution())
+          .add("timestamp", x.timestamp())
+          .add("unit", x.unitAsString())
+          .add("value", x.value())
+          .add("values", x.values())
+          .build
+
+      implicit val putMetricDataRequestShow: Show[PutMetricDataRequest] =
+        x =>
+          ShowBuilder("PutMetricDataRequest")
+            .add("hasMetricData", x.hasMetricData())
+            .add("metricData", x.metricData())
+            .add("namespace", x.namespace())
+            .build
+
+      implicit val putMetricDataResponseShow: Show[PutMetricDataResponse] =
+        _ => ShowBuilder("PutMetricDataResponse").build
+
+      new LogEncoders()
+    }
+  }
 }

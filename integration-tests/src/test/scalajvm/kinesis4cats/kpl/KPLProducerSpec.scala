@@ -28,7 +28,6 @@ import org.scalacheck.Arbitrary
 
 import kinesis4cats.Utils
 import kinesis4cats.kpl.localstack.LocalstackKPLProducer
-import kinesis4cats.kpl.logging.instances.show._
 import kinesis4cats.syntax.scalacheck._
 
 abstract class KPLProducerSpec

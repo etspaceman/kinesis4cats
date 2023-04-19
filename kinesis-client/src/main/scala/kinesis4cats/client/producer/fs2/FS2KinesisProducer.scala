@@ -74,31 +74,57 @@ object FS2KinesisProducer {
     *   underlying
     * @param F
     *   [[cats.effect.Async Async]]
-    * @param LE
-    *   [[kinesis4cats.producer.Producer.LogEncoders Producer.LogEncoders]]
-    * @param KLE
-    *   [[kinesis4cats.client.KinesisClient.LogEncoders KinesisClient.LogEncoders]]
-    * @param SLE
-    *   [[kinesis4cats.producer.ShardMapCache.LogEncoders ShardMapCache.LogEncoders]]
+    * @param encoders
+    *   [[kinesis4cats.client.producer.KinesisProducer.LogEncoders KinesisProducer.LogEncoders]]
+    * @return
+    *   [[cats.effect.Resource Resource]] of
+    *   [[kinesis4cats.client.producer.fs2.FS2KinesisProducer FS2KinesisProducer]]
+    */
+  def instance[F[_]](
+      config: FS2Producer.Config[F],
+      _underlying: KinesisAsyncClient,
+      callback: (Producer.Res[PutRecordsResponse], Async[F]) => F[Unit] =
+        (_: Producer.Res[PutRecordsResponse], f: Async[F]) => f.unit,
+      encoders: KinesisProducer.LogEncoders = KinesisProducer.LogEncoders.show
+  )(implicit
+      F: Async[F]
+  ): Resource[F, FS2KinesisProducer[F]] =
+    KinesisClient(_underlying, encoders.kinesisClientLogEncoders).flatMap(
+      apply(config, _, callback, encoders)
+    )
+
+  /** Basic constructor for the
+    * [[kinesis4cats.client.producer.fs2.FS2KinesisProducer FS2KinesisProducer]]
+    *
+    * @param config
+    *   [[kinesis4cats.producer.fs2.FS2Producer.Config FS2Producer.Config]]
+    * @param underlying
+    *   [[kinesis4cats.client.KinesisClient KinesisClient]] instance
+    * @param callback
+    *   Function that can be run after each of the put results from the
+    *   underlying
+    * @param F
+    *   [[cats.effect.Async Async]]
+    * @param encoders
+    *   [[kinesis4cats.client.producer.KinesisProducer.LogEncoders KinesisProducer.LogEncoders]]
     * @return
     *   [[cats.effect.Resource Resource]] of
     *   [[kinesis4cats.client.producer.fs2.FS2KinesisProducer FS2KinesisProducer]]
     */
   def apply[F[_]](
       config: FS2Producer.Config[F],
-      _underlying: KinesisAsyncClient,
+      underlying: KinesisClient[F],
       callback: (Producer.Res[PutRecordsResponse], Async[F]) => F[Unit] =
-        (_: Producer.Res[PutRecordsResponse], f: Async[F]) => f.unit
+        (_: Producer.Res[PutRecordsResponse], f: Async[F]) => f.unit,
+      encoders: KinesisProducer.LogEncoders = KinesisProducer.LogEncoders.show
   )(implicit
-      F: Async[F],
-      LE: Producer.LogEncoders,
-      KLE: KinesisClient.LogEncoders,
-      SLE: ShardMapCache.LogEncoders
+      F: Async[F]
   ): Resource[F, FS2KinesisProducer[F]] = for {
     logger <- Slf4jLogger.create[F].toResource
     underlying <- KinesisProducer(
       config.producerConfig,
-      _underlying
+      underlying,
+      encoders
     )
     channel <- Channel.bounded[F, Record](config.queueSize).toResource
     producer = new FS2KinesisProducer[F](logger, config, channel, underlying)(

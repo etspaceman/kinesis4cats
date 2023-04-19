@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-package kinesis4cats.kpl
+package kinesis4cats
+package kpl
 
 import scala.concurrent.duration._
 import scala.jdk.CollectionConverters._
@@ -22,6 +23,7 @@ import scala.jdk.CollectionConverters._
 import java.nio.ByteBuffer
 
 import cats.Eq
+import cats.Show
 import cats.effect.{Async, Ref, Resource}
 import cats.syntax.all._
 import com.amazonaws.services.kinesis.producer._
@@ -46,10 +48,10 @@ import kinesis4cats.logging.{LogContext, LogEncoder}
 class KPLProducer[F[_]] private (
     client: KinesisProducer,
     logger: StructuredLogger[F],
-    val state: Ref[F, KPLProducer.State]
-)(implicit
-    F: Async[F],
+    val state: Ref[F, KPLProducer.State],
     LE: KPLProducer.LogEncoders
+)(implicit
+    F: Async[F]
 ) {
 
   import LE._
@@ -465,6 +467,9 @@ object KPLProducer {
     *   before shutting down
     * @param gracefulShutdownFlushInterval
     *   Duration between flush() attempts during the graceful shutdown
+    * @param encoders
+    *   [[kinesis4cats.kpl.KPLProducer.LogEncoders KPLProducer.LogEncoders]].
+    *   Default to show instances
     * @param F
     *   [[cats.effect.Async Async]]
     * @return
@@ -474,17 +479,17 @@ object KPLProducer {
   def apply[F[_]](
       config: KinesisProducerConfiguration = new KinesisProducerConfiguration(),
       gracefulShutdownFlushAttempts: Int = 5,
-      gracefulShutdownFlushInterval: FiniteDuration = 500.millis
+      gracefulShutdownFlushInterval: FiniteDuration = 500.millis,
+      encoders: LogEncoders = LogEncoders.show
   )(implicit
-      F: Async[F],
-      LE: LogEncoders
+      F: Async[F]
   ): Resource[F, KPLProducer[F]] =
     Resource.make[F, KPLProducer[F]](
       for {
         client <- F.delay(new KinesisProducer(config))
         logger <- Slf4jLogger.create[F]
         state <- Ref.of[F, State](State.Up)
-      } yield new KPLProducer(client, logger, state)
+      } yield new KPLProducer(client, logger, state, encoders)
     ) { x =>
       for {
         _ <- x.state.set(State.ShuttingDown)
@@ -505,6 +510,46 @@ object KPLProducer {
       val schemaLogEncoder: LogEncoder[Schema],
       val retryDetailsLogEncoder: LogEncoder[RetryDetails]
   )
+
+  object LogEncoders {
+    val show = {
+      import kinesis4cats.logging.instances.show._
+
+      implicit val attemptShow: Show[Attempt] = x =>
+        ShowBuilder("Attempt")
+          .add("delay", x.getDelay())
+          .add("duration", x.getDuration())
+          .add("errorCode", x.getErrorCode())
+          .add("errorMessage", x.getErrorMessage())
+          .build
+
+      implicit val schemaShow: Show[Schema] = x =>
+        ShowBuilder("Schema")
+          .add("dataFormat", x.getDataFormat())
+          .add("schemaDefinition", x.getSchemaDefinition())
+          .add("schemaName", x.getSchemaName())
+          .build
+
+      implicit val userRecordShow: Show[UserRecord] = x =>
+        ShowBuilder("UserRecord")
+          .add("data", x.getData())
+          .add("partitionKey", x.getPartitionKey())
+          .add("explicitHashKey", x.getExplicitHashKey())
+          .add("schema", x.getSchema())
+          .add("streamName", x.getStreamName())
+          .build
+
+      implicit val userRecordResultShow: Show[UserRecordResult] = x =>
+        ShowBuilder("UserRecordResult")
+          .add("isSuccessful", x.isSuccessful())
+          .add("attempts", x.getAttempts())
+          .add("sequenceNumber", x.getSequenceNumber())
+          .add("shardId", x.getShardId())
+          .build
+
+      new LogEncoders()
+    }
+  }
 
   /** Tracks the [[kinesis4cats.kpl.KPLProducer KPLProducer]] current state.
     */

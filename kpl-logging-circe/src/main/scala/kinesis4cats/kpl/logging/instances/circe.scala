@@ -28,54 +28,56 @@ import kinesis4cats.logging.syntax.circe._
   * encoding of log structures using [[https://circe.github.io/circe/ Circe]]
   */
 object circe {
-  implicit val attemptEncoder: Encoder[Attempt] = x => {
-    val fields: Map[String, Json] =
-      Map
-        .empty[String, Json]
-        .safeAdd("delay", x.getDelay())
-        .safeAdd("duration", x.getDuration())
-        .safeAdd("errorCode", x.getErrorCode())
-        .safeAdd("errorMessage", x.getErrorMessage())
+  val kplProducer: KPLProducer.LogEncoders = {
+    implicit val attemptEncoder: Encoder[Attempt] = x => {
+      val fields: Map[String, Json] =
+        Map
+          .empty[String, Json]
+          .safeAdd("delay", x.getDelay())
+          .safeAdd("duration", x.getDuration())
+          .safeAdd("errorCode", x.getErrorCode())
+          .safeAdd("errorMessage", x.getErrorMessage())
 
-    Json.obj(fields.toSeq: _*)
-  }
+      Json.obj(fields.toSeq: _*)
+    }
 
-  implicit val schemaEncoder: Encoder[Schema] = x => {
-    val fields: Map[String, Json] =
-      Map
-        .empty[String, Json]
-        .safeAdd("dataFormat", x.getDataFormat())
-        .safeAdd("schemaDefinition", x.getSchemaDefinition())
-        .safeAdd("schemaName", x.getSchemaName())
+    implicit val schemaEncoder: Encoder[Schema] = x => {
+      val fields: Map[String, Json] =
+        Map
+          .empty[String, Json]
+          .safeAdd("dataFormat", x.getDataFormat())
+          .safeAdd("schemaDefinition", x.getSchemaDefinition())
+          .safeAdd("schemaName", x.getSchemaName())
 
-    Json.obj(fields.toSeq: _*)
-  }
+      Json.obj(fields.toSeq: _*)
+    }
 
-  implicit val userRecordEncoder: Encoder[UserRecord] = x => {
-    val fields: Map[String, Json] =
-      Map
-        .empty[String, Json]
-        .safeAdd("data", x.getData())
-        .safeAdd("partitionKey", x.getPartitionKey())
-        .safeAdd("explicitHashKey", x.getExplicitHashKey())
-        .safeAdd("schema", x.getSchema())
-        .safeAdd("streamName", x.getStreamName())
+    implicit val userRecordEncoder: Encoder[UserRecord] = x => {
+      val fields: Map[String, Json] =
+        Map
+          .empty[String, Json]
+          .safeAdd("data", x.getData())
+          .safeAdd("partitionKey", x.getPartitionKey())
+          .safeAdd("explicitHashKey", x.getExplicitHashKey())
+          .safeAdd("schema", x.getSchema())
+          .safeAdd("streamName", x.getStreamName())
 
-    Json.obj(fields.toSeq: _*)
-  }
+      Json.obj(fields.toSeq: _*)
+    }
 
-  implicit val userRecordResultEncoder: Encoder[UserRecordResult] = x => {
-    val fields: Map[String, Json] =
-      Map
-        .empty[String, Json]
-        .safeAdd("isSuccessful", x.isSuccessful())
-        .safeAdd("attempts", x.getAttempts())
-        .safeAdd("sequenceNumber", x.getSequenceNumber())
-        .safeAdd("shardId", x.getShardId())
+    implicit val userRecordResultEncoder: Encoder[UserRecordResult] = x => {
+      val fields: Map[String, Json] =
+        Map
+          .empty[String, Json]
+          .safeAdd("isSuccessful", x.isSuccessful())
+          .safeAdd("attempts", x.getAttempts())
+          .safeAdd("sequenceNumber", x.getSequenceNumber())
+          .safeAdd("shardId", x.getShardId())
 
-    Json.obj(fields.toSeq: _*)
-  }
+      Json.obj(fields.toSeq: _*)
+    }
 
-  implicit val kplProducerLogEncoders: KPLProducer.LogEncoders =
     new KPLProducer.LogEncoders()
+  }
+
 }

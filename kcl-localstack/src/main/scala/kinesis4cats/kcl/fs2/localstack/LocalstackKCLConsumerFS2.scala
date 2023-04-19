@@ -51,7 +51,7 @@ object LocalstackKCLConsumerFS2 {
     *   [[kinesis4cats.kcl.KCLConsumer.ProcessConfig KCLConsumer.ProcessConfig]]
     * @param F
     *   [[cats.effect.Async Async]]
-    * @param LE
+    * @param encoders
     *   [[kinesis4cats.kcl.RecordProcessor.LogEncoders RecordProcessor.LogEncoders]]
     * @return
     *   [[kinesis4cats.kcl.fs2.KCLConsumerFS2.Config KCLConsumerFS2.Config]]
@@ -61,10 +61,10 @@ object LocalstackKCLConsumerFS2 {
       streamTracker: StreamTracker,
       appName: String,
       workerId: String,
-      processConfig: KCLConsumer.ProcessConfig
+      processConfig: KCLConsumer.ProcessConfig,
+      encoders: RecordProcessor.LogEncoders
   )(implicit
-      F: Async[F],
-      LE: RecordProcessor.LogEncoders
+      F: Async[F]
   ): Resource[F, KCLConsumerFS2.Config[F]] = for {
     queue <- Queue.bounded[F, CommittableRecord[F]](100).toResource
     underlying <- LocalstackKCLConsumer.kclConfig(
@@ -72,7 +72,8 @@ object LocalstackKCLConsumerFS2 {
       streamTracker,
       appName,
       workerId,
-      processConfig
+      processConfig,
+      encoders
     )(KCLConsumerFS2.callback(queue))
   } yield KCLConsumerFS2
     .Config[F](underlying, queue, KCLConsumerFS2.FS2Config.default)
@@ -98,7 +99,7 @@ object LocalstackKCLConsumerFS2 {
     *   Default is `ProcessConfig.default` with autoCommit set to false
     * @param F
     *   [[cats.effect.Async Async]]
-    * @param LE
+    * @param encoders
     *   [[kinesis4cats.kcl.RecordProcessor.LogEncoders RecordProcessor.LogEncoders]]
     * @return
     *   [[kinesis4cats.kcl.fs2.KCLConsumerFS2.Config KCLConsumerFS2.Config]]
@@ -109,10 +110,10 @@ object LocalstackKCLConsumerFS2 {
       prefix: Option[String] = None,
       workerId: String = Utils.randomUUIDString,
       processConfig: KCLConsumer.ProcessConfig =
-        KCLConsumerFS2.defaultProcessConfig
+        KCLConsumerFS2.defaultProcessConfig,
+      encoders: RecordProcessor.LogEncoders = RecordProcessor.LogEncoders.show
   )(implicit
-      F: Async[F],
-      LE: RecordProcessor.LogEncoders
+      F: Async[F]
   ): Resource[F, KCLConsumerFS2.Config[F]] = for {
     config <- LocalstackConfig.resource(prefix)
     result <- kclConfig(
@@ -120,7 +121,8 @@ object LocalstackKCLConsumerFS2 {
       streamTracker,
       appName,
       workerId,
-      processConfig
+      processConfig,
+      encoders
     )
   } yield result
 
@@ -145,7 +147,7 @@ object LocalstackKCLConsumerFS2 {
     *   [[kinesis4cats.kcl.KCLConsumer.ProcessConfig KCLConsumer.ProcessConfig]]
     * @param F
     *   [[cats.effect.Async Async]]
-    * @param LE
+    * @param encoders
     *   [[kinesis4cats.kcl.RecordProcessor.LogEncoders RecordProcessor.LogEncoders]]
     * @return
     *   [[kinesis4cats.kcl.fs2.KCLConsumerFS2]] in a
@@ -156,18 +158,19 @@ object LocalstackKCLConsumerFS2 {
       streamTracker: StreamTracker,
       appName: String,
       workerId: String,
-      processConfig: KCLConsumer.ProcessConfig
+      processConfig: KCLConsumer.ProcessConfig,
+      encoders: RecordProcessor.LogEncoders
   )(implicit
       F: Async[F],
-      P: Parallel[F],
-      LE: RecordProcessor.LogEncoders
+      P: Parallel[F]
   ): Resource[F, KCLConsumerFS2[F]] =
     kclConfig(
       config,
       streamTracker,
       appName,
       workerId,
-      processConfig
+      processConfig,
+      encoders
     ).map(
       new KCLConsumerFS2[F](_)
     )
@@ -195,7 +198,7 @@ object LocalstackKCLConsumerFS2 {
     *   Default is `ProcessConfig.default` with autoCommit set to false
     * @param F
     *   [[cats.effect.Async Async]]
-    * @param LE
+    * @param encoders
     *   [[kinesis4cats.kcl.RecordProcessor.LogEncoders RecordProcessor.LogEncoders]]
     * @return
     *   [[kinesis4cats.kcl.fs2.KCLConsumerFS2 KCLConsumerFS2]] in a
@@ -207,11 +210,11 @@ object LocalstackKCLConsumerFS2 {
       prefix: Option[String] = None,
       workerId: String = Utils.randomUUIDString,
       processConfig: KCLConsumer.ProcessConfig =
-        KCLConsumerFS2.defaultProcessConfig
+        KCLConsumerFS2.defaultProcessConfig,
+      encoders: RecordProcessor.LogEncoders = RecordProcessor.LogEncoders.show
   )(implicit
       F: Async[F],
-      P: Parallel[F],
-      LE: RecordProcessor.LogEncoders
+      P: Parallel[F]
   ): Resource[F, KCLConsumerFS2[F]] = for {
     config <- LocalstackConfig.resource(prefix)
     result <- kclConsumer(
@@ -219,7 +222,8 @@ object LocalstackKCLConsumerFS2 {
       streamTracker,
       appName,
       workerId,
-      processConfig
+      processConfig,
+      encoders
     )
   } yield result
 }

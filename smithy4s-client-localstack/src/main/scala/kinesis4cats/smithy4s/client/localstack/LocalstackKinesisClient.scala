@@ -33,7 +33,6 @@ import smithy4s.aws.kernel.AwsRegion
 import kinesis4cats.compat.retry.RetryPolicies._
 import kinesis4cats.compat.retry._
 import kinesis4cats.localstack.LocalstackConfig
-import kinesis4cats.logging.LogEncoder
 import kinesis4cats.smithy4s.client.KinesisClient
 import kinesis4cats.smithy4s.client.middleware._
 
@@ -46,13 +45,18 @@ object LocalstackKinesisClient {
   def localstackHttp4sClient[F[_]](
       client: Client[F],
       config: LocalstackConfig,
-      loggerF: Async[F] => F[StructuredLogger[F]]
-  )(implicit
-      F: Async[F],
-      LE: KinesisClient.LogEncoders[F],
-      LELC: LogEncoder[LocalstackConfig]
-  ): F[Client[F]] =
-    loggerF(F).map(logger => LocalstackProxy[F](config, logger)(client))
+      loggerF: Async[F] => F[StructuredLogger[F]],
+      kinesisClientEncoders: KinesisClient.LogEncoders[F],
+      localstackConfigEncoders: LocalstackConfig.LogEncoders
+  )(implicit F: Async[F]): F[Client[F]] =
+    loggerF(F).map(logger =>
+      LocalstackProxy[F](
+        config,
+        logger,
+        kinesisClientEncoders,
+        localstackConfigEncoders
+      )(client)
+    )
 
   /** Creates a [[cats.effect.Resource Resource]] of a KinesisClient that is
     * compatible with Localstack
@@ -66,6 +70,10 @@ object LocalstackKinesisClient {
     * @param loggerF
     *   [[cats.effect.Async Async]] => [[cats.effect.Async Async]] of
     *   [[https://github.com/typelevel/log4cats/blob/main/core/shared/src/main/scala/org/typelevel/log4cats/StructuredLogger.scala StructuredLogger]].
+    * @param kinesisClientEncoders
+    *   [[kinesis4cats.smithy4s.client.KinesisClient.LogEncoders KinesisClient.LogEncoders]]
+    * @param localstackConfigEncoders
+    *   [[kinesis4cats.localstack.LocalstackConfig.LogEncoders LocalstackConfig.LogEncoders]]
     * @param F
     *   [[cats.effect.Async Async]]
     * @return
@@ -75,13 +83,17 @@ object LocalstackKinesisClient {
       client: Client[F],
       region: F[AwsRegion],
       config: LocalstackConfig,
-      loggerF: Async[F] => F[StructuredLogger[F]]
-  )(implicit
-      F: Async[F],
-      LE: KinesisClient.LogEncoders[F],
-      LELC: LogEncoder[LocalstackConfig]
-  ): Resource[F, KinesisClient[F]] = for {
-    http4sClient <- localstackHttp4sClient(client, config, loggerF).toResource
+      loggerF: Async[F] => F[StructuredLogger[F]],
+      kinesisClientEncoders: KinesisClient.LogEncoders[F],
+      localstackConfigEncoders: LocalstackConfig.LogEncoders
+  )(implicit F: Async[F]): Resource[F, KinesisClient[F]] = for {
+    http4sClient <- localstackHttp4sClient(
+      client,
+      config,
+      loggerF,
+      kinesisClientEncoders,
+      localstackConfigEncoders
+    ).toResource
     awsClient <- KinesisClient[F](
       http4sClient,
       region,
@@ -108,6 +120,10 @@ object LocalstackKinesisClient {
     *   [[https://github.com/typelevel/log4cats/blob/main/core/shared/src/main/scala/org/typelevel/log4cats/StructuredLogger.scala StructuredLogger]].
     *   Default is
     *   [[https://github.com/typelevel/log4cats/blob/main/noop/shared/src/main/scala/org/typelevel/log4cats/noop/NoOpLogger.scala NoOpLogger]]
+    * @param kinesisClientEncoders
+    *   [[kinesis4cats.smithy4s.client.KinesisClient.LogEncoders KinesisClient.LogEncoders]]
+    * @param localstackConfigEncoders
+    *   [[kinesis4cats.localstack.LocalstackConfig.LogEncoders LocalstackConfig.LogEncoders]]
     * @param F
     *   [[cats.effect.Async Async]]
     * @return
@@ -118,14 +134,23 @@ object LocalstackKinesisClient {
       region: F[AwsRegion],
       prefix: Option[String] = None,
       loggerF: Async[F] => F[StructuredLogger[F]] = (f: Async[F]) =>
-        f.pure(NoOpLogger[F](f))
-  )(implicit
-      F: Async[F],
-      LE: KinesisClient.LogEncoders[F],
-      LELC: LogEncoder[LocalstackConfig]
-  ): Resource[F, KinesisClient[F]] = LocalstackConfig
+        f.pure(NoOpLogger[F](f)),
+      kinesisClientEncoders: KinesisClient.LogEncoders[F] =
+        KinesisClient.LogEncoders.show[F],
+      localstackConfigEncoders: LocalstackConfig.LogEncoders =
+        LocalstackConfig.LogEncoders.show
+  )(implicit F: Async[F]): Resource[F, KinesisClient[F]] = LocalstackConfig
     .resource(prefix)
-    .flatMap(clientResource(client, region, _, loggerF))
+    .flatMap(
+      clientResource(
+        client,
+        region,
+        _,
+        loggerF,
+        kinesisClientEncoders,
+        localstackConfigEncoders
+      )
+    )
 
   /** A resources that does the following:
     *
@@ -149,8 +174,10 @@ object LocalstackKinesisClient {
     *   How long to delay between retries of the DescribeStreamSummary call
     * @param F
     *   F with an [[cats.effect.Async Async]] instance
-    * @param LE
-    *   [[kinesis4cats.smithy4s.client.KinesisClient.LogEncoders LogEncoders]]
+    * @param kinesisClientEncoders
+    *   [[kinesis4cats.smithy4s.client.KinesisClient.LogEncoders KinesisClient.LogEncoders]]
+    * @param localstackConfigEncoders
+    *   [[kinesis4cats.localstack.LocalstackConfig.LogEncoders LocalstackConfig.LogEncoders]]
     * @return
     *   [[cats.effect.Resource Resource]] of
     *   [[kinesis4cats.smithy4s.client.KinesisClient KinesisClient]]
@@ -163,64 +190,68 @@ object LocalstackKinesisClient {
       shardCount: Int,
       describeRetries: Int,
       describeRetryDuration: FiniteDuration,
-      loggerF: Async[F] => F[StructuredLogger[F]]
-  )(implicit
-      F: Async[F],
-      LE: KinesisClient.LogEncoders[F],
-      LELC: LogEncoder[LocalstackConfig]
-  ): Resource[F, KinesisClient[F]] = {
+      loggerF: Async[F] => F[StructuredLogger[F]],
+      kinesisClientEncoders: KinesisClient.LogEncoders[F],
+      localstackConfigEncoders: LocalstackConfig.LogEncoders
+  )(implicit F: Async[F]): Resource[F, KinesisClient[F]] = {
     val retryPolicy = constantDelay(describeRetryDuration).join(
       limitRetries(describeRetries)
     )
 
-    clientResource[F](http4sClient, region, config, loggerF).flatMap {
-      case client: KinesisClient[F] =>
-        Resource.make[F, KinesisClient[F]](
-          for {
-            _ <- client.createStream(
-              StreamName(streamName),
-              Some(PositiveIntegerObject(shardCount))
-            )
-            _ <- retryingOnFailuresAndAllErrors(
-              retryPolicy,
-              (x: DescribeStreamSummaryOutput) =>
-                F.pure(
-                  x.streamDescriptionSummary.streamStatus == StreamStatus.ACTIVE
-                ),
-              noop[F, DescribeStreamSummaryOutput],
-              noop[F, Throwable]
-            )(
-              client.describeStreamSummary(Some(StreamName(streamName)))
-            )
-          } yield client
-        )(client =>
-          for {
-            _ <- client.deleteStream(
-              Some(StreamName(streamName))
-            )
-            _ <- retryingOnFailuresAndSomeErrors(
-              retryPolicy,
-              (x: Either[Throwable, DescribeStreamSummaryOutput]) =>
-                F.pure(
-                  x.swap.exists {
-                    case _: ResourceNotFoundException => true
-                    case _                            => false
-                  }
-                ),
-              (e: Throwable) =>
-                e match {
-                  case _: ResourceNotFoundException => F.pure(false)
-                  case _                            => F.pure(true)
-                },
-              noop[F, Either[Throwable, DescribeStreamSummaryOutput]],
-              noop[F, Throwable]
-            )(
-              client
-                .describeStreamSummary(Some(StreamName(streamName)))
-                .attempt
-            )
-          } yield ()
-        )
+    clientResource[F](
+      http4sClient,
+      region,
+      config,
+      loggerF,
+      kinesisClientEncoders,
+      localstackConfigEncoders
+    ).flatMap { case client: KinesisClient[F] =>
+      Resource.make[F, KinesisClient[F]](
+        for {
+          _ <- client.createStream(
+            StreamName(streamName),
+            Some(PositiveIntegerObject(shardCount))
+          )
+          _ <- retryingOnFailuresAndAllErrors(
+            retryPolicy,
+            (x: DescribeStreamSummaryOutput) =>
+              F.pure(
+                x.streamDescriptionSummary.streamStatus == StreamStatus.ACTIVE
+              ),
+            noop[F, DescribeStreamSummaryOutput],
+            noop[F, Throwable]
+          )(
+            client.describeStreamSummary(Some(StreamName(streamName)))
+          )
+        } yield client
+      )(client =>
+        for {
+          _ <- client.deleteStream(
+            Some(StreamName(streamName))
+          )
+          _ <- retryingOnFailuresAndSomeErrors(
+            retryPolicy,
+            (x: Either[Throwable, DescribeStreamSummaryOutput]) =>
+              F.pure(
+                x.swap.exists {
+                  case _: ResourceNotFoundException => true
+                  case _                            => false
+                }
+              ),
+            (e: Throwable) =>
+              e match {
+                case _: ResourceNotFoundException => F.pure(false)
+                case _                            => F.pure(true)
+              },
+            noop[F, Either[Throwable, DescribeStreamSummaryOutput]],
+            noop[F, Throwable]
+          )(
+            client
+              .describeStreamSummary(Some(StreamName(streamName)))
+              .attempt
+          )
+        } yield ()
+      )
     }
   }
 
@@ -247,8 +278,11 @@ object LocalstackKinesisClient {
     *   Default to 500 ms
     * @param F
     *   F with an [[cats.effect.Async Async]] instance
-    * @param LE
-    *   [[kinesis4cats.smithy4s.client.KinesisClient.LogEncoders LogEncoders]]
+    * @param kinesisClientEncoders
+    *   [[kinesis4cats.smithy4s.client.KinesisClient.LogEncoders KinesisClient.LogEncoders]]
+    * @param localstackConfigEncoders
+    *   [[kinesis4cats.localstack.LocalstackConfig.LogEncoders LocalstackConfig.LogEncoders]]
+    *   Defaults to show instances
     * @return
     *   [[cats.effect.Resource Resource]] of
     *   [[kinesis4cats.smithy4s.client.KinesisClient KinesisClient]]
@@ -262,12 +296,12 @@ object LocalstackKinesisClient {
       describeRetries: Int = 5,
       describeRetryDuration: FiniteDuration = 500.millis,
       loggerF: Async[F] => F[StructuredLogger[F]] = (f: Async[F]) =>
-        f.pure(NoOpLogger(f))
-  )(implicit
-      F: Async[F],
-      LE: KinesisClient.LogEncoders[F],
-      LELC: LogEncoder[LocalstackConfig]
-  ): Resource[F, KinesisClient[F]] = for {
+        f.pure(NoOpLogger(f)),
+      kinesisClientEncoders: KinesisClient.LogEncoders[F] =
+        KinesisClient.LogEncoders.show[F],
+      localstackConfigEncoders: LocalstackConfig.LogEncoders =
+        LocalstackConfig.LogEncoders.show
+  )(implicit F: Async[F]): Resource[F, KinesisClient[F]] = for {
     config <- LocalstackConfig.resource(prefix)
     result <- streamResource(
       http4sClient,
@@ -277,7 +311,9 @@ object LocalstackKinesisClient {
       shardCount,
       describeRetries,
       describeRetryDuration,
-      loggerF
+      loggerF,
+      kinesisClientEncoders,
+      localstackConfigEncoders
     )
   } yield result
 }

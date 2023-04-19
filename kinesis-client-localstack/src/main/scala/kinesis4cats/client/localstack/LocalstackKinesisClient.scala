@@ -38,20 +38,22 @@ object LocalstackKinesisClient {
     *   [[kinesis4cats.localstack.LocalstackConfig LocalstackConfig]]
     * @param F
     *   F with an [[cats.effect.Async Async]] instance
-    * @param LE
+    * @param encoders
     *   [[kinesis4cats.client.KinesisClient.LogEncoders LogEncoders]]
     * @return
     *   [[cats.effect.Resource Resource]] of
     *   [[kinesis4cats.client.KinesisClient KinesisClient]]
     */
-  def clientResource[F[_]](config: LocalstackConfig)(implicit
-      F: Async[F],
-      LE: KinesisClient.LogEncoders
+  def clientResource[F[_]](
+      config: LocalstackConfig,
+      encoders: KinesisClient.LogEncoders
+  )(implicit
+      F: Async[F]
   ): Resource[F, KinesisClient[F]] = for {
     underlying <- AwsClients.kinesisClient(config).toResource
     logger <- Slf4jLogger.create[F].toResource
     dispatcher <- Dispatcher.parallel[F]
-  } yield new KinesisClient(underlying, logger, dispatcher)
+  } yield new KinesisClient(underlying, logger, dispatcher, encoders)
 
   /** Builds a [[kinesis4cats.client.KinesisClient KinesisClient]] that is
     * compliant for Localstack usage. Lifecycle is managed as a
@@ -59,6 +61,8 @@ object LocalstackKinesisClient {
     *
     * @param prefix
     *   Optional prefix for parsing configuration. Default to None
+    * @param encoders
+    *   [[kinesis4cats.client.KinesisClient.LogEncoders KinesisClient.LogEncoders]]
     * @param F
     *   F with an [[cats.effect.Async Async]] instance
     * @return
@@ -66,12 +70,12 @@ object LocalstackKinesisClient {
     *   [[kinesis4cats.client.KinesisClient KinesisClient]]
     */
   def clientResource[F[_]](
-      prefix: Option[String] = None
+      prefix: Option[String] = None,
+      encoders: KinesisClient.LogEncoders = KinesisClient.LogEncoders.show
   )(implicit
-      F: Async[F],
-      LE: KinesisClient.LogEncoders
+      F: Async[F]
   ): Resource[F, KinesisClient[F]] =
-    LocalstackConfig.resource(prefix).flatMap(clientResource[F])
+    LocalstackConfig.resource(prefix).flatMap(clientResource[F](_, encoders))
 
   /** A resources that does the following:
     *
@@ -106,12 +110,12 @@ object LocalstackKinesisClient {
       streamName: String,
       shardCount: Int,
       describeRetries: Int,
-      describeRetryDuration: FiniteDuration
+      describeRetryDuration: FiniteDuration,
+      encoders: KinesisClient.LogEncoders
   )(implicit
-      F: Async[F],
-      LE: KinesisClient.LogEncoders
+      F: Async[F]
   ): Resource[F, KinesisClient[F]] = for {
-    client <- clientResource(config)
+    client <- clientResource(config, encoders)
     result <- Resource.make(
       AwsClients
         .createStream(
@@ -156,8 +160,9 @@ object LocalstackKinesisClient {
     *   Default to 500 ms
     * @param F
     *   F with an [[cats.effect.Async Async]] instance
-    * @param LE
-    *   [[kinesis4cats.client.KinesisClient.LogEncoders LogEncoders]]
+    * @param encoders
+    *   [[kinesis4cats.client.KinesisClient.LogEncoders LogEncoders]]. Default
+    *   to show instances
     * @return
     *   [[cats.effect.Resource Resource]] of
     *   [[kinesis4cats.client.KinesisClient KinesisClient]]
@@ -167,10 +172,10 @@ object LocalstackKinesisClient {
       shardCount: Int,
       prefix: Option[String] = None,
       describeRetries: Int = 5,
-      describeRetryDuration: FiniteDuration = 500.millis
+      describeRetryDuration: FiniteDuration = 500.millis,
+      encoders: KinesisClient.LogEncoders = KinesisClient.LogEncoders.show
   )(implicit
-      F: Async[F],
-      LE: KinesisClient.LogEncoders
+      F: Async[F]
   ): Resource[F, KinesisClient[F]] = for {
     config <- LocalstackConfig.resource(prefix)
     result <- streamResource(
@@ -178,7 +183,8 @@ object LocalstackKinesisClient {
       streamName,
       shardCount,
       describeRetries,
-      describeRetryDuration
+      describeRetryDuration,
+      encoders
     )
   } yield result
 }

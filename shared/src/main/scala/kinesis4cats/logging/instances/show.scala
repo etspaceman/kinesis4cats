@@ -28,6 +28,8 @@ import cats.Show
 import cats.syntax.all._
 
 import kinesis4cats.compat.retry._
+import kinesis4cats.models.ShardId
+import kinesis4cats.models.StreamNameOrArn
 import kinesis4cats.syntax.bytebuffer._
 
 object show {
@@ -86,5 +88,12 @@ object show {
   implicit val retryDetailsShow: Show[RetryDetails] = {
     case x: RetryDetails.GivingUp          => x.show
     case x: RetryDetails.WillDelayAndRetry => x.show
+  }
+
+  implicit val shardIdShow: Show[ShardId] = _.shardId
+
+  implicit val streamNameOrArnShow: Show[StreamNameOrArn] = {
+    case StreamNameOrArn.Name(streamName) => streamName.show
+    case StreamNameOrArn.Arn(arn)         => arn.streamArn.show
   }
 }

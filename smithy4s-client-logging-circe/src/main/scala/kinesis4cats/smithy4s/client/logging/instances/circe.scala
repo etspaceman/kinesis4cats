@@ -22,34 +22,45 @@ import org.http4s.circe._
 import org.http4s.{Headers, HttpVersion, Method, Request, Response, Status}
 
 import kinesis4cats.logging.instances.circe._
+import kinesis4cats.producer.logging.instances.circe._
+import kinesis4cats.smithy4s.client.producer.KinesisProducer
 
 /** Smithy4s Client [[kinesis4cats.logging.LogEncoder LogEncoder]] instances for
   * string encoding of log structures using [[io.circe.Encoder Encoder]]
   */
 object circe {
-  implicit val headersCirceEncoder: Encoder[Headers] =
-    Encoder[List[(String, String)]]
-      .contramap(_.headers.map(x => x.name.toString -> x.value))
 
-  implicit val httpVersionEncoder: Encoder[HttpVersion] =
-    Encoder.forProduct2("major", "minor")(x => (x.major, x.minor))
+  def kinesisClientCirceEncoders[F[_]]: KinesisClient.LogEncoders[F] = {
+    implicit val headersCirceEncoder: Encoder[Headers] =
+      Encoder[List[(String, String)]]
+        .contramap(_.headers.map(x => x.name.toString -> x.value))
 
-  implicit val methodEncoder: Encoder[Method] =
-    Encoder[String].contramap(_.name)
+    implicit val httpVersionEncoder: Encoder[HttpVersion] =
+      Encoder.forProduct2("major", "minor")(x => (x.major, x.minor))
 
-  implicit val statusEncoder: Encoder[Status] =
-    Encoder.forProduct2("code", "reason")(x => (x.code, x.reason))
+    implicit val methodEncoder: Encoder[Method] =
+      Encoder[String].contramap(_.name)
 
-  implicit def requestCirceEncoder[F[_]]: Encoder[Request[F]] =
-    Encoder.forProduct4("headers", "httpVersion", "method", "uri")(x =>
-      (x.headers, x.httpVersion, x.method, x.uri)
+    implicit val statusEncoder: Encoder[Status] =
+      Encoder.forProduct2("code", "reason")(x => (x.code, x.reason))
+
+    implicit val requestCirceEncoder: Encoder[Request[F]] =
+      Encoder.forProduct4("headers", "httpVersion", "method", "uri")(x =>
+        (x.headers, x.httpVersion, x.method, x.uri)
+      )
+
+    implicit val responseCirceEncoder: Encoder[Response[F]] =
+      Encoder.forProduct3("headers", "httpVersion", "status")(x =>
+        (x.headers, x.httpVersion, x.status)
+      )
+
+    new KinesisClient.LogEncoders[F]()
+  }
+
+  def kinesisProducerCirceEncoders[F[_]]: KinesisProducer.LogEncoders[F] =
+    new KinesisProducer.LogEncoders(
+      kinesisClientCirceEncoders[F],
+      producerCirceEncoders
     )
 
-  implicit def responseCirceEncoder[F[_]]: Encoder[Response[F]] =
-    Encoder.forProduct3("headers", "httpVersion", "status")(x =>
-      (x.headers, x.httpVersion, x.status)
-    )
-
-  implicit def smithy4sKinesisClientLogEncoders[F[_]]
-      : KinesisClient.LogEncoders[F] = new KinesisClient.LogEncoders[F]()
 }

@@ -14,8 +14,12 @@
  * limitations under the License.
  */
 
-package kinesis4cats.smithy4s.client
+package kinesis4cats
+package smithy4s.client
 
+import _root_.smithy4s.aws._
+import _root_.smithy4s.aws.http4s._
+import cats.Show
 import cats.effect.syntax.all._
 import cats.effect.{Async, Resource}
 import cats.syntax.all._
@@ -24,8 +28,6 @@ import org.http4s.client.Client
 import org.http4s.{Request, Response}
 import org.typelevel.log4cats.StructuredLogger
 import org.typelevel.log4cats.noop.NoOpLogger
-import smithy4s.aws._
-import smithy4s.aws.http4s._
 
 import kinesis4cats.logging._
 import kinesis4cats.smithy4s.client.middleware.RequestResponseLogger
@@ -79,6 +81,29 @@ object KinesisClient {
       val http4sResponseLogEncoder: LogEncoder[Response[F]]
   )
 
+  object LogEncoders {
+    def show[F[_]]: LogEncoders[F] = {
+      import kinesis4cats.logging.instances.show._
+
+      implicit val requestShow: Show[Request[F]] = x =>
+        ShowBuilder("Request")
+          .add("method", x.method)
+          .add("headers", x.headers)
+          .add("httpVersion", x.httpVersion)
+          .add("uri", x.uri)
+          .build
+
+      implicit val responseShow: Show[Response[F]] = x =>
+        ShowBuilder("Response")
+          .add("headers", x.headers)
+          .add("httpVersion", x.httpVersion)
+          .add("status", x.status)
+          .build
+
+      new KinesisClient.LogEncoders[F]()
+    }
+  }
+
   /** Create a KinesisClient [[cats.effect.Resource Resource]]
     *
     * @param client
@@ -117,14 +142,14 @@ object KinesisClient {
         (x: SimpleHttpClient[F], f: Async[F]) =>
           AwsCredentialsProvider.default[F](x)(f),
       backendF: (Client[F], Async[F]) => SimpleHttpClient[F] =
-        (client: Client[F], f: Async[F]) => AwsHttp4sBackend[F](client)(f)
+        (client: Client[F], f: Async[F]) => AwsHttp4sBackend[F](client)(f),
+      encoders: LogEncoders[F] = LogEncoders.show[F]
   )(implicit
-      F: Async[F],
-      LE: LogEncoders[F]
+      F: Async[F]
   ): Resource[F, KinesisClient[F]] = for {
     logger <- loggerF(F).toResource
     env <- awsEnv(
-      RequestResponseLogger(logger)(client),
+      RequestResponseLogger(logger, encoders)(client),
       region,
       credsF,
       backendF

@@ -14,10 +14,8 @@ libraryDependencies += "io.github.etspaceman" %% "kinesis4cats-kinesis-client-lo
 import cats.effect.IO
 
 import kinesis4cats.client.localstack.LocalstackKinesisClient
-import kinesis4cats.client.logging.instances.show._
 import kinesis4cats.client.producer.localstack.LocalstackKinesisProducer
 import kinesis4cats.client.producer.fs2.localstack.LocalstackFS2KinesisProducer
-import kinesis4cats.producer.logging.instances.show._
 
 // Load a KinesisClient as a Resource
 LocalstackKinesisClient.clientResource[IO]()

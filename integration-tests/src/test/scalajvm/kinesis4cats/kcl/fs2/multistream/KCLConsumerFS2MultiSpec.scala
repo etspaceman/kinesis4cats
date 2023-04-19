@@ -34,11 +34,9 @@ import software.amazon.kinesis.common._
 import kinesis4cats.Utils
 import kinesis4cats.client.KinesisClient
 import kinesis4cats.client.localstack.LocalstackKinesisClient
-import kinesis4cats.client.logging.instances.show._
 import kinesis4cats.kcl.CommittableRecord
 import kinesis4cats.kcl.fs2.KCLConsumerFS2
 import kinesis4cats.kcl.fs2.localstack.LocalstackKCLConsumerFS2
-import kinesis4cats.kcl.logging.instances.show._
 import kinesis4cats.kcl.multistream.MultiStreamTracker
 import kinesis4cats.models.{AwsRegion, StreamArn}
 import kinesis4cats.syntax.bytebuffer._

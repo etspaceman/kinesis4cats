@@ -26,6 +26,8 @@ import io.circe.{Encoder, KeyEncoder}
 
 import kinesis4cats.compat.retry._
 import kinesis4cats.logging.LogEncoder
+import kinesis4cats.models.ShardId
+import kinesis4cats.models.StreamNameOrArn
 import kinesis4cats.syntax.bytebuffer._
 
 /** [[kinesis4cats.logging.LogEncoder LogEncoder]] instances for JSON encoding
@@ -91,4 +93,13 @@ object circe {
     case x: RetryDetails.GivingUp          => x.asJson
     case x: RetryDetails.WillDelayAndRetry => x.asJson
   }
+
+  implicit val shardIdEncoder: Encoder[ShardId] =
+    Encoder[String].contramap(_.shardId)
+
+  implicit val streamNameOrArnEncoder: Encoder[StreamNameOrArn] = {
+    case StreamNameOrArn.Name(streamName) => streamName.asJson
+    case StreamNameOrArn.Arn(arn)         => arn.streamArn.asJson
+  }
+
 }

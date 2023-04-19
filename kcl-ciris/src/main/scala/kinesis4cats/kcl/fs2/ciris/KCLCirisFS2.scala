@@ -93,7 +93,7 @@ object KCLCirisFS2 {
     *   [[cats.effect.Async Async]] instance
     * @param P
     *   [[cats.Parallel Parallel]] instance
-    * @param LE
+    * @param encoders
     *   [[kinesis4cats.kcl.RecordProcessor.LogEncoders RecordProcessor.LogEncoders]]
     *   for encoding structured logs
     * @return
@@ -117,11 +117,11 @@ object KCLCirisFS2 {
       taskExecutionListener: Option[TaskExecutionListener] = None,
       metricsFactory: Option[MetricsFactory] = None,
       glueSchemaRegistryDeserializer: Option[GlueSchemaRegistryDeserializer] =
-        None
+        None,
+      encoders: RecordProcessor.LogEncoders = RecordProcessor.LogEncoders.show
   )(implicit
       F: Async[F],
-      P: Parallel[F],
-      LE: RecordProcessor.LogEncoders
+      P: Parallel[F]
   ): Resource[F, KCLConsumerFS2[F]] = kclConfig(
     kinesisClient,
     dynamoClient,
@@ -138,7 +138,8 @@ object KCLCirisFS2 {
     aggregatorUtil,
     taskExecutionListener,
     metricsFactory,
-    glueSchemaRegistryDeserializer
+    glueSchemaRegistryDeserializer,
+    encoders
   ).map(new KCLConsumerFS2[F](_))
 
   /** Reads environment variables and system properties to load a
@@ -185,7 +186,7 @@ object KCLCirisFS2 {
     *   Kinesis
     * @param F
     *   [[cats.effect.Async Async]] instance
-    * @param LE
+    * @param encoders
     *   [[kinesis4cats.kcl.RecordProcessor.LogEncoders RecordProcessor.LogEncoders]]
     *   for encoding structured logs
     * @return
@@ -209,10 +210,10 @@ object KCLCirisFS2 {
       taskExecutionListener: Option[TaskExecutionListener] = None,
       metricsFactory: Option[MetricsFactory] = None,
       glueSchemaRegistryDeserializer: Option[GlueSchemaRegistryDeserializer] =
-        None
+        None,
+      encoders: RecordProcessor.LogEncoders = RecordProcessor.LogEncoders.show
   )(implicit
-      F: Async[F],
-      LE: RecordProcessor.LogEncoders
+      F: Async[F]
   ): Resource[F, KCLConsumerFS2.Config[F]] = for {
     autoCommit <- CirisReader
       .readDefaulted[Boolean](
@@ -256,7 +257,8 @@ object KCLCirisFS2 {
       fs2Config,
       processConfig.copy(recordProcessorConfig =
         processConfig.recordProcessorConfig.copy(autoCommit = autoCommit)
-      )
+      ),
+      encoders
     )
 
   } yield config

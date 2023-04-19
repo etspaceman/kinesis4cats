@@ -14,12 +14,14 @@
  * limitations under the License.
  */
 
-package kinesis4cats.producer
+package kinesis4cats
+package producer
 
 import scala.concurrent.duration.FiniteDuration
 
 import cats.Applicative
 import cats.Semigroup
+import cats.Show
 import cats.data.{Ior, NonEmptyList}
 import cats.effect.Async
 import cats.effect.kernel.Ref
@@ -41,19 +43,20 @@ import kinesis4cats.producer.batching.Batcher
   *
   * @param F
   *   [[cats.effect.Async Async]]
-  * @param LE
+  * @param encoders
   *   [[kinesis4cats.producer.Producer.LogEncoders Producer.LogEncoders]]
   * @tparam PutReq
   *   The class that represents a batch put request for the underlying client
   * @tparam PutRes
   *   The class that represents a batch put response for the underlying client
   */
-abstract class Producer[F[_], PutReq, PutRes](implicit
-    F: Async[F],
-    LE: Producer.LogEncoders
+abstract class Producer[F[_], PutReq, PutRes] private[kinesis4cats] (
+    encoders: Producer.LogEncoders
+)(implicit
+    F: Async[F]
 ) {
 
-  import LE._
+  import encoders._
 
   def logger: StructuredLogger[F]
 
@@ -254,11 +257,28 @@ object Producer {
     * @param recordLogEncoder
     * @param finiteDurationEncoder
     */
-  final class LogEncoders(implicit
+  final class LogEncoders(val shardMapLogEncoders: ShardMapCache.LogEncoders)(
+      implicit
       val recordLogEncoder: LogEncoder[Record],
       val finiteDurationEncoder: LogEncoder[FiniteDuration],
       val retryDetailsEncoder: LogEncoder[RetryDetails]
   )
+
+  object LogEncoders {
+    val show = {
+      import kinesis4cats.logging.instances.show._
+
+      implicit val recordShow: Show[Record] = x =>
+        ShowBuilder("Record")
+          .add("data", x.data)
+          .add("partitionKey", x.partitionKey)
+          .add("explicitHashKey", x.explicitHashKey)
+          .build
+
+      new LogEncoders(ShardMapCache.LogEncoders.show)
+
+    }
+  }
 
   /** Configuration for the [[kinesis4cats.producer.Producer Producer]]
     *

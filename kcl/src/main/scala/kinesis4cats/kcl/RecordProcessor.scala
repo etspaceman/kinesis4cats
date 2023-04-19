@@ -14,17 +14,21 @@
  * limitations under the License.
  */
 
-package kinesis4cats.kcl
+package kinesis4cats
+package kcl
 
 import scala.concurrent.duration._
 import scala.jdk.CollectionConverters._
 
+import cats.Show
 import cats.effect._
 import cats.effect.std.Dispatcher
 import cats.effect.syntax.all._
 import cats.syntax.all._
+import com.amazonaws.services.schemaregistry.common.Schema
 import org.typelevel.log4cats.StructuredLogger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
+import software.amazon.awssdk.services.kinesis.model._
 import software.amazon.kinesis.common.StreamIdentifier
 import software.amazon.kinesis.lifecycle.events._
 import software.amazon.kinesis.processor._
@@ -76,10 +80,10 @@ class RecordProcessor[F[_]] private[kinesis4cats] (
     val state: Ref[F, RecordProcessor.State],
     val deferredException: Deferred[F, Throwable],
     logger: StructuredLogger[F],
-    raiseOnError: Boolean
-)(cb: List[CommittableRecord[F]] => F[Unit])(implicit
-    F: Async[F],
+    raiseOnError: Boolean,
     encoders: RecordProcessor.LogEncoders
+)(cb: List[CommittableRecord[F]] => F[Unit])(implicit
+    F: Async[F]
 ) extends ShardRecordProcessor {
 
   import encoders._
@@ -314,10 +318,12 @@ object RecordProcessor {
       config: Config,
       dispatcher: Dispatcher[F],
       deferredException: Deferred[F, Throwable],
-      raiseOnError: Boolean
-  )(cb: List[CommittableRecord[F]] => F[Unit])(implicit
-      F: Async[F],
+      raiseOnError: Boolean,
       encoders: RecordProcessor.LogEncoders
+  )(
+      cb: List[CommittableRecord[F]] => F[Unit]
+  )(implicit
+      F: Async[F]
   ) extends ShardRecordProcessorFactory {
     override def shardRecordProcessor(): ShardRecordProcessor =
       dispatcher.unsafeRunSync(
@@ -334,7 +340,8 @@ object RecordProcessor {
           state,
           deferredException,
           logger,
-          raiseOnError
+          raiseOnError,
+          encoders
         )(cb)
       )
     override def shardRecordProcessor(
@@ -374,19 +381,18 @@ object RecordProcessor {
     def apply[F[_]](
         config: Config,
         deferredException: Deferred[F, Throwable],
-        raiseOnError: Boolean
+        raiseOnError: Boolean,
+        encoders: RecordProcessor.LogEncoders = RecordProcessor.LogEncoders.show
     )(
         cb: List[CommittableRecord[F]] => F[Unit]
-    )(implicit
-        F: Async[F],
-        encoders: RecordProcessor.LogEncoders
-    ): Resource[F, RecordProcessor.Factory[F]] =
+    )(implicit F: Async[F]): Resource[F, RecordProcessor.Factory[F]] =
       Dispatcher.parallel.map { dispatcher =>
         new RecordProcessor.Factory[F](
           config,
           dispatcher,
           deferredException,
-          raiseOnError
+          raiseOnError,
+          encoders
         )(cb)
       }
   }
@@ -403,6 +409,78 @@ object RecordProcessor {
         List[KinesisClientRecord]
       ]
   )
+
+  object LogEncoders {
+    val show: LogEncoders = {
+      import kinesis4cats.logging.instances.show._
+
+      implicit val hashKeyRangeShow: Show[HashKeyRange] = x =>
+        ShowBuilder("HashKeyRange")
+          .add("endingHashKey", x.endingHashKey())
+          .add("startingHashKey", x.startingHashKey())
+          .build
+
+      implicit val childShardShow: Show[ChildShard] = x =>
+        ShowBuilder("ChildShard")
+          .add("hasParentShards", x.hasParentShards())
+          .add("hashKeyRange", x.hashKeyRange())
+          .add("parentShards", x.parentShards())
+          .add("shardId", x.shardId())
+          .build
+
+      implicit val encryptionTypeShow: Show[EncryptionType] = x =>
+        Show[String].show(x.name)
+
+      implicit val schemaShow: Show[Schema] = x =>
+        ShowBuilder("Schema")
+          .add("dataFormat", x.getDataFormat())
+          .add("schemaDefinition", x.getSchemaDefinition())
+          .add("schemaName", x.getSchemaName())
+          .build
+
+      implicit val extendedSequenceNumberShow: Show[ExtendedSequenceNumber] =
+        x =>
+          ShowBuilder("ExtendedSequenceNumber")
+            .add("sequenceNumber", x.sequenceNumber())
+            .add("subSequenceNumber", x.subSequenceNumber())
+            .build
+
+      implicit val initializationInputShow: Show[InitializationInput] = x =>
+        ShowBuilder("InitializationInput")
+          .add("shardId", x.shardId())
+          .add("extendedSequenceNumber", x.extendedSequenceNumber())
+          .add(
+            "pendingCheckpointSequenceNumber",
+            x.pendingCheckpointSequenceNumber()
+          )
+          .build
+
+      implicit val processRecordsInputShow: Show[ProcessRecordsInput] = x =>
+        ShowBuilder("ProcessRecordsInput")
+          .add("cacheEntryTime", x.cacheEntryTime())
+          .add("cacheExitTime", x.cacheExitTime())
+          .add("childShards", x.childShards())
+          .add("isAtShardEnd", x.isAtShardEnd())
+          .add("millisBehindLatest", x.millisBehindLatest())
+          .add("timeSpentInCache", x.timeSpentInCache())
+          .build
+
+      implicit val kinesisClientRecordShow: Show[KinesisClientRecord] = x =>
+        ShowBuilder("KinesisClientRecord")
+          .add("aggregated", x.aggregated())
+          .add("approximateArrivalTimestamp", x.approximateArrivalTimestamp())
+          .add("encryptionType", x.encryptionType())
+          .add("explicitHashKey", x.explicitHashKey())
+          .add("partitionKey", x.partitionKey())
+          .add("schema", x.schema())
+          .add("sequenceNumber", x.sequenceNumber())
+          .add("subSequenceNumber", x.subSequenceNumber())
+          .add("data", x.data())
+          .build
+
+      new RecordProcessor.LogEncoders
+    }
+  }
 
   /** Tracks the [[kinesis4cats.kcl.RecordProcessor RecordProcessor]] current
     * state.

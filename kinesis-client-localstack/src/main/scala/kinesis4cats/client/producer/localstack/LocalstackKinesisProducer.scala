@@ -43,12 +43,8 @@ object LocalstackKinesisProducer {
     *   [[kinesis4cats.localstack.LocalstackConfig LocalstackConfig]]
     * @param F
     *   F with an [[cats.effect.Async Async]] instance
-    * @param LE
-    *   [[kinesis4cats.client.KinesisClient.LogEncoders LogEncoders]]
-    * @param SLE
-    *   [[kinesis4cats.producer.ShardMapCache.LogEncoders ShardMapCache.LogEncoders]]
-    * @param PLE
-    *   [[kinesis4cats.producer.Producer.LogEncoders Producer.LogEncoders]]
+    * @param encoders
+    *   [[kinesis4cats.client.producer.KinesisProducer.LogEncoders KinesisProducer.LogEncoders]].
     * @return
     *   [[cats.effect.Resource Resource]] of
     *   [[kinesis4cats.client.producer.KinesisProducer KinesisProducer]]
@@ -60,28 +56,29 @@ object LocalstackKinesisProducer {
           KinesisClient[F],
           StreamNameOrArn,
           Async[F]
-      ) => F[Either[ShardMapCache.Error, ShardMap]]
-  )(implicit
-      F: Async[F],
-      LE: KinesisClient.LogEncoders,
-      SLE: ShardMapCache.LogEncoders,
-      PLE: Producer.LogEncoders
-  ): Resource[F, KinesisProducer[F]] = AwsClients
+      ) => F[Either[ShardMapCache.Error, ShardMap]],
+      encoders: KinesisProducer.LogEncoders
+  )(implicit F: Async[F]): Resource[F, KinesisProducer[F]] = AwsClients
     .kinesisClientResource[F](config)
     .flatMap(_underlying =>
       for {
         logger <- Slf4jLogger.create[F].toResource
-        underlying <- KinesisClient[F](_underlying)
+        underlying <- KinesisClient[F](
+          _underlying,
+          encoders.kinesisClientLogEncoders
+        )
         shardMapCache <- ShardMapCache[F](
           producerConfig.shardMapCacheConfig,
           shardMapF(underlying, producerConfig.streamNameOrArn, F),
-          Slf4jLogger.create[F].widen
+          Slf4jLogger.create[F].widen,
+          encoders.producerLogEncoders.shardMapLogEncoders
         )
         producer = new KinesisProducer[F](
           logger,
           shardMapCache,
           producerConfig,
-          underlying
+          underlying,
+          encoders.producerLogEncoders
         )
       } yield producer
     )
@@ -100,12 +97,8 @@ object LocalstackKinesisProducer {
     *   Producer.Config.default
     * @param F
     *   F with an [[cats.effect.Async Async]] instance
-    * @param LE
-    *   [[kinesis4cats.client.KinesisClient.LogEncoders LogEncoders]]
-    * @param SLE
-    *   [[kinesis4cats.producer.ShardMapCache.LogEncoders ShardMapCache.LogEncoders]]
-    * @param PLE
-    *   [[kinesis4cats.producer.Producer.LogEncoders Producer.LogEncoders]]
+    * @param encoders
+    *   [[kinesis4cats.client.producer.KinesisProducer.LogEncoders KinesisProducer.LogEncoders]].
     * @return
     *   [[cats.effect.Resource Resource]] of
     *   [[kinesis4cats.client.producer.KinesisProducer KinesisProducer]]
@@ -124,13 +117,16 @@ object LocalstackKinesisProducer {
           client: KinesisClient[F],
           streamNameOrArn: StreamNameOrArn,
           f: Async[F]
-      ) => KinesisProducer.getShardMap(client, streamNameOrArn)(f)
-  )(implicit
-      F: Async[F],
-      LE: KinesisClient.LogEncoders,
-      SLE: ShardMapCache.LogEncoders,
-      PLE: Producer.LogEncoders
-  ): Resource[F, KinesisProducer[F]] = LocalstackConfig
+      ) => KinesisProducer.getShardMap(client, streamNameOrArn)(f),
+      encoders: KinesisProducer.LogEncoders = KinesisProducer.LogEncoders.show
+  )(implicit F: Async[F]): Resource[F, KinesisProducer[F]] = LocalstackConfig
     .resource[F](prefix)
-    .flatMap(resource[F](producerConfig(streamName, F), _, shardMapF))
+    .flatMap(
+      resource[F](
+        producerConfig(streamName, F),
+        _,
+        shardMapF,
+        encoders
+      )
+    )
 }

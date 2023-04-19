@@ -24,7 +24,6 @@ import software.amazon.kinesis.processor.SingleStreamTracker
 import kinesis4cats.Utils
 import kinesis4cats.ciris.CirisReader
 import kinesis4cats.kcl.localstack.LocalstackKCLConsumer
-import kinesis4cats.kcl.logging.instances.show._
 
 // $COVERAGE-OFF$
 object TestKCLService extends ResourceApp.Forever {

@@ -17,7 +17,6 @@ import software.amazon.awssdk.services.kinesis.KinesisAsyncClient
 import software.amazon.awssdk.services.kinesis.model._
 
 import kinesis4cats.client.KinesisClient
-import kinesis4cats.client.logging.instances.show._
 
 object MyApp extends IOApp {
     override def run(args: List[String]) = 
@@ -57,22 +56,17 @@ This module provides an implementation of that interface, backed by the @:source
 
 
 ```scala mdoc:compile-only
-import scala.concurrent.duration._
-
 import cats.data.NonEmptyList
 import cats.effect._
-import cats.syntax.all._
 import software.amazon.awssdk.services.kinesis.KinesisAsyncClient
 
-import kinesis4cats.client.logging.instances.show._
 import kinesis4cats.client.producer.KinesisProducer
-import kinesis4cats.producer.logging.instances.show._
 import kinesis4cats.producer._
 import kinesis4cats.models.StreamNameOrArn
 
 object MyApp extends IOApp {
     override def run(args: List[String]) = 
-        KinesisProducer[IO](
+        KinesisProducer.instance[IO](
             Producer.Config.default(StreamNameOrArn.Name("my-stream")), 
             KinesisAsyncClient.builder().build()
         ).use(producer =>
@@ -97,16 +91,14 @@ This package provides a [KPL-like](https://github.com/awslabs/amazon-kinesis-pro
 import cats.effect._
 import software.amazon.awssdk.services.kinesis.KinesisAsyncClient
 
-import kinesis4cats.client.logging.instances.show._
 import kinesis4cats.client.producer.fs2.FS2KinesisProducer
-import kinesis4cats.producer.logging.instances.show._
 import kinesis4cats.producer._
 import kinesis4cats.producer.fs2._
 import kinesis4cats.models.StreamNameOrArn
 
 object MyApp extends IOApp {
     override def run(args: List[String]) = 
-        FS2KinesisProducer[IO](
+        FS2KinesisProducer.instance[IO](
             FS2Producer.Config.default(StreamNameOrArn.Name("my-stream")), 
             KinesisAsyncClient.builder().build()
         ).use(producer =>
