@@ -345,30 +345,40 @@ class KinesisClient[F[_]] private[kinesis4cats] (
 
 object KinesisClient {
 
-  /** Constructor for the KinesisClient, as a managed
-    * [[cats.effect.Resource Resource]]
-    *
-    * @param client
-    *   [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/kinesis/KinesisAsyncClient.html KinesisAsyncClient]]
-    * @param F
-    *   F with an [[cats.effect.Async Async]] instance
-    * @param encoders
-    *   [[kinesis4cats.client.KinesisClient.LogEncoders LogEncoders]]. Default
-    *   to show instances
-    * @return
-    *   [[cats.effect.Resource Resource]] containing a
-    *   [[kinesis4cats.client.KinesisClient]]
-    */
-  def apply[F[_]](
-      client: KinesisAsyncClient,
-      encoders: LogEncoders = LogEncoders.show
-  )(implicit
-      F: Async[F]
-  ): Resource[F, KinesisClient[F]] = for {
-    clientResource <- Resource.fromAutoCloseable(F.pure(client))
-    logger <- Slf4jLogger.create[F].toResource
-    dispatcher <- Dispatcher.parallel[F]
-  } yield new KinesisClient[F](clientResource, logger, dispatcher, encoders)
+  final case class Builder[F[_]] private (
+      clientResource: Resource[F, KinesisAsyncClient],
+      encoders: LogEncoders,
+      logger: StructuredLogger[F]
+  )(implicit F: Async[F]) {
+    def withClient(
+        client: => KinesisAsyncClient,
+        managed: Boolean = true
+    ): Builder[F] = copy(
+      clientResource =
+        if (managed) Resource.fromAutoCloseable(F.delay(client))
+        else Resource.pure(client)
+    )
+    def withLogEncoders(encoders: LogEncoders): Builder[F] =
+      copy(encoders = encoders)
+    def withLogger(logger: StructuredLogger[F]): Builder[F] =
+      copy(logger = logger)
+
+    def build: Resource[F, KinesisClient[F]] = for {
+      client <- clientResource
+      dispatcher <- Dispatcher.parallel[F]
+    } yield new KinesisClient[F](client, logger, dispatcher, encoders)
+  }
+
+  object Builder {
+    def default[F[_]](implicit F: Async[F]): Builder[F] = Builder[F](
+      Resource.fromAutoCloseable(F.delay(KinesisAsyncClient.builder().build())),
+      LogEncoders.show,
+      Slf4jLogger.getLogger
+    )
+
+    @annotation.unused
+    private def unapply[F[_]](builder: Builder[F]): Unit = ()
+  }
 
   /** Helper class containing required
     * [[kinesis4cats.logging.LogEncoder LogEncoders]] for the

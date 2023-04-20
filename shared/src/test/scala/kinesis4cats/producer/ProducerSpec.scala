@@ -179,23 +179,24 @@ class MockProducer(
 object MockProducer {
   def apply(): Resource[IO, MockProducer] = for {
     logger <- Resource.pure(NoOpLogger[IO])
-    shardMapCache <- ShardMapCache[IO](
-      ShardMapCache.Config.default,
-      IO.pure(
-        Right(
-          ShardMap(
-            List(
-              ShardMapRecord(
-                ShardId("1"),
-                HashKeyRange(BigInt("1"), BigInt("100"))
-              )
-            ),
-            Instant.now()
+    shardMapCache <- ShardMapCache.Builder
+      .default[IO](
+        IO.pure(
+          Right(
+            ShardMap(
+              List(
+                ShardMapRecord(
+                  ShardId("1"),
+                  HashKeyRange(BigInt("1"), BigInt("100"))
+                )
+              ),
+              Instant.now()
+            )
           )
-        )
-      ),
-      IO.pure(logger)
-    )
+        ),
+        logger
+      )
+      .build
     defaultConfig = Producer.Config
       .default[IO](StreamNameOrArn.Name("foo"))
       .copy(retryPolicy = RetryPolicies.limitRetries[IO](5))

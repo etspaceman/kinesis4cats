@@ -18,15 +18,15 @@ package kinesis4cats.smithy4s.client
 package producer
 package localstack
 
-import cats.Applicative
 import cats.effect._
-import cats.effect.syntax.all._
+import cats.syntax.all._
 import org.http4s.client.Client
 import org.typelevel.log4cats.StructuredLogger
 import org.typelevel.log4cats.noop.NoOpLogger
 import smithy4s.aws.kernel.AwsRegion
 
 import kinesis4cats.localstack.LocalstackConfig
+import kinesis4cats.localstack.TestStreamConfig
 import kinesis4cats.models.StreamNameOrArn
 import kinesis4cats.producer.Producer
 import kinesis4cats.producer.ShardMap
@@ -39,135 +39,122 @@ import kinesis4cats.smithy4s.client.localstack.LocalstackKinesisClient
   */
 object LocalstackKinesisProducer {
 
-  /** Creates a [[cats.effect.Resource Resource]] of a
-    * [[kinesis4cats.smithy4s.client.producer.KinesisProducer KinesisProducer]]
-    * that is compatible with Localstack
-    *
-    * @param client
-    *   [[https://http4s.org/v0.23/docs/client.html Client]]
-    * @param region
-    *   [[https://github.com/disneystreaming/smithy4s/blob/series/0.17/modules/aws-kernel/src/smithy4s/aws/AwsRegion.scala AwsRegion]]
-    * @param producerConfig
-    *   [[kinesis4cats.producer.Producer.Config Producer.Config]]
-    * @param config
-    *   [[kinesis4cats.localstack.LocalstackConfig LocalstackConfig]]
-    * @param loggerF
-    *   [[cats.effect.Async Async]] => [[cats.effect.Async Async]] of
-    *   [[https://github.com/typelevel/log4cats/blob/main/core/shared/src/main/scala/org/typelevel/log4cats/StructuredLogger.scala StructuredLogger]].
-    * @param F
-    *   [[cats.effect.Async Async]]
-    * @return
-    *   [[https://github.com/disneystreaming/smithy4s/blob/series/0.17/modules/aws-kernel/src/smithy4s/aws/AwsEnvironment.scala AwsEnvironment]]
-    */
-  def resource[F[_]](
+  final class LogEncoders[F[_]](
+      val kinesisProducerEncoders: KinesisProducer.LogEncoders[F],
+      val localstackConfigEncoders: LocalstackConfig.LogEncoders
+  )
+
+  object LogEncoders {
+    def show[F[_]]: LogEncoders[F] = new LogEncoders(
+      KinesisProducer.LogEncoders.show[F],
+      LocalstackConfig.LogEncoders.show
+    )
+  }
+
+  final case class Builder[F[_]] private (
       client: Client[F],
-      region: F[AwsRegion],
-      producerConfig: Producer.Config[F],
-      config: LocalstackConfig,
-      loggerF: Async[F] => F[StructuredLogger[F]],
+      region: AwsRegion,
+      localstackConfig: LocalstackConfig,
+      config: Producer.Config[F],
+      logger: StructuredLogger[F],
+      encoders: LogEncoders[F],
+      logRequestsResponses: Boolean,
+      streamsToCreate: List[TestStreamConfig[F]],
       shardMapF: (
           KinesisClient[F],
-          StreamNameOrArn,
-          Async[F]
-      ) => F[Either[ShardMapCache.Error, ShardMap]],
-      encoders: Producer.LogEncoders,
-      shardMapEncoders: ShardMapCache.LogEncoders,
-      kinesisClientEncoders: KinesisClient.LogEncoders[F],
-      localstackConfigEncoders: LocalstackConfig.LogEncoders
-  )(implicit F: Async[F]): Resource[F, KinesisProducer[F]] = for {
-    logger <- loggerF(F).toResource
-    underlying <- LocalstackKinesisClient
-      .clientResource[F](
+          StreamNameOrArn
+      ) => F[Either[ShardMapCache.Error, ShardMap]]
+  )(implicit F: Async[F]) {
+
+    def withLocalstackConfig(localstackConfig: LocalstackConfig): Builder[F] =
+      copy(localstackConfig = localstackConfig)
+    def withConfig(config: Producer.Config[F]): Builder[F] = copy(
+      config = config
+    )
+    def withClient(client: Client[F]): Builder[F] = copy(client = client)
+    def withRegion(region: AwsRegion): Builder[F] = copy(region = region)
+    def withLogger(logger: StructuredLogger[F]): Builder[F] =
+      copy(logger = logger)
+    def withLogEncoders(encoders: LogEncoders[F]): Builder[F] =
+      copy(encoders = encoders)
+    def withLogRequestsResponses(logRequestsResponses: Boolean): Builder[F] =
+      copy(logRequestsResponses = logRequestsResponses)
+    def enableLogging: Builder[F] = withLogRequestsResponses(true)
+    def disableLogging: Builder[F] = withLogRequestsResponses(false)
+    def withStreamsToCreate(streamsToCreate: List[TestStreamConfig[F]]) =
+      copy(streamsToCreate = streamsToCreate)
+    def withShardMapF(
+        shardMapF: (
+            KinesisClient[F],
+            StreamNameOrArn
+        ) => F[Either[ShardMapCache.Error, ShardMap]]
+    ): Builder[F] = copy(
+      shardMapF = shardMapF
+    )
+
+    def build: Resource[F, KinesisProducer[F]] = for {
+      underlying <- LocalstackKinesisClient.Builder
+        .default[F](
+          client,
+          region,
+          localstackConfig
+        )
+        .withLogEncoders(
+          new LocalstackKinesisClient.LogEncoders(
+            encoders.kinesisProducerEncoders.kinesisClientLogEncoders,
+            encoders.localstackConfigEncoders
+          )
+        )
+        .withLogger(logger)
+        .withLogRequestsResponses(logRequestsResponses)
+        .withStreamsToCreate(streamsToCreate)
+        .build
+      shardMapCache <- ShardMapCache.Builder
+        .default[F](shardMapF(underlying, config.streamNameOrArn), logger)
+        .withLogEncoders(
+          encoders.kinesisProducerEncoders.producerLogEncoders.shardMapLogEncoders
+        )
+        .build
+    } yield new KinesisProducer[F](
+      logger,
+      shardMapCache,
+      config,
+      underlying,
+      encoders.kinesisProducerEncoders.producerLogEncoders
+    )
+  }
+
+  object Builder {
+    def default[F[_]](
+        client: Client[F],
+        region: AwsRegion,
+        streamNameOrArn: StreamNameOrArn,
+        prefix: Option[String] = None
+    )(implicit
+        F: Async[F]
+    ): F[Builder[F]] = LocalstackConfig
+      .load(prefix)
+      .map(default(client, region, streamNameOrArn, _))
+
+    def default[F[_]](
+        client: Client[F],
+        region: AwsRegion,
+        streamNameOrArn: StreamNameOrArn,
+        config: LocalstackConfig
+    )(implicit
+        F: Async[F]
+    ): Builder[F] =
+      Builder[F](
         client,
         region,
         config,
-        loggerF,
-        kinesisClientEncoders,
-        localstackConfigEncoders
+        Producer.Config.default[F](streamNameOrArn),
+        NoOpLogger[F],
+        LogEncoders.show,
+        true,
+        Nil,
+        (client: KinesisClient[F], snoa: StreamNameOrArn) =>
+          KinesisProducer.getShardMap(client, snoa)
       )
-    shardMapCache <- ShardMapCache[F](
-      producerConfig.shardMapCacheConfig,
-      shardMapF(underlying, producerConfig.streamNameOrArn, F),
-      loggerF(F),
-      shardMapEncoders
-    )
-    producer = new KinesisProducer[F](
-      logger,
-      shardMapCache,
-      producerConfig,
-      underlying,
-      encoders
-    )
-  } yield producer
-
-  /** Creates a [[cats.effect.Resource Resource]] of a
-    * [[kinesis4cats.smithy4s.client.producer.KinesisProducer KinesisProducer]]
-    * that is compatible with Localstack
-    *
-    * @param client
-    *   [[https://http4s.org/v0.23/docs/client.html Client]]
-    * @param streamName
-    *   Name of stream that this producer will produce to
-    * @param region
-    *   [[https://github.com/disneystreaming/smithy4s/blob/series/0.17/modules/aws-kernel/src/smithy4s/aws/AwsRegion.scala AwsRegion]].
-    * @param prefix
-    *   Optional string prefix to apply when loading configuration. Default to
-    *   None
-    * @param producerConfig
-    *   String => [[kinesis4cats.producer.Producer.Config Producer.Config]]
-    *   function that creates configuration given a stream name. Defaults to
-    *   Producer.Config.default
-    * @param loggerF
-    *   [[cats.effect.Async Async]] => [[cats.effect.Async Async]] of
-    *   [[https://github.com/typelevel/log4cats/blob/main/core/shared/src/main/scala/org/typelevel/log4cats/StructuredLogger.scala StructuredLogger]].
-    *   Default is
-    *   [[https://github.com/typelevel/log4cats/blob/main/noop/shared/src/main/scala/org/typelevel/log4cats/noop/NoOpLogger.scala NoOpLogger]]
-    * @param F
-    *   [[cats.effect.Async Async]]
-    * @return
-    *   [[https://github.com/disneystreaming/smithy4s/blob/series/0.17/modules/aws-kernel/src/smithy4s/aws/AwsEnvironment.scala AwsEnvironment]]
-    */
-  def resource[F[_]](
-      client: Client[F],
-      streamName: String,
-      region: F[AwsRegion],
-      prefix: Option[String] = None,
-      producerConfig: (String, Applicative[F]) => Producer.Config[F] =
-        (streamName: String, f: Applicative[F]) =>
-          Producer.Config
-            .default[F](StreamNameOrArn.Name(streamName))(f),
-      loggerF: Async[F] => F[StructuredLogger[F]] = (f: Async[F]) =>
-        f.pure(NoOpLogger[F](f)),
-      shardMapF: (
-          KinesisClient[F],
-          StreamNameOrArn,
-          Async[F]
-      ) => F[Either[ShardMapCache.Error, ShardMap]] = (
-          client: KinesisClient[F],
-          streamNameOrArn: StreamNameOrArn,
-          f: Async[F]
-      ) => KinesisProducer.getShardMap(client, streamNameOrArn)(f),
-      encoders: Producer.LogEncoders = Producer.LogEncoders.show,
-      shardMapEncoders: ShardMapCache.LogEncoders =
-        ShardMapCache.LogEncoders.show,
-      kinesisClientEncoders: KinesisClient.LogEncoders[F] =
-        KinesisClient.LogEncoders.show[F],
-      localstackConfigEncoders: LocalstackConfig.LogEncoders =
-        LocalstackConfig.LogEncoders.show
-  )(implicit F: Async[F]): Resource[F, KinesisProducer[F]] = LocalstackConfig
-    .resource[F](prefix)
-    .flatMap(
-      resource[F](
-        client,
-        region,
-        producerConfig(streamName, F),
-        _,
-        loggerF,
-        shardMapF,
-        encoders,
-        shardMapEncoders,
-        kinesisClientEncoders,
-        localstackConfigEncoders
-      )
-    )
+  }
 }

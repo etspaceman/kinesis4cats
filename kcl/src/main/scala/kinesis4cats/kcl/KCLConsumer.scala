@@ -272,7 +272,7 @@ object KCLConsumer {
     *   [[https://github.com/awslabs/amazon-kinesis-client/issues/10 issue]] for
     *   more information.
     */
-  final case class Config[F[_]] private (
+  final case class Config[F[_]] private[kinesis4cats] (
       checkpointConfig: CheckpointConfig,
       coordinatorConfig: CoordinatorConfig,
       leaseManagementConfig: LeaseManagementConfig,

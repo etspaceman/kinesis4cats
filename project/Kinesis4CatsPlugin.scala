@@ -236,7 +236,7 @@ object Kinesis4CatsPlugin extends AutoPlugin {
           "-source:3.0-migration"
         )
       else
-        Seq("-language:_", "-Wconf:src=src_managed/.*:silent")
+        Seq("-language:_", "-Wconf:src=src_managed/.*:silent", "-Xsource:3")
     },
     scalacOptions -= "-Ykind-projector:underscores",
     ThisBuild / semanticdbEnabled := true,

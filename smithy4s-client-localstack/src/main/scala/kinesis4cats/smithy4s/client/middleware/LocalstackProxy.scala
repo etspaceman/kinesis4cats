@@ -27,6 +27,7 @@ import org.typelevel.log4cats.StructuredLogger
 
 import kinesis4cats.localstack.LocalstackConfig
 import kinesis4cats.logging.LogContext
+import kinesis4cats.smithy4s.client.localstack.LocalstackKinesisClient
 
 /** Middleware for [[https://http4s.org/v0.23/docs/client.html Clients]] that
   * proxies request against the configured Localstack environment
@@ -55,11 +56,10 @@ object LocalstackProxy {
       config: LocalstackConfig,
       req: Request[F],
       logger: StructuredLogger[F],
-      kinesisClientEncoders: KinesisClient.LogEncoders[F],
-      localstackConfigEncoders: LocalstackConfig.LogEncoders
+      encoders: LocalstackKinesisClient.LogEncoders[F]
   )(implicit F: Async[F]): F[Request[F]] = {
-    import kinesisClientEncoders._
-    import localstackConfigEncoders._
+    import encoders.kinesisClientEncoders._
+    import encoders.localstackConfigEncoders._
     val newReq = req
       .withUri(
         req.uri.copy(authority =
@@ -101,8 +101,7 @@ object LocalstackProxy {
   def apply[F[_]](
       config: LocalstackConfig,
       logger: StructuredLogger[F],
-      kinesisClientEncoders: KinesisClient.LogEncoders[F],
-      localstackConfigEncoders: LocalstackConfig.LogEncoders
+      encoders: LocalstackKinesisClient.LogEncoders[F]
   )(
       client: Client[F]
   )(implicit
@@ -113,8 +112,7 @@ object LocalstackProxy {
         config,
         req,
         logger,
-        kinesisClientEncoders,
-        localstackConfigEncoders
+        encoders
       ).toResource
       res <- client.run(proxied)
     } yield res
@@ -142,10 +140,8 @@ object LocalstackProxy {
   def apply[F[_]](
       logger: StructuredLogger[F],
       prefix: Option[String] = None,
-      kinesisClientEncoders: KinesisClient.LogEncoders[F] =
-        KinesisClient.LogEncoders.show[F],
-      localstackConfigEncoders: LocalstackConfig.LogEncoders =
-        LocalstackConfig.LogEncoders.show
+      encoders: LocalstackKinesisClient.LogEncoders[F] =
+        LocalstackKinesisClient.LogEncoders.show[F]
   )(
       client: Client[F]
   )(implicit
@@ -157,8 +153,7 @@ object LocalstackProxy {
         config,
         req,
         logger,
-        kinesisClientEncoders,
-        localstackConfigEncoders
+        encoders
       ).toResource
       res <- client.run(proxied)
     } yield res

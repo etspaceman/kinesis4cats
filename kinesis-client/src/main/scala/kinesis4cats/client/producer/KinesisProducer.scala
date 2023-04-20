@@ -24,7 +24,6 @@ import java.time.Instant
 import cats.data.NonEmptyList
 import cats.effect.Resource
 import cats.effect._
-import cats.effect.syntax.all._
 import cats.syntax.all._
 import org.typelevel.log4cats.StructuredLogger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
@@ -107,6 +106,59 @@ final class KinesisProducer[F[_]] private[kinesis4cats] (
 
 object KinesisProducer {
 
+  final case class Builder[F[_]] private (
+      config: Producer.Config[F],
+      clientResource: Resource[F, KinesisClient[F]],
+      encoders: LogEncoders,
+      logger: StructuredLogger[F]
+  )(implicit F: Async[F]) {
+    def withConfig(config: Producer.Config[F]): Builder[F] = copy(
+      config = config
+    )
+    def withClient(
+        client: => KinesisAsyncClient,
+        managed: Boolean = true
+    ): Builder[F] = copy(
+      clientResource =
+        KinesisClient.Builder.default.withClient(client, managed).build
+    )
+    def withClient(client: KinesisClient[F]): Builder[F] = copy(
+      clientResource = Resource.pure(client)
+    )
+    def withLogEncoders(encoders: LogEncoders): Builder[F] =
+      copy(encoders = encoders)
+    def withLogger(logger: StructuredLogger[F]): Builder[F] =
+      copy(logger = logger)
+
+    def build: Resource[F, KinesisProducer[F]] = for {
+      client <- clientResource
+      shardMapCache <- ShardMapCache.Builder
+        .default(getShardMap(client, config.streamNameOrArn), logger)
+        .withLogEncoders(encoders.producerLogEncoders.shardMapLogEncoders)
+        .build
+    } yield new KinesisProducer[F](
+      logger,
+      shardMapCache,
+      config,
+      client,
+      encoders.producerLogEncoders
+    )
+  }
+
+  object Builder {
+    def default[F[_]](
+        streamNameOrArn: models.StreamNameOrArn
+    )(implicit F: Async[F]): Builder[F] = Builder[F](
+      Producer.Config.default(streamNameOrArn),
+      KinesisClient.Builder.default.build,
+      LogEncoders.show,
+      Slf4jLogger.getLogger
+    )
+
+    @annotation.unused
+    private def unapply[F[_]](builder: Builder[F]): Unit = ()
+  }
+
   final class LogEncoders(
       val kinesisClientLogEncoders: KinesisClient.LogEncoders,
       val producerLogEncoders: Producer.LogEncoders
@@ -165,71 +217,4 @@ object KinesisProducer {
             )
           )
       )
-
-  /** Basic constructor for the
-    * [[kinesis4cats.client.producer.KinesisProducer KinesisProducer]]
-    *
-    * @param config
-    *   [[kinesis4cats.producer.Producer.Config Producer.Config]]
-    * @param _underlying
-    *   [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/kinesis/KinesisAsyncClient.html KinesisAsyncClient]]
-    *   instance
-    * @param F
-    *   [[cats.effect.Async Async]]
-    * @param encoders
-    *   [[kinesis4cats.client.producer.KinesisProducer.LogEncoders KinesisProducer.LogEncoders]].
-    *   Default to show instances
-    * @return
-    *   [[cats.effect.Resource Resource]] of
-    *   [[kinesis4cats.client.producer.KinesisProducer KinesisProducer]]
-    */
-  def instance[F[_]](
-      config: Producer.Config[F],
-      _underlying: KinesisAsyncClient,
-      encoders: LogEncoders = LogEncoders.show
-  )(implicit
-      F: Async[F]
-  ): Resource[F, KinesisProducer[F]] =
-    KinesisClient[F](_underlying, encoders.kinesisClientLogEncoders).flatMap(
-      apply(config, _, encoders)
-    )
-
-  /** Basic constructor for the
-    * [[kinesis4cats.client.producer.KinesisProducer KinesisProducer]]
-    *
-    * @param config
-    *   [[kinesis4cats.producer.Producer.Config Producer.Config]]
-    * @param underlying
-    *   [[kinesis4cats.client.KinesisClient KinesisClient]] instance
-    * @param F
-    *   [[cats.effect.Async Async]]
-    * @param encoders
-    *   [[kinesis4cats.producer.Producer.LogEncoders Producer.LogEncoders]].
-    *   Default to show instances
-    * @return
-    *   [[cats.effect.Resource Resource]] of
-    *   [[kinesis4cats.client.producer.KinesisProducer KinesisProducer]]
-    */
-  def apply[F[_]](
-      config: Producer.Config[F],
-      underlying: KinesisClient[F],
-      encoders: LogEncoders = LogEncoders.show
-  )(implicit
-      F: Async[F]
-  ): Resource[F, KinesisProducer[F]] = for {
-    logger <- Slf4jLogger.create[F].toResource
-    shardMapCache <- ShardMapCache[F](
-      config.shardMapCacheConfig,
-      getShardMap(underlying, config.streamNameOrArn),
-      Slf4jLogger.create[F].widen,
-      encoders.producerLogEncoders.shardMapLogEncoders
-    )
-    producer = new KinesisProducer[F](
-      logger,
-      shardMapCache,
-      config,
-      underlying,
-      encoders.producerLogEncoders
-    )
-  } yield producer
 }

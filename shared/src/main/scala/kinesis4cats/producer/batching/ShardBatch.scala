@@ -36,7 +36,7 @@ import kinesis4cats.models.ShardId
   * @param config
   *   [[kinesis4cats.producer.batching.Batcher.Config Batcher.Config]]
   */
-private[kinesis4cats] final case class ShardBatch private (
+private[kinesis4cats] final case class ShardBatch private[kinesis4cats] (
     shardId: ShardId,
     records: NonEmptyList[Record],
     count: Int,

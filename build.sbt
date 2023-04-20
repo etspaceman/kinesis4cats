@@ -3,7 +3,8 @@ import laika.rewrite.link._
 
 lazy val compat = projectMatrix
   .settings(
-    description := "Code to maintain compatability across major scala versions"
+    description := "Code to maintain compatability across major scala versions",
+    scalacOptions -= "-Xsource:3"
   )
   .jvmPlatform(allScalaVersions)
   .nativePlatform(allScalaVersions)

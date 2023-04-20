@@ -20,7 +20,6 @@ package client
 import java.util.concurrent.CompletableFuture
 
 import cats.Show
-import cats.effect.syntax.all._
 import cats.effect.{Async, Resource}
 import cats.syntax.all._
 import org.typelevel.log4cats.StructuredLogger
@@ -101,29 +100,40 @@ class CloudWatchClient[F[_]] private[kinesis4cats] (
 
 object CloudWatchClient {
 
-  /** Constructor for the CloudWatchClient, as a managed
-    * [[cats.effect.Resource Resource]]
-    *
-    * @param client
-    *   [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/kinesis/CloudWatchAsyncClient.html CloudWatchAsyncClient]]
-    * @param F
-    *   F with an [[cats.effect.Async Async]] instance
-    * @param encoders
-    *   [[kinesis4cats.client.CloudWatchClient.LogEncoders LogEncoders]].
-    *   Defaults to show instances
-    * @return
-    *   [[cats.effect.Resource Resource]] containing a
-    *   [[kinesis4cats.client.CloudWatchClient]]
-    */
-  def apply[F[_]](
-      client: CloudWatchAsyncClient,
-      encoders: CloudWatchClient.LogEncoders = CloudWatchClient.LogEncoders.show
-  )(implicit
-      F: Async[F]
-  ): Resource[F, CloudWatchClient[F]] = for {
-    clientResource <- Resource.fromAutoCloseable(F.pure(client))
-    logger <- Slf4jLogger.create[F].toResource
-  } yield new CloudWatchClient[F](clientResource, logger, encoders)
+  final case class Builder[F[_]] private (
+      clientResource: Resource[F, CloudWatchAsyncClient],
+      encoders: LogEncoders,
+      logger: StructuredLogger[F]
+  )(implicit F: Async[F]) {
+    def withClient(
+        client: => CloudWatchAsyncClient,
+        managed: Boolean = true
+    ): Builder[F] = copy(
+      clientResource =
+        if (managed) Resource.fromAutoCloseable(F.delay(client))
+        else Resource.pure(client)
+    )
+    def withLogEncoders(encoders: LogEncoders): Builder[F] =
+      copy(encoders = encoders)
+    def withLogger(logger: StructuredLogger[F]): Builder[F] =
+      copy(logger = logger)
+
+    def build: Resource[F, CloudWatchClient[F]] =
+      clientResource.map(new CloudWatchClient[F](_, logger, encoders))
+  }
+
+  object Builder {
+    def default[F[_]](implicit F: Async[F]): Builder[F] = Builder[F](
+      Resource.fromAutoCloseable(
+        F.delay(CloudWatchAsyncClient.builder().build())
+      ),
+      LogEncoders.show,
+      Slf4jLogger.getLogger
+    )
+
+    @annotation.unused
+    private def unapply[F[_]](builder: Builder[F]): Unit = ()
+  }
 
   /** Helper class containing required
     * [[kinesis4cats.logging.LogEncoder LogEncoders]] for the

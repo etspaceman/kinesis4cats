@@ -24,7 +24,6 @@ import java.util.concurrent.CompletableFuture
 
 import cats.Eval
 import cats.Show
-import cats.effect.syntax.all._
 import cats.effect.{Async, Resource}
 import cats.syntax.all._
 import org.typelevel.log4cats.StructuredLogger
@@ -134,27 +133,40 @@ class DynamoClient[F[_]] private[kinesis4cats] (
 
 object DynamoClient {
 
-  /** Constructor for the DynamoClient, as a managed
-    * [[cats.effect.Resource Resource]]
-    *
-    * @param client
-    *   [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/kinesis/DynamoDbAsyncClient.html DynamoDbAsyncClient]]
-    * @param F
-    *   F with an [[cats.effect.Async Async]] instance
-    * @param encoders
-    *   [[kinesis4cats.client.DynamoClient.LogEncoders LogEncoders]]. Default to
-    *   show instances
-    * @return
-    *   [[cats.effect.Resource Resource]] containing a
-    *   [[kinesis4cats.client.DynamoClient]]
-    */
-  def apply[F[_]](
-      client: DynamoDbAsyncClient,
-      encoders: LogEncoders = LogEncoders.show
-  )(implicit F: Async[F]): Resource[F, DynamoClient[F]] = for {
-    clientResource <- Resource.fromAutoCloseable(F.pure(client))
-    logger <- Slf4jLogger.create[F].toResource
-  } yield new DynamoClient[F](clientResource, logger, encoders)
+  final case class Builder[F[_]] private (
+      clientResource: Resource[F, DynamoDbAsyncClient],
+      encoders: LogEncoders,
+      logger: StructuredLogger[F]
+  )(implicit F: Async[F]) {
+    def withClient(
+        client: => DynamoDbAsyncClient,
+        managed: Boolean = true
+    ): Builder[F] = copy(
+      clientResource =
+        if (managed) Resource.fromAutoCloseable(F.delay(client))
+        else Resource.pure(client)
+    )
+    def withLogEncoders(encoders: LogEncoders): Builder[F] =
+      copy(encoders = encoders)
+    def withLogger(logger: StructuredLogger[F]): Builder[F] =
+      copy(logger = logger)
+
+    def build: Resource[F, DynamoClient[F]] =
+      clientResource.map(new DynamoClient[F](_, logger, encoders))
+  }
+
+  object Builder {
+    def default[F[_]](implicit F: Async[F]): Builder[F] = Builder[F](
+      Resource.fromAutoCloseable(
+        F.delay(DynamoDbAsyncClient.builder().build())
+      ),
+      LogEncoders.show,
+      Slf4jLogger.getLogger
+    )
+
+    @annotation.unused
+    private def unapply[F[_]](builder: Builder[F]): Unit = ()
+  }
 
   /** Helper class containing required
     * [[kinesis4cats.logging.LogEncoder LogEncoders]] for the

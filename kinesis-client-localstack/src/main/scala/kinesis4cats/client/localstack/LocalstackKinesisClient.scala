@@ -30,6 +30,10 @@ import kinesis4cats.localstack.aws.v2.AwsClients
 
 object LocalstackKinesisClient {
 
+  final case class Builder[F[_]] private (
+
+  )
+
   /** Builds a [[kinesis4cats.client.KinesisClient KinesisClient]] that is
     * compliant for Localstack usage. Lifecycle is managed as a
     * [[cats.effect.Resource Resource]].
