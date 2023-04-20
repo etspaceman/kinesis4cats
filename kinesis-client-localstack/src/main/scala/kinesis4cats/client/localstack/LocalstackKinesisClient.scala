@@ -17,178 +17,94 @@
 package kinesis4cats.client
 package localstack
 
-import scala.concurrent.duration._
-
-import cats.effect.std.Dispatcher
-import cats.effect.syntax.all._
 import cats.effect.{Async, Resource}
 import cats.syntax.all._
+import org.typelevel.log4cats.StructuredLogger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
+import software.amazon.awssdk.services.kinesis.KinesisAsyncClient
 
 import kinesis4cats.localstack.LocalstackConfig
+import kinesis4cats.localstack.TestStreamConfig
 import kinesis4cats.localstack.aws.v2.AwsClients
 
 object LocalstackKinesisClient {
 
   final case class Builder[F[_]] private (
-
-  )
-
-  /** Builds a [[kinesis4cats.client.KinesisClient KinesisClient]] that is
-    * compliant for Localstack usage. Lifecycle is managed as a
-    * [[cats.effect.Resource Resource]].
-    *
-    * @param config
-    *   [[kinesis4cats.localstack.LocalstackConfig LocalstackConfig]]
-    * @param F
-    *   F with an [[cats.effect.Async Async]] instance
-    * @param encoders
-    *   [[kinesis4cats.client.KinesisClient.LogEncoders LogEncoders]]
-    * @return
-    *   [[cats.effect.Resource Resource]] of
-    *   [[kinesis4cats.client.KinesisClient KinesisClient]]
-    */
-  def clientResource[F[_]](
-      config: LocalstackConfig,
-      encoders: KinesisClient.LogEncoders
-  )(implicit
-      F: Async[F]
-  ): Resource[F, KinesisClient[F]] = for {
-    underlying <- AwsClients.kinesisClient(config).toResource
-    logger <- Slf4jLogger.create[F].toResource
-    dispatcher <- Dispatcher.parallel[F]
-  } yield new KinesisClient(underlying, logger, dispatcher, encoders)
-
-  /** Builds a [[kinesis4cats.client.KinesisClient KinesisClient]] that is
-    * compliant for Localstack usage. Lifecycle is managed as a
-    * [[cats.effect.Resource Resource]].
-    *
-    * @param prefix
-    *   Optional prefix for parsing configuration. Default to None
-    * @param encoders
-    *   [[kinesis4cats.client.KinesisClient.LogEncoders KinesisClient.LogEncoders]]
-    * @param F
-    *   F with an [[cats.effect.Async Async]] instance
-    * @return
-    *   [[cats.effect.Resource Resource]] of
-    *   [[kinesis4cats.client.KinesisClient KinesisClient]]
-    */
-  def clientResource[F[_]](
-      prefix: Option[String] = None,
-      encoders: KinesisClient.LogEncoders = KinesisClient.LogEncoders.show
-  )(implicit
-      F: Async[F]
-  ): Resource[F, KinesisClient[F]] =
-    LocalstackConfig.resource(prefix).flatMap(clientResource[F](_, encoders))
-
-  /** A resources that does the following:
-    *
-    *   - Builds a [[kinesis4cats.client.KinesisClient KinesisClient]] that is
-    *     compliant for Localstack usage.
-    *   - Creates a stream with the desired name and shard count, and waits
-    *     until the stream is active.
-    *   - Destroys the stream when the [[cats.effect.Resource Resource]] is
-    *     closed
-    *
-    * @param config
-    *   [[kinesis4cats.localstack.LocalstackConfig LocalstackConfig]]
-    * @param streamName
-    *   Stream name
-    * @param shardCount
-    *   Shard count for stream
-    * @param describeRetries
-    *   How many times to retry DescribeStreamSummary when checking the stream
-    *   status
-    * @param describeRetryDuration
-    *   How long to delay between retries of the DescribeStreamSummary call
-    * @param F
-    *   F with an [[cats.effect.Async Async]] instance
-    * @param LE
-    *   [[kinesis4cats.client.KinesisClient.LogEncoders LogEncoders]]
-    * @return
-    *   [[cats.effect.Resource Resource]] of
-    *   [[kinesis4cats.client.KinesisClient KinesisClient]]
-    */
-  def streamResource[F[_]](
-      config: LocalstackConfig,
-      streamName: String,
-      shardCount: Int,
-      describeRetries: Int,
-      describeRetryDuration: FiniteDuration,
-      encoders: KinesisClient.LogEncoders
-  )(implicit
-      F: Async[F]
-  ): Resource[F, KinesisClient[F]] = for {
-    client <- clientResource(config, encoders)
-    result <- Resource.make(
-      AwsClients
-        .createStream(
-          client.client,
-          streamName,
-          shardCount,
-          describeRetries,
-          describeRetryDuration
-        )
-        .as(client)
-    )(client =>
-      AwsClients
-        .deleteStream(
-          client.client,
-          streamName,
-          describeRetries,
-          describeRetryDuration
-        )
+      localstackConfig: LocalstackConfig,
+      encoders: KinesisClient.LogEncoders,
+      logger: StructuredLogger[F],
+      streamsToCreate: List[TestStreamConfig[F]],
+      clientResource: Resource[F, KinesisAsyncClient]
+  )(implicit F: Async[F]) {
+    def withClient(
+        client: => KinesisAsyncClient,
+        managed: Boolean = true
+    ): Builder[F] = copy(
+      clientResource =
+        if (managed) Resource.fromAutoCloseable(F.delay(client))
+        else Resource.pure(client)
     )
-  } yield result
 
-  /** A resources that does the following:
-    *
-    *   - Builds a [[kinesis4cats.client.KinesisClient KinesisClient]] that is
-    *     compliant for Localstack usage.
-    *   - Creates a stream with the desired name and shard count, and waits
-    *     until the stream is active.
-    *   - Destroys the stream when the [[cats.effect.Resource Resource]] is
-    *     closed
-    *
-    * @param streamName
-    *   Stream name
-    * @param shardCount
-    *   Shard count for stream
-    * @param prefix
-    *   Optional prefix for parsing configuration. Default to None
-    * @param describeRetries
-    *   How many times to retry DescribeStreamSummary when checking the stream
-    *   status. Default to 5
-    * @param describeRetryDuration
-    *   How long to delay between retries of the DescribeStreamSummary call.
-    *   Default to 500 ms
-    * @param F
-    *   F with an [[cats.effect.Async Async]] instance
-    * @param encoders
-    *   [[kinesis4cats.client.KinesisClient.LogEncoders LogEncoders]]. Default
-    *   to show instances
-    * @return
-    *   [[cats.effect.Resource Resource]] of
-    *   [[kinesis4cats.client.KinesisClient KinesisClient]]
-    */
-  def streamResource[F[_]](
-      streamName: String,
-      shardCount: Int,
-      prefix: Option[String] = None,
-      describeRetries: Int = 5,
-      describeRetryDuration: FiniteDuration = 500.millis,
-      encoders: KinesisClient.LogEncoders = KinesisClient.LogEncoders.show
-  )(implicit
-      F: Async[F]
-  ): Resource[F, KinesisClient[F]] = for {
-    config <- LocalstackConfig.resource(prefix)
-    result <- streamResource(
-      config,
-      streamName,
-      shardCount,
-      describeRetries,
-      describeRetryDuration,
-      encoders
+    def withLocalstackConfig(localstackConfig: LocalstackConfig): Builder[F] =
+      copy(localstackConfig = localstackConfig)
+
+    def withLogEncoders(encoders: KinesisClient.LogEncoders): Builder[F] = copy(
+      encoders = encoders
     )
-  } yield result
+
+    def withLogger(logger: StructuredLogger[F]): Builder[F] = copy(
+      logger = logger
+    )
+
+    def withStreamsToCreate(
+        streamsToCreate: List[TestStreamConfig[F]]
+    ): Builder[F] =
+      copy(
+        streamsToCreate = streamsToCreate
+      )
+
+    def build: Resource[F, KinesisClient[F]] = for {
+      underlying <- clientResource
+      client <- KinesisClient.Builder
+        .default[F]
+        .withClient(underlying, false)
+        .withLogEncoders(encoders)
+        .withLogger(logger)
+        .build
+      _ <- streamsToCreate.traverse_(config =>
+        Builder.managedStream(config, client)
+      )
+    } yield client
+  }
+
+  object Builder {
+    private def managedStream[F[_]](
+        config: TestStreamConfig[F],
+        client: KinesisClient[F]
+    )(implicit F: Async[F]): Resource[F, KinesisClient[F]] = Resource.make(
+      AwsClients.createStream(client.client, config).as(client)
+    )(c => AwsClients.deleteStream(c.client, config))
+
+    def default[F[_]](
+        prefix: Option[String] = None
+    )(implicit
+        F: Async[F]
+    ): F[Builder[F]] = LocalstackConfig.load(prefix).map(default(_))
+
+    def default[F[_]](
+        localstackConfig: LocalstackConfig
+    )(implicit
+        F: Async[F]
+    ): Builder[F] =
+      Builder[F](
+        localstackConfig,
+        KinesisClient.LogEncoders.show,
+        Slf4jLogger.getLogger,
+        Nil,
+        AwsClients.kinesisClientResource[F](localstackConfig)
+      )
+
+    @annotation.unused
+    private def unapply[F[_]](builder: Builder[F]): Unit = ()
+  }
 }

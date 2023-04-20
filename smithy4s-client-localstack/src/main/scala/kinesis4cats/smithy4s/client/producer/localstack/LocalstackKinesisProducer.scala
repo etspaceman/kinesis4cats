@@ -156,5 +156,8 @@ object LocalstackKinesisProducer {
         (client: KinesisClient[F], snoa: StreamNameOrArn) =>
           KinesisProducer.getShardMap(client, snoa)
       )
+
+    @annotation.unused
+    private def unapply[F[_]](builder: Builder[F]): Unit = ()
   }
 }

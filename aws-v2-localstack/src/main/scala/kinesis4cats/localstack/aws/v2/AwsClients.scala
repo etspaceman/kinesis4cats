@@ -17,8 +17,6 @@
 package kinesis4cats.localstack
 package aws.v2
 
-import scala.concurrent.duration._
-
 import cats.effect.syntax.all._
 import cats.effect.{Async, Resource}
 import cats.syntax.all._
@@ -32,7 +30,6 @@ import software.amazon.awssdk.services.kinesis.KinesisAsyncClient
 import software.amazon.awssdk.services.kinesis.model._
 import software.amazon.awssdk.utils.AttributeMap
 
-import kinesis4cats.compat.retry.RetryPolicies._
 import kinesis4cats.compat.retry._
 
 /** Helpers for constructing and leveraging AWS Java Client interfaces with
@@ -166,22 +163,16 @@ object AwsClients {
     */
   def createStream[F[_]](
       client: KinesisAsyncClient,
-      streamName: String,
-      shardCount: Int,
-      describeRetries: Int,
-      describeRetryDuration: FiniteDuration
-  )(implicit F: Async[F]): F[Unit] = {
-    val retryPolicy = constantDelay(describeRetryDuration).join(
-      limitRetries(describeRetries)
-    )
+      config: TestStreamConfig[F]
+  )(implicit F: Async[F]): F[Unit] =
     for {
       _ <- F.fromCompletableFuture(
         F.delay(
           client.createStream(
             CreateStreamRequest
               .builder()
-              .streamName(streamName)
-              .shardCount(shardCount)
+              .streamName(config.streamName)
+              .shardCount(config.shardCount)
               .streamModeDetails(
                 StreamModeDetails
                   .builder()
@@ -193,7 +184,7 @@ object AwsClients {
         )
       )
       _ <- retryingOnFailuresAndAllErrors(
-        retryPolicy,
+        config.describeRetryPolicy,
         (x: DescribeStreamSummaryResponse) =>
           F.pure(
             x.streamDescriptionSummary()
@@ -207,14 +198,13 @@ object AwsClients {
             client.describeStreamSummary(
               DescribeStreamSummaryRequest
                 .builder()
-                .streamName(streamName)
+                .streamName(config.streamName)
                 .build()
             )
           )
         )
       )
     } yield ()
-  }
 
   /** Deletes a stream and awaits for the stream deletion to be finalized
     *
@@ -234,23 +224,18 @@ object AwsClients {
     */
   def deleteStream[F[_]](
       client: KinesisAsyncClient,
-      streamName: String,
-      describeRetries: Int,
-      describeRetryDuration: FiniteDuration
-  )(implicit F: Async[F]): F[Unit] = {
-    val retryPolicy = constantDelay(describeRetryDuration).join(
-      limitRetries(describeRetries)
-    )
+      config: TestStreamConfig[F]
+  )(implicit F: Async[F]): F[Unit] =
     for {
       _ <- F.fromCompletableFuture(
         F.delay(
           client.deleteStream(
-            DeleteStreamRequest.builder().streamName(streamName).build()
+            DeleteStreamRequest.builder().streamName(config.streamName).build()
           )
         )
       )
       _ <- retryingOnFailuresAndSomeErrors(
-        retryPolicy,
+        config.describeRetryPolicy,
         (x: Either[Throwable, DescribeStreamSummaryResponse]) =>
           F.pure(
             x.swap.exists {
@@ -271,14 +256,13 @@ object AwsClients {
             client.describeStreamSummary(
               DescribeStreamSummaryRequest
                 .builder()
-                .streamName(streamName)
+                .streamName(config.streamName)
                 .build()
             )
           )
         ).attempt
       )
     } yield ()
-  }
 
   /** A resource that does the following:
     *
@@ -308,27 +292,18 @@ object AwsClients {
     *   [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/kinesis/KinesisAsyncClient.html KinesisAsyncClient]]
     */
   def kinesisStreamResource[F[_]](
-      config: LocalstackConfig,
-      streamName: String,
-      shardCount: Int,
-      describeRetries: Int,
-      describeRetryDuration: FiniteDuration
+      localstackConfig: LocalstackConfig,
+      streamsToCreate: List[TestStreamConfig[F]]
   )(implicit
       F: Async[F]
   ): Resource[F, KinesisAsyncClient] = for {
-    client <- kinesisClientResource(config)
-    result <- Resource.make(
-      createStream(
-        client,
-        streamName,
-        shardCount,
-        describeRetries,
-        describeRetryDuration
-      ).as(client)
-    )(client =>
-      deleteStream(client, streamName, describeRetries, describeRetryDuration)
+    client <- kinesisClientResource(localstackConfig)
+    _ <- streamsToCreate.traverse_(config =>
+      Resource.make(createStream(client, config).as(client))(client =>
+        deleteStream(client, config)
+      )
     )
-  } yield result
+  } yield client
 
   /** A resource that does the following:
     *
@@ -359,22 +334,13 @@ object AwsClients {
     *   [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/kinesis/KinesisAsyncClient.html KinesisAsyncClient]]
     */
   def kinesisStreamResource[F[_]](
-      streamName: String,
-      shardCount: Int,
-      prefix: Option[String] = None,
-      describeRetries: Int = 5,
-      describeRetryDuration: FiniteDuration = 500.millis
+      streamsToCreate: List[TestStreamConfig[F]],
+      prefix: Option[String] = None
   )(implicit
       F: Async[F]
   ): Resource[F, KinesisAsyncClient] = for {
-    config <- LocalstackConfig.resource(prefix)
-    result <- kinesisStreamResource(
-      config,
-      streamName,
-      shardCount,
-      describeRetries,
-      describeRetryDuration
-    )
+    localstackConfig <- LocalstackConfig.resource(prefix)
+    result <- kinesisStreamResource(localstackConfig, streamsToCreate)
   } yield result
 
   /** Builds a

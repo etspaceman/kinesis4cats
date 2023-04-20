@@ -156,5 +156,8 @@ object LocalstackFS2KinesisProducer {
           KinesisProducer.getShardMap(client, snoa),
         (_: Producer.Res[PutRecordsOutput]) => F.unit
       )
+
+    @annotation.unused
+    private def unapply[F[_]](builder: Builder[F]): Unit = ()
   }
 }
