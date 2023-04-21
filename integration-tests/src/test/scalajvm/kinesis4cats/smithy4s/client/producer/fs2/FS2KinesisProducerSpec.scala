@@ -88,7 +88,6 @@ class FS2KinesisProducerSpec
       )
       deferredWithResults <- builder.runWithResults()
       _ <- deferredWithResults.deferred.get.toResource
-
     } yield FS2ProducerSpec.Resources(
       deferredWithResults.resultsQueue,
       producer

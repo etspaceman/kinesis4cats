@@ -60,6 +60,7 @@ class KinesisFS2ProducerSpec
     CommittableRecord[IO]
   ]]] = ResourceFunFixture(
     for {
+      producer <- producerResource
       builder <- LocalstackKCLConsumer.Builder.default[IO](
         new SingleStreamTracker(
           StreamIdentifier.singleStreamInstance(streamName),
@@ -71,7 +72,6 @@ class KinesisFS2ProducerSpec
       )
       deferredWithResults <- builder.runWithResults()
       _ <- deferredWithResults.deferred.get.toResource
-      producer <- producerResource
     } yield FS2ProducerSpec.Resources(
       deferredWithResults.resultsQueue,
       producer
