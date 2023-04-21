@@ -86,11 +86,13 @@ object LocalstackFS2KinesisProducer {
     )
 
     def build: Resource[F, FS2KinesisProducer[F]] = for {
+      client <- clientResource
       underlying <- LocalstackKinesisProducer.Builder
         .default[F](
           config.producerConfig.streamNameOrArn,
           localstackConfig
         )
+        .withClient(client)
         .withConfig(config.producerConfig)
         .withLogEncoders(encoders)
         .withLogger(logger)
@@ -107,6 +109,9 @@ object LocalstackFS2KinesisProducer {
         underlying
       )(
         callback
+      )
+      _ <- streamsToCreate.traverse_(x =>
+        LocalstackKinesisClient.managedStream(x, client)
       )
       _ <- producer.resource
     } yield producer

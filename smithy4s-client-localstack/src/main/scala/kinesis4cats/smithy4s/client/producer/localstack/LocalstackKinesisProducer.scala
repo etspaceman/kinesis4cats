@@ -115,6 +115,9 @@ object LocalstackKinesisProducer {
           encoders.kinesisProducerEncoders.producerLogEncoders.shardMapLogEncoders
         )
         .build
+      _ <- streamsToCreate.traverse_(config =>
+        LocalstackKinesisClient.managedStream(config, underlying)
+      )
     } yield new KinesisProducer[F](
       logger,
       shardMapCache,

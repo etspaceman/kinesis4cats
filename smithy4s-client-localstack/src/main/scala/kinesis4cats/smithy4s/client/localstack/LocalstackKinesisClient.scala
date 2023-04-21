@@ -95,65 +95,12 @@ object LocalstackKinesisClient {
           )
         )
         .build
-      _ <- streamsToCreate.traverse_(config =>
-        Builder.managedStream(config, client)
-      )
+      _ <- streamsToCreate.traverse_(config => managedStream(config, client))
     } yield client
 
   }
 
   object Builder {
-    private def managedStream[F[_]](
-        config: TestStreamConfig[F],
-        client: KinesisClient[F]
-    )(implicit F: Async[F]): Resource[F, KinesisClient[F]] =
-      Resource.make[F, KinesisClient[F]](
-        for {
-          _ <- client.createStream(
-            StreamName(config.streamName),
-            Some(PositiveIntegerObject(config.shardCount))
-          )
-          _ <- retryingOnFailuresAndAllErrors(
-            config.describeRetryPolicy,
-            (x: DescribeStreamSummaryOutput) =>
-              F.pure(
-                x.streamDescriptionSummary.streamStatus == StreamStatus.ACTIVE
-              ),
-            noop[F, DescribeStreamSummaryOutput],
-            noop[F, Throwable]
-          )(
-            client.describeStreamSummary(Some(StreamName(config.streamName)))
-          )
-        } yield client
-      )(client =>
-        for {
-          _ <- client.deleteStream(
-            Some(StreamName(config.streamName))
-          )
-          _ <- retryingOnFailuresAndSomeErrors(
-            config.describeRetryPolicy,
-            (x: Either[Throwable, DescribeStreamSummaryOutput]) =>
-              F.pure(
-                x.swap.exists {
-                  case _: ResourceNotFoundException => true
-                  case _                            => false
-                }
-              ),
-            (e: Throwable) =>
-              e match {
-                case _: ResourceNotFoundException => F.pure(false)
-                case _                            => F.pure(true)
-              },
-            noop[F, Either[Throwable, DescribeStreamSummaryOutput]],
-            noop[F, Throwable]
-          )(
-            client
-              .describeStreamSummary(Some(StreamName(config.streamName)))
-              .attempt
-          )
-        } yield ()
-      )
-
     def default[F[_]](
         client: Client[F],
         region: AwsRegion,
@@ -184,4 +131,55 @@ object LocalstackKinesisClient {
     @annotation.unused
     private def unapply[F[_]](builder: Builder[F]): Unit = ()
   }
+
+  private[kinesis4cats] def managedStream[F[_]](
+      config: TestStreamConfig[F],
+      client: KinesisClient[F]
+  )(implicit F: Async[F]): Resource[F, KinesisClient[F]] =
+    Resource.make[F, KinesisClient[F]](
+      for {
+        _ <- client.createStream(
+          StreamName(config.streamName),
+          Some(PositiveIntegerObject(config.shardCount))
+        )
+        _ <- retryingOnFailuresAndAllErrors(
+          config.describeRetryPolicy,
+          (x: DescribeStreamSummaryOutput) =>
+            F.pure(
+              x.streamDescriptionSummary.streamStatus == StreamStatus.ACTIVE
+            ),
+          noop[F, DescribeStreamSummaryOutput],
+          noop[F, Throwable]
+        )(
+          client.describeStreamSummary(Some(StreamName(config.streamName)))
+        )
+      } yield client
+    )(client =>
+      for {
+        _ <- client.deleteStream(
+          Some(StreamName(config.streamName))
+        )
+        _ <- retryingOnFailuresAndSomeErrors(
+          config.describeRetryPolicy,
+          (x: Either[Throwable, DescribeStreamSummaryOutput]) =>
+            F.pure(
+              x.swap.exists {
+                case _: ResourceNotFoundException => true
+                case _                            => false
+              }
+            ),
+          (e: Throwable) =>
+            e match {
+              case _: ResourceNotFoundException => F.pure(false)
+              case _                            => F.pure(true)
+            },
+          noop[F, Either[Throwable, DescribeStreamSummaryOutput]],
+          noop[F, Throwable]
+        )(
+          client
+            .describeStreamSummary(Some(StreamName(config.streamName)))
+            .attempt
+        )
+      } yield ()
+    )
 }

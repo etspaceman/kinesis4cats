@@ -37,6 +37,7 @@ import kinesis4cats.producer.Record
 import kinesis4cats.producer.ShardMap
 import kinesis4cats.producer.ShardMapCache
 import kinesis4cats.producer.fs2.FS2Producer
+import kinesis4cats.smithy4s.client.localstack.LocalstackKinesisClient
 import kinesis4cats.smithy4s.client.producer.localstack.LocalstackKinesisProducer
 
 /** Like KinesisProducer, but also includes the
@@ -93,34 +94,59 @@ object LocalstackFS2KinesisProducer {
       callback = callback
     )
 
-    def build: Resource[F, FS2KinesisProducer[F]] = for {
-      underlying <- LocalstackKinesisProducer.Builder
-        .default[F](
-          client,
-          region,
-          config.producerConfig.streamNameOrArn,
-          localstackConfig
+    def build: Resource[F, FS2KinesisProducer[F]] =
+      for {
+        underlying <- LocalstackKinesisClient.Builder
+          .default[F](
+            client,
+            region,
+            localstackConfig
+          )
+          .withLogEncoders(
+            new LocalstackKinesisClient.LogEncoders(
+              encoders.kinesisProducerEncoders.kinesisClientLogEncoders,
+              encoders.localstackConfigEncoders
+            )
+          )
+          .withLogger(logger)
+          .withLogRequestsResponses(logRequestsResponses)
+          .withStreamsToCreate(streamsToCreate)
+          .build
+        shardMapCache <- ShardMapCache.Builder
+          .default[F](
+            shardMapF(underlying, config.producerConfig.streamNameOrArn),
+            logger
+          )
+          .withLogEncoders(
+            encoders.kinesisProducerEncoders.producerLogEncoders.shardMapLogEncoders
+          )
+          .build
+        _ <- streamsToCreate.traverse_(config =>
+          LocalstackKinesisClient.managedStream(config, underlying)
         )
-        .withConfig(config.producerConfig)
-        .withLogEncoders(encoders)
-        .withLogger(logger)
-        .withLogRequestsResponses(logRequestsResponses)
-        .withStreamsToCreate(streamsToCreate)
-        .withShardMapF(shardMapF)
-        .build
-      channel <- Channel
-        .bounded[F, Record](config.queueSize)
-        .toResource
-      producer = new FS2KinesisProducer[F](
-        logger,
-        config,
-        channel,
-        underlying
-      )(
-        callback
-      )
-      _ <- producer.resource
-    } yield producer
+        underlyingProducer = new KinesisProducer[F](
+          logger,
+          shardMapCache,
+          config.producerConfig,
+          underlying,
+          encoders.kinesisProducerEncoders.producerLogEncoders
+        )
+        channel <- Channel
+          .bounded[F, Record](config.queueSize)
+          .toResource
+        producer = new FS2KinesisProducer[F](
+          logger,
+          config,
+          channel,
+          underlyingProducer
+        )(
+          callback
+        )
+        _ <- streamsToCreate.traverse_(config =>
+          LocalstackKinesisClient.managedStream(config, underlying)
+        )
+        _ <- producer.resource
+      } yield producer
   }
 
   object Builder {

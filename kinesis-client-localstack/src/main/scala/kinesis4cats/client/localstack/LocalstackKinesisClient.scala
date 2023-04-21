@@ -67,20 +67,11 @@ object LocalstackKinesisClient {
         .withLogEncoders(encoders)
         .withLogger(logger)
         .build
-      _ <- streamsToCreate.traverse_(config =>
-        Builder.managedStream(config, client)
-      )
+      _ <- streamsToCreate.traverse_(config => managedStream(config, client))
     } yield client
   }
 
   object Builder {
-    private def managedStream[F[_]](
-        config: TestStreamConfig[F],
-        client: KinesisClient[F]
-    )(implicit F: Async[F]): Resource[F, KinesisClient[F]] = Resource.make(
-      AwsClients.createStream(client.client, config).as(client)
-    )(c => AwsClients.deleteStream(c.client, config))
-
     def default[F[_]](
         prefix: Option[String] = None
     )(implicit
@@ -102,4 +93,11 @@ object LocalstackKinesisClient {
     @annotation.unused
     private def unapply[F[_]](builder: Builder[F]): Unit = ()
   }
+
+  private[kinesis4cats] def managedStream[F[_]](
+      config: TestStreamConfig[F],
+      client: KinesisClient[F]
+  )(implicit F: Async[F]): Resource[F, KinesisClient[F]] = Resource.make(
+    AwsClients.createStream(client.client, config).as(client)
+  )(c => AwsClients.deleteStream(c.client, config))
 }
