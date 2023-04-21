@@ -107,9 +107,11 @@ object KCLCiris {
     *   [[kinesis4cats.kcl.KCLConsumer KCLConsumer]]
     */
   def consumer[F[_]](
-      kinesisClient: KinesisAsyncClient,
-      dynamoClient: DynamoDbAsyncClient,
-      cloudWatchClient: CloudWatchAsyncClient,
+      kinesisClient: => KinesisAsyncClient = KinesisAsyncClient.builder().build,
+      dynamoClient: => DynamoDbAsyncClient =
+        DynamoDbAsyncClient.builder().build,
+      cloudWatchClient: => CloudWatchAsyncClient =
+        CloudWatchAsyncClient.builder().build,
       prefix: Option[String] = None,
       shardPrioritization: Option[ShardPrioritization] = None,
       workerStateChangeListener: Option[WorkerStateChangeListener] = None,

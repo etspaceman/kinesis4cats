@@ -105,9 +105,11 @@ object KCLCirisFS2 {
     *   [[kinesis4cats.kcl.fs2.KCLConsumerFS2 KCLConsumerFS2]]
     */
   def consumer[F[_]](
-      kinesisClient: KinesisAsyncClient,
-      dynamoClient: DynamoDbAsyncClient,
-      cloudwatchClient: CloudWatchAsyncClient,
+      kinesisClient: => KinesisAsyncClient = KinesisAsyncClient.builder().build,
+      dynamoClient: => DynamoDbAsyncClient =
+        DynamoDbAsyncClient.builder().build,
+      cloudWatchClient: => CloudWatchAsyncClient =
+        CloudWatchAsyncClient.builder().build,
       prefix: Option[String] = None,
       shardPrioritization: Option[ShardPrioritization] = None,
       workerStateChangeListener: Option[WorkerStateChangeListener] = None,
@@ -122,29 +124,45 @@ object KCLCirisFS2 {
       metricsFactory: Option[MetricsFactory] = None,
       glueSchemaRegistryDeserializer: Option[GlueSchemaRegistryDeserializer] =
         None,
-      encoders: RecordProcessor.LogEncoders = RecordProcessor.LogEncoders.show
+      encoders: RecordProcessor.LogEncoders = RecordProcessor.LogEncoders.show,
+      managedClients: Boolean = true
   )(implicit
       F: Async[F],
       P: Parallel[F]
-  ): Resource[F, KCLConsumerFS2[F]] = kclConfig(
-    kinesisClient,
-    dynamoClient,
-    cloudwatchClient,
-    prefix,
-    shardPrioritization,
-    workerStateChangeListener,
-    coordinatorFactory,
-    customShardDetectorProvider,
-    tableCreatorCallback,
-    hierarchicalShardSyncer,
-    leaseManagementFactory,
-    leaseExecutorService,
-    aggregatorUtil,
-    taskExecutionListener,
-    metricsFactory,
-    glueSchemaRegistryDeserializer,
-    encoders
-  ).map(new KCLConsumerFS2[F](_))
+  ): Resource[F, KCLConsumerFS2[F]] = for {
+    kClient <-
+      if (managedClients)
+        Resource.fromAutoCloseable(
+          F.delay(kinesisClient)
+        )
+      else Resource.pure[F, KinesisAsyncClient](kinesisClient)
+    dClient <-
+      if (managedClients) Resource.fromAutoCloseable(F.delay(dynamoClient))
+      else Resource.pure[F, DynamoDbAsyncClient](dynamoClient)
+    cClient <-
+      if (managedClients)
+        Resource.fromAutoCloseable(F.delay(cloudWatchClient))
+      else Resource.pure[F, CloudWatchAsyncClient](cloudWatchClient)
+    config <- kclConfig(
+      kClient,
+      dClient,
+      cClient,
+      prefix,
+      shardPrioritization,
+      workerStateChangeListener,
+      coordinatorFactory,
+      customShardDetectorProvider,
+      tableCreatorCallback,
+      hierarchicalShardSyncer,
+      leaseManagementFactory,
+      leaseExecutorService,
+      aggregatorUtil,
+      taskExecutionListener,
+      metricsFactory,
+      glueSchemaRegistryDeserializer,
+      encoders
+    )
+  } yield new KCLConsumerFS2[F](config)
 
   /** Reads environment variables and system properties to load a
     * [[kinesis4cats.kcl.fs2.KCLConsumerFS2.Config KCLConsumerFS2.Config]]

@@ -12,13 +12,28 @@ libraryDependencies += "io.github.etspaceman" %% "kinesis4cats-kpl-localstack" %
 
 ```scala mdoc:compile-only
 import cats.effect.IO
+import cats.effect.syntax.all._
 
+import kinesis4cats.localstack.TestStreamConfig
 import kinesis4cats.kpl.localstack.LocalstackKPLProducer
 
 // Load a KPLProducer as a resource
-LocalstackKPLProducer.producer[IO]()
+LocalstackKPLProducer.Builder
+  .default[IO]()
+  .toResource
+  .flatMap(_.build)
 
 // Load a KPLProducer as a resource.
-// Also creates and deletes a stream during it's usage. Useful for tests.
-LocalstackKPLProducer.producerWithStream[IO]("my-stream", 1)
+// Also creates and deletes streams during it's usage. Useful for tests.
+LocalstackKPLProducer.Builder
+  .default[IO]()
+  .toResource
+  .flatMap(x => 
+    x.withStreamsToCreate(
+      List(
+        TestStreamConfig.default[IO]("my-stream", 1),
+        TestStreamConfig.default[IO]("my-stream-2", 1)
+      )
+    ).build
+  )
 ```

@@ -55,7 +55,7 @@ object KPLCiris {
     *   [[https://cir.is/docs/configurations ConfigValue]] containing
     *   [[https://github.com/awslabs/aws-glue-schema-registry/blob/master/common/src/main/java/com/amazonaws/services/schemaregistry/common/configs/GlueSchemaRegistryConfiguration.java GlueSchemaRegistryConfiguration]]
     */
-  def readGlueConfig(
+  private[kinesis4cats] def readGlueConfig(
       prefix: Option[String] = None
   ): ConfigValue[Effect, GlueSchemaRegistryConfiguration] =
     for {
@@ -157,7 +157,7 @@ object KPLCiris {
     *   [[https://cir.is/docs/configurations ConfigValue]] containing
     *   [[https://github.com/awslabs/amazon-kinesis-producer/blob/master/java/amazon-kinesis-producer/src/main/java/com/amazonaws/services/kinesis/producer/KinesisProducerConfiguration.java KinesisProducerConfiguration]]
     */
-  def readKplConfig(
+  private[kinesis4cats] def readKplConfig(
       credentialsProvider: Option[AWSCredentialsProvider] = None,
       metricsCredentialsProvider: Option[AWSCredentialsProvider] = None,
       glueSchemaRegistryCredentialsProvider: Option[AwsCredentialsProvider] =
@@ -445,7 +445,7 @@ object KPLCiris {
     *   [[cats.effect.Async Async]] containing
     *   [[https://github.com/awslabs/amazon-kinesis-producer/blob/master/java/amazon-kinesis-producer/src/main/java/com/amazonaws/services/kinesis/producer/KinesisProducerConfiguration.java KinesisProducerConfiguration]]
     */
-  def loadKplConfig[F[_]](
+  private[kinesis4cats] def loadKplConfig[F[_]](
       credentialsProvider: Option[AWSCredentialsProvider] = None,
       metricsCredentialsProvider: Option[AWSCredentialsProvider] = None,
       glueSchemaRegistryCredentialsProvider: Option[AwsCredentialsProvider] =

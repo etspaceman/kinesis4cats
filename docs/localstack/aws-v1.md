@@ -14,6 +14,7 @@ libraryDependencies += "io.github.etspaceman" %% "kinesis4cats-aws-v1-localstack
 import cats.effect.IO
 
 import kinesis4cats.localstack.aws.v1.AwsClients
+import kinesis4cats.localstack.TestStreamConfig
 
 // Load an AmazonKinesisAsync as an effect
 AwsClients.kinesisClient[IO]()
@@ -22,6 +23,11 @@ AwsClients.kinesisClient[IO]()
 AwsClients.kinesisClientResource[IO]()
 
 // Load a AmazonKinesisAsync as a resource.
-// Also creates and deletes a stream during it's usage. Useful for tests.
-AwsClients.kinesisStreamResource[IO]("my-stream", 1)
+// Also creates and deletes streams during it's usage. Useful for tests.
+AwsClients.kinesisStreamResource[IO](
+  List(
+    TestStreamConfig.default[IO]("my-stream", 1),
+    TestStreamConfig.default[IO]("my-stream-2", 1)
+  )
+)
 ```

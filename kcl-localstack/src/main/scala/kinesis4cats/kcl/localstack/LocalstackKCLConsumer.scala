@@ -44,9 +44,13 @@ object LocalstackKCLConsumer {
   final case class Builder[F[_]] private (
       kclBuilder: KCLConsumer.Builder[F]
   )(implicit F: Async[F]) {
-    def configure(f: KCLConsumer.Builder[F] => KCLConsumer.Builder[F]) = copy(
+    def configure(
+        f: KCLConsumer.Builder[F] => KCLConsumer.Builder[F]
+    ): Builder[F] = copy(
       kclBuilder = f(kclBuilder)
     )
+    def withCallback(f: List[CommittableRecord[F]] => F[Unit]): Builder[F] =
+      copy(kclBuilder = kclBuilder.withCallback(f))
     def build: Resource[F, KCLConsumer[F]] = kclBuilder.build
     def run: Resource[F, Deferred[F, Unit]] =
       build.flatMap(_.runWithDeferredListener())

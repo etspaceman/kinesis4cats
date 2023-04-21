@@ -213,6 +213,11 @@ object KCLConsumer {
       config = f(config)
     )
 
+    def withCallback(
+        callback: List[CommittableRecord[F]] => F[Unit]
+    ): Builder[F] =
+      copy(config = config.withCallback(callback))
+
     def build: Resource[F, KCLConsumer[F]] =
       config.build.map(new KCLConsumer[F](_))
   }

@@ -13,9 +13,6 @@ libraryDependencies += "io.github.etspaceman" %% "kinesis4cats-kcl-ciris" % "@VE
 ```scala mdoc:compile-only
 import cats.effect._
 import cats.syntax.all._
-import software.amazon.awssdk.services.cloudwatch.CloudWatchAsyncClient
-import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient
-import software.amazon.awssdk.services.kinesis.KinesisAsyncClient
 
 import kinesis4cats.kcl._
 import kinesis4cats.kcl.ciris.KCLCiris
@@ -23,21 +20,9 @@ import kinesis4cats.syntax.bytebuffer._
 
 object MyApp extends ResourceApp.Forever {
     override def run(args: List[String]) = for {
-        kinesisClient <- Resource.fromAutoCloseable(
-            IO(KinesisAsyncClient.builder().build())
-        )
-        dynamoClient <- Resource.fromAutoCloseable(
-            IO(DynamoDbAsyncClient.builder().build())
-        )
-        cloudWatchClient <- Resource.fromAutoCloseable(
-            IO(CloudWatchAsyncClient.builder().build())
-        )
-        consumer <- KCLCiris.consumer[IO](
-            kinesisClient, 
-            dynamoClient, 
-            cloudWatchClient
-        ){ case records: List[CommittableRecord[IO]] => 
-            records.traverse_(r => IO.println(r.data.asString)) 
+        consumer <- KCLCiris.consumer[IO](){ 
+            case records: List[CommittableRecord[IO]] => 
+                records.traverse_(r => IO.println(r.data.asString)) 
         }
         _ <- consumer.run()
     } yield ()
@@ -191,19 +176,13 @@ Standard environment variables and system properties for configuring a @:source(
 
 ```scala mdoc:compile-only
 import cats.effect._
-import software.amazon.awssdk.services.cloudwatch.CloudWatchAsyncClient
-import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient
-import software.amazon.awssdk.services.kinesis.KinesisAsyncClient
 
 import kinesis4cats.kcl.fs2.ciris.KCLCirisFS2
 import kinesis4cats.syntax.bytebuffer._
 
 object MyApp extends ResourceApp.Forever {
     override def run(args: List[String]) = for {
-        kinesisClient <- Resource.fromAutoCloseable(IO(KinesisAsyncClient.builder().build()))
-        dynamoClient <- Resource.fromAutoCloseable(IO(DynamoDbAsyncClient.builder().build()))
-        cloudWatchClient <- Resource.fromAutoCloseable(IO(CloudWatchAsyncClient.builder().build()))
-        consumer <- KCLCirisFS2.consumer[IO](kinesisClient, dynamoClient, cloudWatchClient)
+        consumer <- KCLCirisFS2.consumer[IO]()
         _ <- consumer.stream()
             .flatMap(stream =>
                 stream

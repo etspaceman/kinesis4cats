@@ -60,7 +60,8 @@ All of the configuration below is optional.
 | `KPL_THREADING_MODEL`| `kpl.threading.model` | PER_REQUEST | Sets the threading model that the native process will use. Valid values are PER_REQUEST, POOLED |
 | `KPL_THREAD_POOL_SIZE`| `kpl.thread.pool.size` | | Sets the maximum number of threads that the native process' thread pool will be configured with. Must be a non-negative number. |
 | `KPL_USER_RECORD_TIMEOUT`| `kpl.user.record.timeout` | | Set the value when the user submitted records will be timed out at the Java layer. Valid values are durations (e.g. `1 second`) |
-
+| `KPL_GRACEFUL_SHUTDOWN_FLUSH_ATTEMPTS`| `kpl.graceful.shutdown.flush.attempts` | 5 | Set the amount of times that the KPL will perform a flush() during its graceful shutdown process. |
+| `KPL_GRACEFUL_SHUTDOWN_FLUSH_INTERVAL`| `kpl.graceful.shutdown.flush.attempts` | 500 millis | Set the duration between flush() commands during its graceful shutdown process. |
 ### Glue
 
 The KPL can be configured to leverage the [AWS Glue](https://docs.aws.amazon.com/streams/latest/dev/kpl-with-schemaregistry.html) schema registry. There are some available configuration values for this.
