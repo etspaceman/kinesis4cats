@@ -149,6 +149,7 @@
         <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">effect</span><span>.</span><span class="type-name">IO</span><span>
 
 </span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">localstack</span><span>.</span><span class="identifier">aws</span><span>.</span><span class="identifier">v1</span><span>.</span><span class="type-name">AwsClients</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">localstack</span><span>.</span><span class="type-name">TestStreamConfig</span><span>
 
 </span><span class="comment">// Load a KinesisAsyncClient as an effect
 </span><span class="type-name">AwsClients</span><span>.</span><span class="identifier">kinesisClient</span><span>[</span><span class="type-name">IO</span><span>]()
@@ -157,8 +158,13 @@
 </span><span class="type-name">AwsClients</span><span>.</span><span class="identifier">kinesisClientResource</span><span>[</span><span class="type-name">IO</span><span>]()
 
 </span><span class="comment">// Load a KinesisAsyncClient as a resource.
-// Also creates and deletes a stream during it&#39;s usage. Useful for tests.
-</span><span class="type-name">AwsClients</span><span>.</span><span class="identifier">kinesisStreamResource</span><span>[</span><span class="type-name">IO</span><span>](</span><span class="string-literal">&quot;my-stream&quot;</span><span>, </span><span class="number-literal">1</span><span>)</span></code></pre>
+// Also creates and deletes streams during it&#39;s usage. Useful for tests.
+</span><span class="type-name">AwsClients</span><span>.</span><span class="identifier">kinesisStreamResource</span><span>[</span><span class="type-name">IO</span><span>](
+  </span><span class="type-name">List</span><span>(
+    </span><span class="type-name">TestStreamConfig</span><span>.</span><span class="keyword">default</span><span>[</span><span class="type-name">IO</span><span>](</span><span class="string-literal">&quot;my-stream&quot;</span><span>, </span><span class="number-literal">1</span><span>),
+    </span><span class="type-name">TestStreamConfig</span><span>.</span><span class="keyword">default</span><span>[</span><span class="type-name">IO</span><span>](</span><span class="string-literal">&quot;my-stream-2&quot;</span><span>, </span><span class="number-literal">1</span><span>)
+  )
+)</span></code></pre>
 
         <hr style="margin-top: 30px"/>
         <footer style="font-size: 90%; text-align: center">

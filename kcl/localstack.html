@@ -158,20 +158,26 @@
 </span><span class="keyword">val</span><span> </span><span class="identifier">processRecords</span><span> = (</span><span class="identifier">records</span><span>: </span><span class="type-name">List</span><span>[</span><span class="type-name">CommittableRecord</span><span>[</span><span class="type-name">IO</span><span>]]) =&gt; 
     </span><span class="identifier">records</span><span>.</span><span class="identifier">traverse_</span><span>(</span><span class="identifier">record</span><span> =&gt; </span><span class="type-name">IO</span><span>.</span><span class="identifier">println</span><span>(</span><span class="identifier">record</span><span>.</span><span class="identifier">data</span><span>.</span><span class="identifier">asString</span><span>))
 
-</span><span class="comment">// Runs a KCLConsumer as a Resource. Resource contains a Deferred value, 
-//which completes when the consumer has begun to process records.
-</span><span class="type-name">LocalstackKCLConsumer</span><span>.</span><span class="identifier">kclConsumer</span><span>[</span><span class="type-name">IO</span><span>](
+</span><span class="comment">// Builds a KCLConsumer as a Resource. 
+</span><span class="type-name">LocalstackKCLConsumer</span><span>.</span><span class="type-name">Builder</span><span>.</span><span class="keyword">default</span><span>[</span><span class="type-name">IO</span><span>](
     </span><span class="keyword">new</span><span> </span><span class="type-name">SingleStreamTracker</span><span>(</span><span class="string-literal">&quot;my-stream&quot;</span><span>), 
     </span><span class="string-literal">&quot;my-app-name&quot;</span><span>
-)(</span><span class="identifier">processRecords</span><span>)
+).</span><span class="identifier">flatMap</span><span>(</span><span class="identifier">_</span><span>.</span><span class="identifier">withCallback</span><span>(</span><span class="identifier">processRecords</span><span>).</span><span class="identifier">build</span><span>)
+
+</span><span class="comment">// Runs a KCLConsumer as a Resource. Resource contains a Deferred value, 
+//which completes when the consumer has begun to process records.
+</span><span class="type-name">LocalstackKCLConsumer</span><span>.</span><span class="type-name">Builder</span><span>.</span><span class="keyword">default</span><span>[</span><span class="type-name">IO</span><span>](
+    </span><span class="keyword">new</span><span> </span><span class="type-name">SingleStreamTracker</span><span>(</span><span class="string-literal">&quot;my-stream&quot;</span><span>), 
+    </span><span class="string-literal">&quot;my-app-name&quot;</span><span>
+).</span><span class="identifier">flatMap</span><span>(</span><span class="identifier">_</span><span>.</span><span class="identifier">withCallback</span><span>(</span><span class="identifier">processRecords</span><span>).</span><span class="identifier">build</span><span>)
 
 </span><span class="comment">// Runs a KCLConsumer as a Resource. Resource contains 2 things: 
 // - A Deferred value, which completes when the consumer has begun to process records. 
 // - A results Queue, which contains records received by the consumer
-</span><span class="type-name">LocalstackKCLConsumer</span><span>.</span><span class="identifier">kclConsumerWithResults</span><span>[</span><span class="type-name">IO</span><span>](
+</span><span class="type-name">LocalstackKCLConsumer</span><span>.</span><span class="type-name">Builder</span><span>.</span><span class="keyword">default</span><span>[</span><span class="type-name">IO</span><span>](
     </span><span class="keyword">new</span><span> </span><span class="type-name">SingleStreamTracker</span><span>(</span><span class="string-literal">&quot;my-stream&quot;</span><span>), 
     </span><span class="string-literal">&quot;my-app-name&quot;</span><span>
-)(</span><span class="identifier">processRecords</span><span>)</span></code></pre>
+).</span><span class="identifier">flatMap</span><span>(</span><span class="identifier">_</span><span>.</span><span class="identifier">withCallback</span><span>(</span><span class="identifier">processRecords</span><span>).</span><span class="identifier">build</span><span>)</span></code></pre>
         
         <h2 id="usage-fs2" class="section">Usage - FS2<a class="anchor-link right" href="#usage-fs2"><i class="icofont-laika">&#xef71;</i></a></h2>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">effect</span><span>.</span><span class="type-name">IO</span><span>
@@ -180,10 +186,10 @@
 </span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">kcl</span><span>.</span><span class="identifier">fs2</span><span>.</span><span class="identifier">localstack</span><span>.</span><span class="type-name">LocalstackKCLConsumerFS2</span><span>
 
 </span><span class="comment">// Runs a KCLConsumerFS2 as a Resource, which contains FS2 Streaming methods.
-</span><span class="type-name">LocalstackKCLConsumerFS2</span><span>.</span><span class="identifier">kclConsumer</span><span>[</span><span class="type-name">IO</span><span>](
+</span><span class="type-name">LocalstackKCLConsumerFS2</span><span>.</span><span class="type-name">Builder</span><span>.</span><span class="keyword">default</span><span>[</span><span class="type-name">IO</span><span>](
     </span><span class="keyword">new</span><span> </span><span class="type-name">SingleStreamTracker</span><span>(</span><span class="string-literal">&quot;my-stream&quot;</span><span>), 
     </span><span class="string-literal">&quot;my-app-name&quot;</span><span>
-)</span></code></pre>
+).</span><span class="identifier">flatMap</span><span>(</span><span class="identifier">_</span><span>.</span><span class="identifier">build</span><span>)</span></code></pre>
 
         <hr style="margin-top: 30px"/>
         <footer style="font-size: 90%; text-align: center">

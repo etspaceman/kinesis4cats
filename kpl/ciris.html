@@ -383,6 +383,18 @@
               <td></td>
               <td>Set the value when the user submitted records will be timed out at the Java layer. Valid values are durations (e.g. <code>1 second</code>)</td>
             </tr>
+            <tr>
+              <td><code>KPL_GRACEFUL_SHUTDOWN_FLUSH_ATTEMPTS</code></td>
+              <td><code>kpl.graceful.shutdown.flush.attempts</code></td>
+              <td>5</td>
+              <td>Set the amount of times that the KPL will perform a flush() during its graceful shutdown process.</td>
+            </tr>
+            <tr>
+              <td><code>KPL_GRACEFUL_SHUTDOWN_FLUSH_INTERVAL</code></td>
+              <td><code>kpl.graceful.shutdown.flush.attempts</code></td>
+              <td>500 millis</td>
+              <td>Set the duration between flush() commands during its graceful shutdown process.</td>
+            </tr>
           </tbody>
         </table>
         

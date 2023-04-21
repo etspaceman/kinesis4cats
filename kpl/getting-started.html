@@ -155,7 +155,7 @@
 
 </span><span class="keyword">object</span><span> </span><span class="type-name">MyApp</span><span> </span><span class="keyword">extends</span><span> </span><span class="type-name">IOApp</span><span> {
     </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">run</span><span>(</span><span class="identifier">args</span><span>: </span><span class="type-name">List</span><span>[</span><span class="type-name">String</span><span>]) = {
-        </span><span class="type-name">KPLProducer</span><span>[</span><span class="type-name">IO</span><span>]().</span><span class="identifier">use</span><span>(</span><span class="identifier">kpl</span><span> =&gt; 
+        </span><span class="type-name">KPLProducer</span><span>.</span><span class="type-name">Builder</span><span>.</span><span class="keyword">default</span><span>[</span><span class="type-name">IO</span><span>].</span><span class="identifier">build</span><span>.</span><span class="identifier">use</span><span>(</span><span class="identifier">kpl</span><span> =&gt; 
             </span><span class="keyword">for</span><span> {
                 </span><span class="identifier">_</span><span> &lt;- </span><span class="identifier">kpl</span><span>.</span><span class="identifier">put</span><span>(
                     </span><span class="keyword">new</span><span> </span><span class="type-name">UserRecord</span><span>(

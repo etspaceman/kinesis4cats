@@ -147,12 +147,11 @@
         
         <h2 id="usage" class="section">Usage<a class="anchor-link right" href="#usage"><i class="icofont-laika">&#xef71;</i></a></h2>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">effect</span><span>.</span><span class="identifier">_</span><span>
-</span><span class="keyword">import</span><span> </span><span class="identifier">software</span><span>.</span><span class="identifier">amazon</span><span>.</span><span class="identifier">awssdk</span><span>.</span><span class="identifier">services</span><span>.</span><span class="identifier">kinesis</span><span>.</span><span class="type-name">KinesisAsyncClient</span><span>
 
 </span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">client</span><span>.</span><span class="type-name">KinesisClient</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">client</span><span>.</span><span class="identifier">logging</span><span>.</span><span class="identifier">instances</span><span>.</span><span class="identifier">circe</span><span>.</span><span class="identifier">_</span><span>
 
-</span><span class="type-name">KinesisClient</span><span>[</span><span class="type-name">IO</span><span>](</span><span class="type-name">KinesisAsyncClient</span><span>.</span><span class="identifier">builder</span><span>().</span><span class="identifier">build</span><span>(), </span><span class="identifier">kinesisClientCirceEncoders</span><span>)</span></code></pre>
+</span><span class="type-name">KinesisClient</span><span>.</span><span class="type-name">Builder</span><span>.</span><span class="keyword">default</span><span>[</span><span class="type-name">IO</span><span>].</span><span class="identifier">withLogEncoders</span><span>(</span><span class="identifier">kinesisClientCirceEncoders</span><span>).</span><span class="identifier">build</span></code></pre>
 
         <hr style="margin-top: 30px"/>
         <footer style="font-size: 90%; text-align: center">

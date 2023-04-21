@@ -147,23 +147,46 @@
         
         <h2 id="usage" class="section">Usage<a class="anchor-link right" href="#usage"><i class="icofont-laika">&#xef71;</i></a></h2>
         <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">effect</span><span>.</span><span class="type-name">IO</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">effect</span><span>.</span><span class="identifier">syntax</span><span>.</span><span class="identifier">all</span><span>.</span><span class="identifier">_</span><span>
 
 </span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">client</span><span>.</span><span class="identifier">localstack</span><span>.</span><span class="type-name">LocalstackKinesisClient</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">client</span><span>.</span><span class="identifier">producer</span><span>.</span><span class="identifier">localstack</span><span>.</span><span class="type-name">LocalstackKinesisProducer</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">client</span><span>.</span><span class="identifier">producer</span><span>.</span><span class="identifier">fs2</span><span>.</span><span class="identifier">localstack</span><span>.</span><span class="type-name">LocalstackFS2KinesisProducer</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">models</span><span>.</span><span class="type-name">StreamNameOrArn</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">localstack</span><span>.</span><span class="type-name">TestStreamConfig</span><span>
 
 </span><span class="comment">// Load a KinesisClient as a Resource
-</span><span class="type-name">LocalstackKinesisClient</span><span>.</span><span class="identifier">clientResource</span><span>[</span><span class="type-name">IO</span><span>]()
+</span><span class="type-name">LocalstackKinesisClient</span><span>.</span><span class="type-name">Builder</span><span>
+    .</span><span class="keyword">default</span><span>[</span><span class="type-name">IO</span><span>]()
+    .</span><span class="identifier">toResource</span><span>
+    .</span><span class="identifier">flatMap</span><span>(</span><span class="identifier">_</span><span>.</span><span class="identifier">build</span><span>)
 
 </span><span class="comment">// Load a KinesisClient as a Resource.
-// Also creates and deletes a stream during it&#39;s usage. Useful for tests.
-</span><span class="type-name">LocalstackKinesisClient</span><span>.</span><span class="identifier">streamResource</span><span>[</span><span class="type-name">IO</span><span>](</span><span class="string-literal">&quot;my-stream&quot;</span><span>, </span><span class="number-literal">1</span><span>)
+// Also creates and deletes streams during it&#39;s usage. Useful for tests.
+</span><span class="type-name">LocalstackKinesisClient</span><span>.</span><span class="type-name">Builder</span><span>
+    .</span><span class="keyword">default</span><span>[</span><span class="type-name">IO</span><span>]()
+    .</span><span class="identifier">toResource</span><span>
+    .</span><span class="identifier">flatMap</span><span>(</span><span class="identifier">x</span><span> =&gt; 
+        </span><span class="identifier">x</span><span>.</span><span class="identifier">withStreamsToCreate</span><span>(
+            </span><span class="type-name">List</span><span>(
+                </span><span class="type-name">TestStreamConfig</span><span>.</span><span class="keyword">default</span><span>[</span><span class="type-name">IO</span><span>](</span><span class="string-literal">&quot;my-stream&quot;</span><span>, </span><span class="number-literal">1</span><span>),
+                </span><span class="type-name">TestStreamConfig</span><span>.</span><span class="keyword">default</span><span>[</span><span class="type-name">IO</span><span>](</span><span class="string-literal">&quot;my-stream-2&quot;</span><span>, </span><span class="number-literal">1</span><span>),
+            )
+        )
+        .</span><span class="identifier">build</span><span>    
+    )
 
 </span><span class="comment">// Load a KinesisProducer as a resource
-</span><span class="type-name">LocalstackKinesisProducer</span><span>.</span><span class="identifier">resource</span><span>[</span><span class="type-name">IO</span><span>](</span><span class="string-literal">&quot;my-stream&quot;</span><span>)
+</span><span class="type-name">LocalstackKinesisProducer</span><span>.</span><span class="type-name">Builder</span><span>
+    .</span><span class="keyword">default</span><span>[</span><span class="type-name">IO</span><span>](</span><span class="type-name">StreamNameOrArn</span><span>.</span><span class="type-name">Name</span><span>(</span><span class="string-literal">&quot;my-stream&quot;</span><span>))
+    .</span><span class="identifier">toResource</span><span>
+    .</span><span class="identifier">flatMap</span><span>(</span><span class="identifier">_</span><span>.</span><span class="identifier">build</span><span>)
 
 </span><span class="comment">// Load a FS2KinesisProducer as a resource
-</span><span class="type-name">LocalstackFS2KinesisProducer</span><span>.</span><span class="identifier">resource</span><span>[</span><span class="type-name">IO</span><span>](</span><span class="string-literal">&quot;my-stream&quot;</span><span>)</span></code></pre>
+</span><span class="type-name">LocalstackFS2KinesisProducer</span><span>.</span><span class="type-name">Builder</span><span>
+    .</span><span class="keyword">default</span><span>[</span><span class="type-name">IO</span><span>](</span><span class="type-name">StreamNameOrArn</span><span>.</span><span class="type-name">Name</span><span>(</span><span class="string-literal">&quot;my-stream&quot;</span><span>))
+    .</span><span class="identifier">toResource</span><span>
+    .</span><span class="identifier">flatMap</span><span>(</span><span class="identifier">_</span><span>.</span><span class="identifier">build</span><span>)</span></code></pre>
 
         <hr style="margin-top: 30px"/>
         <footer style="font-size: 90%; text-align: center">

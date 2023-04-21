@@ -151,20 +151,16 @@
 </span><span class="keyword">import</span><span> </span><span class="identifier">org</span><span>.</span><span class="identifier">typelevel</span><span>.</span><span class="identifier">log4cats</span><span>.</span><span class="identifier">slf4j</span><span>.</span><span class="type-name">Slf4jLogger</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">smithy4s</span><span>.</span><span class="identifier">aws</span><span>.</span><span class="identifier">_</span><span>
 
-</span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">smithy4s</span><span>.</span><span class="identifier">client</span><span>.</span><span class="identifier">producer</span><span>.</span><span class="type-name">KinesisProducer</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">smithy4s</span><span>.</span><span class="identifier">client</span><span>.</span><span class="type-name">KinesisClient</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">smithy4s</span><span>.</span><span class="identifier">client</span><span>.</span><span class="identifier">logging</span><span>.</span><span class="identifier">instances</span><span>.</span><span class="identifier">circe</span><span>.</span><span class="identifier">_</span><span>
-</span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">producer</span><span>.</span><span class="identifier">_</span><span>
-</span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">models</span><span>.</span><span class="type-name">StreamNameOrArn</span><span>
 
-</span><span class="type-name">BlazeClientBuilder</span><span>[</span><span class="type-name">IO</span><span>].</span><span class="identifier">resource</span><span>.</span><span class="identifier">flatMap</span><span>(</span><span class="identifier">client</span><span> =&gt;
-            </span><span class="type-name">KinesisProducer</span><span>[</span><span class="type-name">IO</span><span>](
-                </span><span class="type-name">Producer</span><span>.</span><span class="type-name">Config</span><span>.</span><span class="keyword">default</span><span>(</span><span class="type-name">StreamNameOrArn</span><span>.</span><span class="type-name">Name</span><span>(</span><span class="string-literal">&quot;my-stream&quot;</span><span>)),
-                </span><span class="identifier">client</span><span>,
-                </span><span class="type-name">IO</span><span>.</span><span class="identifier">pure</span><span>(</span><span class="type-name">AwsRegion</span><span>.</span><span class="type-name">US_EAST_1</span><span>),
-                </span><span class="identifier">loggerF</span><span> = (</span><span class="identifier">_</span><span>: </span><span class="type-name">Async</span><span>[</span><span class="type-name">IO</span><span>]) =&gt; </span><span class="type-name">Slf4jLogger</span><span>.</span><span class="identifier">create</span><span>[</span><span class="type-name">IO</span><span>],
-                </span><span class="identifier">encoders</span><span> = </span><span class="identifier">kinesisProducerCirceEncoders</span><span>[</span><span class="type-name">IO</span><span>]
-            )
-        )</span></code></pre>
+</span><span class="type-name">BlazeClientBuilder</span><span>[</span><span class="type-name">IO</span><span>].</span><span class="identifier">resource</span><span>.</span><span class="identifier">flatMap</span><span>(</span><span class="identifier">underlying</span><span> =&gt;
+    </span><span class="type-name">KinesisClient</span><span>.</span><span class="type-name">Builder</span><span>
+        .</span><span class="keyword">default</span><span>[</span><span class="type-name">IO</span><span>](</span><span class="identifier">underlying</span><span>, </span><span class="type-name">AwsRegion</span><span>.</span><span class="type-name">US_EAST_1</span><span>)
+        .</span><span class="identifier">withLogger</span><span>(</span><span class="type-name">Slf4jLogger</span><span>.</span><span class="identifier">getLogger</span><span>)
+        .</span><span class="identifier">withLogEncoders</span><span>(</span><span class="identifier">kinesisClientCirceEncoders</span><span>[</span><span class="type-name">IO</span><span>])
+        .</span><span class="identifier">build</span><span>
+)</span></code></pre>
 
         <hr style="margin-top: 30px"/>
         <footer style="font-size: 90%; text-align: center">

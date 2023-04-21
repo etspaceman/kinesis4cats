@@ -150,14 +150,13 @@
         <h2 id="usage" class="section">Usage<a class="anchor-link right" href="#usage"><i class="icofont-laika">&#xef71;</i></a></h2>
         <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">effect</span><span>.</span><span class="identifier">_</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">software</span><span>.</span><span class="identifier">amazon</span><span>.</span><span class="identifier">awssdk</span><span>.</span><span class="identifier">core</span><span>.</span><span class="type-name">SdkBytes</span><span>
-</span><span class="keyword">import</span><span> </span><span class="identifier">software</span><span>.</span><span class="identifier">amazon</span><span>.</span><span class="identifier">awssdk</span><span>.</span><span class="identifier">services</span><span>.</span><span class="identifier">kinesis</span><span>.</span><span class="type-name">KinesisAsyncClient</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">software</span><span>.</span><span class="identifier">amazon</span><span>.</span><span class="identifier">awssdk</span><span>.</span><span class="identifier">services</span><span>.</span><span class="identifier">kinesis</span><span>.</span><span class="identifier">model</span><span>.</span><span class="identifier">_</span><span>
 
 </span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">client</span><span>.</span><span class="type-name">KinesisClient</span><span>
 
 </span><span class="keyword">object</span><span> </span><span class="type-name">MyApp</span><span> </span><span class="keyword">extends</span><span> </span><span class="type-name">IOApp</span><span> {
     </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">run</span><span>(</span><span class="identifier">args</span><span>: </span><span class="type-name">List</span><span>[</span><span class="type-name">String</span><span>]) = 
-        </span><span class="type-name">KinesisClient</span><span>[</span><span class="type-name">IO</span><span>](</span><span class="type-name">KinesisAsyncClient</span><span>.</span><span class="identifier">builder</span><span>().</span><span class="identifier">build</span><span>()).</span><span class="identifier">use</span><span>(</span><span class="identifier">client</span><span> =&gt; 
+        </span><span class="type-name">KinesisClient</span><span>.</span><span class="type-name">Builder</span><span>.</span><span class="keyword">default</span><span>[</span><span class="type-name">IO</span><span>].</span><span class="identifier">build</span><span>.</span><span class="identifier">use</span><span>(</span><span class="identifier">client</span><span> =&gt; 
             </span><span class="keyword">for</span><span> {
                 </span><span class="identifier">_</span><span> &lt;- </span><span class="identifier">client</span><span>.</span><span class="identifier">createStream</span><span>(
                     </span><span class="type-name">CreateStreamRequest</span><span>
@@ -190,55 +189,52 @@
         <p>This module provides an implementation of that interface, backed by the <a href="https://github.com/etspaceman/kinesis4cats/blob/main/kinesis-client/src/main/scala/kinesis4cats/client/KinesisClient.scala">KinesisClient</a>.</p>
         <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">data</span><span>.</span><span class="type-name">NonEmptyList</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">effect</span><span>.</span><span class="identifier">_</span><span>
-</span><span class="keyword">import</span><span> </span><span class="identifier">software</span><span>.</span><span class="identifier">amazon</span><span>.</span><span class="identifier">awssdk</span><span>.</span><span class="identifier">services</span><span>.</span><span class="identifier">kinesis</span><span>.</span><span class="type-name">KinesisAsyncClient</span><span>
 
 </span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">client</span><span>.</span><span class="identifier">producer</span><span>.</span><span class="type-name">KinesisProducer</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">producer</span><span>.</span><span class="identifier">_</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">models</span><span>.</span><span class="type-name">StreamNameOrArn</span><span>
 
 </span><span class="keyword">object</span><span> </span><span class="type-name">MyApp</span><span> </span><span class="keyword">extends</span><span> </span><span class="type-name">IOApp</span><span> {
-    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">run</span><span>(</span><span class="identifier">args</span><span>: </span><span class="type-name">List</span><span>[</span><span class="type-name">String</span><span>]) = 
-        </span><span class="type-name">KinesisProducer</span><span>.</span><span class="identifier">instance</span><span>[</span><span class="type-name">IO</span><span>](
-            </span><span class="type-name">Producer</span><span>.</span><span class="type-name">Config</span><span>.</span><span class="keyword">default</span><span>(</span><span class="type-name">StreamNameOrArn</span><span>.</span><span class="type-name">Name</span><span>(</span><span class="string-literal">&quot;my-stream&quot;</span><span>)), 
-            </span><span class="type-name">KinesisAsyncClient</span><span>.</span><span class="identifier">builder</span><span>().</span><span class="identifier">build</span><span>()
-        ).</span><span class="identifier">use</span><span>(</span><span class="identifier">producer</span><span> =&gt;
-            </span><span class="keyword">for</span><span> {
-                </span><span class="identifier">_</span><span> &lt;- </span><span class="identifier">producer</span><span>.</span><span class="identifier">put</span><span>(
-                    </span><span class="type-name">NonEmptyList</span><span>.</span><span class="identifier">of</span><span>(
-                        </span><span class="type-name">Record</span><span>(</span><span class="string-literal">&quot;my-data&quot;</span><span>.</span><span class="identifier">getBytes</span><span>(), </span><span class="string-literal">&quot;some-partition-key&quot;</span><span>),
-                        </span><span class="type-name">Record</span><span>(</span><span class="string-literal">&quot;my-data-2&quot;</span><span>.</span><span class="identifier">getBytes</span><span>(), </span><span class="string-literal">&quot;some-partition-key-2&quot;</span><span>),
-                        </span><span class="type-name">Record</span><span>(</span><span class="string-literal">&quot;my-data-3&quot;</span><span>.</span><span class="identifier">getBytes</span><span>(), </span><span class="string-literal">&quot;some-partition-key-3&quot;</span><span>),
-                    )
-                )
-            } </span><span class="keyword">yield</span><span> </span><span class="type-name">ExitCode</span><span>.</span><span class="type-name">Success</span><span>
-        )
+  </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">run</span><span>(</span><span class="identifier">args</span><span>: </span><span class="type-name">List</span><span>[</span><span class="type-name">String</span><span>]) = 
+    </span><span class="type-name">KinesisProducer</span><span>.</span><span class="type-name">Builder</span><span>
+      .</span><span class="keyword">default</span><span>[</span><span class="type-name">IO</span><span>](</span><span class="type-name">StreamNameOrArn</span><span>.</span><span class="type-name">Name</span><span>(</span><span class="string-literal">&quot;my-stream&quot;</span><span>))
+      .</span><span class="identifier">build</span><span>
+      .</span><span class="identifier">use</span><span>(</span><span class="identifier">producer</span><span> =&gt;
+        </span><span class="keyword">for</span><span> {
+          </span><span class="identifier">_</span><span> &lt;- </span><span class="identifier">producer</span><span>.</span><span class="identifier">put</span><span>(
+            </span><span class="type-name">NonEmptyList</span><span>.</span><span class="identifier">of</span><span>(
+              </span><span class="type-name">Record</span><span>(</span><span class="string-literal">&quot;my-data&quot;</span><span>.</span><span class="identifier">getBytes</span><span>(), </span><span class="string-literal">&quot;some-partition-key&quot;</span><span>),
+              </span><span class="type-name">Record</span><span>(</span><span class="string-literal">&quot;my-data-2&quot;</span><span>.</span><span class="identifier">getBytes</span><span>(), </span><span class="string-literal">&quot;some-partition-key-2&quot;</span><span>),
+              </span><span class="type-name">Record</span><span>(</span><span class="string-literal">&quot;my-data-3&quot;</span><span>.</span><span class="identifier">getBytes</span><span>(), </span><span class="string-literal">&quot;some-partition-key-3&quot;</span><span>),
+            )
+          )
+        } </span><span class="keyword">yield</span><span> </span><span class="type-name">ExitCode</span><span>.</span><span class="type-name">Success</span><span>
+      )
 }</span></code></pre>
         
         <h2 id="fs2-producer" class="section">FS2 Producer<a class="anchor-link right" href="#fs2-producer"><i class="icofont-laika">&#xef71;</i></a></h2>
         <p>This package provides a <a href="https://github.com/awslabs/amazon-kinesis-producer">KPL-like</a> producer via implementing <a href="https://github.com/etspaceman/kinesis4cats/blob/main/shared/src/main/scala/kinesis4cats/producer/fs2/FS2Producer.scala">FS2Producer</a>. This interface receives records from a user, enqueues them into a Queue and puts them as batches to Kinesis on a configured interval. This leverages all of the functionality of the <a href="https://github.com/etspaceman/kinesis4cats/blob/main/shared/src/main/scala/kinesis4cats/producer/Producer.scala">Producer</a> interface, including batching, aggregation and retries. </p>
         <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">effect</span><span>.</span><span class="identifier">_</span><span>
-</span><span class="keyword">import</span><span> </span><span class="identifier">software</span><span>.</span><span class="identifier">amazon</span><span>.</span><span class="identifier">awssdk</span><span>.</span><span class="identifier">services</span><span>.</span><span class="identifier">kinesis</span><span>.</span><span class="type-name">KinesisAsyncClient</span><span>
 
 </span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">client</span><span>.</span><span class="identifier">producer</span><span>.</span><span class="identifier">fs2</span><span>.</span><span class="type-name">FS2KinesisProducer</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">producer</span><span>.</span><span class="identifier">_</span><span>
-</span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">producer</span><span>.</span><span class="identifier">fs2</span><span>.</span><span class="identifier">_</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">models</span><span>.</span><span class="type-name">StreamNameOrArn</span><span>
 
 </span><span class="keyword">object</span><span> </span><span class="type-name">MyApp</span><span> </span><span class="keyword">extends</span><span> </span><span class="type-name">IOApp</span><span> {
     </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">run</span><span>(</span><span class="identifier">args</span><span>: </span><span class="type-name">List</span><span>[</span><span class="type-name">String</span><span>]) = 
-        </span><span class="type-name">FS2KinesisProducer</span><span>.</span><span class="identifier">instance</span><span>[</span><span class="type-name">IO</span><span>](
-            </span><span class="type-name">FS2Producer</span><span>.</span><span class="type-name">Config</span><span>.</span><span class="keyword">default</span><span>(</span><span class="type-name">StreamNameOrArn</span><span>.</span><span class="type-name">Name</span><span>(</span><span class="string-literal">&quot;my-stream&quot;</span><span>)), 
-            </span><span class="type-name">KinesisAsyncClient</span><span>.</span><span class="identifier">builder</span><span>().</span><span class="identifier">build</span><span>()
-        ).</span><span class="identifier">use</span><span>(</span><span class="identifier">producer</span><span> =&gt;
+        </span><span class="type-name">FS2KinesisProducer</span><span>.</span><span class="type-name">Builder</span><span>
+          .</span><span class="keyword">default</span><span>[</span><span class="type-name">IO</span><span>](</span><span class="type-name">StreamNameOrArn</span><span>.</span><span class="type-name">Name</span><span>(</span><span class="string-literal">&quot;my-stream&quot;</span><span>))
+          .</span><span class="identifier">build</span><span>
+          .</span><span class="identifier">use</span><span>(</span><span class="identifier">producer</span><span> =&gt;
             </span><span class="keyword">for</span><span> {
-                </span><span class="identifier">_</span><span> &lt;- </span><span class="identifier">producer</span><span>.</span><span class="identifier">put</span><span>(
-                    </span><span class="type-name">Record</span><span>(</span><span class="string-literal">&quot;my-data&quot;</span><span>.</span><span class="identifier">getBytes</span><span>(), </span><span class="string-literal">&quot;some-partition-key&quot;</span><span>)
+              </span><span class="identifier">_</span><span> &lt;- </span><span class="identifier">producer</span><span>.</span><span class="identifier">put</span><span>(
+                  </span><span class="type-name">Record</span><span>(</span><span class="string-literal">&quot;my-data&quot;</span><span>.</span><span class="identifier">getBytes</span><span>(), </span><span class="string-literal">&quot;some-partition-key&quot;</span><span>)
                 )
-                </span><span class="identifier">_</span><span> &lt;- </span><span class="identifier">producer</span><span>.</span><span class="identifier">put</span><span>(
-                    </span><span class="type-name">Record</span><span>(</span><span class="string-literal">&quot;my-data-2&quot;</span><span>.</span><span class="identifier">getBytes</span><span>(), </span><span class="string-literal">&quot;some-partition-key-2&quot;</span><span>)
+              </span><span class="identifier">_</span><span> &lt;- </span><span class="identifier">producer</span><span>.</span><span class="identifier">put</span><span>(
+                  </span><span class="type-name">Record</span><span>(</span><span class="string-literal">&quot;my-data-2&quot;</span><span>.</span><span class="identifier">getBytes</span><span>(), </span><span class="string-literal">&quot;some-partition-key-2&quot;</span><span>)
                 )
-                </span><span class="identifier">_</span><span> &lt;- </span><span class="identifier">producer</span><span>.</span><span class="identifier">put</span><span>(
-                    </span><span class="type-name">Record</span><span>(</span><span class="string-literal">&quot;my-data-3&quot;</span><span>.</span><span class="identifier">getBytes</span><span>(), </span><span class="string-literal">&quot;some-partition-key-3&quot;</span><span>)
+              </span><span class="identifier">_</span><span> &lt;- </span><span class="identifier">producer</span><span>.</span><span class="identifier">put</span><span>(
+                  </span><span class="type-name">Record</span><span>(</span><span class="string-literal">&quot;my-data-3&quot;</span><span>.</span><span class="identifier">getBytes</span><span>(), </span><span class="string-literal">&quot;some-partition-key-3&quot;</span><span>)
                 )
             } </span><span class="keyword">yield</span><span> </span><span class="type-name">ExitCode</span><span>.</span><span class="type-name">Success</span><span>
         )
