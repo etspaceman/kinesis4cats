@@ -5,8 +5,7 @@ lazy val compat = projectMatrix
   .settings(
     description := "Code to maintain compatability across major scala versions",
     scalacOptions --= Seq("-deprecation", "-Xlint:deprecation", "-Xsource:3"),
-    Compile / doc / sources := Seq.empty,
-    Compile / packageDoc / publishArtifact := false
+    Compile / doc / sources := Seq.empty
   )
   .jvmPlatform(allScalaVersions)
   .nativePlatform(allScalaVersions)
