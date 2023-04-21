@@ -23,6 +23,7 @@ import java.nio.charset.StandardCharsets
 import java.time.Instant
 
 import cats.Show
+import cats.effect.kernel.Resource
 import cats.effect.syntax.all._
 import cats.effect.{Async, Ref}
 import cats.syntax.all._
@@ -112,34 +113,43 @@ private[kinesis4cats] class ShardMapCache[F[_]] private (
 
 object ShardMapCache {
 
-  /** Construct a ShardMapCache
-    *
-    * @param config
-    *   ShardMapCache
-    * @param shardMapF
-    *   F that supplies a new [[kinesis4cats.producer.ShardMap ShardMap]]
-    * @param loggerF
-    *   F of [[org.typelevel.log4cats.StructuredLogger StructuredLogger]]
-    * @param F
-    *   [[cats.effect.Async Async]]
-    * @param encoders
-    *   [[kinesis4cats.producer.ShardMapCache.LogEncoders ShardMapCache.LogEncoders]].
-    *   Defaults to show instances
-    * @return
-    */
-  def apply[F[_]](
+  final case class Builder[F[_]] private (
       config: Config,
       shardMapF: F[Either[Error, ShardMap]],
-      loggerF: F[StructuredLogger[F]],
-      encoders: ShardMapCache.LogEncoders = LogEncoders.show
-  )(implicit
-      F: Async[F]
-  ) = for {
-    logger <- loggerF.toResource
-    ref <- Ref.of[F, ShardMap](ShardMap.empty).toResource
-    service = new ShardMapCache[F](config, logger, ref, shardMapF, encoders)
-    _ <- service.start()
-  } yield service
+      logger: StructuredLogger[F],
+      encoders: LogEncoders
+  )(implicit F: Async[F]) {
+    def withConfig(config: Config): Builder[F] = copy(config = config)
+    def withShardMapF(shardMapF: F[Either[Error, ShardMap]]): Builder[F] =
+      copy(shardMapF = shardMapF)
+    def withLogger(logger: StructuredLogger[F]): Builder[F] =
+      copy(logger = logger)
+    def withLogEncoders(encoders: LogEncoders): Builder[F] =
+      copy(encoders = encoders)
+
+    def build: Resource[F, ShardMapCache[F]] = for {
+      ref <- Ref.of[F, ShardMap](ShardMap.empty).toResource
+      service = new ShardMapCache[F](config, logger, ref, shardMapF, encoders)
+      _ <- service.start()
+    } yield service
+  }
+
+  object Builder {
+    def default[F[_]](
+        shardMapF: F[Either[Error, ShardMap]],
+        logger: StructuredLogger[F]
+    )(implicit
+        F: Async[F]
+    ): Builder[F] = Builder[F](
+      Config.default,
+      shardMapF,
+      logger,
+      LogEncoders.show
+    )
+
+    @annotation.unused
+    private def unapply[F[_]](builder: Builder[F]): Unit = ()
+  }
 
   /** [[kinesis4cats.logging.LogEncoder LogEncoder]] instances for the
     * ShardMapCache

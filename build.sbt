@@ -3,7 +3,10 @@ import laika.rewrite.link._
 
 lazy val compat = projectMatrix
   .settings(
-    description := "Code to maintain compatability across major scala versions"
+    description := "Code to maintain compatability across major scala versions",
+    scalacOptions --= Seq("-deprecation", "-Xlint:deprecation", "-Xsource:3"),
+    Compile / doc / sources := Seq.empty,
+    Compile / packageDoc / publishArtifact := false
   )
   .jvmPlatform(allScalaVersions)
   .nativePlatform(allScalaVersions)
@@ -475,7 +478,6 @@ lazy val unidocs = projectMatrix
     moduleName := name.value,
     ScalaUnidoc / unidoc / unidocProjectFilter := inProjects(
       List(
-        compat,
         shared,
         `shared-circe`,
         `shared-ciris`,

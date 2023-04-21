@@ -22,7 +22,6 @@ import java.time.Instant
 import cats.data.NonEmptyList
 import cats.effect.Resource
 import cats.effect._
-import cats.effect.syntax.all._
 import cats.syntax.all._
 import com.amazonaws.kinesis._
 import org.http4s.client.Client
@@ -104,6 +103,76 @@ final class KinesisProducer[F[_]] private[kinesis4cats] (
 
 object KinesisProducer {
 
+  final case class Builder[F[_]] private (
+      config: Producer.Config[F],
+      client: Client[F],
+      region: AwsRegion,
+      logger: StructuredLogger[F],
+      credentialsResourceF: SimpleHttpClient[F] => Resource[F, F[
+        AwsCredentials
+      ]],
+      encoders: LogEncoders[F],
+      logRequestsResponses: Boolean
+  )(implicit F: Async[F]) {
+    def withConfig(config: Producer.Config[F]): Builder[F] =
+      copy(config = config)
+    def withClient(client: Client[F]): Builder[F] = copy(client = client)
+    def withRegion(region: AwsRegion): Builder[F] = copy(region = region)
+    def withLogger(logger: StructuredLogger[F]): Builder[F] =
+      copy(logger = logger)
+    def withCredentials(
+        credentialsResourceF: SimpleHttpClient[F] => Resource[F, F[
+          AwsCredentials
+        ]]
+    ): Builder[F] =
+      copy(credentialsResourceF = credentialsResourceF)
+    def withLogEncoders(encoders: LogEncoders[F]): Builder[F] =
+      copy(encoders = encoders)
+    def withLogRequestsResponses(logRequestsResponses: Boolean): Builder[F] =
+      copy(logRequestsResponses = logRequestsResponses)
+    def enableLogging: Builder[F] = withLogRequestsResponses(true)
+    def disableLogging: Builder[F] = withLogRequestsResponses(false)
+
+    def build: Resource[F, KinesisProducer[F]] = for {
+      client <- KinesisClient.Builder
+        .default[F](client, region)
+        .withLogger(logger)
+        .withCredentials(credentialsResourceF)
+        .withLogEncoders(encoders.kinesisClientLogEncoders)
+        .withLogRequestsResponses(logRequestsResponses)
+        .build
+      shardMapCache <- ShardMapCache.Builder
+        .default(getShardMap(client, config.streamNameOrArn), logger)
+        .withLogEncoders(encoders.producerLogEncoders.shardMapLogEncoders)
+        .build
+    } yield new KinesisProducer[F](
+      logger,
+      shardMapCache,
+      config,
+      client,
+      encoders.producerLogEncoders
+    )
+  }
+
+  object Builder {
+    def default[F[_]](
+        streamNameOrArn: models.StreamNameOrArn,
+        client: Client[F],
+        region: AwsRegion
+    )(implicit F: Async[F]): Builder[F] = Builder[F](
+      Producer.Config.default(streamNameOrArn),
+      client,
+      region,
+      NoOpLogger[F],
+      backend => AwsCredentialsProvider.default(backend),
+      LogEncoders.show[F],
+      true
+    )
+
+    @annotation.unused
+    private def unapply[F[_]](builder: Builder[F]): Unit = ()
+  }
+
   final class LogEncoders[F[_]](
       val kinesisClientLogEncoders: KinesisClient.LogEncoders[F],
       val producerLogEncoders: Producer.LogEncoders
@@ -159,73 +228,4 @@ object KinesisProducer {
             )
           )
       )
-
-  /** Basic constructor for the
-    * [[kinesis4cats.smithy4s.client.producer.KinesisProducer KinesisProducer]]
-    *
-    * @param config
-    *   [[kinesis4cats.producer.Producer.Config Producer.Config]]
-    * @param client
-    *   [[org.http4s.client.Client Client]] instance
-    * @param region
-    *   [[https://github.com/disneystreaming/smithy4s/blob/series/0.17/modules/aws-kernel/src/smithy4s/aws/AwsRegion.scala AwsRegion]]
-    * @param loggerF
-    *   [[cats.effect.Async Async]] => F of
-    *   [[org.typelevel.log4cats.StructuredLogger StructuredLogger]]. Default
-    *   uses [[org.typelevel.log4cats.noop.NoOpLogger NoOpLogger]]
-    * @param credsF
-    *   (
-    *   [[https://github.com/disneystreaming/smithy4s/blob/series/0.17/modules/aws/src/smithy4s/aws/SimpleHttpClient.scala SimpleHttpClient]],
-    *   [[cats.effect.Async Async]]) => F of
-    *   [[https://github.com/disneystreaming/smithy4s/blob/series/0.17/modules/aws-kernel/src/smithy4s/aws/AwsCredentials.scala AwsCredentials]]
-    *   Default uses
-    *   [[https://github.com/disneystreaming/smithy4s/blob/series/0.17/modules/aws/src/smithy4s/aws/AwsCredentialsProvider.scala AwsCredentialsProvider.default]]
-    * @param F
-    *   [[cats.effect.Async Async]]
-    * @param encoders
-    *   [[kinesis4cats.smithy4s.client.producer.KinesisProducer.LogEncoders KinesisProducer.LogEncoders]].
-    *   Default to show instances
-    * @return
-    *   [[cats.effect.Resource Resource]] of
-    *   [[kinesis4cats.smithy4s.client.producer.KinesisProducer KinesisProducer]]
-    */
-  def apply[F[_]](
-      config: Producer.Config[F],
-      client: Client[F],
-      region: F[AwsRegion],
-      loggerF: Async[F] => F[StructuredLogger[F]] = (f: Async[F]) =>
-        f.pure(NoOpLogger[F](f)),
-      credsF: (
-          SimpleHttpClient[F],
-          Async[F]
-      ) => Resource[F, F[AwsCredentials]] =
-        (x: SimpleHttpClient[F], f: Async[F]) =>
-          AwsCredentialsProvider.default[F](x)(f),
-      encoders: KinesisProducer.LogEncoders[F] =
-        KinesisProducer.LogEncoders.show[F]
-  )(implicit
-      F: Async[F]
-  ): Resource[F, KinesisProducer[F]] = for {
-    logger <- loggerF(F).toResource
-    underlying <- KinesisClient[F](
-      client,
-      region,
-      loggerF,
-      credsF,
-      encoders = encoders.kinesisClientLogEncoders
-    )
-    shardMapCache <- ShardMapCache[F](
-      config.shardMapCacheConfig,
-      getShardMap(underlying, config.streamNameOrArn),
-      loggerF(F),
-      encoders.producerLogEncoders.shardMapLogEncoders
-    )
-    producer = new KinesisProducer[F](
-      logger,
-      shardMapCache,
-      config,
-      underlying,
-      encoders.producerLogEncoders
-    )
-  } yield producer
 }

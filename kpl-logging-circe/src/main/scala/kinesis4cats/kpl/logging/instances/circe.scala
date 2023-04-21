@@ -28,7 +28,7 @@ import kinesis4cats.logging.syntax.circe._
   * encoding of log structures using [[https://circe.github.io/circe/ Circe]]
   */
 object circe {
-  val kplProducer: KPLProducer.LogEncoders = {
+  val kplCirceEncoders: KPLProducer.LogEncoders = {
     implicit val attemptEncoder: Encoder[Attempt] = x => {
       val fields: Map[String, Json] =
         Map

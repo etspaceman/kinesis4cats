@@ -26,10 +26,10 @@ import software.amazon.kinesis.processor.SingleStreamTracker
 
 import kinesis4cats.Utils
 import kinesis4cats.client.KinesisClient
-import kinesis4cats.client.localstack.LocalstackKinesisClient
 import kinesis4cats.client.producer.localstack.LocalstackKinesisProducer
 import kinesis4cats.kcl.CommittableRecord
 import kinesis4cats.kcl.localstack.LocalstackKCLConsumer
+import kinesis4cats.localstack.TestStreamConfig
 import kinesis4cats.models.StreamNameOrArn
 import kinesis4cats.producer.Producer
 import kinesis4cats.producer.ProducerSpec
@@ -46,26 +46,26 @@ class KinesisProducerNoShardMapSpec
     s"kinesis-client-producer-spec-${Utils.randomUUIDString}"
   override def producerResource
       : Resource[IO, Producer[IO, PutRecordsRequest, PutRecordsResponse]] =
-    LocalstackKinesisProducer.resource[IO](
-      streamName,
-      shardMapF = (
-          _: KinesisClient[IO],
-          _: StreamNameOrArn,
-          _: Async[IO]
-      ) =>
-        IO.pure(
-          ShardMapCache
-            .ListShardsError(
-              new RuntimeException("Expected Exception")
-            )
-            .asLeft
-        )
-    )
+    LocalstackKinesisProducer.Builder
+      .default[IO](StreamNameOrArn.Name(streamName))
+      .toResource
+      .flatMap(x =>
+        x.withStreamsToCreate(
+          List(TestStreamConfig.default(streamName, 3))
+        ).withShardMapF((_: KinesisClient[IO], _: StreamNameOrArn) =>
+          IO.pure(
+            ShardMapCache
+              .ListShardsError(
+                new RuntimeException("Expected Exception")
+              )
+              .asLeft
+          )
+        ).build
+      )
 
   override def aAsBytes(a: CommittableRecord[IO]): Array[Byte] = a.data.asArray
 
   override def fixture(
-      shardCount: Int,
       appName: String
   ): SyncIO[FunFixture[ProducerSpec.Resources[
     IO,
@@ -74,18 +74,19 @@ class KinesisProducerNoShardMapSpec
     CommittableRecord[IO]
   ]]] = ResourceFunFixture(
     for {
-      _ <- LocalstackKinesisClient.streamResource[IO](streamName, shardCount)
-      deferredWithResults <- LocalstackKCLConsumer.kclConsumerWithResults(
-        new SingleStreamTracker(
-          StreamIdentifier.singleStreamInstance(streamName),
-          InitialPositionInStreamExtended.newInitialPosition(
-            InitialPositionInStream.TRIM_HORIZON
-          )
-        ),
-        appName
-      )((_: List[CommittableRecord[IO]]) => IO.unit)
-      _ <- deferredWithResults.deferred.get.toResource
       producer <- producerResource
+      builder <- LocalstackKCLConsumer.Builder
+        .default[IO](
+          new SingleStreamTracker(
+            StreamIdentifier.singleStreamInstance(streamName),
+            InitialPositionInStreamExtended.newInitialPosition(
+              InitialPositionInStream.TRIM_HORIZON
+            )
+          ),
+          appName
+        )
+      deferredWithResults <- builder.runWithResults()
+      _ <- deferredWithResults.deferred.get.toResource
     } yield ProducerSpec.Resources(deferredWithResults.resultsQueue, producer)
   )
 

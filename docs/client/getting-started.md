@@ -13,14 +13,13 @@ libraryDependencies += "io.github.etspaceman" %% "kinesis4cats-client" % "@VERSI
 ```scala mdoc:compile-only
 import cats.effect._
 import software.amazon.awssdk.core.SdkBytes
-import software.amazon.awssdk.services.kinesis.KinesisAsyncClient
 import software.amazon.awssdk.services.kinesis.model._
 
 import kinesis4cats.client.KinesisClient
 
 object MyApp extends IOApp {
     override def run(args: List[String]) = 
-        KinesisClient[IO](KinesisAsyncClient.builder().build()).use(client => 
+        KinesisClient.Builder.default[IO].build.use(client => 
             for {
                 _ <- client.createStream(
                     CreateStreamRequest
@@ -58,28 +57,27 @@ This module provides an implementation of that interface, backed by the @:source
 ```scala mdoc:compile-only
 import cats.data.NonEmptyList
 import cats.effect._
-import software.amazon.awssdk.services.kinesis.KinesisAsyncClient
 
 import kinesis4cats.client.producer.KinesisProducer
 import kinesis4cats.producer._
 import kinesis4cats.models.StreamNameOrArn
 
 object MyApp extends IOApp {
-    override def run(args: List[String]) = 
-        KinesisProducer.instance[IO](
-            Producer.Config.default(StreamNameOrArn.Name("my-stream")), 
-            KinesisAsyncClient.builder().build()
-        ).use(producer =>
-            for {
-                _ <- producer.put(
-                    NonEmptyList.of(
-                        Record("my-data".getBytes(), "some-partition-key"),
-                        Record("my-data-2".getBytes(), "some-partition-key-2"),
-                        Record("my-data-3".getBytes(), "some-partition-key-3"),
-                    )
-                )
-            } yield ExitCode.Success
-        )
+  override def run(args: List[String]) = 
+    KinesisProducer.Builder
+      .default[IO](StreamNameOrArn.Name("my-stream"))
+      .build
+      .use(producer =>
+        for {
+          _ <- producer.put(
+            NonEmptyList.of(
+              Record("my-data".getBytes(), "some-partition-key"),
+              Record("my-data-2".getBytes(), "some-partition-key-2"),
+              Record("my-data-3".getBytes(), "some-partition-key-3"),
+            )
+          )
+        } yield ExitCode.Success
+      )
 }
 ```
 
@@ -89,28 +87,26 @@ This package provides a [KPL-like](https://github.com/awslabs/amazon-kinesis-pro
 
 ```scala mdoc:compile-only
 import cats.effect._
-import software.amazon.awssdk.services.kinesis.KinesisAsyncClient
 
 import kinesis4cats.client.producer.fs2.FS2KinesisProducer
 import kinesis4cats.producer._
-import kinesis4cats.producer.fs2._
 import kinesis4cats.models.StreamNameOrArn
 
 object MyApp extends IOApp {
     override def run(args: List[String]) = 
-        FS2KinesisProducer.instance[IO](
-            FS2Producer.Config.default(StreamNameOrArn.Name("my-stream")), 
-            KinesisAsyncClient.builder().build()
-        ).use(producer =>
+        FS2KinesisProducer.Builder
+          .default[IO](StreamNameOrArn.Name("my-stream"))
+          .build
+          .use(producer =>
             for {
-                _ <- producer.put(
-                    Record("my-data".getBytes(), "some-partition-key")
+              _ <- producer.put(
+                  Record("my-data".getBytes(), "some-partition-key")
                 )
-                _ <- producer.put(
-                    Record("my-data-2".getBytes(), "some-partition-key-2")
+              _ <- producer.put(
+                  Record("my-data-2".getBytes(), "some-partition-key-2")
                 )
-                _ <- producer.put(
-                    Record("my-data-3".getBytes(), "some-partition-key-3")
+              _ <- producer.put(
+                  Record("my-data-3".getBytes(), "some-partition-key-3")
                 )
             } yield ExitCode.Success
         )

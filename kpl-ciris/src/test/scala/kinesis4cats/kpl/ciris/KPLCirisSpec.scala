@@ -26,6 +26,7 @@ import com.amazonaws.services.schemaregistry.utils.AWSSchemaRegistryConstants.CO
 import com.amazonaws.services.schemaregistry.utils._
 import software.amazon.awssdk.services.glue.model.Compatibility
 
+import kinesis4cats.kpl.KPLProducer
 import kinesis4cats.kpl.instances.eq._
 import kinesis4cats.kpl.instances.show._
 import kinesis4cats.syntax.id._
@@ -37,7 +38,7 @@ class KPLCirisSpec extends munit.CatsEffectSuite {
     "It should load the environment variables the same as system properties"
   ) {
     // format: off
-    val expected = new KinesisProducerConfiguration()
+    val expected = KPLProducer.Config(new KinesisProducerConfiguration()
       .setGlueSchemaRegistryConfiguration(
         new GlueSchemaRegistryConfiguration("us-east-1")
           .runUnsafe(COMPRESSION.valueOf(BuildInfo.kplGlueCompressionType))(
@@ -112,7 +113,10 @@ class KPLCirisSpec extends munit.CatsEffectSuite {
       .safeTransform(BuildInfo.kplThreadPoolSize.toInt)(_.setThreadPoolSize(_))
       .safeTransform(BuildInfo.kplUserRecordTimeout.asMillisUnsafe)(
         _.setUserRecordTimeoutInMillis(_)
-      )
+      ), KPLProducer.Config.GracefulShutdown(
+        BuildInfo.kplGracefulShutdownFlushAttempts.toInt, 
+        BuildInfo.kplGracefulShutdownFlushInterval.asFiniteDurationUnsafe
+      ))
     // format: on
     for {
       kplConfigEnv <- KPLCiris.loadKplConfig[IO](prefix = Some("env"))

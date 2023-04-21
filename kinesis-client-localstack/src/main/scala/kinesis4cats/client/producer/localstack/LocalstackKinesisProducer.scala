@@ -16,16 +16,17 @@
 
 package kinesis4cats.client.producer.localstack
 
-import cats.Applicative
 import cats.effect._
-import cats.effect.syntax.all._
 import cats.syntax.all._
+import org.typelevel.log4cats.StructuredLogger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
+import software.amazon.awssdk.services.kinesis.KinesisAsyncClient
 
 import kinesis4cats.client.KinesisClient
+import kinesis4cats.client.localstack.LocalstackKinesisClient
 import kinesis4cats.client.producer.KinesisProducer
 import kinesis4cats.localstack.LocalstackConfig
-import kinesis4cats.localstack.aws.v2.AwsClients
+import kinesis4cats.localstack.TestStreamConfig
 import kinesis4cats.models.StreamNameOrArn
 import kinesis4cats.producer.Producer
 import kinesis4cats.producer.ShardMap
@@ -33,100 +34,97 @@ import kinesis4cats.producer.ShardMapCache
 
 object LocalstackKinesisProducer {
 
-  /** Builds a [[kinesis4cats.client.producer.KinesisProducer KinesisProducer]]
-    * that is compliant for Localstack usage. Lifecycle is managed as a
-    * [[cats.effect.Resource Resource]].
-    *
-    * @param producerConfig
-    *   [[kinesis4cats.producer.Producer.Config Producer.Config]]
-    * @param config
-    *   [[kinesis4cats.localstack.LocalstackConfig LocalstackConfig]]
-    * @param F
-    *   F with an [[cats.effect.Async Async]] instance
-    * @param encoders
-    *   [[kinesis4cats.client.producer.KinesisProducer.LogEncoders KinesisProducer.LogEncoders]].
-    * @return
-    *   [[cats.effect.Resource Resource]] of
-    *   [[kinesis4cats.client.producer.KinesisProducer KinesisProducer]]
-    */
-  def resource[F[_]](
-      producerConfig: Producer.Config[F],
-      config: LocalstackConfig,
+  final case class Builder[F[_]] private (
+      clientResource: Resource[F, KinesisClient[F]],
+      localstackConfig: LocalstackConfig,
+      config: Producer.Config[F],
+      logger: StructuredLogger[F],
+      encoders: KinesisProducer.LogEncoders,
+      streamsToCreate: List[TestStreamConfig[F]],
       shardMapF: (
           KinesisClient[F],
-          StreamNameOrArn,
-          Async[F]
-      ) => F[Either[ShardMapCache.Error, ShardMap]],
-      encoders: KinesisProducer.LogEncoders
-  )(implicit F: Async[F]): Resource[F, KinesisProducer[F]] = AwsClients
-    .kinesisClientResource[F](config)
-    .flatMap(_underlying =>
-      for {
-        logger <- Slf4jLogger.create[F].toResource
-        underlying <- KinesisClient[F](
-          _underlying,
-          encoders.kinesisClientLogEncoders
-        )
-        shardMapCache <- ShardMapCache[F](
-          producerConfig.shardMapCacheConfig,
-          shardMapF(underlying, producerConfig.streamNameOrArn, F),
-          Slf4jLogger.create[F].widen,
-          encoders.producerLogEncoders.shardMapLogEncoders
-        )
-        producer = new KinesisProducer[F](
-          logger,
-          shardMapCache,
-          producerConfig,
-          underlying,
-          encoders.producerLogEncoders
-        )
-      } yield producer
+          StreamNameOrArn
+      ) => F[Either[ShardMapCache.Error, ShardMap]]
+  )(implicit F: Async[F]) {
+
+    def withLocalstackConfig(localstackConfig: LocalstackConfig): Builder[F] =
+      copy(localstackConfig = localstackConfig)
+    def withConfig(config: Producer.Config[F]): Builder[F] = copy(
+      config = config
+    )
+    def withClient(
+        client: => KinesisAsyncClient,
+        managed: Boolean = true
+    ): Builder[F] = copy(
+      clientResource =
+        KinesisClient.Builder.default.withClient(client, managed).build
+    )
+    def withClient(client: KinesisClient[F]): Builder[F] = copy(
+      clientResource = Resource.pure(client)
+    )
+    def withLogger(logger: StructuredLogger[F]): Builder[F] =
+      copy(logger = logger)
+    def withLogEncoders(encoders: KinesisProducer.LogEncoders): Builder[F] =
+      copy(encoders = encoders)
+    def withStreamsToCreate(streamsToCreate: List[TestStreamConfig[F]]) =
+      copy(streamsToCreate = streamsToCreate)
+    def withShardMapF(
+        shardMapF: (
+            KinesisClient[F],
+            StreamNameOrArn
+        ) => F[Either[ShardMapCache.Error, ShardMap]]
+    ): Builder[F] = copy(
+      shardMapF = shardMapF
     )
 
-  /** Builds a [[kinesis4cats.client.producer.KinesisProducer KinesisProducer]]
-    * that is compliant for Localstack usage. Lifecycle is managed as a
-    * [[cats.effect.Resource Resource]].
-    *
-    * @param streamName
-    *   Name of stream for the producer to produce to
-    * @param prefix
-    *   Optional prefix for parsing configuration. Default to None
-    * @param producerConfig
-    *   String => [[kinesis4cats.producer.Producer.Config Producer.Config]]
-    *   function that creates configuration given a stream name. Defaults to
-    *   Producer.Config.default
-    * @param F
-    *   F with an [[cats.effect.Async Async]] instance
-    * @param encoders
-    *   [[kinesis4cats.client.producer.KinesisProducer.LogEncoders KinesisProducer.LogEncoders]].
-    * @return
-    *   [[cats.effect.Resource Resource]] of
-    *   [[kinesis4cats.client.producer.KinesisProducer KinesisProducer]]
-    */
-  def resource[F[_]](
-      streamName: String,
-      prefix: Option[String] = None,
-      producerConfig: (String, Applicative[F]) => Producer.Config[F] =
-        (streamName: String, f: Applicative[F]) =>
-          Producer.Config.default[F](StreamNameOrArn.Name(streamName))(f),
-      shardMapF: (
-          KinesisClient[F],
-          StreamNameOrArn,
-          Async[F]
-      ) => F[Either[ShardMapCache.Error, ShardMap]] = (
-          client: KinesisClient[F],
-          streamNameOrArn: StreamNameOrArn,
-          f: Async[F]
-      ) => KinesisProducer.getShardMap(client, streamNameOrArn)(f),
-      encoders: KinesisProducer.LogEncoders = KinesisProducer.LogEncoders.show
-  )(implicit F: Async[F]): Resource[F, KinesisProducer[F]] = LocalstackConfig
-    .resource[F](prefix)
-    .flatMap(
-      resource[F](
-        producerConfig(streamName, F),
-        _,
-        shardMapF,
-        encoders
+    def build: Resource[F, KinesisProducer[F]] = for {
+      client <- clientResource
+      _ <- streamsToCreate.traverse_(x =>
+        LocalstackKinesisClient.managedStream(x, client)
       )
+      shardMapCache <- ShardMapCache.Builder
+        .default[F](shardMapF(client, config.streamNameOrArn), logger)
+        .withLogEncoders(
+          encoders.producerLogEncoders.shardMapLogEncoders
+        )
+        .build
+    } yield new KinesisProducer[F](
+      logger,
+      shardMapCache,
+      config,
+      client,
+      encoders.producerLogEncoders
     )
+  }
+
+  object Builder {
+    def default[F[_]](
+        streamNameOrArn: StreamNameOrArn,
+        prefix: Option[String] = None
+    )(implicit
+        F: Async[F]
+    ): F[Builder[F]] = LocalstackConfig
+      .load(prefix)
+      .map(default(streamNameOrArn, _))
+
+    def default[F[_]](
+        streamNameOrArn: StreamNameOrArn,
+        config: LocalstackConfig
+    )(implicit
+        F: Async[F]
+    ): Builder[F] =
+      Builder[F](
+        LocalstackKinesisClient.Builder.default[F](config).build,
+        config,
+        Producer.Config.default[F](streamNameOrArn),
+        Slf4jLogger.getLogger[F],
+        KinesisProducer.LogEncoders.show,
+        Nil,
+        (client: KinesisClient[F], snoa: StreamNameOrArn) =>
+          KinesisProducer.getShardMap(client, snoa)
+      )
+
+    @annotation.unused
+    private def unapply[F[_]](builder: Builder[F]): Unit = ()
+  }
 }

@@ -31,6 +31,7 @@ import smithy4s.aws.SimpleHttpClient
 import smithy4s.aws.kernel.AwsCredentials
 import smithy4s.aws.kernel.AwsRegion
 
+import kinesis4cats.models
 import kinesis4cats.producer._
 import kinesis4cats.producer.fs2.FS2Producer
 
@@ -57,80 +58,77 @@ final class FS2KinesisProducer[F[_]] private[kinesis4cats] (
     override protected val channel: Channel[F, Record],
     override protected val underlying: KinesisProducer[F]
 )(
-    override protected val callback: (
-        Producer.Res[PutRecordsOutput],
-        Async[F]
-    ) => F[Unit]
+    override protected val callback: Producer.Res[PutRecordsOutput] => F[Unit]
 )(implicit
     F: Async[F]
 ) extends FS2Producer[F, PutRecordsInput, PutRecordsOutput]
 
 object FS2KinesisProducer {
 
-  /** Basic constructor for the
-    * [[kinesis4cats.smithy4s.client.producer.fs2.FS2KinesisProducer FS2KinesisProducer]]
-    *
-    * @param config
-    *   [[kinesis4cats.producer.fs2.FS2Producer.Config FS2Producer.Config]]
-    * @param client
-    *   [[org.http4s.client.Client Client]] instance
-    * @param region
-    *   [[https://github.com/disneystreaming/smithy4s/blob/series/0.17/modules/aws-kernel/src/smithy4s/aws/AwsRegion.scala AwsRegion]]
-    * @param loggerF
-    *   [[cats.effect.Async Async]] => F of
-    *   [[org.typelevel.log4cats.StructuredLogger StructuredLogger]]. Default
-    *   uses [[org.typelevel.log4cats.noop.NoOpLogger NoOpLogger]]
-    * @param credsF
-    *   (
-    *   [[https://github.com/disneystreaming/smithy4s/blob/series/0.17/modules/aws/src/smithy4s/aws/SimpleHttpClient.scala SimpleHttpClient]],
-    *   [[cats.effect.Async Async]]) => F of
-    *   [[https://github.com/disneystreaming/smithy4s/blob/series/0.17/modules/aws-kernel/src/smithy4s/aws/AwsCredentials.scala AwsCredentials]]
-    *   Default uses
-    *   [[https://github.com/disneystreaming/smithy4s/blob/series/0.17/modules/aws/src/smithy4s/aws/AwsCredentialsProvider.scala AwsCredentialsProvider.default]]
-    * @param callback
-    *   Function that can be run after each of the put results from the
-    *   underlying
-    * @param F
-    *   [[cats.effect.Async Async]]
-    * @param encoders
-    *   [[kinesis4cats.smithy4s.client.producer.KinesisProducer.LogEncoders KinesisProducer.LogEncoders]].
-    *   Default to show instances
-    * @return
-    *   [[cats.effect.Resource Resource]] of
-    *   [[kinesis4cats.smithy4s.client.producer.KinesisProducer KinesisProducer]]
-    */
-  def apply[F[_]](
+  final case class Builder[F[_]] private (
       config: FS2Producer.Config[F],
       client: Client[F],
-      region: F[AwsRegion],
-      loggerF: Async[F] => F[StructuredLogger[F]] = (f: Async[F]) =>
-        f.pure(NoOpLogger[F](f)),
-      credsF: (
-          SimpleHttpClient[F],
-          Async[F]
-      ) => Resource[F, F[AwsCredentials]] =
-        (x: SimpleHttpClient[F], f: Async[F]) =>
-          AwsCredentialsProvider.default[F](x)(f),
-      callback: (Producer.Res[PutRecordsOutput], Async[F]) => F[Unit] =
-        (_: Producer.Res[PutRecordsOutput], f: Async[F]) => f.unit,
-      encoders: KinesisProducer.LogEncoders[F] =
-        KinesisProducer.LogEncoders.show[F]
-  )(implicit
-      F: Async[F]
-  ): Resource[F, FS2KinesisProducer[F]] = for {
-    logger <- loggerF(F).toResource
-    underlying <- KinesisProducer(
-      config.producerConfig,
+      region: AwsRegion,
+      logger: StructuredLogger[F],
+      credentialsResourceF: SimpleHttpClient[F] => Resource[F, F[
+        AwsCredentials
+      ]],
+      encoders: KinesisProducer.LogEncoders[F],
+      logRequestsResponses: Boolean,
+      callback: Producer.Res[PutRecordsOutput] => F[Unit]
+  )(implicit F: Async[F]) {
+    def withConfig(config: FS2Producer.Config[F]): Builder[F] =
+      copy(config = config)
+    def withClient(client: Client[F]): Builder[F] = copy(client = client)
+    def withRegion(region: AwsRegion): Builder[F] = copy(region = region)
+    def withLogger(logger: StructuredLogger[F]): Builder[F] =
+      copy(logger = logger)
+    def withCredentials(
+        credentialsResourceF: SimpleHttpClient[F] => Resource[F, F[
+          AwsCredentials
+        ]]
+    ): Builder[F] =
+      copy(credentialsResourceF = credentialsResourceF)
+    def withLogEncoders(encoders: KinesisProducer.LogEncoders[F]): Builder[F] =
+      copy(encoders = encoders)
+    def withLogRequestsResponses(logRequestsResponses: Boolean): Builder[F] =
+      copy(logRequestsResponses = logRequestsResponses)
+    def enableLogging: Builder[F] = withLogRequestsResponses(true)
+    def disableLogging: Builder[F] = withLogRequestsResponses(false)
+
+    def build: Resource[F, FS2KinesisProducer[F]] = for {
+      underlying <- KinesisProducer.Builder
+        .default[F](config.producerConfig.streamNameOrArn, client, region)
+        .withLogger(logger)
+        .withCredentials(credentialsResourceF)
+        .withLogEncoders(encoders)
+        .withLogRequestsResponses(logRequestsResponses)
+        .build
+      channel <- Channel.bounded[F, Record](config.queueSize).toResource
+      producer = new FS2KinesisProducer[F](logger, config, channel, underlying)(
+        callback
+      )
+      _ <- producer.resource
+    } yield producer
+  }
+
+  object Builder {
+    def default[F[_]](
+        streamNameOrArn: models.StreamNameOrArn,
+        client: Client[F],
+        region: AwsRegion
+    )(implicit F: Async[F]): Builder[F] = Builder[F](
+      FS2Producer.Config.default(streamNameOrArn),
       client,
       region,
-      loggerF,
-      credsF,
-      encoders
+      NoOpLogger[F],
+      backend => AwsCredentialsProvider.default(backend),
+      KinesisProducer.LogEncoders.show[F],
+      true,
+      (_: Producer.Res[PutRecordsOutput]) => F.unit
     )
-    channel <- Channel.bounded[F, Record](config.queueSize).toResource
-    producer = new FS2KinesisProducer[F](logger, config, channel, underlying)(
-      callback
-    )
-    _ <- producer.resource
-  } yield producer
+
+    @annotation.unused
+    private def unapply[F[_]](builder: Builder[F]): Unit = ()
+  }
 }

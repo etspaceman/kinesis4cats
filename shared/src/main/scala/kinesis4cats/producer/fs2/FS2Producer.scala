@@ -21,8 +21,6 @@ import scala.concurrent.duration._
 
 import _root_.fs2.concurrent.Channel
 import cats.Applicative
-import cats.data.Ior
-import cats.data.NonEmptyList
 import cats.effect._
 import cats.effect.syntax.all._
 import cats.syntax.all._
@@ -56,8 +54,7 @@ abstract class FS2Producer[F[_], PutReq, PutRes](implicit
 
   /** A user defined function that can be run against the results of a request
     */
-  protected def callback
-      : (Ior[Producer.Error, NonEmptyList[PutRes]], Async[F]) => F[Unit]
+  protected def callback: Producer.Res[PutRes] => F[Unit]
 
   protected def underlying: Producer[F, PutReq, PutRes]
 
@@ -118,7 +115,7 @@ abstract class FS2Producer[F[_], PutReq, PutRes](implicit
               )
               _ <- underlying
                 .put(records)
-                .flatMap(callback(_, implicitly))
+                .flatMap(callback)
                 .void
               _ <- logger.debug(c.context)(
                 "Finished processing batch"

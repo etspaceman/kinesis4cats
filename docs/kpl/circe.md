@@ -13,8 +13,8 @@ libraryDependencies += "io.github.etspaceman" %% "kinesis4cats-kpl-logging-circe
 ```scala mdoc:compile-only
 import cats.effect._
 
-import kinesis4cats.kpl.logging.instances.circe
+import kinesis4cats.kpl.logging.instances.circe._
 import kinesis4cats.kpl.KPLProducer
 
-KPLProducer[IO](encoders = circe.kplProducer)
+ KPLProducer.Builder.default[IO].withLogEncoders(kplCirceEncoders).build
 ```

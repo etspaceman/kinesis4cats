@@ -458,47 +458,68 @@ class KPLProducer[F[_]] private (
 
 object KPLProducer {
 
-  /** Constructor for the [[kinesis4cats.kpl.KPLProducer KPLProducer]]
-    *
-    * @param config
-    *   [[https://github.com/awslabs/amazon-kinesis-producer/blob/master/java/amazon-kinesis-producer/src/main/java/com/amazonaws/services/kinesis/producer/KinesisProducerConfiguration.java KinesisProducerConfiguration]]
-    * @param gracefulShutdownFlushAttempts
-    *   How many times to execute flush() and wait for the KPL's buffer to clear
-    *   before shutting down
-    * @param gracefulShutdownFlushInterval
-    *   Duration between flush() attempts during the graceful shutdown
-    * @param encoders
-    *   [[kinesis4cats.kpl.KPLProducer.LogEncoders KPLProducer.LogEncoders]].
-    *   Default to show instances
-    * @param F
-    *   [[cats.effect.Async Async]]
-    * @return
-    *   [[cats.effect.Resource Resource]] containing the
-    *   [[kinesis4cats.kpl.KPLProducer KPLProducer]]
-    */
-  def apply[F[_]](
-      config: KinesisProducerConfiguration = new KinesisProducerConfiguration(),
-      gracefulShutdownFlushAttempts: Int = 5,
-      gracefulShutdownFlushInterval: FiniteDuration = 500.millis,
-      encoders: LogEncoders = LogEncoders.show
-  )(implicit
-      F: Async[F]
-  ): Resource[F, KPLProducer[F]] =
-    Resource.make[F, KPLProducer[F]](
+  final case class Config(
+      kpl: KinesisProducerConfiguration,
+      gracefulShutdown: Config.GracefulShutdown
+  )
+
+  object Config {
+    val default =
+      Config(
+        new KinesisProducerConfiguration(),
+        Config.GracefulShutdown.default
+      )
+
+    final case class GracefulShutdown(
+        flushAttempts: Int,
+        flushInterval: FiniteDuration
+    )
+
+    object GracefulShutdown {
+      val default: GracefulShutdown = GracefulShutdown(5, 500.millis)
+    }
+  }
+
+  final case class Builder[F[_]] private (
+      config: Config,
+      logger: StructuredLogger[F],
+      encoders: LogEncoders
+  )(implicit F: Async[F]) {
+    def withConfig(config: Config): Builder[F] = copy(config = config)
+    def withLogger(logger: StructuredLogger[F]) = copy(logger = logger)
+    def withLogEncoders(encoders: LogEncoders): Builder[F] =
+      copy(encoders = encoders)
+    def configure(
+        f: KinesisProducerConfiguration => KinesisProducerConfiguration
+    ) = copy(config = config.copy(kpl = f(config.kpl)))
+
+    def build: Resource[F, KPLProducer[F]] = Resource.make[F, KPLProducer[F]](
       for {
-        client <- F.delay(new KinesisProducer(config))
-        logger <- Slf4jLogger.create[F]
+        client <- F.delay(new KinesisProducer(config.kpl))
         state <- Ref.of[F, State](State.Up)
       } yield new KPLProducer(client, logger, state, encoders)
     ) { x =>
       for {
         _ <- x.state.set(State.ShuttingDown)
         _ <- x.gracefulShutdown(
-          gracefulShutdownFlushAttempts,
-          gracefulShutdownFlushInterval
+          config.gracefulShutdown.flushAttempts,
+          config.gracefulShutdown.flushInterval
         )
       } yield ()
     }
+  }
+
+  object Builder {
+
+    def default[F[_]](implicit F: Async[F]): Builder[F] = Builder[F](
+      KPLProducer.Config.default,
+      Slf4jLogger.getLogger,
+      LogEncoders.show
+    )
+
+    @annotation.unused
+    private def unapply[F[_]](builder: Builder[F]): Unit = ()
+  }
 
   /** Helper class containing required
     * [[kinesis4cats.logging.LogEncoder LogEncoders]] for the

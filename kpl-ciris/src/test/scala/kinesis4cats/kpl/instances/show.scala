@@ -21,6 +21,7 @@ import com.amazonaws.services.kinesis.producer.KinesisProducerConfiguration
 import com.amazonaws.services.schemaregistry.common.configs.GlueSchemaRegistryConfiguration
 
 import kinesis4cats.ShowBuilder
+import kinesis4cats.kpl.KPLProducer
 import kinesis4cats.logging.instances.show._
 
 object show {
@@ -85,6 +86,19 @@ object show {
         "glueSchemaRegistryConfiguration",
         x.getGlueSchemaRegistryConfiguration()
       )
+      .build
+
+  implicit val gracefulShutdownShow: Show[KPLProducer.Config.GracefulShutdown] =
+    x =>
+      ShowBuilder("GracefulShutdown")
+        .add("flushAttempts", x.flushAttempts)
+        .add("flushInterval", x.flushInterval)
+        .build
+
+  implicit val kplProducerConfigShow: Show[KPLProducer.Config] = x =>
+    ShowBuilder("Config")
+      .add("kpl", x.kpl)
+      .add("gracefulShutdown", x.gracefulShutdown)
       .build
 
 }

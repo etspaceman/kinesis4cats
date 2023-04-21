@@ -55,7 +55,7 @@ object KPLCiris {
     *   [[https://cir.is/docs/configurations ConfigValue]] containing
     *   [[https://github.com/awslabs/aws-glue-schema-registry/blob/master/common/src/main/java/com/amazonaws/services/schemaregistry/common/configs/GlueSchemaRegistryConfiguration.java GlueSchemaRegistryConfiguration]]
     */
-  def readGlueConfig(
+  private[kinesis4cats] def readGlueConfig(
       prefix: Option[String] = None
   ): ConfigValue[Effect, GlueSchemaRegistryConfiguration] =
     for {
@@ -157,13 +157,13 @@ object KPLCiris {
     *   [[https://cir.is/docs/configurations ConfigValue]] containing
     *   [[https://github.com/awslabs/amazon-kinesis-producer/blob/master/java/amazon-kinesis-producer/src/main/java/com/amazonaws/services/kinesis/producer/KinesisProducerConfiguration.java KinesisProducerConfiguration]]
     */
-  def readKplConfig(
+  private[kinesis4cats] def readKplConfig(
       credentialsProvider: Option[AWSCredentialsProvider] = None,
       metricsCredentialsProvider: Option[AWSCredentialsProvider] = None,
       glueSchemaRegistryCredentialsProvider: Option[AwsCredentialsProvider] =
         None,
       prefix: Option[String] = None
-  ): ConfigValue[Effect, KinesisProducerConfiguration] = for {
+  ): ConfigValue[Effect, KPLProducer.Config] = for {
     additionalMetricsDimensions <- CirisReader
       .readOptional[List[AdditionalMetricsDimension]](
         List("kpl", "additional", "metrics", "dimensions"),
@@ -341,62 +341,80 @@ object KPLCiris {
         prefix
       )
       .map(_.map(_.toMillis))
-  } yield new KinesisProducerConfiguration()
-    .maybeTransform(credentialsProvider)(_.setCredentialsProvider(_))
-    .maybeTransform(metricsCredentialsProvider)(
-      _.setMetricsCredentialsProvider(_)
-    )
-    .maybeTransform(glueSchemaRegistryCredentialsProvider)(
-      _.setGlueSchemaRegistryCredentialsProvider(_)
-    )
-    .maybeTransform(glueConfig)(_.setGlueSchemaRegistryConfiguration(_))
-    .maybeTransform(caCertPath)(_.setCaCertPath(_))
-    .maybeTransform(aggregationEnabled)(_.setAggregationEnabled(_))
-    .maybeTransform(aggregationMaxCount)(_.setAggregationMaxCount(_))
-    .maybeTransform(aggregationMaxSize)(_.setAggregationMaxSize(_))
-    .maybeTransform(cloudwatchEndpoint)(_.setCloudwatchEndpoint(_))
-    .maybeTransform(cloudwatchPort)(_.setCloudwatchPort(_))
-    .maybeTransform(collectionMaxCount)(_.setCollectionMaxCount(_))
-    .maybeTransform(collectionMaxSize)(_.setCollectionMaxSize(_))
-    .maybeTransform(connectTimeout)(_.setConnectTimeout(_))
-    .maybeTransform(credentialsRefreshDelay)(_.setCredentialsRefreshDelay(_))
-    .maybeTransform(enableCoreDumps)(_.setEnableCoreDumps(_))
-    .maybeTransform(failIfThrottled)(_.setFailIfThrottled(_))
-    .maybeTransform(kinesisEndpoint)(_.setKinesisEndpoint(_))
-    .maybeTransform(kinesisPort)(_.setKinesisPort(_))
-    .maybeTransform(logLevel)(_.setLogLevel(_))
-    .maybeTransform(maxConnections)(_.setMaxConnections(_))
-    .maybeTransform(metricsGranularity)(_.setMetricsGranularity(_))
-    .maybeTransform(metricsLevel)(_.setMetricsLevel(_))
-    .maybeTransform(metricsNamespace)(_.setMetricsNamespace(_))
-    .maybeTransform(metricsUploadDelay)(_.setMetricsUploadDelay(_))
-    .maybeTransform(minConnections)(_.setMinConnections(_))
-    .maybeTransform(nativeExecutable)(_.setNativeExecutable(_))
-    .maybeTransform(rateLimit)(_.setRateLimit(_))
-    .maybeTransform(recordMaxBufferedTime)(_.setRecordMaxBufferedTime(_))
-    .maybeTransform(recordTtl)(_.setRecordTtl(_))
-    .maybeTransform(region)(_.setRegion(_))
-    .maybeTransform(requestTimeout)(_.setRequestTimeout(_))
-    .maybeTransform(tempDirectory)(_.setTempDirectory(_))
-    .maybeTransform(verifyCertificate)(_.setVerifyCertificate(_))
-    .maybeTransform(proxyHost)(_.setProxyHost(_))
-    .maybeTransform(proxyPort)(_.setProxyPort(_))
-    .maybeTransform(proxyUserName)(_.setProxyUserName(_))
-    .maybeTransform(proxyPassword)(_.setProxyPassword(_))
-    .maybeTransform(threadingModel)(_.setThreadingModel(_))
-    .maybeTransform(threadPoolSize)(_.setThreadPoolSize(_))
-    .maybeTransform(userRecordTimeout)(_.setUserRecordTimeoutInMillis(_))
-    .maybeRunUnsafe(additionalMetricsDimensions) {
-      case (conf, additionalDims) =>
-        additionalDims.foreach(x =>
-          conf.addAdditionalMetricsDimension(
-            x.key,
-            x.value,
-            x.granularity.value
+    gracefulShutdownFlushAttempts <- CirisReader
+      .readDefaulted[Int](
+        List("kpl", "graceful", "shutdown", "flush", "attempts"),
+        5,
+        prefix
+      )
+    gracefulShutdownFlushInterval <- CirisReader
+      .readDefaulted[FiniteDuration](
+        List("kpl", "graceful", "shutdown", "flush", "interval"),
+        500.millis,
+        prefix
+      )
+  } yield KPLProducer.Config(
+    new KinesisProducerConfiguration()
+      .maybeTransform(credentialsProvider)(_.setCredentialsProvider(_))
+      .maybeTransform(metricsCredentialsProvider)(
+        _.setMetricsCredentialsProvider(_)
+      )
+      .maybeTransform(glueSchemaRegistryCredentialsProvider)(
+        _.setGlueSchemaRegistryCredentialsProvider(_)
+      )
+      .maybeTransform(glueConfig)(_.setGlueSchemaRegistryConfiguration(_))
+      .maybeTransform(caCertPath)(_.setCaCertPath(_))
+      .maybeTransform(aggregationEnabled)(_.setAggregationEnabled(_))
+      .maybeTransform(aggregationMaxCount)(_.setAggregationMaxCount(_))
+      .maybeTransform(aggregationMaxSize)(_.setAggregationMaxSize(_))
+      .maybeTransform(cloudwatchEndpoint)(_.setCloudwatchEndpoint(_))
+      .maybeTransform(cloudwatchPort)(_.setCloudwatchPort(_))
+      .maybeTransform(collectionMaxCount)(_.setCollectionMaxCount(_))
+      .maybeTransform(collectionMaxSize)(_.setCollectionMaxSize(_))
+      .maybeTransform(connectTimeout)(_.setConnectTimeout(_))
+      .maybeTransform(credentialsRefreshDelay)(_.setCredentialsRefreshDelay(_))
+      .maybeTransform(enableCoreDumps)(_.setEnableCoreDumps(_))
+      .maybeTransform(failIfThrottled)(_.setFailIfThrottled(_))
+      .maybeTransform(kinesisEndpoint)(_.setKinesisEndpoint(_))
+      .maybeTransform(kinesisPort)(_.setKinesisPort(_))
+      .maybeTransform(logLevel)(_.setLogLevel(_))
+      .maybeTransform(maxConnections)(_.setMaxConnections(_))
+      .maybeTransform(metricsGranularity)(_.setMetricsGranularity(_))
+      .maybeTransform(metricsLevel)(_.setMetricsLevel(_))
+      .maybeTransform(metricsNamespace)(_.setMetricsNamespace(_))
+      .maybeTransform(metricsUploadDelay)(_.setMetricsUploadDelay(_))
+      .maybeTransform(minConnections)(_.setMinConnections(_))
+      .maybeTransform(nativeExecutable)(_.setNativeExecutable(_))
+      .maybeTransform(rateLimit)(_.setRateLimit(_))
+      .maybeTransform(recordMaxBufferedTime)(_.setRecordMaxBufferedTime(_))
+      .maybeTransform(recordTtl)(_.setRecordTtl(_))
+      .maybeTransform(region)(_.setRegion(_))
+      .maybeTransform(requestTimeout)(_.setRequestTimeout(_))
+      .maybeTransform(tempDirectory)(_.setTempDirectory(_))
+      .maybeTransform(verifyCertificate)(_.setVerifyCertificate(_))
+      .maybeTransform(proxyHost)(_.setProxyHost(_))
+      .maybeTransform(proxyPort)(_.setProxyPort(_))
+      .maybeTransform(proxyUserName)(_.setProxyUserName(_))
+      .maybeTransform(proxyPassword)(_.setProxyPassword(_))
+      .maybeTransform(threadingModel)(_.setThreadingModel(_))
+      .maybeTransform(threadPoolSize)(_.setThreadPoolSize(_))
+      .maybeTransform(userRecordTimeout)(_.setUserRecordTimeoutInMillis(_))
+      .maybeRunUnsafe(additionalMetricsDimensions) {
+        case (conf, additionalDims) =>
+          additionalDims.foreach(x =>
+            conf.addAdditionalMetricsDimension(
+              x.key,
+              x.value,
+              x.granularity.value
+            )
           )
-        )
 
-    }
+      },
+    KPLProducer.Config.GracefulShutdown(
+      gracefulShutdownFlushAttempts,
+      gracefulShutdownFlushInterval
+    )
+  )
 
   /** Reads environment variables and system properties to load
     * [[https://github.com/awslabs/amazon-kinesis-producer/blob/master/java/amazon-kinesis-producer/src/main/java/com/amazonaws/services/kinesis/producer/KinesisProducerConfiguration.java KinesisProducerConfiguration]]
@@ -427,13 +445,13 @@ object KPLCiris {
     *   [[cats.effect.Async Async]] containing
     *   [[https://github.com/awslabs/amazon-kinesis-producer/blob/master/java/amazon-kinesis-producer/src/main/java/com/amazonaws/services/kinesis/producer/KinesisProducerConfiguration.java KinesisProducerConfiguration]]
     */
-  def loadKplConfig[F[_]](
+  private[kinesis4cats] def loadKplConfig[F[_]](
       credentialsProvider: Option[AWSCredentialsProvider] = None,
       metricsCredentialsProvider: Option[AWSCredentialsProvider] = None,
       glueSchemaRegistryCredentialsProvider: Option[AwsCredentialsProvider] =
         None,
       prefix: Option[String] = None
-  )(implicit F: Async[F]): F[KinesisProducerConfiguration] = readKplConfig(
+  )(implicit F: Async[F]): F[KPLProducer.Config] = readKplConfig(
     credentialsProvider,
     metricsCredentialsProvider,
     glueSchemaRegistryCredentialsProvider,
@@ -475,7 +493,7 @@ object KPLCiris {
       glueSchemaRegistryCredentialsProvider: Option[AwsCredentialsProvider] =
         None,
       prefix: Option[String] = None
-  )(implicit F: Async[F]): Resource[F, KinesisProducerConfiguration] =
+  )(implicit F: Async[F]): Resource[F, KPLProducer.Config] =
     readKplConfig(
       credentialsProvider,
       metricsCredentialsProvider,
@@ -524,12 +542,16 @@ object KPLCiris {
   )(implicit
       F: Async[F]
   ): Resource[F, KPLProducer[F]] = for {
-    kplConfig <- kplConfigResource[F](
+    config <- kplConfigResource[F](
       credentialsProvider,
       metricsCredentialsProvider,
       glueSchemaRegistryCredentialsProvider,
       prefix
     )
-    kpl <- KPLProducer[F](kplConfig, encoders = encoders)
+    kpl <- KPLProducer.Builder
+      .default[F]
+      .withConfig(config)
+      .withLogEncoders(encoders)
+      .build
   } yield kpl
 }

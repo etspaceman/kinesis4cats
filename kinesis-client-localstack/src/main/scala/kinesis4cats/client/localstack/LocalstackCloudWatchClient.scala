@@ -17,97 +17,70 @@
 package kinesis4cats.client
 package localstack
 
-import cats.effect.syntax.all._
 import cats.effect.{Async, Resource}
 import cats.syntax.all._
+import org.typelevel.log4cats.StructuredLogger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
+import software.amazon.awssdk.services.cloudwatch.CloudWatchAsyncClient
 
 import kinesis4cats.localstack.LocalstackConfig
 import kinesis4cats.localstack.aws.v2.AwsClients
 
 object LocalstackCloudWatchClient {
 
-  /** Builds a [[kinesis4cats.client.CloudWatchClient CloudWatchClient]] that is
-    * compliant for Localstack usage.
-    *
-    * @param config
-    *   [[kinesis4cats.localstack.LocalstackConfig LocalstackConfig]]
-    * @param F
-    *   F with an [[cats.effect.Async Async]] instance
-    * @param encoders
-    *   [[kinesis4cats.client.CloudWatchClient.LogEncoders LogEncoders]]
-    * @return
-    *   F of [[kinesis4cats.client.CloudWatchClient CloudWatchClient]]
-    */
-  def client[F[_]](
-      config: LocalstackConfig,
-      encoders: CloudWatchClient.LogEncoders
-  )(implicit
-      F: Async[F]
-  ): F[CloudWatchClient[F]] =
-    for {
-      underlying <- AwsClients.cloudwatchClient(config)
-      logger <- Slf4jLogger.create[F]
-    } yield new CloudWatchClient(underlying, logger, encoders)
+  final case class Builder[F[_]] private (
+      encoders: CloudWatchClient.LogEncoders,
+      logger: StructuredLogger[F],
+      clientResource: Resource[F, CloudWatchAsyncClient]
+  )(implicit F: Async[F]) {
+    def withClient(
+        client: => CloudWatchAsyncClient,
+        managed: Boolean = true
+    ): Builder[F] = copy(
+      clientResource =
+        if (managed) Resource.fromAutoCloseable(F.delay(client))
+        else Resource.pure(client)
+    )
 
-  /** Builds a [[kinesis4cats.client.CloudWatchClient CloudWatchClient]] that is
-    * compliant for Localstack usage.
-    *
-    * @param prefix
-    *   Optional prefix for parsing configuration. Default to None
-    * @param F
-    *   F with an [[cats.effect.Async Async]] instance
-    * @param encoders
-    *   [[kinesis4cats.client.CloudWatchClient.LogEncoders LogEncoders]]
-    * @return
-    *   F of [[kinesis4cats.client.CloudWatchClient CloudWatchClient]]
-    */
-  def client[F[_]](
-      prefix: Option[String] = None,
-      encoders: CloudWatchClient.LogEncoders = CloudWatchClient.LogEncoders.show
-  )(implicit F: Async[F]): F[CloudWatchClient[F]] =
-    for {
-      underlying <- AwsClients.cloudwatchClient(prefix)
-      logger <- Slf4jLogger.create[F]
-    } yield new CloudWatchClient(underlying, logger, encoders)
+    def withLogEncoders(encoders: CloudWatchClient.LogEncoders): Builder[F] =
+      copy(
+        encoders = encoders
+      )
 
-  /** Builds a [[kinesis4cats.client.CloudWatchClient CloudWatchClient]] that is
-    * compliant for Localstack usage. Lifecycle is managed as a
-    * [[cats.effect.Resource Resource]].
-    *
-    * @param config
-    *   [[kinesis4cats.localstack.LocalstackConfig LocalstackConfig]]
-    * @param F
-    *   F with an [[cats.effect.Async Async]] instance
-    * @param encoders
-    *   [[kinesis4cats.client.CloudWatchClient.LogEncoders LogEncoders]]
-    * @return
-    *   [[cats.effect.Resource Resource]] of
-    *   [[kinesis4cats.client.CloudWatchClient CloudWatchClient]]
-    */
-  def clientResource[F[_]](
-      config: LocalstackConfig,
-      encoders: CloudWatchClient.LogEncoders
-  )(implicit
-      F: Async[F]
-  ): Resource[F, CloudWatchClient[F]] =
-    client[F](config, encoders).toResource
+    def withLogger(logger: StructuredLogger[F]): Builder[F] = copy(
+      logger = logger
+    )
 
-  /** Builds a [[kinesis4cats.client.CloudWatchClient CloudWatchClient]] that is
-    * compliant for Localstack usage. Lifecycle is managed as a
-    * [[cats.effect.Resource Resource]].
-    *
-    * @param prefix
-    *   Optional prefix for parsing configuration. Default to None
-    * @param F
-    *   F with an [[cats.effect.Async Async]] instance
-    * @return
-    *   [[cats.effect.Resource Resource]] of
-    *   [[kinesis4cats.client.CloudWatchClient CloudWatchClient]]
-    */
-  def clientResource[F[_]](
-      prefix: Option[String] = None,
-      encoders: CloudWatchClient.LogEncoders = CloudWatchClient.LogEncoders.show
-  )(implicit F: Async[F]): Resource[F, CloudWatchClient[F]] =
-    client[F](prefix, encoders).toResource
+    def build: Resource[F, CloudWatchClient[F]] = for {
+      underlying <- clientResource
+      client <- CloudWatchClient.Builder
+        .default[F]
+        .withClient(underlying, false)
+        .withLogEncoders(encoders)
+        .withLogger(logger)
+        .build
+    } yield client
+  }
+
+  object Builder {
+    def default[F[_]](
+        prefix: Option[String] = None
+    )(implicit
+        F: Async[F]
+    ): F[Builder[F]] = LocalstackConfig.load(prefix).map(default(_))
+
+    def default[F[_]](
+        localstackConfig: LocalstackConfig
+    )(implicit
+        F: Async[F]
+    ): Builder[F] =
+      Builder[F](
+        CloudWatchClient.LogEncoders.show,
+        Slf4jLogger.getLogger,
+        AwsClients.cloudwatchClientResource[F](localstackConfig)
+      )
+
+    @annotation.unused
+    private def unapply[F[_]](builder: Builder[F]): Unit = ()
+  }
 }

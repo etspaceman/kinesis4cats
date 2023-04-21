@@ -20,7 +20,7 @@ import kinesis4cats.kpl.KPLProducer
 
 object MyApp extends IOApp {
     override def run(args: List[String]) = {
-        KPLProducer[IO]().use(kpl => 
+        KPLProducer.Builder.default[IO].build.use(kpl => 
             for {
                 _ <- kpl.put(
                     new UserRecord(

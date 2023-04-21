@@ -19,6 +19,7 @@ package client
 
 import scala.jdk.CollectionConverters._
 
+import cats.effect.syntax.all._
 import cats.effect.{IO, SyncIO}
 import software.amazon.awssdk.services.dynamodb.model._
 
@@ -28,7 +29,7 @@ import kinesis4cats.client.localstack.LocalstackDynamoClient
 class DynamoClientSpec extends munit.CatsEffectSuite {
   def fixture: SyncIO[FunFixture[DynamoClient[IO]]] =
     ResourceFunFixture(
-      LocalstackDynamoClient.clientResource[IO]()
+      LocalstackDynamoClient.Builder.default[IO]().toResource.flatMap(_.build)
     )
 
   val tableName = s"dynamo-client-spec-${Utils.randomUUIDString}"

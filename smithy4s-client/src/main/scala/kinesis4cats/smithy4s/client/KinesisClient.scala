@@ -20,7 +20,6 @@ package smithy4s.client
 import _root_.smithy4s.aws._
 import _root_.smithy4s.aws.http4s._
 import cats.Show
-import cats.effect.syntax.all._
 import cats.effect.{Async, Resource}
 import cats.syntax.all._
 import com.amazonaws.kinesis._
@@ -48,28 +47,69 @@ import kinesis4cats.smithy4s.client.middleware.RequestResponseLogger
   */
 object KinesisClient {
 
-  def awsEnv[F[_]](
+  final case class Builder[F[_]] private (
       client: Client[F],
-      region: F[AwsRegion],
-      credsF: (
-          SimpleHttpClient[F],
-          Async[F]
-      ) => Resource[F, F[AwsCredentials]] =
-        (x: SimpleHttpClient[F], f: Async[F]) =>
-          AwsCredentialsProvider.default[F](x)(f),
-      backendF: (Client[F], Async[F]) => SimpleHttpClient[F] =
-        (client: Client[F], f: Async[F]) => AwsHttp4sBackend[F](client)(f)
-  )(implicit F: Async[F]) = {
-    val backend = backendF(client, F)
-    credsF(backend, F).map(creds =>
-      AwsEnvironment
-        .make[F](
+      region: AwsRegion,
+      logger: StructuredLogger[F],
+      credentialsResourceF: SimpleHttpClient[F] => Resource[F, F[
+        AwsCredentials
+      ]],
+      encoders: LogEncoders[F],
+      logRequestsResponses: Boolean
+  )(implicit F: Async[F]) {
+
+    def withClient(client: Client[F]): Builder[F] = copy(client = client)
+    def withRegion(region: AwsRegion): Builder[F] = copy(region = region)
+    def withLogger(logger: StructuredLogger[F]): Builder[F] =
+      copy(logger = logger)
+    def withCredentials(
+        credentialsResourceF: SimpleHttpClient[F] => Resource[F, F[
+          AwsCredentials
+        ]]
+    ): Builder[F] =
+      copy(credentialsResourceF = credentialsResourceF)
+    def withLogEncoders(encoders: LogEncoders[F]): Builder[F] =
+      copy(encoders = encoders)
+    def withLogRequestsResponses(logRequestsResponses: Boolean): Builder[F] =
+      copy(logRequestsResponses = logRequestsResponses)
+    def enableLogging: Builder[F] = withLogRequestsResponses(true)
+    def disableLogging: Builder[F] = withLogRequestsResponses(false)
+
+    def build: Resource[F, KinesisClient[F]] = {
+      val clnt =
+        if (logRequestsResponses)
+          RequestResponseLogger(logger, encoders)(client)
+        else client
+      val backend =
+        AwsHttp4sBackend[F](RequestResponseLogger(logger, encoders)(clnt))
+      for {
+        credentials <- credentialsResourceF(backend)
+        environment = AwsEnvironment.make[F](
           backend,
-          region,
-          creds,
+          F.pure(region),
+          credentials,
           F.realTime.map(_.toSeconds).map(Timestamp(_, 0))
         )
-    )
+        awsClient <- AwsClient.simple(Kinesis.service, environment)
+      } yield awsClient
+    }
+  }
+
+  object Builder {
+    def default[F[_]](client: Client[F], region: AwsRegion)(implicit
+        F: Async[F]
+    ): Builder[F] =
+      Builder[F](
+        client,
+        region,
+        NoOpLogger[F],
+        backend => AwsCredentialsProvider.default(backend),
+        LogEncoders.show[F],
+        true
+      )
+
+    @annotation.unused
+    private def unapply[F[_]](builder: Builder[F]): Unit = ()
   }
 
   /** Helper class containing required
@@ -103,57 +143,4 @@ object KinesisClient {
       new KinesisClient.LogEncoders[F]()
     }
   }
-
-  /** Create a KinesisClient [[cats.effect.Resource Resource]]
-    *
-    * @param client
-    *   [[https://http4s.org/v0.23/docs/client.html Client]] implementation for
-    *   the api calls
-    * @param region
-    *   [[https://github.com/disneystreaming/smithy4s/blob/series/0.17/modules/aws-kernel/src/smithy4s/aws/AwsRegion.scala AwsRegion]]
-    *   in use
-    * @param loggerF
-    *   [[cats.effect.Async Async]] => [[cats.effect.Async Async]] of
-    *   [[https://github.com/typelevel/log4cats/blob/main/core/shared/src/main/scala/org/typelevel/log4cats/StructuredLogger.scala StructuredLogger]].
-    *   Default is
-    *   [[https://github.com/typelevel/log4cats/blob/main/noop/shared/src/main/scala/org/typelevel/log4cats/noop/NoOpLogger.scala NoOpLogger]]
-    * @param credsF
-    *   [[https://github.com/disneystreaming/smithy4s/blob/series/0.17/modules/aws/src/smithy4s/aws/SimpleHttpClient.scala SimpleHttpClient]]
-    *   \=>
-    *   [[https://github.com/disneystreaming/smithy4s/blob/series/0.17/modules/aws-kernel/src/smithy4s/aws/AwsCredentials.scala AwsCredentials]].
-    *   Default to
-    *   [[https://github.com/disneystreaming/smithy4s/blob/series/0.17/modules/aws/src/smithy4s/aws/AwsCredentialsProvider.scala AwsCredentialsProvider.default]]
-    * @param F
-    *   [[cats.effect.Async Async]]
-    * @param LE
-    *   [[kinesis4cats.smithy4s.client.KinesisClient.LogEncoders KinesisClient.LogEncoders]]
-    * @return
-    *   [[cats.effect.Resource Resource]] of a Kinesis Client.
-    */
-  def apply[F[_]](
-      client: Client[F],
-      region: F[AwsRegion],
-      loggerF: Async[F] => F[StructuredLogger[F]] = (f: Async[F]) =>
-        f.pure(NoOpLogger[F](f)),
-      credsF: (
-          SimpleHttpClient[F],
-          Async[F]
-      ) => Resource[F, F[AwsCredentials]] =
-        (x: SimpleHttpClient[F], f: Async[F]) =>
-          AwsCredentialsProvider.default[F](x)(f),
-      backendF: (Client[F], Async[F]) => SimpleHttpClient[F] =
-        (client: Client[F], f: Async[F]) => AwsHttp4sBackend[F](client)(f),
-      encoders: LogEncoders[F] = LogEncoders.show[F]
-  )(implicit
-      F: Async[F]
-  ): Resource[F, KinesisClient[F]] = for {
-    logger <- loggerF(F).toResource
-    env <- awsEnv(
-      RequestResponseLogger(logger, encoders)(client),
-      region,
-      credsF,
-      backendF
-    )
-    awsClient <- AwsClient.simple(Kinesis.service, env)
-  } yield awsClient
 }

@@ -32,11 +32,10 @@ import kinesis4cats.smithy4s.client.KinesisClient
 object MyApp extends IOApp {
     override def run(args: List[String]) = (for {
         underlying <- BlazeClientBuilder[IO].resource
-        client <- KinesisClient[IO](
-            underlying, 
-            IO.pure(AwsRegion.US_EAST_1), 
-            loggerF = (_: Async[IO]) => Slf4jLogger.create[IO]
-        )
+        client <- KinesisClient.Builder
+            .default[IO](underlying, AwsRegion.US_EAST_1)
+            .withLogger(Slf4jLogger.getLogger)
+            .build
     } yield client).use(client =>
         for {
             _ <- client.createStream(StreamName("my-stream"), Some(1))
@@ -77,12 +76,14 @@ import kinesis4cats.models.StreamNameOrArn
 object MyApp extends IOApp {
     override def run(args: List[String]) =
         BlazeClientBuilder[IO].resource.flatMap(client =>
-            KinesisProducer[IO](
-                Producer.Config.default(StreamNameOrArn.Name("my-stream")),
-                client,
-                IO.pure(AwsRegion.US_EAST_1),
-                loggerF = (_: Async[IO]) => Slf4jLogger.create[IO]
-            )
+            KinesisProducer.Builder
+                .default[IO](
+                    StreamNameOrArn.Name("my-stream"),
+                    client,
+                    AwsRegion.US_EAST_1
+                )
+                .withLogger(Slf4jLogger.getLogger)
+                .build
         ).use(producer =>
                 for {
                     _ <- producer.put(
@@ -110,19 +111,20 @@ import org.typelevel.log4cats.slf4j.Slf4jLogger
 import smithy4s.aws._
 
 import kinesis4cats.smithy4s.client.producer.fs2.FS2KinesisProducer
-import kinesis4cats.producer.fs2._
 import kinesis4cats.producer._
 import kinesis4cats.models.StreamNameOrArn
 
 object MyApp extends IOApp {
     override def run(args: List[String]) = 
         BlazeClientBuilder[IO].resource.flatMap(client =>
-            FS2KinesisProducer[IO](
-                FS2Producer.Config.default(StreamNameOrArn.Name("my-stream")),
-                client,
-                IO.pure(AwsRegion.US_EAST_1),
-                loggerF = (_: Async[IO]) => Slf4jLogger.create[IO]
-            )
+            FS2KinesisProducer.Builder
+                .default[IO](
+                    StreamNameOrArn.Name("my-stream"),
+                    client,
+                    AwsRegion.US_EAST_1
+                )
+                .withLogger(Slf4jLogger.getLogger)
+                .build
         ).use(producer =>
             for {
                 _ <- producer.put(

@@ -22,6 +22,7 @@ import scala.concurrent.duration._
 
 import _root_.fs2.Stream
 import cats.effect.Deferred
+import cats.effect.syntax.all._
 import cats.effect.{IO, Resource, SyncIO}
 import cats.syntax.all._
 import io.circe.parser._
@@ -36,6 +37,7 @@ import kinesis4cats.Utils
 import kinesis4cats.client.KinesisClient
 import kinesis4cats.client.localstack.LocalstackKinesisClient
 import kinesis4cats.kcl.fs2.localstack.LocalstackKCLConsumerFS2
+import kinesis4cats.localstack.TestStreamConfig
 import kinesis4cats.syntax.bytebuffer._
 import kinesis4cats.syntax.scalacheck._
 
@@ -87,8 +89,15 @@ object KCLConsumerFS2Spec {
       shardCount: Int,
       appName: String
   ): Resource[IO, Resources[IO]] = for {
-    client <- LocalstackKinesisClient.streamResource[IO](streamName, shardCount)
-    consumer <- LocalstackKCLConsumerFS2.kclConsumer[IO](
+    client <- LocalstackKinesisClient.Builder
+      .default[IO]()
+      .toResource
+      .flatMap(
+        _.withStreamsToCreate(
+          List(TestStreamConfig.default(streamName, shardCount))
+        ).build
+      )
+    builder <- LocalstackKCLConsumerFS2.Builder.default[IO](
       new SingleStreamTracker(
         StreamIdentifier.singleStreamInstance(streamName),
         InitialPositionInStreamExtended.newInitialPosition(
@@ -97,6 +106,7 @@ object KCLConsumerFS2Spec {
       ),
       appName
     )
+    consumer <- builder.build
     streamAndDeferred <- consumer.streamWithDeferredListener()
   } yield Resources(
     client,

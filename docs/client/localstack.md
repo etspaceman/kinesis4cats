@@ -12,21 +12,44 @@ libraryDependencies += "io.github.etspaceman" %% "kinesis4cats-kinesis-client-lo
 
 ```scala mdoc:compile-only
 import cats.effect.IO
+import cats.effect.syntax.all._
 
 import kinesis4cats.client.localstack.LocalstackKinesisClient
 import kinesis4cats.client.producer.localstack.LocalstackKinesisProducer
 import kinesis4cats.client.producer.fs2.localstack.LocalstackFS2KinesisProducer
+import kinesis4cats.models.StreamNameOrArn
+import kinesis4cats.localstack.TestStreamConfig
 
 // Load a KinesisClient as a Resource
-LocalstackKinesisClient.clientResource[IO]()
+LocalstackKinesisClient.Builder
+    .default[IO]()
+    .toResource
+    .flatMap(_.build)
 
 // Load a KinesisClient as a Resource.
-// Also creates and deletes a stream during it's usage. Useful for tests.
-LocalstackKinesisClient.streamResource[IO]("my-stream", 1)
+// Also creates and deletes streams during it's usage. Useful for tests.
+LocalstackKinesisClient.Builder
+    .default[IO]()
+    .toResource
+    .flatMap(x => 
+        x.withStreamsToCreate(
+            List(
+                TestStreamConfig.default[IO]("my-stream", 1),
+                TestStreamConfig.default[IO]("my-stream-2", 1),
+            )
+        )
+        .build    
+    )
 
 // Load a KinesisProducer as a resource
-LocalstackKinesisProducer.resource[IO]("my-stream")
+LocalstackKinesisProducer.Builder
+    .default[IO](StreamNameOrArn.Name("my-stream"))
+    .toResource
+    .flatMap(_.build)
 
 // Load a FS2KinesisProducer as a resource
-LocalstackFS2KinesisProducer.resource[IO]("my-stream")
+LocalstackFS2KinesisProducer.Builder
+    .default[IO](StreamNameOrArn.Name("my-stream"))
+    .toResource
+    .flatMap(_.build)
 ```

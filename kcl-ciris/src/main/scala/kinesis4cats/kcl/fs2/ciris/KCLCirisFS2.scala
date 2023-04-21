@@ -23,6 +23,8 @@ import java.util.concurrent.ExecutorService
 
 import _root_.ciris._
 import cats.Parallel
+import cats.effect.std.Queue
+import cats.effect.syntax.all._
 import cats.effect.{Async, Resource}
 import com.amazonaws.services.schemaregistry.deserializers.GlueSchemaRegistryDeserializer
 import software.amazon.awssdk.services.cloudwatch.CloudWatchAsyncClient
@@ -38,6 +40,8 @@ import software.amazon.kinesis.retrieval.AggregatorUtil
 
 import kinesis4cats.ciris.CirisReader
 import kinesis4cats.instances.ciris._
+import kinesis4cats.kcl.CommittableRecord
+import kinesis4cats.kcl.KCLConsumer
 import kinesis4cats.kcl.RecordProcessor
 import kinesis4cats.kcl.ciris.KCLCiris
 
@@ -101,9 +105,11 @@ object KCLCirisFS2 {
     *   [[kinesis4cats.kcl.fs2.KCLConsumerFS2 KCLConsumerFS2]]
     */
   def consumer[F[_]](
-      kinesisClient: KinesisAsyncClient,
-      dynamoClient: DynamoDbAsyncClient,
-      cloudwatchClient: CloudWatchAsyncClient,
+      kinesisClient: => KinesisAsyncClient = KinesisAsyncClient.builder().build,
+      dynamoClient: => DynamoDbAsyncClient =
+        DynamoDbAsyncClient.builder().build,
+      cloudWatchClient: => CloudWatchAsyncClient =
+        CloudWatchAsyncClient.builder().build,
       prefix: Option[String] = None,
       shardPrioritization: Option[ShardPrioritization] = None,
       workerStateChangeListener: Option[WorkerStateChangeListener] = None,
@@ -118,29 +124,45 @@ object KCLCirisFS2 {
       metricsFactory: Option[MetricsFactory] = None,
       glueSchemaRegistryDeserializer: Option[GlueSchemaRegistryDeserializer] =
         None,
-      encoders: RecordProcessor.LogEncoders = RecordProcessor.LogEncoders.show
+      encoders: RecordProcessor.LogEncoders = RecordProcessor.LogEncoders.show,
+      managedClients: Boolean = true
   )(implicit
       F: Async[F],
       P: Parallel[F]
-  ): Resource[F, KCLConsumerFS2[F]] = kclConfig(
-    kinesisClient,
-    dynamoClient,
-    cloudwatchClient,
-    prefix,
-    shardPrioritization,
-    workerStateChangeListener,
-    coordinatorFactory,
-    customShardDetectorProvider,
-    tableCreatorCallback,
-    hierarchicalShardSyncer,
-    leaseManagementFactory,
-    leaseExecutorService,
-    aggregatorUtil,
-    taskExecutionListener,
-    metricsFactory,
-    glueSchemaRegistryDeserializer,
-    encoders
-  ).map(new KCLConsumerFS2[F](_))
+  ): Resource[F, KCLConsumerFS2[F]] = for {
+    kClient <-
+      if (managedClients)
+        Resource.fromAutoCloseable(
+          F.delay(kinesisClient)
+        )
+      else Resource.pure[F, KinesisAsyncClient](kinesisClient)
+    dClient <-
+      if (managedClients) Resource.fromAutoCloseable(F.delay(dynamoClient))
+      else Resource.pure[F, DynamoDbAsyncClient](dynamoClient)
+    cClient <-
+      if (managedClients)
+        Resource.fromAutoCloseable(F.delay(cloudWatchClient))
+      else Resource.pure[F, CloudWatchAsyncClient](cloudWatchClient)
+    config <- kclConfig(
+      kClient,
+      dClient,
+      cClient,
+      prefix,
+      shardPrioritization,
+      workerStateChangeListener,
+      coordinatorFactory,
+      customShardDetectorProvider,
+      tableCreatorCallback,
+      hierarchicalShardSyncer,
+      leaseManagementFactory,
+      leaseExecutorService,
+      aggregatorUtil,
+      taskExecutionListener,
+      metricsFactory,
+      glueSchemaRegistryDeserializer,
+      encoders
+    )
+  } yield new KCLConsumerFS2[F](config)
 
   /** Reads environment variables and system properties to load a
     * [[kinesis4cats.kcl.fs2.KCLConsumerFS2.Config KCLConsumerFS2.Config]]
@@ -193,25 +215,24 @@ object KCLCirisFS2 {
     *   [[cats.effect.Resource Resource]] containing the
     *   [[kinesis4cats.kcl.fs2.KCLConsumerFS2.Config KCLConsumerFS2.Config]]
     */
-  def kclConfig[F[_]](
+  private[kinesis4cats] def kclConfig[F[_]](
       kinesisClient: KinesisAsyncClient,
       dynamoClient: DynamoDbAsyncClient,
       cloudwatchClient: CloudWatchAsyncClient,
-      prefix: Option[String] = None,
-      shardPrioritization: Option[ShardPrioritization] = None,
-      workerStateChangeListener: Option[WorkerStateChangeListener] = None,
-      coordinatorFactory: Option[CoordinatorFactory] = None,
-      customShardDetectorProvider: Option[StreamConfig => ShardDetector] = None,
-      tableCreatorCallback: Option[TableCreatorCallback] = None,
-      hierarchicalShardSyncer: Option[HierarchicalShardSyncer] = None,
-      leaseManagementFactory: Option[LeaseManagementFactory] = None,
-      leaseExecutorService: Option[ExecutorService] = None,
-      aggregatorUtil: Option[AggregatorUtil] = None,
-      taskExecutionListener: Option[TaskExecutionListener] = None,
-      metricsFactory: Option[MetricsFactory] = None,
-      glueSchemaRegistryDeserializer: Option[GlueSchemaRegistryDeserializer] =
-        None,
-      encoders: RecordProcessor.LogEncoders = RecordProcessor.LogEncoders.show
+      prefix: Option[String],
+      shardPrioritization: Option[ShardPrioritization],
+      workerStateChangeListener: Option[WorkerStateChangeListener],
+      coordinatorFactory: Option[CoordinatorFactory],
+      customShardDetectorProvider: Option[StreamConfig => ShardDetector],
+      tableCreatorCallback: Option[TableCreatorCallback],
+      hierarchicalShardSyncer: Option[HierarchicalShardSyncer],
+      leaseManagementFactory: Option[LeaseManagementFactory],
+      leaseExecutorService: Option[ExecutorService],
+      aggregatorUtil: Option[AggregatorUtil],
+      taskExecutionListener: Option[TaskExecutionListener],
+      metricsFactory: Option[MetricsFactory],
+      glueSchemaRegistryDeserializer: Option[GlueSchemaRegistryDeserializer],
+      encoders: RecordProcessor.LogEncoders
   )(implicit
       F: Async[F]
   ): Resource[F, KCLConsumerFS2.Config[F]] = for {
@@ -247,24 +268,25 @@ object KCLCirisFS2 {
     retrievalConfig <- KCLCiris.Retrieval
       .resource[F](kinesisClient, prefix, glueSchemaRegistryDeserializer)
     processConfig <- KCLCiris.Processor.resource[F](prefix)
-    config <- KCLConsumerFS2.Config.create[F](
+    queue <- Queue
+      .bounded[F, CommittableRecord[F]](fs2Config.queueSize)
+      .toResource
+    underlying <- KCLConsumer.Config.create[F](
       checkpointConfig,
       coordinatorConfig,
       leaseManagementConfig,
       lifecycleConfig,
       metricsConfig,
       retrievalConfig,
-      fs2Config,
       processConfig.copy(recordProcessorConfig =
         processConfig.recordProcessorConfig.copy(autoCommit = autoCommit)
       ),
       encoders
-    )
+    )(KCLConsumerFS2.callback(queue))
+  } yield KCLConsumerFS2.Config(underlying, queue, fs2Config)
 
-  } yield config
-
-  def readFS2Config(
-      prefix: Option[String] = None
+  private[kinesis4cats] def readFS2Config(
+      prefix: Option[String]
   ): ConfigValue[Effect, KCLConsumerFS2.FS2Config] = for {
     queueSize <- CirisReader
       .readDefaulted[Int](List("kcl", "fs2", "queue", "size"), 100, prefix)

@@ -19,6 +19,7 @@ package client
 
 import scala.jdk.CollectionConverters._
 
+import cats.effect.syntax.all._
 import cats.effect.{IO, SyncIO}
 import cats.syntax.all._
 import io.circe.parser._
@@ -35,7 +36,7 @@ import kinesis4cats.syntax.scalacheck._
 class KinesisClientSpec extends munit.CatsEffectSuite {
   def fixture: SyncIO[FunFixture[KinesisClient[IO]]] =
     ResourceFunFixture(
-      LocalstackKinesisClient.clientResource[IO]()
+      LocalstackKinesisClient.Builder.default[IO]().toResource.flatMap(_.build)
     )
 
   val streamName = s"kinesis-client-spec-${Utils.randomUUIDString}"

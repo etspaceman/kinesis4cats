@@ -18,6 +18,7 @@ package kinesis4cats
 package client
 
 import cats.effect.kernel.Clock
+import cats.effect.syntax.all._
 import cats.effect.{IO, SyncIO}
 import software.amazon.awssdk.services.cloudwatch.model._
 
@@ -27,7 +28,10 @@ import kinesis4cats.client.localstack.LocalstackCloudWatchClient
 class CloudWatchClientSpec extends munit.CatsEffectSuite {
   def fixture: SyncIO[FunFixture[CloudWatchClient[IO]]] =
     ResourceFunFixture(
-      LocalstackCloudWatchClient.clientResource[IO]()
+      LocalstackCloudWatchClient.Builder
+        .default[IO]()
+        .toResource
+        .flatMap(_.build)
     )
 
   val tableName = s"cloudwatch-client-spec-${Utils.randomUUIDString}"

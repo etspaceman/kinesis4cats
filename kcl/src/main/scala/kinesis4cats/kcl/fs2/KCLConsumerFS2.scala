@@ -197,146 +197,74 @@ object KCLConsumerFS2 {
   ): List[CommittableRecord[F]] => F[Unit] =
     (records: List[CommittableRecord[F]]) => records.traverse_(queue.offer)
 
-  /** Low-level constructor for
-    * [[kinesis4cats.kcl.fs2.KCLConsumerFS2 KCLConsumerFS2]].
-    *
-    * @param checkpointConfig
-    *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/checkpoint/CheckpointConfig.java CheckpointConfig]]
-    * @param coordinatorConfig
-    *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/coordinator/CoordinatorConfig.java CoordinatorConfig]]
-    * @param leaseManagementConfig
-    *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/leases/LeaseManagementConfig.java LeaseManagementConfig]]
-    * @param lifecycleConfig
-    *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/lifecycle/LifecycleConfig.java LifecycleConfig]]
-    * @param metricsConfig
-    *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/metrics/MetricsConfig.java MetricsConfig]]
-    * @param retrievalConfig
-    *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/retrieval/RetrievalConfig.java RetrievalConfig]]
-    * @param queueSize
-    *   Size of the underlying queue for the FS2 stream. If the queue fills up,
-    *   backpressure on the processors will occur. Default 100
-    * @param commitMaxChunk
-    *   Max records to be received in the commitRecords [[fs2.Pipe Pipe]] before
-    *   a commit is run. Default is 1000
-    * @param commitMaxWait
-    *   Max duration to wait in commitRecords [[fs2.Pipe Pipe]] before a commit
-    *   is run. Default is 10 seconds
-    * @param processConfig
-    *   [[kinesis4cats.kcl.KCLConsumer.ProcessConfig KCLConsumer.ProcessConfig]]
-    * @param F
-    *   [[cats.effect.Async Async]] instance
-    * @param encoders
-    *   [[kinesis4cats.kcl.RecordProcessor.LogEncoders RecordProcessor.LogEncoders]]
-    *   for encoding structured logs
-    * @return
-    *   [[cats.effect.Resource Resource]] containing the
-    *   [[kinesis4cats.kcl.fs2.KCLConsumerFS2 KCLConsumerFS2]]
-    */
-  def apply[F[_]](
-      checkpointConfig: CheckpointConfig,
-      coordinatorConfig: CoordinatorConfig,
-      leaseManagementConfig: LeaseManagementConfig,
-      lifecycleConfig: LifecycleConfig,
-      metricsConfig: MetricsConfig,
-      retrievalConfig: RetrievalConfig,
-      fs2Config: FS2Config = FS2Config.default,
-      processConfig: KCLConsumer.ProcessConfig = defaultProcessConfig,
-      encoders: RecordProcessor.LogEncoders = RecordProcessor.LogEncoders.show
-  )(implicit
-      F: Async[F],
-      P: Parallel[F]
-  ): Resource[F, KCLConsumerFS2[F]] = Config
-    .create(
-      checkpointConfig,
-      coordinatorConfig,
-      leaseManagementConfig,
-      lifecycleConfig,
-      metricsConfig,
-      retrievalConfig,
-      fs2Config,
-      processConfig,
-      encoders
-    )
-    .map(new KCLConsumerFS2[F](_))
+  final case class Builder[F[_]] private (
+      config: KCLConsumer.BuilderConfig[F],
+      fs2Config: FS2Config
+  )(implicit F: Async[F], P: Parallel[F]) {
+    def configure(
+        f: KCLConsumer.BuilderConfig[F] => KCLConsumer.BuilderConfig[F]
+    ): Builder[F] =
+      copy(config = f(config))
+    def configureFs2Config(f: FS2Config => FS2Config): Builder[F] =
+      copy(fs2Config = f(fs2Config))
+    def withFs2Config(fs2Config: FS2Config): Builder[F] =
+      copy(fs2Config = fs2Config)
 
-  /** Constructor for the [[kinesis4cats.kcl.fs2.KCLConsumerFS2 KCLConsumerFS2]]
-    * that leverages the
-    * [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/common/ConfigsBuilder.java ConfigsBuilder]]
-    * from the KCL. This is a simpler entry-point for creating the
-    * configuration, and provides a transform function to add any custom
-    * configuration that was not covered by the default
-    *
-    * @param kinesisClient
-    *   [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/kinesis/KinesisAsyncClient.html KinesisAsyncClient]]
-    * @param dynamoClient
-    *   [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/dynamodb/DynamoDbAsyncClient.html DynamoDbAsyncClient]]
-    * @param cloudWatchClient
-    *   [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/cloudwatch/CloudWatchClient.html CloudWatchClient]]
-    * @param streamTracker
-    *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/processor/StreamTracker.java StreamTracker]]
-    *   to use, which defines the name of the stream(s) and the initial position
-    *   within them
-    * @param appName
-    *   Name of the application. Usually also the dynamo table name for
-    *   checkpoints
-    * @param queueSize
-    *   Size of the underlying queue for the FS2 stream. If the queue fills up,
-    *   backpressure on the processors will occur. Default 100
-    * @param commitMaxChunk
-    *   Max records to be received in the commitRecords [[fs2.Pipe Pipe]] before
-    *   a commit is run. Default is 1000
-    * @param commitMaxWait
-    *   Max duration to wait in commitRecords [[fs2.Pipe Pipe]] before a commit
-    *   is run. Default is 10 seconds
-    * @param workerId
-    *   Unique identifier for a single instance of this consumer. Default is a
-    *   random UUID.
-    * @param processConfig
-    *   [[kinesis4cats.kcl.KCLConsumer.ProcessConfig KCLConsumer.ProcessConfig]]
-    * @param tfn
-    *   Function to update the
-    *   [[kinesis4cats.kcl.KCLConsumer.Config KCLConsumer.Config]]. Useful for
-    *   overriding defaults.
-    * @param F
-    *   [[cats.effect.Async Async]] instance
-    * @param encoders
-    *   [[kinesis4cats.kcl.RecordProcessor.LogEncoders RecordProcessor.LogEncoders]]
-    *   for encoding structured logs
-    * @return
-    *   [[cats.effect.Resource Resource]] containing the
-    *   [[kinesis4cats.kcl.fs2.KCLConsumerFS2.Config KCLConsumerFS2.Config]]
-    */
-  def configsBuilder[F[_]](
-      kinesisClient: KinesisAsyncClient,
-      dynamoClient: DynamoDbAsyncClient,
-      cloudWatchClient: CloudWatchAsyncClient,
-      streamTracker: StreamTracker,
-      appName: String,
-      fs2Config: FS2Config = FS2Config.default,
-      workerId: String = Utils.randomUUIDString,
-      processConfig: KCLConsumer.ProcessConfig = defaultProcessConfig,
-      encoders: RecordProcessor.LogEncoders = RecordProcessor.LogEncoders.show
-  )(
-      tfn: kinesis4cats.kcl.KCLConsumer.Config[
-        F
-      ] => kinesis4cats.kcl.KCLConsumer.Config[F] =
-        (x: kinesis4cats.kcl.KCLConsumer.Config[F]) => x
-  )(implicit
-      F: Async[F],
-      P: Parallel[F]
-  ): Resource[F, KCLConsumerFS2[F]] = Config
-    .configsBuilder(
-      kinesisClient,
-      dynamoClient,
-      cloudWatchClient,
-      streamTracker,
-      appName,
-      fs2Config,
-      workerId,
-      processConfig,
-      encoders
-    )(tfn)
-    .map(new KCLConsumerFS2[F](_))
+    def build: Resource[F, KCLConsumerFS2[F]] = for {
+      queue <- Queue
+        .bounded[F, CommittableRecord[F]](fs2Config.queueSize)
+        .toResource
+      underlying <- config.withCallback(callback(queue)).build
+    } yield new KCLConsumerFS2[F](Config(underlying, queue, fs2Config))
+  }
+
+  object Builder {
+    def default[F[_]](
+        streamTracker: StreamTracker,
+        appName: String,
+        kinesisClient: => KinesisAsyncClient =
+          KinesisAsyncClient.builder().build(),
+        dynamoClient: => DynamoDbAsyncClient =
+          DynamoDbAsyncClient.builder().build(),
+        cloudWatchClient: => CloudWatchAsyncClient =
+          CloudWatchAsyncClient.builder().build(),
+        managedClients: Boolean = true
+    )(implicit
+        F: Async[F],
+        P: Parallel[F]
+    ): Resource[F, Builder[F]] = for {
+      kClient <-
+        if (managedClients)
+          Resource.fromAutoCloseable(
+            F.delay(kinesisClient)
+          )
+        else Resource.pure[F, KinesisAsyncClient](kinesisClient)
+      dClient <-
+        if (managedClients) Resource.fromAutoCloseable(F.delay(dynamoClient))
+        else Resource.pure[F, DynamoDbAsyncClient](dynamoClient)
+      cClient <-
+        if (managedClients)
+          Resource.fromAutoCloseable(F.delay(cloudWatchClient))
+        else Resource.pure[F, CloudWatchAsyncClient](cloudWatchClient)
+      workerId = Utils.randomUUIDString
+    } yield Builder(
+      KCLConsumer.BuilderConfig(
+        new CheckpointConfig(),
+        new CoordinatorConfig(appName),
+        new LeaseManagementConfig(appName, dClient, kClient, workerId),
+        new LifecycleConfig(),
+        new MetricsConfig(cClient, appName),
+        new RetrievalConfig(kClient, streamTracker, appName),
+        defaultProcessConfig,
+        RecordProcessor.LogEncoders.show,
+        (_: List[CommittableRecord[F]]) => F.unit
+      ),
+      FS2Config.default
+    )
+
+    @annotation.unused
+    private def unapply[F[_]](builder: Builder[F]): Unit = ()
+  }
 
   /** Configuration for the
     * [[kinesis4cats.kcl.fs2.KCLConsumerFS2 KCLConsumerFS2]]
@@ -357,153 +285,11 @@ object KCLConsumerFS2 {
     * @param maxCommitRetryDuration
     *   Delay between retries of commits
     */
-  final case class Config[F[_]](
+  final case class Config[F[_]] private[kinesis4cats] (
       underlying: kinesis4cats.kcl.KCLConsumer.Config[F],
       queue: Queue[F, CommittableRecord[F]],
       fs2Config: FS2Config
   )
-
-  object Config {
-
-    /** Low-level constructor for
-      * [[kinesis4cats.kcl.fs2.KCLConsumerFS2.Config KCLConsumerFS2.Config]].
-      *
-      * @param checkpointConfig
-      *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/checkpoint/CheckpointConfig.java CheckpointConfig]]
-      * @param coordinatorConfig
-      *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/coordinator/CoordinatorConfig.java CoordinatorConfig]]
-      * @param leaseManagementConfig
-      *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/leases/LeaseManagementConfig.java LeaseManagementConfig]]
-      * @param lifecycleConfig
-      *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/lifecycle/LifecycleConfig.java LifecycleConfig]]
-      * @param metricsConfig
-      *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/metrics/MetricsConfig.java MetricsConfig]]
-      * @param retrievalConfig
-      *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/retrieval/RetrievalConfig.java RetrievalConfig]]
-      * @param queueSize
-      *   Size of the underlying queue for the FS2 stream. If the queue fills
-      *   up, backpressure on the processors will occur. Default 100
-      * @param commitMaxChunk
-      *   Max records to be received in the commitRecords [[fs2.Pipe Pipe]]
-      *   before a commit is run. Default is 1000
-      * @param commitMaxWait
-      *   Max duration to wait in commitRecords [[fs2.Pipe Pipe]] before a
-      *   commit is run. Default is 10 seconds
-      * @param commitMaxRetries
-      *   Max number of retries for a commit operation
-      * @param commitRetryInterval
-      *   Delay between retries of commits
-      * @param processConfig
-      *   [[kinesis4cats.kcl.KCLConsumer.ProcessConfig KCLConsumer.ProcessConfig]]
-      * @param F
-      *   [[cats.effect.Async Async]] instance
-      * @param encoders
-      *   [[kinesis4cats.kcl.RecordProcessor.LogEncoders RecordProcessor.LogEncoders]]
-      *   for encoding structured logs
-      * @return
-      *   [[cats.effect.Resource Resource]] containing the
-      *   [[kinesis4cats.kcl.fs2.KCLConsumerFS2.Config KCLConsumerFS2.Config]]
-      */
-    def create[F[_]](
-        checkpointConfig: CheckpointConfig,
-        coordinatorConfig: CoordinatorConfig,
-        leaseManagementConfig: LeaseManagementConfig,
-        lifecycleConfig: LifecycleConfig,
-        metricsConfig: MetricsConfig,
-        retrievalConfig: RetrievalConfig,
-        fs2Config: FS2Config,
-        processConfig: KCLConsumer.ProcessConfig = defaultProcessConfig,
-        encoders: RecordProcessor.LogEncoders = RecordProcessor.LogEncoders.show
-    )(implicit F: Async[F]): Resource[F, Config[F]] = for {
-      queue <- Queue
-        .bounded[F, CommittableRecord[F]](fs2Config.queueSize)
-        .toResource
-      underlying <- kinesis4cats.kcl.KCLConsumer.Config
-        .create(
-          checkpointConfig,
-          coordinatorConfig,
-          leaseManagementConfig,
-          lifecycleConfig,
-          metricsConfig,
-          retrievalConfig,
-          processConfig,
-          encoders
-        )(callback(queue))
-    } yield Config(underlying, queue, fs2Config)
-
-    /** Constructor for the
-      * [[kinesis4cats.kcl.fs2.KCLConsumerFS2.Config KCLConsumerFS2.Config]]
-      * that leverages the
-      * [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/common/ConfigsBuilder.java ConfigsBuilder]]
-      * from the KCL. This is a simpler entry-point for creating the
-      * configuration, and provides a transform function to add any custom
-      * configuration that was not covered by the default
-      *
-      * @param kinesisClient
-      *   [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/kinesis/KinesisAsyncClient.html KinesisAsyncClient]]
-      * @param dynamoClient
-      *   [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/dynamodb/DynamoDbAsyncClient.html DynamoDbAsyncClient]]
-      * @param cloudWatchClient
-      *   [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/cloudwatch/CloudWatchClient.html CloudWatchClient]]
-      * @param streamTracker
-      *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/processor/StreamTracker.java StreamTracker]]
-      *   to use, which defines the name of the stream(s) and the initial
-      *   position within them
-      * @param appName
-      *   Name of the application. Usually also the dynamo table name for
-      *   checkpoints
-      * @param workerId
-      *   Unique identifier for a single instance of this consumer. Default is a
-      *   random UUID.
-      * @param processConfig
-      *   [[kinesis4cats.kcl.KCLConsumer.ProcessConfig KCLConsumer.ProcessConfig]]
-      * @param tfn
-      *   Function to update the
-      *   [[kinesis4cats.kcl.KCLConsumer.Config KCLConsumer.Config]]. Useful for
-      *   overriding defaults.
-      * @param F
-      *   [[cats.effect.Async Async]] instance
-      * @param encoders
-      *   [[kinesis4cats.kcl.RecordProcessor.LogEncoders RecordProcessor.LogEncoders]]
-      *   for encoding structured logs
-      * @return
-      *   [[cats.effect.Resource Resource]] containing the
-      *   [[kinesis4cats.kcl.fs2.KCLConsumerFS2.Config KCLConsumerFS2.Config]]
-      */
-    def configsBuilder[F[_]](
-        kinesisClient: KinesisAsyncClient,
-        dynamoClient: DynamoDbAsyncClient,
-        cloudWatchClient: CloudWatchAsyncClient,
-        streamTracker: StreamTracker,
-        appName: String,
-        fs2Config: KCLConsumerFS2.FS2Config = KCLConsumerFS2.FS2Config.default,
-        workerId: String = Utils.randomUUIDString,
-        processConfig: KCLConsumer.ProcessConfig = defaultProcessConfig,
-        encoders: RecordProcessor.LogEncoders = RecordProcessor.LogEncoders.show
-    )(
-        tfn: kinesis4cats.kcl.KCLConsumer.Config[
-          F
-        ] => kinesis4cats.kcl.KCLConsumer.Config[F] =
-          (x: kinesis4cats.kcl.KCLConsumer.Config[F]) => x
-    )(implicit
-        F: Async[F]
-    ): Resource[F, Config[F]] = for {
-      queue <- Queue
-        .bounded[F, CommittableRecord[F]](fs2Config.queueSize)
-        .toResource
-      underlying <- kinesis4cats.kcl.KCLConsumer.Config
-        .configsBuilder(
-          kinesisClient,
-          dynamoClient,
-          cloudWatchClient,
-          streamTracker,
-          appName,
-          workerId,
-          processConfig,
-          encoders
-        )(callback(queue))(tfn)
-    } yield Config(underlying, queue, fs2Config)
-  }
 
   /** Configuration for the FS2 implementation
     *

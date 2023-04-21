@@ -16,9 +16,9 @@
 
 package kinesis4cats.smithy4s.client
 
-import cats.effect.Async
 import cats.effect.IO
 import cats.effect.SyncIO
+import cats.effect.syntax.all._
 import com.amazonaws.kinesis.Kinesis
 import org.http4s.blaze.client.BlazeClientBuilder
 
@@ -33,11 +33,10 @@ class KinesisClientJVMSpec extends KinesisClientSpec {
         underlying <- BlazeClientBuilder[IO]
           .withSslContext(SSL.context)
           .resource
-        client <- LocalstackKinesisClient.clientResource[IO](
-          underlying,
-          IO.pure(region),
-          loggerF = (f: Async[IO]) => f.pure(new ConsoleLogger[IO])
-        )
+        builder <- LocalstackKinesisClient.Builder
+          .default(underlying, region)
+          .toResource
+        client <- builder.withLogger(new ConsoleLogger[IO]).build
       } yield client
     )
 }

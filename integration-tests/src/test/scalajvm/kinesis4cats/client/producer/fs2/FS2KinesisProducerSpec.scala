@@ -24,10 +24,11 @@ import software.amazon.kinesis.common._
 import software.amazon.kinesis.processor.SingleStreamTracker
 
 import kinesis4cats.Utils
-import kinesis4cats.client.localstack.LocalstackKinesisClient
 import kinesis4cats.client.producer.fs2.localstack.LocalstackFS2KinesisProducer
 import kinesis4cats.kcl.CommittableRecord
 import kinesis4cats.kcl.localstack.LocalstackKCLConsumer
+import kinesis4cats.localstack.TestStreamConfig
+import kinesis4cats.models.StreamNameOrArn
 import kinesis4cats.producer.fs2.FS2Producer
 import kinesis4cats.producer.fs2.FS2ProducerSpec
 import kinesis4cats.syntax.bytebuffer._
@@ -42,12 +43,15 @@ class KinesisFS2ProducerSpec
     s"kinesis-client-fs2-producer-spec-${Utils.randomUUIDString}"
   override def producerResource
       : Resource[IO, FS2Producer[IO, PutRecordsRequest, PutRecordsResponse]] =
-    LocalstackFS2KinesisProducer.resource[IO](streamName)
+    LocalstackFS2KinesisProducer.Builder
+      .default[IO](StreamNameOrArn.Name(streamName))
+      .map(_.withStreamsToCreate(List(TestStreamConfig.default(streamName, 3))))
+      .toResource
+      .flatMap(_.build)
 
   override def aAsBytes(a: CommittableRecord[IO]): Array[Byte] = a.data.asArray
 
   override def fixture(
-      shardCount: Int,
       appName: String
   ): SyncIO[FunFixture[FS2ProducerSpec.Resources[
     IO,
@@ -56,8 +60,8 @@ class KinesisFS2ProducerSpec
     CommittableRecord[IO]
   ]]] = ResourceFunFixture(
     for {
-      _ <- LocalstackKinesisClient.streamResource[IO](streamName, shardCount)
-      deferredWithResults <- LocalstackKCLConsumer.kclConsumerWithResults(
+      producer <- producerResource
+      builder <- LocalstackKCLConsumer.Builder.default[IO](
         new SingleStreamTracker(
           StreamIdentifier.singleStreamInstance(streamName),
           InitialPositionInStreamExtended.newInitialPosition(
@@ -65,9 +69,9 @@ class KinesisFS2ProducerSpec
           )
         ),
         appName
-      )((_: List[CommittableRecord[IO]]) => IO.unit)
+      )
+      deferredWithResults <- builder.runWithResults()
       _ <- deferredWithResults.deferred.get.toResource
-      producer <- producerResource
     } yield FS2ProducerSpec.Resources(
       deferredWithResults.resultsQueue,
       producer

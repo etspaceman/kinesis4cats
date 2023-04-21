@@ -12,10 +12,12 @@ libraryDependencies += "io.github.etspaceman" %% "kinesis4cats-smithy4s-client-l
 
 ```scala mdoc:compile-only
 import cats.effect._
+import cats.effect.syntax.all._
 import org.http4s.blaze.client.BlazeClientBuilder
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 import smithy4s.aws._
 
+import kinesis4cats.models.StreamNameOrArn
 import kinesis4cats.smithy4s.client.localstack.LocalstackKinesisClient
 import kinesis4cats.smithy4s.client.producer.localstack.LocalstackKinesisProducer
 import kinesis4cats.smithy4s.client.producer.fs2.localstack.LocalstackFS2KinesisProducer
@@ -24,11 +26,12 @@ val kinesisClientResource = for {
     underlying <- BlazeClientBuilder[IO]
         .withCheckEndpointAuthentication(false)
         .resource
-    client <- LocalstackKinesisClient.clientResource[IO](
-        underlying,
-        IO.pure(AwsRegion.US_EAST_1),
-        loggerF = (_: Async[IO]) => Slf4jLogger.create[IO]
-    )
+    client <- LocalstackKinesisClient.Builder    
+        .default[IO](underlying, AwsRegion.US_EAST_1)
+        .toResource
+        .flatMap(x => 
+            x.withLogger(Slf4jLogger.getLogger).build
+        )
 } yield client
 
 // Load a KinesisProducer as a Resource
@@ -36,12 +39,16 @@ val kinesisProducerResource = for {
     underlying <- BlazeClientBuilder[IO]
         .withCheckEndpointAuthentication(false)
         .resource
-    producer <- LocalstackKinesisProducer.resource[IO](
-        underlying,
-        "my-stream",
-        IO.pure(AwsRegion.US_EAST_1),
-        loggerF = (_: Async[IO]) => Slf4jLogger.create[IO]
-    )
+    producer <- LocalstackKinesisProducer.Builder    
+        .default[IO](
+            underlying, 
+            AwsRegion.US_EAST_1,
+            StreamNameOrArn.Name("my-stream")
+        )
+        .toResource
+        .flatMap(x => 
+            x.withLogger(Slf4jLogger.getLogger).build
+        )
 } yield producer
 
 // Load a FS2KinesisProducer as a Resource
@@ -49,11 +56,15 @@ val fs2KinesisProducerResource = for {
     underlying <- BlazeClientBuilder[IO]
         .withCheckEndpointAuthentication(false)
         .resource
-    producer <- LocalstackFS2KinesisProducer.resource[IO](
-        underlying,
-        "my-stream",
-        IO.pure(AwsRegion.US_EAST_1),
-        loggerF = (_: Async[IO]) => Slf4jLogger.create[IO]
-    )
+    producer <- LocalstackFS2KinesisProducer.Builder    
+        .default[IO](
+            underlying, 
+            AwsRegion.US_EAST_1,
+            StreamNameOrArn.Name("my-stream")
+        )
+        .toResource
+        .flatMap(x => 
+            x.withLogger(Slf4jLogger.getLogger).build
+        )
 } yield producer
 ```

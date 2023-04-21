@@ -29,11 +29,12 @@ import kinesis4cats.kcl.localstack.LocalstackKCLConsumer
 object TestKCLService extends ResourceApp.Forever {
   override def run(args: List[String]): Resource[IO, Unit] = for {
     streamName <- CirisReader.read[String](List("test", "stream")).resource[IO]
-    configAndResults <- LocalstackKCLConsumer.kclConfigWithResults[IO](
-      new SingleStreamTracker(streamName),
-      s"test-kcl-service-spec-${Utils.randomUUIDString}"
-    )((_: List[CommittableRecord[IO]]) => IO.unit)
-    consumer = new KCLConsumer[IO](configAndResults.kclConfig)
+    consumer <- LocalstackKCLConsumer.Builder
+      .default[IO](
+        new SingleStreamTracker(streamName),
+        s"test-kcl-service-spec-${Utils.randomUUIDString}"
+      )
+      .flatMap(_.build)
     _ <- KCLService.server[IO](consumer, port"8080", host"0.0.0.0")
   } yield ()
 

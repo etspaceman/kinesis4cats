@@ -15,18 +15,14 @@ import org.http4s.blaze.client.BlazeClientBuilder
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 import smithy4s.aws._
 
-import kinesis4cats.smithy4s.client.producer.KinesisProducer
+import kinesis4cats.smithy4s.client.KinesisClient
 import kinesis4cats.smithy4s.client.logging.instances.circe._
-import kinesis4cats.producer._
-import kinesis4cats.models.StreamNameOrArn
 
-BlazeClientBuilder[IO].resource.flatMap(client =>
-            KinesisProducer[IO](
-                Producer.Config.default(StreamNameOrArn.Name("my-stream")),
-                client,
-                IO.pure(AwsRegion.US_EAST_1),
-                loggerF = (_: Async[IO]) => Slf4jLogger.create[IO],
-                encoders = kinesisProducerCirceEncoders[IO]
-            )
-        )
+BlazeClientBuilder[IO].resource.flatMap(underlying =>
+    KinesisClient.Builder
+        .default[IO](underlying, AwsRegion.US_EAST_1)
+        .withLogger(Slf4jLogger.getLogger)
+        .withLogEncoders(kinesisClientCirceEncoders[IO])
+        .build
+)
 ```
