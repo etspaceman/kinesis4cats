@@ -110,9 +110,6 @@ object LocalstackFS2KinesisProducer {
       )(
         callback
       )
-      _ <- streamsToCreate.traverse_(x =>
-        LocalstackKinesisClient.managedStream(x, client)
-      )
       _ <- producer.resource
     } yield producer
   }
