@@ -45,8 +45,12 @@ class KCLCirisSpec extends munit.CatsEffectSuite {
     "It should load the environment variables the same as system properties for CoordinatorConfig"
   ) {
     for {
-      configEnv <- KCLCiris.Coordinator.load[IO](prefix = Some("env"))
-      configProp <- KCLCiris.Coordinator.load[IO](prefix = Some("prop"))
+      configEnv <- KCLCiris.Coordinator
+        .read(Some("env"), None, None, None)
+        .load[IO]
+      configProp <- KCLCiris.Coordinator
+        .read(Some("prop"), None, None, None)
+        .load[IO]
       expected = new CoordinatorConfig(BuildInfo.kclAppName)
         .safeTransform(BuildInfo.kclCoordinatorMaxInitializationAttempts.toInt)(
           _.maxInitializationAttempts(_)
@@ -91,9 +95,29 @@ class KCLCirisSpec extends munit.CatsEffectSuite {
       dynamoClient <- AwsClients.dynamoClient[IO]()
       kinesisClient <- AwsClients.kinesisClient[IO]()
       configEnv <- KCLCiris.Lease
-        .load[IO](dynamoClient, kinesisClient, prefix = Some("env"))
+        .read(
+          dynamoClient,
+          kinesisClient,
+          Some("env"),
+          None,
+          None,
+          None,
+          None,
+          None
+        )
+        .load[IO]
       configProp <- KCLCiris.Lease
-        .load[IO](dynamoClient, kinesisClient, prefix = Some("prop"))
+        .read(
+          dynamoClient,
+          kinesisClient,
+          Some("prop"),
+          None,
+          None,
+          None,
+          None,
+          None
+        )
+        .load[IO]
       expected = new LeaseManagementConfig(
         BuildInfo.kclLeaseTableName,
         dynamoClient,
@@ -170,8 +194,8 @@ class KCLCirisSpec extends munit.CatsEffectSuite {
     "It should load the environment variables the same as system properties for LifecycleConfig"
   ) {
     for {
-      configEnv <- KCLCiris.Lifecycle.load[IO](prefix = Some("env"))
-      configProp <- KCLCiris.Lifecycle.load[IO](prefix = Some("prop"))
+      configEnv <- KCLCiris.Lifecycle.read(Some("env"), None, None).load[IO]
+      configProp <- KCLCiris.Lifecycle.read(Some("prop"), None, None).load[IO]
       expected = new LifecycleConfig()
         .logWarningForTaskAfterMillis(
           java.lang.Long
@@ -207,9 +231,11 @@ class KCLCirisSpec extends munit.CatsEffectSuite {
     for {
       cloudwatchClient <- AwsClients.cloudwatchClient[IO]()
       configEnv <- KCLCiris.Metrics
-        .load[IO](cloudwatchClient, prefix = Some("env"))
+        .read(cloudwatchClient, Some("env"), None)
+        .load[IO]
       configProp <- KCLCiris.Metrics
-        .load[IO](cloudwatchClient, prefix = Some("prop"))
+        .read(cloudwatchClient, Some("prop"), None)
+        .load[IO]
       expected = new MetricsConfig(
         cloudwatchClient,
         BuildInfo.kclMetricsNamespace
@@ -247,13 +273,17 @@ class KCLCirisSpec extends munit.CatsEffectSuite {
     for {
       kinesisClient <- AwsClients.kinesisClient[IO]()
       fanoutConfigEnv <- KCLCiris.Retrieval
-        .load[IO](kinesisClient, prefix = Some("FANOUT_ENV"))
+        .read(kinesisClient, Some("FANOUT_ENV"), None)
+        .load[IO]
       fanoutConfigProp <- KCLCiris.Retrieval
-        .load[IO](kinesisClient, prefix = Some("fanout.prop"))
+        .read(kinesisClient, Some("fanout.prop"), None)
+        .load[IO]
       pollingConfigEnv <- KCLCiris.Retrieval
-        .load[IO](kinesisClient, prefix = Some("POLLING_ENV"))
+        .read(kinesisClient, Some("POLLING_ENV"), None)
+        .load[IO]
       pollingConfigProp <- KCLCiris.Retrieval
-        .load[IO](kinesisClient, prefix = Some("polling.prop"))
+        .read(kinesisClient, Some("polling.prop"), None)
+        .load[IO]
       pollingExpected = new RetrievalConfig(
         kinesisClient,
         new SingleStreamTracker(
@@ -380,8 +410,8 @@ class KCLCirisSpec extends munit.CatsEffectSuite {
     "It should load the environment variables the same as system properties for ProcessorConfig"
   ) {
     for {
-      configEnv <- KCLCiris.Processor.load[IO](prefix = Some("env"))
-      configProp <- KCLCiris.Processor.load[IO](prefix = Some("prop"))
+      configEnv <- KCLCiris.Processor.read(prefix = Some("env"))
+      configProp <- KCLCiris.Processor.read(prefix = Some("prop"))
       expected = KCLConsumer.ProcessConfig(
         BuildInfo.kclProcessorRaiseOnError.toBoolean,
         RecordProcessor.Config(

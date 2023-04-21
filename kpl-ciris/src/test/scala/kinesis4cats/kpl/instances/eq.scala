@@ -21,6 +21,8 @@ import cats.syntax.all._
 import com.amazonaws.services.kinesis.producer.KinesisProducerConfiguration
 import com.amazonaws.services.schemaregistry.common.configs.GlueSchemaRegistryConfiguration
 
+import kinesis4cats.kpl.KPLProducer
+
 object eq {
   implicit val glueSchemaRegistryConfigurationEq
       : Eq[GlueSchemaRegistryConfiguration] = (x, y) =>
@@ -78,4 +80,8 @@ object eq {
       x.isVerifyCertificate() === y.isVerifyCertificate() &&
       Option(x.getGlueSchemaRegistryConfiguration()) ===
       Option(y.getGlueSchemaRegistryConfiguration())
+
+  implicit val kplProducerConfigEq: Eq[KPLProducer.Config] = (x, y) =>
+    x.gracefulShutdown == y.gracefulShutdown &&
+      x.kpl === y.kpl
 }

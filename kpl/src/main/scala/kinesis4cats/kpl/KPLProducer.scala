@@ -482,9 +482,11 @@ object KPLProducer {
 
   final case class Builder[F[_]] private (
       config: Config,
+      logger: StructuredLogger[F], 
       encoders: LogEncoders
   )(implicit F: Async[F]) {
     def withConfig(config: Config): Builder[F] = copy(config = config)
+    def withLogger(logger: StructuredLogger[F]) = copy(logger = logger)
     def withLogEncoders(encoders: LogEncoders): Builder[F] =
       copy(encoders = encoders)
     def configure(
@@ -494,7 +496,6 @@ object KPLProducer {
     def build: Resource[F, KPLProducer[F]] = Resource.make[F, KPLProducer[F]](
       for {
         client <- F.delay(new KinesisProducer(config.kpl))
-        logger <- Slf4jLogger.create[F]
         state <- Ref.of[F, State](State.Up)
       } yield new KPLProducer(client, logger, state, encoders)
     ) { x =>
@@ -512,6 +513,7 @@ object KPLProducer {
 
     def default[F[_]](implicit F: Async[F]): Builder[F] = Builder[F](
       KPLProducer.Config.default,
+      Slf4jLogger.getLogger,
       LogEncoders.show
     )
 

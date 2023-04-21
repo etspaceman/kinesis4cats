@@ -25,11 +25,11 @@ import ciris.{ConfigDecoder, ConfigError}
   * @param value
   *   Underlying value
   */
-sealed abstract class RetrievalType(val value: String)
+private[kinesis4cats] sealed abstract class RetrievalType(val value: String)
 
-object RetrievalType {
-  case object Polling extends RetrievalType("polling")
-  case object FanOut extends RetrievalType("fanout")
+private[kinesis4cats] object RetrievalType {
+  private[kinesis4cats] case object Polling extends RetrievalType("polling")
+  private[kinesis4cats] case object FanOut extends RetrievalType("fanout")
 
   implicit val retrievalTypeConfigDecoder
       : ConfigDecoder[String, RetrievalType] = ConfigDecoder[String].mapEither {
