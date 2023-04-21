@@ -30,7 +30,6 @@ import kinesis4cats.localstack.aws.v2.AwsClients
 object LocalstackKinesisClient {
 
   final case class Builder[F[_]] private (
-      localstackConfig: LocalstackConfig,
       encoders: KinesisClient.LogEncoders,
       logger: StructuredLogger[F],
       streamsToCreate: List[TestStreamConfig[F]],
@@ -44,9 +43,6 @@ object LocalstackKinesisClient {
         if (managed) Resource.fromAutoCloseable(F.delay(client))
         else Resource.pure(client)
     )
-
-    def withLocalstackConfig(localstackConfig: LocalstackConfig): Builder[F] =
-      copy(localstackConfig = localstackConfig)
 
     def withLogEncoders(encoders: KinesisClient.LogEncoders): Builder[F] = copy(
       encoders = encoders
@@ -97,7 +93,6 @@ object LocalstackKinesisClient {
         F: Async[F]
     ): Builder[F] =
       Builder[F](
-        localstackConfig,
         KinesisClient.LogEncoders.show,
         Slf4jLogger.getLogger,
         Nil,

@@ -18,19 +18,19 @@ package kinesis4cats.client.producer.localstack
 
 import cats.effect._
 import cats.syntax.all._
+import org.typelevel.log4cats.StructuredLogger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
+import software.amazon.awssdk.services.kinesis.KinesisAsyncClient
 
 import kinesis4cats.client.KinesisClient
+import kinesis4cats.client.localstack.LocalstackKinesisClient
 import kinesis4cats.client.producer.KinesisProducer
 import kinesis4cats.localstack.LocalstackConfig
+import kinesis4cats.localstack.TestStreamConfig
 import kinesis4cats.models.StreamNameOrArn
 import kinesis4cats.producer.Producer
 import kinesis4cats.producer.ShardMap
 import kinesis4cats.producer.ShardMapCache
-import org.typelevel.log4cats.StructuredLogger
-import kinesis4cats.localstack.TestStreamConfig
-import software.amazon.awssdk.services.kinesis.KinesisAsyncClient
-import kinesis4cats.client.localstack.LocalstackKinesisClient
 
 object LocalstackKinesisProducer {
 
@@ -52,7 +52,7 @@ object LocalstackKinesisProducer {
     def withConfig(config: Producer.Config[F]): Builder[F] = copy(
       config = config
     )
-     def withClient(
+    def withClient(
         client: => KinesisAsyncClient,
         managed: Boolean = true
     ): Builder[F] = copy(

@@ -21,6 +21,7 @@ import scala.concurrent.duration._
 
 import java.nio.ByteBuffer
 
+import cats.effect.syntax.all._
 import cats.effect.{IO, SyncIO}
 import com.amazonaws.services.kinesis.producer._
 import io.circe.syntax._
@@ -28,6 +29,7 @@ import org.scalacheck.Arbitrary
 
 import kinesis4cats.Utils
 import kinesis4cats.kpl.localstack.LocalstackKPLProducer
+import kinesis4cats.localstack.TestStreamConfig
 import kinesis4cats.syntax.scalacheck._
 
 abstract class KPLProducerSpec
@@ -40,10 +42,14 @@ abstract class KPLProducerSpec
       streamName: String,
       shardCount: Int
   ): SyncIO[FunFixture[KPLProducer[IO]]] = ResourceFunFixture(
-    LocalstackKPLProducer.producerWithStream[IO](
-      streamName,
-      shardCount
-    )
+    LocalstackKPLProducer.Builder
+      .default[IO]()
+      .toResource
+      .flatMap(
+        _.withStreamsToCreate(
+          List(TestStreamConfig.default(streamName, shardCount))
+        ).build
+      )
   )
 
   val streamName = s"kpl-producer-spec-${Utils.randomUUIDString}"

@@ -29,7 +29,6 @@ import kinesis4cats.localstack.aws.v2.AwsClients
 object LocalstackDynamoClient {
 
   final case class Builder[F[_]] private (
-      localstackConfig: LocalstackConfig,
       encoders: DynamoClient.LogEncoders,
       logger: StructuredLogger[F],
       clientResource: Resource[F, DynamoDbAsyncClient]
@@ -42,9 +41,6 @@ object LocalstackDynamoClient {
         if (managed) Resource.fromAutoCloseable(F.delay(client))
         else Resource.pure(client)
     )
-
-    def withLocalstackConfig(localstackConfig: LocalstackConfig): Builder[F] =
-      copy(localstackConfig = localstackConfig)
 
     def withLogEncoders(encoders: DynamoClient.LogEncoders): Builder[F] = copy(
       encoders = encoders
@@ -78,7 +74,6 @@ object LocalstackDynamoClient {
         F: Async[F]
     ): Builder[F] =
       Builder[F](
-        localstackConfig,
         DynamoClient.LogEncoders.show,
         Slf4jLogger.getLogger,
         AwsClients.dynamoClientResource[F](localstackConfig)

@@ -124,7 +124,7 @@ object ShardMapCache {
       copy(shardMapF = shardMapF)
     def withLogger(logger: StructuredLogger[F]): Builder[F] =
       copy(logger = logger)
-    def withLogEncoders(encoders: LogEncoders): Builder[F] = 
+    def withLogEncoders(encoders: LogEncoders): Builder[F] =
       copy(encoders = encoders)
 
     def build: Resource[F, ShardMapCache[F]] = for {

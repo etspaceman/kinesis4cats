@@ -19,17 +19,16 @@ package localstack
 
 import cats.effect.{Async, Resource}
 import cats.syntax.all._
+import org.typelevel.log4cats.StructuredLogger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
+import software.amazon.awssdk.services.cloudwatch.CloudWatchAsyncClient
 
 import kinesis4cats.localstack.LocalstackConfig
 import kinesis4cats.localstack.aws.v2.AwsClients
-import org.typelevel.log4cats.StructuredLogger
-import software.amazon.awssdk.services.cloudwatch.CloudWatchAsyncClient
 
 object LocalstackCloudWatchClient {
 
   final case class Builder[F[_]] private (
-      localstackConfig: LocalstackConfig,
       encoders: CloudWatchClient.LogEncoders,
       logger: StructuredLogger[F],
       clientResource: Resource[F, CloudWatchAsyncClient]
@@ -43,12 +42,10 @@ object LocalstackCloudWatchClient {
         else Resource.pure(client)
     )
 
-    def withLocalstackConfig(localstackConfig: LocalstackConfig): Builder[F] =
-      copy(localstackConfig = localstackConfig)
-
-    def withLogEncoders(encoders: CloudWatchClient.LogEncoders): Builder[F] = copy(
-      encoders = encoders
-    )
+    def withLogEncoders(encoders: CloudWatchClient.LogEncoders): Builder[F] =
+      copy(
+        encoders = encoders
+      )
 
     def withLogger(logger: StructuredLogger[F]): Builder[F] = copy(
       logger = logger
@@ -78,7 +75,6 @@ object LocalstackCloudWatchClient {
         F: Async[F]
     ): Builder[F] =
       Builder[F](
-        localstackConfig,
         CloudWatchClient.LogEncoders.show,
         Slf4jLogger.getLogger,
         AwsClients.cloudwatchClientResource[F](localstackConfig)

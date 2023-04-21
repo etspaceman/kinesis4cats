@@ -41,7 +41,6 @@ private[kinesis4cats] abstract class FS2ProducerSpec[PutReq, PutRes, A]
   def aAsBytes(a: A): Array[Byte]
 
   def fixture(
-      shardCount: Int,
       appName: String
   ): SyncIO[FunFixture[FS2ProducerSpec.Resources[IO, PutReq, PutRes, A]]]
 
@@ -49,36 +48,35 @@ private[kinesis4cats] abstract class FS2ProducerSpec[PutReq, PutRes, A]
 
   def appName = streamName
 
-  fixture(3, appName).test("It should produce records end to end") {
-    resources =>
-      for {
-        data <- IO(Arbitrary.arbitrary[TestData].take(50).toList)
-        records = NonEmptyList.fromListUnsafe(
-          data.map(x =>
-            Record(
-              x.asJson.noSpaces.getBytes(),
-              Utils.randomUUIDString,
-              None,
-              None
-            )
+  fixture(appName).test("It should produce records end to end") { resources =>
+    for {
+      data <- IO(Arbitrary.arbitrary[TestData].take(50).toList)
+      records = NonEmptyList.fromListUnsafe(
+        data.map(x =>
+          Record(
+            x.asJson.noSpaces.getBytes(),
+            Utils.randomUUIDString,
+            None,
+            None
           )
         )
-        _ <- records.traverse(resources.producer.put)
-        retryPolicy = limitRetries[IO](30).join(constantDelay(1.second))
-        size <- retryingOnFailures(
-          retryPolicy,
-          (x: Int) => IO(x === 50),
-          noop[IO, Int]
-        )(resources.resultsQueue.size)
-        _ <- IO(assertEquals(size, 50))
-        results <- resources.resultsQueue.tryTakeN(None)
-        resultRecords <- results.traverse { x =>
-          IO.fromEither(decode[TestData](new String(aAsBytes(x))))
-        }
-      } yield assert(
-        resultRecords.forall(data.contains),
-        s"res: ${resultRecords}\nexp: ${data}"
       )
+      _ <- records.traverse(resources.producer.put)
+      retryPolicy = limitRetries[IO](30).join(constantDelay(1.second))
+      size <- retryingOnFailures(
+        retryPolicy,
+        (x: Int) => IO(x === 50),
+        noop[IO, Int]
+      )(resources.resultsQueue.size)
+      _ <- IO(assertEquals(size, 50))
+      results <- resources.resultsQueue.tryTakeN(None)
+      resultRecords <- results.traverse { x =>
+        IO.fromEither(decode[TestData](new String(aAsBytes(x))))
+      }
+    } yield assert(
+      resultRecords.forall(data.contains),
+      s"res: ${resultRecords}\nexp: ${data}"
+    )
   }
 }
 

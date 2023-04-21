@@ -22,6 +22,7 @@ import scala.concurrent.duration._
 import _root_.smithy4s.ByteArray
 import _root_.smithy4s.aws.AwsRegion
 import cats.effect._
+import cats.effect.syntax.all._
 import cats.syntax.all._
 import com.amazonaws.kinesis._
 import fs2.io.net.tls.TLSContext
@@ -51,11 +52,10 @@ abstract class KinesisClientSpec extends munit.CatsEffectSuite {
           .withTLSContext(tlsContext)
           .withoutCheckEndpointAuthentication
           .build
-        client <- LocalstackKinesisClient.clientResource[IO](
-          underlying,
-          IO.pure(region),
-          loggerF = (f: Async[IO]) => f.pure(new ConsoleLogger[IO])
-        )
+        builder <- LocalstackKinesisClient.Builder
+          .default(underlying, region)
+          .toResource
+        client <- builder.withLogger(new ConsoleLogger[IO]).build
       } yield client
     )
 

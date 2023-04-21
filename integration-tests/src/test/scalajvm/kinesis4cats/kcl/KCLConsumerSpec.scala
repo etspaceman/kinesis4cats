@@ -21,6 +21,7 @@ import scala.concurrent.duration._
 
 import cats.effect.Deferred
 import cats.effect.std.Queue
+import cats.effect.syntax.all._
 import cats.effect.{IO, Resource, SyncIO}
 import cats.syntax.all._
 import io.circe.parser._
@@ -37,6 +38,7 @@ import kinesis4cats.client.localstack.LocalstackKinesisClient
 import kinesis4cats.compat.retry
 import kinesis4cats.compat.retry.RetryPolicies._
 import kinesis4cats.kcl.localstack.LocalstackKCLConsumer
+import kinesis4cats.localstack.TestStreamConfig
 import kinesis4cats.syntax.bytebuffer._
 import kinesis4cats.syntax.scalacheck._
 
@@ -90,8 +92,15 @@ object KCLConsumerSpec {
       shardCount: Int,
       appName: String
   ): Resource[IO, Resources[IO]] = for {
-    client <- LocalstackKinesisClient.streamResource[IO](streamName, shardCount)
-    deferredWithResults <- LocalstackKCLConsumer.kclConsumerWithResults(
+    client <- LocalstackKinesisClient.Builder
+      .default[IO]()
+      .toResource
+      .flatMap(
+        _.withStreamsToCreate(
+          List(TestStreamConfig.default(streamName, shardCount))
+        ).build
+      )
+    builder <- LocalstackKCLConsumer.Builder.default[IO](
       new SingleStreamTracker(
         StreamIdentifier.singleStreamInstance(streamName),
         InitialPositionInStreamExtended.newInitialPosition(
@@ -99,7 +108,8 @@ object KCLConsumerSpec {
         )
       ),
       appName
-    )((_: List[CommittableRecord[IO]]) => IO.unit)
+    )
+    deferredWithResults <- builder.runWithResults()
   } yield Resources(
     client,
     deferredWithResults.deferred,

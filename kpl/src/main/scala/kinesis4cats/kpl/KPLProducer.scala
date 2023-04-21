@@ -482,7 +482,7 @@ object KPLProducer {
 
   final case class Builder[F[_]] private (
       config: Config,
-      logger: StructuredLogger[F], 
+      logger: StructuredLogger[F],
       encoders: LogEncoders
   )(implicit F: Async[F]) {
     def withConfig(config: Config): Builder[F] = copy(config = config)

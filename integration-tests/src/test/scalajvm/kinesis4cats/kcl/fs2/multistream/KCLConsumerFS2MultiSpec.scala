@@ -38,6 +38,7 @@ import kinesis4cats.kcl.CommittableRecord
 import kinesis4cats.kcl.fs2.KCLConsumerFS2
 import kinesis4cats.kcl.fs2.localstack.LocalstackKCLConsumerFS2
 import kinesis4cats.kcl.multistream.MultiStreamTracker
+import kinesis4cats.localstack.TestStreamConfig
 import kinesis4cats.models.{AwsRegion, StreamArn}
 import kinesis4cats.syntax.bytebuffer._
 import kinesis4cats.syntax.scalacheck._
@@ -121,23 +122,32 @@ object KCLConsumerFS2MultiSpec {
       shardCount: Int,
       appName: String
   ): Resource[IO, Resources[IO]] = for {
-    _ <- LocalstackKinesisClient
-      .streamResource[IO](streamArn1.streamName, shardCount)
+
+    client <- LocalstackKinesisClient.Builder
+      .default[IO]()
+      .toResource
+      .flatMap(
+        _.withStreamsToCreate(
+          List(
+            TestStreamConfig.default(streamArn1.streamName, shardCount),
+            TestStreamConfig.default(streamArn2.streamName, shardCount)
+          )
+        ).build
+      )
     position = InitialPositionInStreamExtended.newInitialPosition(
       InitialPositionInStream.TRIM_HORIZON
     )
-    client <- LocalstackKinesisClient
-      .streamResource[IO](streamArn2.streamName, shardCount)
     tracker <- MultiStreamTracker
       .noLeaseDeletionFromArns[IO](
         client,
         Map(streamArn1 -> position, streamArn2 -> position)
       )
       .toResource
-    consumer <- LocalstackKCLConsumerFS2.kclConsumer[IO](
+    builder <- LocalstackKCLConsumerFS2.Builder.default[IO](
       tracker,
       appName
     )
+    consumer <- builder.build
     streamAndDeferred <- consumer.streamWithDeferredListener()
   } yield Resources(
     client,

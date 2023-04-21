@@ -30,9 +30,10 @@ import kinesis4cats.SSL
 import kinesis4cats.Utils
 import kinesis4cats.kcl.CommittableRecord
 import kinesis4cats.kcl.localstack.LocalstackKCLConsumer
+import kinesis4cats.localstack.TestStreamConfig
+import kinesis4cats.models.StreamNameOrArn
 import kinesis4cats.producer.Producer
 import kinesis4cats.producer.ProducerSpec
-import kinesis4cats.smithy4s.client.localstack.LocalstackKinesisClient
 import kinesis4cats.smithy4s.client.producer.localstack.LocalstackKinesisProducer
 import kinesis4cats.syntax.bytebuffer._
 
@@ -48,25 +49,26 @@ class KinesisProducerSpec
   def http4sClientResource =
     BlazeClientBuilder[IO].withSslContext(SSL.context).resource
 
-  lazy val region = IO.pure(AwsRegion.US_EAST_1)
+  lazy val region = AwsRegion.US_EAST_1
 
   override def producerResource
       : Resource[IO, Producer[IO, PutRecordsInput, PutRecordsOutput]] =
     for {
       http4sClient <- http4sClientResource
-      producer <- LocalstackKinesisProducer
-        .resource[IO](
-          http4sClient,
-          streamName,
-          region,
-          loggerF = (_: Async[IO]) => Slf4jLogger.create[IO]
+      builder <- LocalstackKinesisProducer.Builder
+        .default(http4sClient, region, StreamNameOrArn.Name(streamName))
+        .toResource
+      producer <- builder
+        .withLogger(Slf4jLogger.getLogger[IO])
+        .withStreamsToCreate(
+          List(TestStreamConfig.default(streamName, 3))
         )
+        .build
     } yield producer
 
   override def aAsBytes(a: CommittableRecord[IO]): Array[Byte] = a.data.asArray
 
   override def fixture(
-      shardCount: Int,
       appName: String
   ): SyncIO[FunFixture[ProducerSpec.Resources[
     IO,
@@ -75,16 +77,8 @@ class KinesisProducerSpec
     CommittableRecord[IO]
   ]]] = ResourceFunFixture(
     for {
-      http4sClient <- http4sClientResource
-      _ <- LocalstackKinesisClient
-        .streamResource[IO](
-          http4sClient,
-          region,
-          streamName,
-          shardCount,
-          loggerF = (f: Async[IO]) => Slf4jLogger.create[IO](f, implicitly)
-        )
-      deferredWithResults <- LocalstackKCLConsumer.kclConsumerWithResults(
+      producer <- producerResource
+      builder <- LocalstackKCLConsumer.Builder.default[IO](
         new SingleStreamTracker(
           StreamIdentifier.singleStreamInstance(streamName),
           InitialPositionInStreamExtended.newInitialPosition(
@@ -92,9 +86,9 @@ class KinesisProducerSpec
           )
         ),
         appName
-      )((_: List[CommittableRecord[IO]]) => IO.unit)
+      )
+      deferredWithResults <- builder.runWithResults()
       _ <- deferredWithResults.deferred.get.toResource
-      producer <- producerResource
     } yield ProducerSpec.Resources(deferredWithResults.resultsQueue, producer)
   )
 

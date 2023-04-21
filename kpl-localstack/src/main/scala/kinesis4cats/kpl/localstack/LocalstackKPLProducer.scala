@@ -18,6 +18,7 @@ package kinesis4cats.kpl
 package localstack
 
 import cats.effect.{Async, Resource}
+import cats.syntax.all._
 import com.amazonaws.services.kinesis.producer.KinesisProducerConfiguration
 import org.typelevel.log4cats.StructuredLogger
 
@@ -64,6 +65,10 @@ object LocalstackKPLProducer {
         Nil,
         localstackConfig
       )
+
+    def default[F[_]](prefix: Option[String] = None)(implicit
+        F: Async[F]
+    ): F[Builder[F]] = LocalstackConfig.load[F](prefix).map(default(_))
 
     @annotation.unused
     def unapply[F[_]](builder: Builder[F]): Unit = ()

@@ -70,7 +70,7 @@ object KinesisClient {
       copy(credentialsResourceF = credentialsResourceF)
     def withLogEncoders(encoders: LogEncoders[F]): Builder[F] =
       copy(encoders = encoders)
-    def withLogRequestsResponses(logRequestsResponses: Boolean): Builder[F] = 
+    def withLogRequestsResponses(logRequestsResponses: Boolean): Builder[F] =
       copy(logRequestsResponses = logRequestsResponses)
     def enableLogging: Builder[F] = withLogRequestsResponses(true)
     def disableLogging: Builder[F] = withLogRequestsResponses(false)

@@ -180,7 +180,7 @@ object LocalstackKinesisClient {
         true,
         Nil
       )
-    
+
     @annotation.unused
     private def unapply[F[_]](builder: Builder[F]): Unit = ()
   }
