@@ -113,8 +113,10 @@ class KPLCirisSpec extends munit.CatsEffectSuite {
       .safeTransform(BuildInfo.kplThreadPoolSize.toInt)(_.setThreadPoolSize(_))
       .safeTransform(BuildInfo.kplUserRecordTimeout.asMillisUnsafe)(
         _.setUserRecordTimeoutInMillis(_)
-        // TODO: Write Tests
-      ), KPLProducer.Config.GracefulShutdown.default)
+      ), KPLProducer.Config.GracefulShutdown(
+        BuildInfo.kplGracefulShutdownFlushAttempts.toInt, 
+        BuildInfo.kplGracefulShutdownFlushInterval.asFiniteDurationUnsafe
+      ))
     // format: on
     for {
       kplConfigEnv <- KPLCiris.loadKplConfig[IO](prefix = Some("env"))

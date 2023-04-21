@@ -119,6 +119,14 @@ object KPLCirisSpecVars {
       CirisUtil.propAndEnv(
         List("kpl", "native", "executable"),
         "foo.exe"
+      ),
+      CirisUtil.propAndEnv(
+        List("kpl", "graceful", "shutdown", "flush", "attempts"),
+        "6"
+      ),
+      CirisUtil.propAndEnv(
+        List("kpl", "graceful", "shutdown", "flush", "interval"),
+        "1 second"
       )
     )
   )
