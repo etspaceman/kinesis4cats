@@ -80,14 +80,14 @@ object LocalstackKCLConsumer {
       kinesisClient <- AwsClients.kinesisClientResource(localstackConfig)
       cloudWatchClient <- AwsClients.cloudwatchClientResource(localstackConfig)
       dynamoClient <- AwsClients.dynamoClientResource(localstackConfig)
-      default <- KCLConsumer.Builder.default(
-        streamTracker,
-        appName,
-        kinesisClient,
-        dynamoClient,
-        cloudWatchClient,
-        false
-      )
+      default = KCLConsumer.Builder
+        .default(
+          streamTracker,
+          appName
+        )
+        .withKinesisClient(kinesisClient)
+        .withDynamoClient(dynamoClient)
+        .withCloudWatchClient(cloudWatchClient)
       retrievalConfig =
         if (streamTracker.isMultiStream()) new PollingConfig(kinesisClient)
         else
