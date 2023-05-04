@@ -216,7 +216,7 @@ object KCLConsumer {
           workerId: String
       ): BuilderConfig[F]
 
-      def map(f: BuilderConfig[F] => BuilderConfig[F]): Make[F] =
+      def andThen(f: BuilderConfig[F] => BuilderConfig[F]): Make[F] =
         (k, d, c, wid) => f(self.make(k, d, c, wid))
     }
     private[kinesis4cats] object Make {
@@ -248,7 +248,7 @@ object KCLConsumer {
   )(implicit F: Async[F]) {
 
     def configure(f: BuilderConfig[F] => BuilderConfig[F]): Builder[F] = copy(
-      config = config.map(f)
+      config = config.andThen(f)
     )
 
     def withCallback(
