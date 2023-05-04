@@ -25,14 +25,13 @@ import kinesis4cats.syntax.bytebuffer._
 
 object MyApp extends ResourceApp.Forever {
     override def run(args: List[String]) = for {
-        consumerBuilder <- KCLConsumer.Builder.default[IO](
-            new SingleStreamTracker("my-stream"), 
-            "my-app-name",
-        )
-        consumer <- consumerBuilder.withCallback(
-            (records: List[CommittableRecord[IO]]) => 
-                records.traverse_(r => IO.println(r.data.asString))
-        ).build
+        consumer <- KCLConsumer.Builder.default[IO](
+                new SingleStreamTracker("my-stream"),
+                "my-app-name",
+            ).withCallback(
+                (records: List[CommittableRecord[IO]]) =>
+                    records.traverse_(r => IO.println(r.data.asString))
+            ).build
         _ <- KCLService.server[IO](consumer, port"8080", host"0.0.0.0")
     } yield ()
 }

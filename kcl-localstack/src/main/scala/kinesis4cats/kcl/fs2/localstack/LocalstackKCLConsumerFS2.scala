@@ -50,14 +50,6 @@ object LocalstackKCLConsumerFS2 {
       kinesisClient <- AwsClients.kinesisClientResource(localstackConfig)
       cloudWatchClient <- AwsClients.cloudwatchClientResource(localstackConfig)
       dynamoClient <- AwsClients.dynamoClientResource(localstackConfig)
-      default <- KCLConsumerFS2.Builder.default(
-        streamTracker,
-        appName,
-        kinesisClient,
-        dynamoClient,
-        cloudWatchClient,
-        false
-      )
       retrievalConfig =
         if (streamTracker.isMultiStream()) new PollingConfig(kinesisClient)
         else
@@ -65,9 +57,16 @@ object LocalstackKCLConsumerFS2 {
             streamTracker.streamConfigList.get(0).streamIdentifier.streamName,
             kinesisClient
           )
-      initial = default
-        .configure(x =>
-          x.configureLeaseManagementConfig(_.shardSyncIntervalMillis(1000L))
+      initial = KCLConsumerFS2.Builder
+        .default(
+          streamTracker,
+          appName
+        )
+        .withKinesisClient(kinesisClient)
+        .withDynamoClient(dynamoClient)
+        .withCloudWatchClient(cloudWatchClient)
+        .configure(
+          _.configureLeaseManagementConfig(_.shardSyncIntervalMillis(1000L))
             .configureCoordinatorConfig(_.parentShardPollIntervalMillis(1000L))
             .configureRetrievalConfig(
               _.retrievalSpecificConfig(retrievalConfig)
