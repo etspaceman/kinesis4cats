@@ -20,14 +20,13 @@ import kinesis4cats.syntax.bytebuffer._
 
 object MyApp extends ResourceApp.Forever {
     override def run(args: List[String]) = for {
-        consumerBuilder <- KCLConsumer.Builder.default[IO](
-            new SingleStreamTracker("my-stream"),
-            "my-app-name",
-        )
-        consumer <- consumerBuilder.withCallback(
-            (records: List[CommittableRecord[IO]]) => 
-                records.traverse_(r => IO.println(r.data.asString))
-        ).build
+        consumer <- KCLConsumer.Builder.default[IO](
+                new SingleStreamTracker("my-stream"),
+                "my-app-name",
+            ).withCallback(
+                (records: List[CommittableRecord[IO]]) =>
+                    records.traverse_(r => IO.println(r.data.asString))
+            ).build
         _ <- consumer.run()
     } yield ()
 }
@@ -52,7 +51,7 @@ import kinesis4cats.kcl.multistream._
 import kinesis4cats.syntax.bytebuffer._
 
 object MyApp extends ResourceApp.Forever {
-    override def run(args: List[String]) = { 
+    override def run(args: List[String]) = {
         val streamArn1 = StreamArn(AwsRegion.US_EAST_1, "my-stream-1", "123456789012")
         val streamArn2 = StreamArn(AwsRegion.US_EAST_1, "my-stream-2", "123456789012")
         val position = InitialPositionInStreamExtended
@@ -63,12 +62,12 @@ object MyApp extends ResourceApp.Forever {
                 kinesisClient,
                 Map(streamArn1 -> position, streamArn2 -> position)
             ).toResource
-            consumerBuilder <- KCLConsumer.Builder
+            consumer <- KCLConsumer.Builder
                 .default[IO](tracker, "my-app-name")
-            consumer <- consumerBuilder.withCallback(
-                (records: List[CommittableRecord[IO]]) => 
-                    records.traverse_(r => IO.println(r.data.asString))
-            ).build
+                .withCallback(
+                (records: List[CommittableRecord[IO]]) =>
+                        records.traverse_(r => IO.println(r.data.asString))
+                ).build
             _ <- consumer.run()
         } yield ()
     }
@@ -90,11 +89,10 @@ import kinesis4cats.syntax.bytebuffer._
 
 object MyApp extends ResourceApp.Forever {
     override def run(args: List[String]) = for {
-        consumerBuilder <- KCLConsumerFS2.Builder.default[IO](
-            new SingleStreamTracker("my-stream"), 
+        consumer <- KCLConsumerFS2.Builder.default[IO](
+            new SingleStreamTracker("my-stream"),
             "my-app-name",
-        )
-        consumer <- consumerBuilder.build
+        ).build
         _ <- consumer
             .stream()
             .flatMap(stream =>

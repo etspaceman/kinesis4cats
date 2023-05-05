@@ -16,7 +16,9 @@
 
 package kinesis4cats.kcl
 
+import cats.InvariantMonoidal
 import cats.effect.Deferred
+import cats.effect.kernel.Sync
 import cats.effect.syntax.all._
 import cats.effect.{Async, Ref, Resource}
 import cats.syntax.all._
@@ -205,65 +207,97 @@ object KCLConsumer {
     )(callback)
   }
 
+  object BuilderConfig {
+    private[kinesis4cats] trait Make[F[_]] { self =>
+      def make(
+          kinesisClient: KinesisAsyncClient,
+          dynamoClient: DynamoDbAsyncClient,
+          cloudWatchClient: CloudWatchAsyncClient,
+          workerId: String
+      ): BuilderConfig[F]
+
+      def andThen(f: BuilderConfig[F] => BuilderConfig[F]): Make[F] =
+        (k, d, c, wid) => f(self.make(k, d, c, wid))
+    }
+    private[kinesis4cats] object Make {
+      def default[F[_]: InvariantMonoidal](
+          appName: String,
+          streamTracker: StreamTracker
+      ): Make[F] =
+        (kClient, dClient, cClient, workerId) =>
+          BuilderConfig(
+            new CheckpointConfig(),
+            new CoordinatorConfig(appName),
+            new LeaseManagementConfig(appName, dClient, kClient, workerId),
+            new LifecycleConfig(),
+            new MetricsConfig(cClient, appName),
+            new RetrievalConfig(kClient, streamTracker, appName),
+            ProcessConfig.default,
+            RecordProcessor.LogEncoders.show,
+            (_: List[CommittableRecord[F]]) => InvariantMonoidal[F].unit
+          )
+    }
+  }
+
   final case class Builder[F[_]] private (
-      config: BuilderConfig[F]
+      config: BuilderConfig.Make[F],
+      mkKinesisClient: Resource[F, KinesisAsyncClient],
+      mkDynamoClient: Resource[F, DynamoDbAsyncClient],
+      mkCloudWatchClient: Resource[F, CloudWatchAsyncClient],
+      mkWorkerId: F[String]
   )(implicit F: Async[F]) {
 
     def configure(f: BuilderConfig[F] => BuilderConfig[F]): Builder[F] = copy(
-      config = f(config)
+      config = config.andThen(f)
     )
 
     def withCallback(
         callback: List[CommittableRecord[F]] => F[Unit]
     ): Builder[F] =
-      copy(config = config.withCallback(callback))
+      configure(_.withCallback(callback))
+
+    def withKinesisClient(client: KinesisAsyncClient): Builder[F] =
+      copy(mkKinesisClient = Resource.pure(client))
+
+    def withDynamoClient(client: DynamoDbAsyncClient): Builder[F] =
+      copy(mkDynamoClient = Resource.pure(client))
+
+    def withCloudWatchClient(client: CloudWatchAsyncClient): Builder[F] =
+      copy(mkCloudWatchClient = Resource.pure(client))
+
+    def withWorkerId(workerId: String): Builder[F] =
+      copy(mkWorkerId = F.pure(workerId))
 
     def build: Resource[F, KCLConsumer[F]] =
-      config.build.map(new KCLConsumer[F](_))
+      (
+        mkKinesisClient,
+        mkDynamoClient,
+        mkCloudWatchClient,
+        mkWorkerId.toResource
+      ).mapN(config.make).flatMap(_.build).map(new KCLConsumer[F](_))
   }
 
   object Builder {
 
     def default[F[_]](
         streamTracker: StreamTracker,
-        appName: String,
-        kinesisClient: => KinesisAsyncClient =
-          KinesisAsyncClient.builder().build(),
-        dynamoClient: => DynamoDbAsyncClient =
-          DynamoDbAsyncClient.builder().build(),
-        cloudWatchClient: => CloudWatchAsyncClient =
-          CloudWatchAsyncClient.builder().build(),
-        managedClients: Boolean = true
+        appName: String
     )(implicit
         F: Async[F]
-    ): Resource[F, Builder[F]] = for {
-      kClient <-
-        if (managedClients)
-          Resource.fromAutoCloseable(
-            F.delay(kinesisClient)
-          )
-        else Resource.pure[F, KinesisAsyncClient](kinesisClient)
-      dClient <-
-        if (managedClients) Resource.fromAutoCloseable(F.delay(dynamoClient))
-        else Resource.pure[F, DynamoDbAsyncClient](dynamoClient)
-      cClient <-
-        if (managedClients)
-          Resource.fromAutoCloseable(F.delay(cloudWatchClient))
-        else Resource.pure[F, CloudWatchAsyncClient](cloudWatchClient)
-      workerId = Utils.randomUUIDString
-    } yield Builder(
-      BuilderConfig(
-        new CheckpointConfig(),
-        new CoordinatorConfig(appName),
-        new LeaseManagementConfig(appName, dClient, kClient, workerId),
-        new LifecycleConfig(),
-        new MetricsConfig(cClient, appName),
-        new RetrievalConfig(kClient, streamTracker, appName),
-        ProcessConfig.default,
-        RecordProcessor.LogEncoders.show,
-        (_: List[CommittableRecord[F]]) => F.unit
+    ): Builder[F] =
+      Builder(
+        config = BuilderConfig.Make.default(appName, streamTracker),
+        mkKinesisClient = Resource.fromAutoCloseable(
+          Sync[F].delay(KinesisAsyncClient.create())
+        ),
+        mkDynamoClient = Resource.fromAutoCloseable(
+          Sync[F].delay(DynamoDbAsyncClient.create())
+        ),
+        mkCloudWatchClient = Resource.fromAutoCloseable(
+          Sync[F].delay(CloudWatchAsyncClient.create())
+        ),
+        mkWorkerId = F.delay(Utils.randomUUIDString)
       )
-    )
 
     @annotation.unused
     private def unapply[F[_]](builder: Builder[F]): Unit = ()

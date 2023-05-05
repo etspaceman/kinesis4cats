@@ -21,13 +21,12 @@ import kinesis4cats.syntax.bytebuffer._
 
 object MyApp extends ResourceApp.Forever {
     override def run(args: List[String]) = for {
-        consumerBuilder <- KCLConsumer.Builder.default[IO](
-            new SingleStreamTracker("my-stream"),
-            "my-app-name",
-        )
-        consumer <- consumerBuilder
+        consumer <- KCLConsumer.Builder.default[IO](
+                new SingleStreamTracker("my-stream"),
+                "my-app-name",
+            )
             .withCallback(
-                (records: List[CommittableRecord[IO]]) => 
+                (records: List[CommittableRecord[IO]]) =>
                     records.traverse_(r => IO.println(r.data.asString))
             )
             .configure(_.withLogEncoders(kclCirceEncoders))
