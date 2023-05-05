@@ -166,13 +166,12 @@
 
 </span><span class="keyword">object</span><span> </span><span class="type-name">MyApp</span><span> </span><span class="keyword">extends</span><span> </span><span class="type-name">ResourceApp</span><span>.</span><span class="type-name">Forever</span><span> {
     </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">run</span><span>(</span><span class="identifier">args</span><span>: </span><span class="type-name">List</span><span>[</span><span class="type-name">String</span><span>]) = </span><span class="keyword">for</span><span> {
-        </span><span class="identifier">consumerBuilder</span><span> &lt;- </span><span class="type-name">KCLConsumer</span><span>.</span><span class="type-name">Builder</span><span>.</span><span class="keyword">default</span><span>[</span><span class="type-name">IO</span><span>](
-            </span><span class="keyword">new</span><span> </span><span class="type-name">SingleStreamTracker</span><span>(</span><span class="string-literal">&quot;my-stream&quot;</span><span>),
-            </span><span class="string-literal">&quot;my-app-name&quot;</span><span>,
-        )
-        </span><span class="identifier">consumer</span><span> &lt;- </span><span class="identifier">consumerBuilder</span><span>
+        </span><span class="identifier">consumer</span><span> &lt;- </span><span class="type-name">KCLConsumer</span><span>.</span><span class="type-name">Builder</span><span>.</span><span class="keyword">default</span><span>[</span><span class="type-name">IO</span><span>](
+                </span><span class="keyword">new</span><span> </span><span class="type-name">SingleStreamTracker</span><span>(</span><span class="string-literal">&quot;my-stream&quot;</span><span>),
+                </span><span class="string-literal">&quot;my-app-name&quot;</span><span>,
+            )
             .</span><span class="identifier">withCallback</span><span>(
-                (</span><span class="identifier">records</span><span>: </span><span class="type-name">List</span><span>[</span><span class="type-name">CommittableRecord</span><span>[</span><span class="type-name">IO</span><span>]]) =&gt; 
+                (</span><span class="identifier">records</span><span>: </span><span class="type-name">List</span><span>[</span><span class="type-name">CommittableRecord</span><span>[</span><span class="type-name">IO</span><span>]]) =&gt;
                     </span><span class="identifier">records</span><span>.</span><span class="identifier">traverse_</span><span>(</span><span class="identifier">r</span><span> =&gt; </span><span class="type-name">IO</span><span>.</span><span class="identifier">println</span><span>(</span><span class="identifier">r</span><span>.</span><span class="identifier">data</span><span>.</span><span class="identifier">asString</span><span>))
             )
             .</span><span class="identifier">configure</span><span>(</span><span class="identifier">_</span><span>.</span><span class="identifier">withLogEncoders</span><span>(</span><span class="identifier">kclCirceEncoders</span><span>))
