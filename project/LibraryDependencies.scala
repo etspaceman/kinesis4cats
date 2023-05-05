@@ -19,7 +19,7 @@ object LibraryDependencies {
   }
 
   object Log4Cats {
-    val log4CatsVersion = "2.5.0"
+    val log4CatsVersion = "2.6.0"
     val core =
       Def.setting("org.typelevel" %%% "log4cats-core" % log4CatsVersion)
     val slf4j = "org.typelevel" %% "log4cats-slf4j" % log4CatsVersion
@@ -64,13 +64,13 @@ object LibraryDependencies {
         "com.github.awslabs.kinesis-aggregation" % "amazon-kinesis-aggregator" % "2.0.3-deagg"
     }
 
-    val kpl = "com.amazonaws" % "amazon-kinesis-producer" % "0.15.6"
+    val kpl = "com.amazonaws" % "amazon-kinesis-producer" % "0.15.7"
     val kcl = "software.amazon.kinesis" % "amazon-kinesis-client" % "2.4.8"
   }
 
   object Cats {
     val catsVersion = "2.9.0"
-    val catsEffectVersion = "3.4.9"
+    val catsEffectVersion = "3.4.10"
     val core = Def.setting("org.typelevel" %%% "cats-core" % catsVersion)
     val effect =
       Def.setting("org.typelevel" %%% "cats-effect" % catsEffectVersion)
