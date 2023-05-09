@@ -20,6 +20,7 @@ import java.util.ArrayList
 import java.util.Collections
 import java.util.function
 import java.util.function.BiFunction
+import java.util.stream.Collectors
 
 import software.amazon.smithy.build._
 import software.amazon.smithy.model.Model
@@ -106,7 +107,7 @@ final class KinesisSpecTransformer extends ProjectionTransformer {
                 .build()
             else member
           }
-          .toList()
+          .collect(Collectors.toList())
 
       shape
         .asStructureShape()
@@ -121,7 +122,9 @@ final class KinesisSpecTransformer extends ProjectionTransformer {
 
     val withMappedTraits =
       transformer.mapTraits(context.getModel(), traitTransform)
-    val newShapesAl = new ArrayList[Shape](withMappedTraits.shapes().toList())
+    val newShapesAl = new ArrayList[Shape](
+      withMappedTraits.shapes().collect(Collectors.toList())
+    )
     newShapesAl.add(nonNegativeIntegerObjectShape)
 
     val newShapes = Collections.unmodifiableList(newShapesAl)
