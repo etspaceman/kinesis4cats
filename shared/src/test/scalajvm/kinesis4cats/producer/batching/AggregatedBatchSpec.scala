@@ -21,6 +21,8 @@ import scala.jdk.CollectionConverters._
 
 import java.nio.ByteBuffer
 import java.time.Instant
+import java.util.Arrays
+import java.util.Collections
 
 import cats.syntax.all._
 import com.amazonaws.kinesis.agg.AggRecord
@@ -138,7 +140,7 @@ class AggregatedBatchSpec extends munit.CatsEffectSuite {
       .build()
 
     val res = new AggregatorUtil()
-      .deaggregate(java.util.List.of[KinesisClientRecord](kclRecord))
+      .deaggregate(Collections.unmodifiableList(Arrays.asList(kclRecord)))
       .asScala
       .toList
 
