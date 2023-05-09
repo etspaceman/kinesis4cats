@@ -97,7 +97,8 @@ class KPLProducer[F[_]] private (
     *   Optional hash key, used to explicitly set the shard and override the
     *   partitionKey hash.
     * @param data
-    *   [[java.nio.ByteBuffer]] representing the data to be produced
+    *   [[https://docs.oracle.com/javase/8/docs/api/java/nio/ByteBuffer.html ByteBuffer]]
+    *   representing the data to be produced
     * @return
     *   F of
     *   [[https://github.com/awslabs/amazon-kinesis-producer/blob/master/java/amazon-kinesis-producer/src/main/java/com/amazonaws/services/kinesis/producer/UserRecordResult.java UserRecordResult]]
@@ -154,7 +155,8 @@ class KPLProducer[F[_]] private (
     *   Optional hash key, used to explicitly set the shard and override the
     *   partitionKey hash.
     * @param data
-    *   [[java.nio.ByteBuffer]] representing the data to be produced
+    *   [[https://docs.oracle.com/javase/8/docs/api/java/nio/ByteBuffer.html ByteBuffer]]
+    *   representing the data to be produced
     * @param schema
     *   [[https://github.com/awslabs/aws-glue-schema-registry/blob/master/common/src/main/java/com/amazonaws/services/schemaregistry/common/Schema.java Schema]]
     *   representing a glue schema for this event

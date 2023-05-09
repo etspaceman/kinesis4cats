@@ -25,6 +25,7 @@ object Kinesis4CatsPlugin extends AutoPlugin {
   import TypelevelCiPlugin.autoImport._
   import TypelevelGitHubPlugin.autoImport._
   import TypelevelKernelPlugin.autoImport._
+  import TypelevelSettingsPlugin.autoImport._
   import TypelevelSitePlugin.autoImport._
   import TypelevelVersioningPlugin.autoImport._
   import autoImport._
@@ -257,7 +258,8 @@ object Kinesis4CatsPlugin extends AutoPlugin {
       else (Compile / doc / sources).value
     },
     assembly / test := {},
-    Test / parallelExecution := false
+    Test / parallelExecution := false,
+    tlJdkRelease := Some(8)
   ) ++ Seq(
     addCommandAlias(
       "cpl",
