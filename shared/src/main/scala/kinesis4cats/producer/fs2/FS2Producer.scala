@@ -22,7 +22,6 @@ import scala.concurrent.duration._
 import _root_.fs2.concurrent.Channel
 import cats.Applicative
 import cats.Foldable
-import cats.data.NonEmptyList
 import cats.effect._
 import cats.effect.syntax.all._
 import cats.syntax.all._
