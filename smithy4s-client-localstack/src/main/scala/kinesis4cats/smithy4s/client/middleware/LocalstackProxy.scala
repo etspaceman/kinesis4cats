@@ -26,6 +26,8 @@ import org.typelevel.ci._
 import org.typelevel.log4cats.StructuredLogger
 
 import kinesis4cats.localstack.LocalstackConfig
+import kinesis4cats.localstack.Protocol.Http
+import kinesis4cats.localstack.Protocol.Https
 import kinesis4cats.logging.LogContext
 import kinesis4cats.smithy4s.client.localstack.LocalstackKinesisClient
 
@@ -62,13 +64,19 @@ object LocalstackProxy {
     import encoders.localstackConfigEncoders._
     val newReq = req
       .withUri(
-        req.uri.copy(authority =
-          req.uri.authority.map(x =>
+        req.uri.copy(
+          authority = req.uri.authority.map(x =>
             x.copy(
               host = Uri.RegName(config.kinesisHost),
               port = config.kinesisPort.some
             )
-          )
+          ),
+          scheme = Some {
+            config.kinesisProtocol match {
+              case Http  => Uri.Scheme.http
+              case Https => Uri.Scheme.https
+            }
+          }
         )
       )
       .putHeaders(Header.Raw(ci"host", config.kinesisHost))
