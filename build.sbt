@@ -1,5 +1,9 @@
 import LibraryDependencies.{Smithy4s => S4S, _}
 import laika.rewrite.link._
+import sbt.Package.FixedTimestamp
+import sbt.Package.JarManifest
+import sbt.Package.MainClass
+import sbt.Package.ManifestAttributes
 
 lazy val compat = projectMatrix
   .settings(
@@ -135,7 +139,8 @@ lazy val `kcl-http4s` = projectMatrix
       "com.disneystreaming.smithy4s" %%% "smithy4s-http4s-swagger" % smithy4sVersion.value,
       Http4s.emberServer.value
     ),
-    Compile / smithy4sSmithyLibrary := false
+    Compile / smithy4sSmithyLibrary := false,
+    removeSmithy4sDependenciesFromManifest
   )
   .jvmPlatform(allScalaVersions)
   .dependsOn(kcl)
@@ -259,6 +264,24 @@ lazy val `smithy4s-client-transformers` = projectMatrix
   )
   .jvmPlatform(List(Scala212))
 
+// Workaround for https://github.com/disneystreaming/smithy4s/issues/963
+// as a solution for https://github.com/etspaceman/kinesis4cats/issues/123
+val removeSmithy4sDependenciesFromManifest =
+  Compile / packageBin / packageOptions ~= {
+    _.map { opt =>
+      opt match {
+        case JarManifest(m) =>
+          m.getMainAttributes()
+            .remove(
+              new java.util.jar.Attributes.Name(
+                smithy4s.codegen.SMITHY4S_DEPENDENCIES
+              )
+            )
+          opt
+        case _ => opt
+      }
+    }
+  }
 lazy val `smithy4s-client` = projectMatrix
   .enablePlugins(Smithy4sCodegenPlugin)
   .settings(
@@ -283,7 +306,8 @@ lazy val `smithy4s-client` = projectMatrix
       ) / Compile / packageBin).value,
     Compile / smithy4sSmithyLibrary := false,
     scalacOptions -= "-deprecation",
-    tlJdkRelease := Some(11)
+    tlJdkRelease := Some(11),
+    removeSmithy4sDependenciesFromManifest
   )
   .jvmPlatform(last2ScalaVersions)
   .nativePlatform(Seq(Scala3))
