@@ -21,6 +21,7 @@ import scala.concurrent.duration._
 
 import _root_.fs2.concurrent.Channel
 import cats.Applicative
+import cats.data.NonEmptyList
 import cats.effect._
 import cats.effect.syntax.all._
 import cats.syntax.all._
@@ -84,6 +85,17 @@ abstract class FS2Producer[F[_], PutReq, PutRes](implicit
       )
     } yield ()
   }
+
+  /** Put records into the producer's buffer, to be batched and produced at a
+    * defined interval
+    *
+    * @param records
+    *   A [[cats.data.NonEmptyList NonEmptyList]] of
+    *   [[kinesis4cats.producer.Record Records]]
+    * @return
+    *   F of Unit
+    */
+  def putN(records: NonEmptyList[Record]): F[Unit] = records.traverse_(put)
 
   /** Stop the processing of records
     */
