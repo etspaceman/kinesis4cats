@@ -19,6 +19,7 @@ package fs2
 
 import scala.concurrent.duration._
 
+import _root_.fs2.Chunk
 import _root_.fs2.concurrent.Channel
 import cats.Applicative
 import cats.Foldable
@@ -51,7 +52,7 @@ abstract class FS2Producer[F[_], PutReq, PutRes](implicit
 
   /** The underlying queue of records to process
     */
-  protected def channel: Channel[F, Record]
+  protected def channel: Channel[F, Chunk[Record]]
 
   /** A user defined function that can be run against the results of a request
     */
@@ -67,24 +68,7 @@ abstract class FS2Producer[F[_], PutReq, PutRes](implicit
     * @return
     *   F of Unit
     */
-  def put(record: Record): F[Unit] = {
-    val ctx = LogContext()
-
-    for {
-      _ <- logger.debug(ctx.context)("Received record to put")
-      res <- channel.send(record)
-      _ <- res.bitraverse(
-        _ =>
-          logger.warn(ctx.context)(
-            "Producer has been shut down and will not accept further requests"
-          ),
-        _ =>
-          logger.debug(ctx.context)(
-            "Successfully put record into processing queue"
-          )
-      )
-    } yield ()
-  }
+  def put(record: Record): F[Unit] = putN(List(record))
 
   /** Put records into the producer's buffer, to be batched and produced at a
     * defined interval
@@ -95,8 +79,24 @@ abstract class FS2Producer[F[_], PutReq, PutRes](implicit
     * @return
     *   F of Unit
     */
-  def putN[G[_]](records: G[Record])(implicit G: Foldable[G]): F[Unit] =
-    records.traverse_(put)
+  def putN[G[_]](records: G[Record])(implicit G: Foldable[G]): F[Unit] = {
+    val ctx = LogContext()
+
+    for {
+      _ <- logger.debug(ctx.context)(s"Received ${records.size} records to put")
+      res <- channel.send(Chunk.iterable(records.toIterable))
+      _ <- res.bitraverse(
+        _ =>
+          logger.warn(ctx.context)(
+            "Producer has been shut down and will not accept further requests"
+          ),
+        _ =>
+          logger.debug(ctx.context)(
+            "Successfully put records into processing queue"
+          )
+      )
+    } yield ()
+  }
 
   /** Stop the processing of records
     */
@@ -117,7 +117,7 @@ abstract class FS2Producer[F[_], PutReq, PutRes](implicit
     for {
       _ <- logger
         .debug(ctx.context)("Starting the FS2KinesisProducer")
-      _ <- channel.stream
+      _ <- channel.stream.unchunks
         .groupWithin(config.putMaxChunk, config.putMaxWait)
         .evalMap { x =>
           val c = ctx.addEncoded("batchSize", x.size)
