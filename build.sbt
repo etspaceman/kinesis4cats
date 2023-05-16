@@ -283,7 +283,7 @@ val removeSmithy4sDependenciesFromManifest =
     }
   }
 lazy val `smithy4s-client` = projectMatrix
-  .enablePlugins(Smithy4sCodegenPlugin)
+  .enablePlugins(Smithy4sCodegenPlugin, ShadingPlugin)
   .settings(
     description := "Cats tooling for the Smithy4s Kinesis Client",
     libraryDependencies ++= Seq(
@@ -307,7 +307,22 @@ lazy val `smithy4s-client` = projectMatrix
     Compile / smithy4sSmithyLibrary := false,
     scalacOptions -= "-deprecation",
     tlJdkRelease := Some(11),
-    removeSmithy4sDependenciesFromManifest
+    removeSmithy4sDependenciesFromManifest,
+    shadedModules += S4S.kinesis.module,
+    shadedModules += Smithy
+      .rulesEngine(smithy4s.codegen.BuildInfo.smithyVersion)
+      .module,
+    shadingRules ++= Seq(
+      ShadingRule.moveUnder(
+        "smithy.rules",
+        "kinesis4cats.internal.shaded.smithy4s.rules"
+      ),
+      ShadingRule.moveUnder(
+        "com.amazonaws",
+        "kinesis4cats.internal.shaded.com.amazonaws"
+      )
+    ),
+    validNamespaces += "kinesis4cats"
   )
   .jvmPlatform(last2ScalaVersions)
   .nativePlatform(Seq(Scala3))
