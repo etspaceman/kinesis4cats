@@ -21,6 +21,7 @@ import scala.concurrent.duration._
 
 import _root_.fs2.concurrent.Channel
 import cats.Applicative
+import cats.Foldable
 import cats.data.NonEmptyList
 import cats.effect._
 import cats.effect.syntax.all._
@@ -95,7 +96,8 @@ abstract class FS2Producer[F[_], PutReq, PutRes](implicit
     * @return
     *   F of Unit
     */
-  def putN(records: NonEmptyList[Record]): F[Unit] = records.traverse_(put)
+  def putN[G[_]](records: G[Record])(implicit G: Foldable[G]): F[Unit] =
+    records.traverse_(put)
 
   /** Stop the processing of records
     */
