@@ -22,8 +22,6 @@ addSbtPlugin("com.thesamet" % "sbt-protoc" % "1.0.6")
 // Older versions exit sbt on compilation failures.
 addSbtPlugin("org.scalameta" % "sbt-mdoc" % "2.3.7")
 
-addSbtPlugin("io.get-coursier" % "sbt-shading" % "2.1.1")
-
 libraryDependencies ++= Seq(
   "com.thesamet.scalapb" %% "compilerplugin" % "0.11.13",
   "org.slf4j" % "slf4j-nop" % "2.0.7"
