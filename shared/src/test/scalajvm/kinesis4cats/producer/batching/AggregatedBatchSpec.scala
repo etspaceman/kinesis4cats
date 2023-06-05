@@ -29,7 +29,6 @@ import com.amazonaws.kinesis.agg.AggRecord
 import software.amazon.kinesis.retrieval.AggregatorUtil
 import software.amazon.kinesis.retrieval.KinesisClientRecord
 
-import kinesis4cats.instances.eq._
 import kinesis4cats.models.ShardId
 import kinesis4cats.syntax.bytebuffer._
 
@@ -82,7 +81,7 @@ class AggregatedBatchSpec extends munit.CatsEffectSuite {
     val testBytes = batch.asBytes
     val expectedBytes = agRecord.toRecordBytes()
 
-    assert(testBytes === expectedBytes)
+    assert(testBytes.sameElements(expectedBytes))
   }
 
   test("It should signal that a record cannot be added") {
@@ -144,9 +143,9 @@ class AggregatedBatchSpec extends munit.CatsEffectSuite {
       .asScala
       .toList
 
-    assert(res.head.data().asArray === data1)
+    assert(res.head.data().asArray.sameElements(data1))
     assert(res.head.partitionKey() === partitionKey1)
-    assert(res(1).data().asArray === data2)
+    assert(res(1).data().asArray.sameElements(data2))
     assert(res(1).partitionKey() === partitionKey2)
 
   }

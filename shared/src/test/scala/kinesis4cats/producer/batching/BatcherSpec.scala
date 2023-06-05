@@ -20,7 +20,6 @@ package batching
 import cats.data._
 import cats.syntax.all._
 
-import kinesis4cats.instances.eq._
 import kinesis4cats.models.ShardId
 
 class BatcherSpec extends munit.CatsEffectSuite {
@@ -37,28 +36,32 @@ class BatcherSpec extends munit.CatsEffectSuite {
       )
     )
 
-    val expected = NonEmptyList
-      .fromListUnsafe(records.grouped(3).toList)
-      .map(x =>
-        Batch(
-          NonEmptyMap.of(
-            shardId -> ShardBatch(
-              shardId,
-              x.map(_.record),
-              x.length,
-              x.map(_.record.payloadSize).sumAll,
-              config
-            )
-          ),
-          x.length,
-          x.map(_.record.payloadSize).sumAll,
-          config
+    val expected: Batcher.Result = Batcher.Result(
+      Nil,
+      records
+        .grouped(3)
+        .toList
+        .map(x =>
+          Batch(
+            NonEmptyMap.of(
+              shardId -> ShardBatch(
+                shardId,
+                x.map(_.record),
+                x.length,
+                x.map(_.record.payloadSize).sumAll,
+                config
+              )
+            ),
+            x.length,
+            x.map(_.record.payloadSize).sumAll,
+            config
+          )
         )
-      )
+    )
 
     val res = batcher.batch(records)
-    assert(res.isRight)
-    assert(res.contains_(expected), s"res: ${res.right.get}\nexp: ${expected}")
+    assert(res.isSuccessful)
+    assert(res === expected, s"res: $res\nexp: $expected")
   }
 
   test("It should batch records against maxPayloadSizePerRequest") {
@@ -74,33 +77,33 @@ class BatcherSpec extends munit.CatsEffectSuite {
       }
     )
 
-    val expected = NonEmptyList
-      .fromListUnsafe(
-        records
-          .map { case (shardId, record) =>
-            shardId -> ShardBatch(
-              shardId,
-              NonEmptyList.one(record.record),
-              1,
-              record.record.payloadSize,
-              config
-            )
-          }
-          .grouped(6)
-          .toList
-      )
-      .map(x =>
-        Batch(
-          NonEmptyMap.of(x.head, x.tail: _*),
-          x.length,
-          x.map(_._2.batchSize).sumAll,
-          config
+    val expected = Batcher.Result(
+      Nil,
+      records
+        .map { case (shardId, record) =>
+          shardId -> ShardBatch(
+            shardId,
+            NonEmptyList.one(record.record),
+            1,
+            record.record.payloadSize,
+            config
+          )
+        }
+        .grouped(6)
+        .toList
+        .map(x =>
+          Batch(
+            NonEmptyMap.of(x.head, x.tail: _*),
+            x.length,
+            x.map(_._2.batchSize).sumAll,
+            config
+          )
         )
-      )
+    )
 
     val res = batcher.batch(records.map(_._2))
-    assert(res.isRight)
-    assert(res.contains_(expected), s"res: ${res.right.get}\nexp: ${expected}")
+    assert(res.isSuccessful)
+    assert(res === expected, s"res: $res\nexp: $expected")
   }
 
   test("It should batch records against maxRecordsPerRequest") {
@@ -111,30 +114,32 @@ class BatcherSpec extends munit.CatsEffectSuite {
       }
     )
 
-    val expected = NonEmptyList
-      .fromListUnsafe(
-        records.grouped(config.maxRecordsPerRequest).toList
-      )
-      .map(x =>
-        Batch(
-          NonEmptyMap.of(
-            shardId -> ShardBatch(
-              shardId,
-              x.map(_.record),
-              x.length,
-              x.map(_.record.payloadSize).sumAll,
-              config
-            )
-          ),
-          x.length,
-          x.map(_.record.payloadSize).sumAll,
-          config
+    val expected = Batcher.Result(
+      Nil,
+      records
+        .grouped(config.maxRecordsPerRequest)
+        .toList
+        .map(x =>
+          Batch(
+            NonEmptyMap.of(
+              shardId -> ShardBatch(
+                shardId,
+                x.map(_.record),
+                x.length,
+                x.map(_.record.payloadSize).sumAll,
+                config
+              )
+            ),
+            x.length,
+            x.map(_.record.payloadSize).sumAll,
+            config
+          )
         )
-      )
+    )
 
     val res = batcher.batch(records)
-    assert(res.isRight)
-    assert(res.contains_(expected), s"res: ${res.right.get}\nexp: ${expected}")
+    assert(res.isSuccessful)
+    assert(res === expected, s"res: $res\nexp: $expected")
   }
 
   test(
@@ -150,33 +155,33 @@ class BatcherSpec extends munit.CatsEffectSuite {
       }
     )
 
-    val expected = NonEmptyList
-      .fromListUnsafe(
-        records
-          .map { case (shardId, record) =>
-            shardId -> ShardBatch(
-              shardId,
-              NonEmptyList.one(record.record),
-              1,
-              record.record.payloadSize,
-              config
-            )
-          }
-          .grouped(config.maxRecordsPerRequest)
-          .toList
-      )
-      .map(x =>
-        Batch(
-          NonEmptyMap.of(x.head, x.tail: _*),
-          x.length,
-          x.map(_._2.batchSize).sumAll,
-          config
+    val expected = Batcher.Result(
+      Nil,
+      records
+        .map { case (shardId, record) =>
+          shardId -> ShardBatch(
+            shardId,
+            NonEmptyList.one(record.record),
+            1,
+            record.record.payloadSize,
+            config
+          )
+        }
+        .grouped(config.maxRecordsPerRequest)
+        .toList
+        .map(x =>
+          Batch(
+            NonEmptyMap.of(x.head, x.tail: _*),
+            x.length,
+            x.map(_._2.batchSize).sumAll,
+            config
+          )
         )
-      )
+    )
 
     val res = batcher.batch(records.map(_._2))
-    assert(res.isRight)
-    assert(res.contains_(expected), s"res: ${res.right.get}\nexp: ${expected}")
+    assert(res.isSuccessful)
+    assert(res === expected, s"res: $res\nexp: $expected")
   }
 
   test("It should reject records that are too large") {
@@ -188,12 +193,13 @@ class BatcherSpec extends munit.CatsEffectSuite {
         Record.WithShard(Record(tooBig, s"$index", None, None), shardId)
       }
     )
-    val expected = Producer.Error.invalidRecords(
-      records.map(x => Producer.InvalidRecord.RecordTooLarge(x.record))
+    val expected = Batcher.Result(
+      records.map(x => Producer.InvalidRecord.RecordTooLarge(x.record)).toList,
+      Nil
     )
     val res = batcher.batch(records)
-    assert(res.isLeft)
-    assert(res.swap.contains_(expected))
+    assert(res.hasInvalid)
+    assert(res === expected, s"res: $res\nexp: $expected")
   }
 
   test("It should reject records that are too large and batch valid records") {
@@ -213,35 +219,31 @@ class BatcherSpec extends munit.CatsEffectSuite {
         )
       }
     )
-
-    val expectedLeft = Producer.Error.invalidRecords(
-      badRecords.map(x => Producer.InvalidRecord.RecordTooLarge(x.record))
-    )
-    val expectedRight = {
-      val shardBatch = ShardBatch(
-        shardId,
-        goodRecords.map(_._2.record),
-        goodRecords.length,
-        goodRecords.map(_._2.record.payloadSize).sumAll,
-        config
-      )
-
-      NonEmptyList.one(
-        Batch(
-          NonEmptyMap.one(shardId, shardBatch),
-          shardBatch.count,
-          shardBatch.batchSize,
+    val expected = Batcher.Result(
+      badRecords
+        .map(x => Producer.InvalidRecord.RecordTooLarge(x.record))
+        .toList, {
+        val shardBatch = ShardBatch(
+          shardId,
+          goodRecords.map(_._2.record),
+          goodRecords.length,
+          goodRecords.map(_._2.record.payloadSize).sumAll,
           config
         )
-      )
-    }
+
+        List(
+          Batch(
+            NonEmptyMap.one(shardId, shardBatch),
+            shardBatch.count,
+            shardBatch.batchSize,
+            config
+          )
+        )
+      }
+    )
 
     val res = batcher.batch(badRecords ::: goodRecords.map(_._2))
-    assert(res.isBoth)
-    assert(res.swap.contains_(expectedLeft))
-    assert(
-      res.contains_(expectedRight),
-      s"res: ${res.right.get}\nexp: ${expectedRight}"
-    )
+    assert(res.isPartiallySuccessful)
+    assert(res === expected, s"res: $res\nexp: $expected")
   }
 }
