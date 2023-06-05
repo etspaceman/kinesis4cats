@@ -136,7 +136,7 @@ abstract class FS2Producer[F[_], PutReq, PutRes](implicit
     _ <- Resource
       .make(start(deferredError).start)(stop)
       .void
-      .race(deferredError.get.toResource)
+      .race(deferredError.get.flatMap(F.raiseError[Unit]).toResource)
   } yield ()
 }
 
