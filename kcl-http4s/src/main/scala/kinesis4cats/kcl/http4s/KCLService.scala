@@ -17,6 +17,7 @@
 package kinesis4cats.kcl
 package http4s
 
+import _root_.fs2.io.net.Network
 import cats.effect.{Async, Ref, Resource}
 import cats.syntax.all._
 import com.comcast.ip4s.{Host, Port}
@@ -121,7 +122,7 @@ object KCLService {
       consumer: KCLConsumer[F],
       port: Port,
       host: Host
-  )(implicit F: Async[F]): Resource[F, Server] =
+  )(implicit F: Async[F], N: Network[F]): Resource[F, Server] =
     routes(consumer).flatMap { routes =>
       EmberServerBuilder
         .default[F]

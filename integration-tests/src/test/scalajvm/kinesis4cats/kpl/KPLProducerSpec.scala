@@ -21,7 +21,6 @@ import scala.concurrent.duration._
 
 import java.nio.ByteBuffer
 
-import cats.effect.syntax.all._
 import cats.effect.{IO, SyncIO}
 import com.amazonaws.services.kinesis.producer._
 import io.circe.syntax._

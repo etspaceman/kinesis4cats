@@ -19,7 +19,6 @@ package client
 
 import scala.jdk.CollectionConverters._
 
-import cats.effect.syntax.all._
 import cats.effect.{IO, SyncIO}
 import software.amazon.awssdk.services.dynamodb.model._
 

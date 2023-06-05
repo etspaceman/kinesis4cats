@@ -17,7 +17,6 @@
 package kinesis4cats.client.producer
 
 import cats.effect._
-import cats.effect.syntax.all._
 import cats.syntax.all._
 import software.amazon.awssdk.services.kinesis.model.PutRecordsRequest
 import software.amazon.awssdk.services.kinesis.model.PutRecordsResponse

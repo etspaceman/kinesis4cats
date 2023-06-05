@@ -13,7 +13,7 @@ object LibraryDependencies {
   }
 
   object FS2 {
-    val fs2Version = "3.6.1"
+    val fs2Version = "3.7.0"
     val core = Def.setting("co.fs2" %%% "fs2-core" % fs2Version)
     val reactiveStreams = "co.fs2" %% "fs2-reactive-streams" % fs2Version
   }
@@ -51,7 +51,7 @@ object LibraryDependencies {
 
     object V2 {
       val awssdkVersion =
-        "2.20.8" // Should be the same as the version in the KCL
+        "2.20.43" // Should be the same as the version in the KCL
       val kinesis = "software.amazon.awssdk" % "kinesis" % awssdkVersion
       val dynamo = "software.amazon.awssdk" % "dynamodb" % awssdkVersion
       val cloudwatch = "software.amazon.awssdk" % "cloudwatch" % awssdkVersion
@@ -65,12 +65,12 @@ object LibraryDependencies {
     }
 
     val kpl = "com.amazonaws" % "amazon-kinesis-producer" % "0.15.7"
-    val kcl = "software.amazon.kinesis" % "amazon-kinesis-client" % "2.4.8"
+    val kcl = "software.amazon.kinesis" % "amazon-kinesis-client" % "2.5.0"
   }
 
   object Cats {
     val catsVersion = "2.9.0"
-    val catsEffectVersion = "3.4.11"
+    val catsEffectVersion = "3.5.0"
     val core = Def.setting("org.typelevel" %%% "cats-core" % catsVersion)
     val effect =
       Def.setting("org.typelevel" %%% "cats-effect" % catsEffectVersion)
@@ -83,18 +83,18 @@ object LibraryDependencies {
   }
 
   object Ciris {
-    val cirisVersion = "3.1.0"
+    val cirisVersion = "3.2.0"
     val core = Def.setting("is.cir" %%% "ciris" % cirisVersion)
   }
 
   object Http4s {
-    val http4sVersion = "0.23.18"
+    val http4sVersion = "0.23.19"
     val emberServer =
       Def.setting("org.http4s" %%% "http4s-ember-server" % http4sVersion)
     val emberClient =
       Def.setting("org.http4s" %%% "http4s-ember-client" % http4sVersion)
     val blazeClient =
-      Def.setting("org.http4s" %%% "http4s-blaze-client" % "0.23.14")
+      Def.setting("org.http4s" %%% "http4s-blaze-client" % "0.23.15")
     val circe = Def.setting("org.http4s" %%% "http4s-circe" % http4sVersion)
   }
 
