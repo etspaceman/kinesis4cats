@@ -176,12 +176,7 @@ abstract class Producer[F[_], PutReq, PutRes] private[kinesis4cats] (
     *   a [[cats.data.NonEmptyList NonEmptyList]] of
     *   [[kinesis4cats.producer.Record Records]]
     * @return
-    *   [[cats.data.Ior Ior]] with the following:
-    *   - left: a [[kinesis4cats.producer.Producer.Error Producer.Error]], which
-    *     represents records that were too large to be put on kinesis as well as
-    *     records that were not produced successfully in the batch request.
-    *   - right: a [[cats.data.NonEmptyList NonEmptyList]] of the underlying put
-    *     responses
+    *   Producer.Result
     */
   def put(records: NonEmptyList[Record]): F[Producer.Result[PutRes]] = {
     val ctx = LogContext()
@@ -291,14 +286,14 @@ object Producer {
     implicit def producerResultSemigroup[A]: Semigroup[Result[A]] =
       (x: Result[A], y: Result[A]) => x.add(y)
 
-    /** Create a [[kinesis4cats.producer.Producer.Result Producer.Result]] with
-      * records that were too large to fit into Kinesis
+    /** Create a Producer.Result with records that were too large to fit into
+      * Kinesis
       *
       * @param records
       *   a List of [[kinesis4cats.producer.Record Records]] that were too large
       *   to fit into a single Kinesis request
       * @return
-      *   [[kinesis4cats.producer.Producer.Result Producer.Result]]
+      *   Producer.Result
       */
     def invalidRecords[A](records: List[InvalidRecord]): Result[A] =
       Result(
@@ -307,8 +302,8 @@ object Producer {
         Nil
       )
 
-    /** Create a [[kinesis4cats.producer.Producer.Result Producer.Result]] with
-      * records that failed during a batch put to Kinesis.
+    /** Create a Producer.Result with records that failed during a batch put to
+      * Kinesis.
       *
       * @param records
       *   a [[cats.data.NonEmptyList NonEmptyList]] of
@@ -316,7 +311,7 @@ object Producer {
       *   which represent records that failed to produce to Kinesis within a
       *   given batch
       * @return
-      *   [[kinesis4cats.producer.Producer.Result Producer.Result]]
+      *   Producer.Result
       */
     def putFailures[A](records: NonEmptyList[FailedRecord]): Result[A] = Result(
       Nil,
@@ -324,13 +319,13 @@ object Producer {
       records.toList
     )
 
-    /** Create a [[kinesis4cats.producer.Producer.Result Producer.Result]] with
-      * records that were successfully produced to kinesis.
+    /** Create a Producer.Result with records that were successfully produced to
+      * kinesis.
       *
       * @param record
       *   A, which represent a successful put result
       * @return
-      *   [[kinesis4cats.producer.Producer.Result Producer.Result]]
+      *   Producer.Result
       */
     def success[A](record: A): Result[A] =
       Result(List(record), Nil, Nil)
@@ -432,15 +427,10 @@ object Producer {
 
   /** Represents errors encountered when processing records for Kinesis
     *
-    * @param errors
-    *   [[cats.data.Ior Ior]] with the following:
-    *   - left: a [[cats.data.NonEmptyList NonEmptyList]] of
-    *     [[kinesis4cats.producer.Record Records]] that were too large to fit
-    *     into a single Kinesis request
-    *   - right: a [[cats.data.NonEmptyList NonEmptyList]] of
-    *     [[kinesis4cats.producer.Producer.FailedRecord Producer.FailedRecords]],
-    *     which represent records that failed to produce to Kinesis within a
-    *     given batch
+    * @param invalid
+    *   List of [[kinesis4cats.producer.Producer.InvalidRecord InvalidRecords]]
+    * @param failed
+    *   List of [[kinesis4cats.producer.Producer.FailedRecord FailedRecords]]
     */
   final case class Error(
       invalid: List[InvalidRecord],

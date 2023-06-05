@@ -36,11 +36,7 @@ private[kinesis4cats] final class Batcher(config: Batcher.Config) {
     *   [[cats.data.NonEmptyList NonEmptyList]] of
     *   [[kinesis4cats.producer.Record.WithShard records]]
     * @return
-    *   [[cats.data.Ior Ior]] with the following:
-    *   - left: a [[kinesis4cats.producer.Producer.Error Producer.Error]], which
-    *     represents records that were invalid for Kinesis puts.
-    *   - right: a [[cats.data.NonEmptyList NonEmptyList]] of compliant Kinesis
-    *     [[kinesis4cats.producer.batching.Batch batches]]
+    *   [[kinesis4cats.producer.batching.Batcher.Result Batcher.Result]]
     */
   def batch(
       records: NonEmptyList[Record.WithShard]
