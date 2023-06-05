@@ -18,7 +18,7 @@ package kinesis4cats.compat.retry
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
 
-private[kinesis4cats] final case class RetryStatus(
+final case class RetryStatus(
     retriesSoFar: Int,
     cumulativeDelay: FiniteDuration,
     previousDelay: Option[FiniteDuration]
@@ -30,6 +30,6 @@ private[kinesis4cats] final case class RetryStatus(
   )
 }
 
-private[kinesis4cats] object RetryStatus {
+object RetryStatus {
   val NoRetriesYet = RetryStatus(0, Duration.Zero, None)
 }
