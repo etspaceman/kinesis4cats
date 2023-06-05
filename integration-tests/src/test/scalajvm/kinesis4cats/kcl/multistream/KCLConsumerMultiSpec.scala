@@ -22,7 +22,6 @@ import scala.concurrent.duration._
 
 import cats.effect.Deferred
 import cats.effect.std.Queue
-import cats.effect.syntax.all._
 import cats.effect.{IO, Resource, SyncIO}
 import cats.syntax.all._
 import io.circe.parser._

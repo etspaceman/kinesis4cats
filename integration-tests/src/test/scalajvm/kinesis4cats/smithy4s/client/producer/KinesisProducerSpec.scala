@@ -17,7 +17,6 @@
 package kinesis4cats.smithy4s.client.producer
 
 import cats.effect._
-import cats.effect.syntax.all._
 import com.amazonaws.kinesis.PutRecordsInput
 import com.amazonaws.kinesis.PutRecordsOutput
 import org.http4s.blaze.client.BlazeClientBuilder

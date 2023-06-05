@@ -22,7 +22,6 @@ import scala.concurrent.duration._
 import _root_.smithy4s.ByteArray
 import _root_.smithy4s.aws.AwsRegion
 import cats.effect._
-import cats.effect.syntax.all._
 import cats.syntax.all._
 import com.amazonaws.kinesis._
 import fs2.io.net.tls.TLSContext

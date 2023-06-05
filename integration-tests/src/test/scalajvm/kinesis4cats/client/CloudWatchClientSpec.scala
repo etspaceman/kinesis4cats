@@ -18,7 +18,6 @@ package kinesis4cats
 package client
 
 import cats.effect.kernel.Clock
-import cats.effect.syntax.all._
 import cats.effect.{IO, SyncIO}
 import software.amazon.awssdk.services.cloudwatch.model._
 
