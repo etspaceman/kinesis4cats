@@ -129,7 +129,7 @@ object Kinesis4CatsPlugin extends AutoPlugin {
         WorkflowStep.Use(
           UseRef.Public("nick-fields", "retry", "v2"),
           name = Some("Link Native"),
-          cond = Some(primaryJavaOSCond.value),
+          cond = Some(onlyNativeCond.value),
           params = Map(
             "timeout_minutes" -> "25",
             "max_attempts" -> "3",
