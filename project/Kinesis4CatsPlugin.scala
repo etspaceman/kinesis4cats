@@ -109,22 +109,33 @@ object Kinesis4CatsPlugin extends AutoPlugin {
       }
 
       val test = List(
-        WorkflowStep.Sbt(
-          List(
-            "dockerComposeUp"
-          ),
+        WorkflowStep.Use(
+          UseRef.Public("nick-fields", "retry", "2.8.3"),
           name = Some("Docker Compose Up"),
-          cond = Some(primaryJavaOSCond.value)
+          cond = Some(primaryJavaOSCond.value),
+          params = Map(
+            "timeout_minutes" -> "15",
+            "max_attempts" -> "3",
+            "command" -> "sbt 'project ${{ matrix.project }}' dockerComposeUp",
+            "retry_on" -> "error",
+            "on_retry_command" -> "sbt 'project ${{ matrix.project }}' dockerComposeDown"
+          )
         ),
         WorkflowStep.Sbt(
           List("Test/fastLinkJS"),
           name = Some("Link JS"),
           cond = Some(onlyScalaJsCond.value)
         ),
-        WorkflowStep.Sbt(
-          List("Test/nativeLink"),
+        WorkflowStep.Use(
+          UseRef.Public("nick-fields", "retry", "2.8.3"),
           name = Some("Link Native"),
-          cond = Some(onlyNativeCond.value)
+          cond = Some(primaryJavaOSCond.value),
+          params = Map(
+            "timeout_minutes" -> "25",
+            "max_attempts" -> "3",
+            "command" -> "sbt 'project ${{ matrix.project }}' Test/nativeLink",
+            "retry_on" -> "error"
+          )
         ),
         WorkflowStep.Sbt(
           List(
