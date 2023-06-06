@@ -80,7 +80,7 @@ jobs:
 
       - name: Docker Compose Up
         if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-latest'
-        uses: nick-fields/retry@2.8.3
+        uses: nick-fields/retry@v2
         with:
           timeout_minutes: 15
           retry_on: error
@@ -94,7 +94,7 @@ jobs:
 
       - name: Link Native
         if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-latest'
-        uses: nick-fields/retry@2.8.3
+        uses: nick-fields/retry@v2
         with:
           timeout_minutes: 25
           max_attempts: 3

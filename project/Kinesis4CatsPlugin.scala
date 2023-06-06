@@ -110,7 +110,7 @@ object Kinesis4CatsPlugin extends AutoPlugin {
 
       val test = List(
         WorkflowStep.Use(
-          UseRef.Public("nick-fields", "retry", "2.8.3"),
+          UseRef.Public("nick-fields", "retry", "v2"),
           name = Some("Docker Compose Up"),
           cond = Some(primaryJavaOSCond.value),
           params = Map(
@@ -127,7 +127,7 @@ object Kinesis4CatsPlugin extends AutoPlugin {
           cond = Some(onlyScalaJsCond.value)
         ),
         WorkflowStep.Use(
-          UseRef.Public("nick-fields", "retry", "2.8.3"),
+          UseRef.Public("nick-fields", "retry", "v2"),
           name = Some("Link Native"),
           cond = Some(primaryJavaOSCond.value),
           params = Map(
