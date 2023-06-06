@@ -80,7 +80,13 @@ jobs:
 
       - name: Docker Compose Up
         if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-latest'
-        run: sbt 'project ${{ matrix.project }}' dockerComposeUp
+        uses: nick-fields/retry@v2
+        with:
+          timeout_minutes: 15
+          retry_on: error
+          command: sbt 'project ${{ matrix.project }}' dockerComposeUp
+          on_retry_command: sbt 'project ${{ matrix.project }}' dockerComposeDown
+          max_attempts: 3
 
       - name: Link JS
         if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-latest' && startsWith(matrix.project, 'root-js')
@@ -88,7 +94,12 @@ jobs:
 
       - name: Link Native
         if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-latest' && startsWith(matrix.project, 'root-native')
-        run: sbt 'project ${{ matrix.project }}' Test/nativeLink
+        uses: nick-fields/retry@v2
+        with:
+          timeout_minutes: 25
+          max_attempts: 3
+          command: sbt 'project ${{ matrix.project }}' Test/nativeLink
+          retry_on: error
 
       - name: Test
         if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-latest'
