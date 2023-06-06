@@ -27,7 +27,7 @@ import cats.syntax.show._
 
 import kinesis4cats.compat.retry.PolicyDecision._
 
-private[kinesis4cats] object RetryPolicies {
+object RetryPolicies {
   private val LongMax: BigInt = BigInt(Long.MaxValue)
 
   /*

@@ -20,9 +20,10 @@ package producer
 import scala.concurrent.duration.FiniteDuration
 
 import cats.Applicative
+import cats.Eq
 import cats.Semigroup
 import cats.Show
-import cats.data.{Ior, NonEmptyList}
+import cats.data.NonEmptyList
 import cats.effect.Async
 import cats.effect.kernel.Ref
 import cats.effect.syntax.all._
@@ -105,9 +106,9 @@ abstract class Producer[F[_], PutReq, PutRes] private[kinesis4cats] (
       resp: PutRes
   ): Option[NonEmptyList[Producer.FailedRecord]]
 
-  private def _put(
+  def _put(
       records: NonEmptyList[Record]
-  ): F[Producer.Res[PutRes]] = {
+  ): F[Producer.Result[PutRes]] = {
     val ctx = LogContext()
 
     for {
@@ -133,20 +134,20 @@ abstract class Producer[F[_], PutReq, PutRes] private[kinesis4cats] (
         } yield Record.WithShard.fromOption(rec, shardRes.toOption)
       )
       batched = batcher.batch(withShards)
-      res <- batched
-        .traverse(batches =>
-          batches.flatTraverse(batch =>
-            batch.shardBatches.toNonEmptyList
+      res <-
+        batched.batches
+          .flatTraverse(batch =>
+            batch.shardBatches.toList
               .map(_.records)
               .parTraverseN(config.shardParallelism) { shardBatch =>
                 for {
                   resp <- putImpl(asPutRequest(shardBatch))
-                  res = failedRecords(records, resp)
-                    .map(Producer.Error.putFailures)
+                  result = failedRecords(records, resp)
+                    .map(Producer.Result.putFailures[PutRes])
                     .fold(
-                      Ior.right[Producer.Error, PutRes](resp)
-                    )(e => Ior.both[Producer.Error, PutRes](e, resp))
-                  _ <- res.leftTraverse { e =>
+                      Producer.Result.success(resp)
+                    )(e => Producer.Result.success(resp) |+| e)
+                  _ <- result.error.traverse { e =>
                     if (config.raiseOnFailures) F.raiseError[Unit](e)
                     else if (config.warnOnBatchFailures)
                       logger.warn(ctx.context, e)(
@@ -154,11 +155,14 @@ abstract class Producer[F[_], PutReq, PutRes] private[kinesis4cats] (
                       )
                     else F.unit
                   }
-                } yield res
+                } yield result
               }
           )
-        )
-        .map(_.flatMap(_.sequence))
+          .map(x =>
+            x.foldLeft(
+              Producer.Result.invalidRecords[PutRes](batched.invalid)
+            ) { case (x, y) => x |+| y }
+          )
     } yield res
   }
 
@@ -172,39 +176,40 @@ abstract class Producer[F[_], PutReq, PutRes] private[kinesis4cats] (
     *   a [[cats.data.NonEmptyList NonEmptyList]] of
     *   [[kinesis4cats.producer.Record Records]]
     * @return
-    *   [[cats.data.Ior Ior]] with the following:
-    *   - left: a [[kinesis4cats.producer.Producer.Error Producer.Error]], which
-    *     represents records that were too large to be put on kinesis as well as
-    *     records that were not produced successfully in the batch request.
-    *   - right: a [[cats.data.NonEmptyList NonEmptyList]] of the underlying put
-    *     responses
+    *   Producer.Result
     */
-  def put(records: NonEmptyList[Record]): F[Producer.Res[PutRes]] = {
+  def put(records: NonEmptyList[Record]): F[Producer.Result[PutRes]] = {
     val ctx = LogContext()
 
     for {
       ref <- Ref.of(Producer.RetryState[PutRes](records, None))
       finalRes <- retryingOnFailuresAndAllErrors(
         config.retryPolicy,
-        (x: Producer.Res[PutRes]) =>
-          F.pure(x.isRight || x.left.exists(e => e.errors.exists(_.isLeft))),
-        (x: Producer.Res[PutRes], details: RetryDetails) =>
+        (x: Producer.Result[PutRes]) =>
+          F.pure(x.isSuccessful || (x.isPartiallySuccessful && !x.hasFailed)),
+        (x: Producer.Result[PutRes], details: RetryDetails) =>
           for {
-            failedRecords <- F.fromOption(
-              x.left.flatMap { e =>
-                e.errors.flatMap(errors => errors.right)
-              },
+            failed <- F.fromOption(
+              NonEmptyList.fromList(x.failed),
               new RuntimeException(
                 "Failed records empty, this should never happen"
               )
             )
             _ <- logger.debug(ctx.addEncoded("retryDetails", details).context)(
-              s"Failures with ${failedRecords.size} records detected, retrying failed records"
+              s"Failures with ${failed.length} records detected, retrying failed records"
             )
             _ <- ref.update(current =>
               Producer.RetryState(
-                failedRecords.map(_.record),
-                current.res.fold(Some(x))(y => Some(y.combine(x)))
+                failed.map(_.record),
+                current.res.fold(Some(x)) { currentResult =>
+                  Some(
+                    Producer.Result(
+                      currentResult.successful ++ x.successful,
+                      currentResult.invalid ++ x.invalid,
+                      failed.toList // Only use failed from most recent result
+                    )
+                  )
+                }
               )
             )
           } yield (),
@@ -214,18 +219,25 @@ abstract class Producer[F[_], PutReq, PutRes] private[kinesis4cats] (
           )
       )(ref.get.flatMap(x => _put(x.inputRecords)))
       _ <-
-        if (finalRes.left.exists(e => e.errors.exists(_.right.nonEmpty))) {
-          if (config.raiseOnExhaustedRetries)
-            finalRes.leftTraverse(F.raiseError[Unit]).void
-          else {
+        if (finalRes.hasFailed) {
+          if (config.raiseOnExhaustedRetries) {
+            finalRes.error.traverse(F.raiseError[Unit]).void
+          } else {
             logger
               .warn(ctx.context)(
-                "All retries have been exhausted, and the final retry detected errors"
+                "All retries have been exhausted, and the final retry detected errors. " +
+                  "If you would like an exception to be raised in this case, set raiseOnExhaustedRetries to true"
               )
           }
         } else F.unit
       res <- ref.modify { current =>
-        val result = current.res.fold(finalRes)(x => x.combine(finalRes))
+        val result = current.res.fold(finalRes)(currentResult =>
+          Producer.Result(
+            currentResult.successful ++ finalRes.successful,
+            currentResult.invalid ++ finalRes.invalid,
+            finalRes.failed // Only use failed from most recent result
+          )
+        )
         (
           Producer.RetryState(
             current.inputRecords,
@@ -242,14 +254,82 @@ object Producer {
 
   final private case class RetryState[A](
       inputRecords: NonEmptyList[Record],
-      res: Option[Res[A]]
+      res: Option[Result[A]]
   )
 
-  type Res[A] = Ior[Producer.Error, NonEmptyList[A]]
-  type Errs = Ior[
-    NonEmptyList[InvalidRecord],
-    NonEmptyList[FailedRecord]
-  ]
+  private[kinesis4cats] final case class Result[A](
+      val successful: List[A],
+      val invalid: List[InvalidRecord],
+      val failed: List[FailedRecord]
+  ) {
+    def add(that: Result[A]): Result[A] = Result(
+      successful ++ that.successful,
+      invalid ++ that.invalid,
+      failed ++ that.failed
+    )
+
+    val hasSuccessful: Boolean = successful.nonEmpty
+    val hasInvalid: Boolean = invalid.nonEmpty
+    val hasFailed: Boolean = failed.nonEmpty
+    val hasErrors: Boolean = hasInvalid || hasFailed
+    val isSuccessful: Boolean = hasSuccessful && !hasErrors
+    val isPartiallySuccessful: Boolean = hasSuccessful && hasErrors
+    val error: Option[Error] =
+      if (isSuccessful) None else Some(Error(invalid, failed))
+  }
+
+  object Result {
+
+    implicit def resultEq[A](implicit eqA: Eq[A]): Eq[Result[A]] =
+      Eq.by(x => (x.successful, x.invalid, x.failed))
+
+    implicit def producerResultSemigroup[A]: Semigroup[Result[A]] =
+      (x: Result[A], y: Result[A]) => x.add(y)
+
+    /** Create a Producer.Result with records that were too large to fit into
+      * Kinesis
+      *
+      * @param records
+      *   a List of [[kinesis4cats.producer.Record Records]] that were too large
+      *   to fit into a single Kinesis request
+      * @return
+      *   Producer.Result
+      */
+    def invalidRecords[A](records: List[InvalidRecord]): Result[A] =
+      Result(
+        Nil,
+        records,
+        Nil
+      )
+
+    /** Create a Producer.Result with records that failed during a batch put to
+      * Kinesis.
+      *
+      * @param records
+      *   a [[cats.data.NonEmptyList NonEmptyList]] of
+      *   [[kinesis4cats.producer.Producer.FailedRecord Producer.FailedRecords]],
+      *   which represent records that failed to produce to Kinesis within a
+      *   given batch
+      * @return
+      *   Producer.Result
+      */
+    def putFailures[A](records: NonEmptyList[FailedRecord]): Result[A] = Result(
+      Nil,
+      Nil,
+      records.toList
+    )
+
+    /** Create a Producer.Result with records that were successfully produced to
+      * kinesis.
+      *
+      * @param record
+      *   A, which represent a successful put result
+      * @return
+      *   Producer.Result
+      */
+    def success[A](record: A): Result[A] =
+      Result(List(record), Nil, Nil)
+  }
 
   /** [[kinesis4cats.logging.LogEncoder LogEncoder]] instances for the
     * [[kinesis4cats.producer.Producer]]
@@ -347,37 +427,35 @@ object Producer {
 
   /** Represents errors encountered when processing records for Kinesis
     *
-    * @param errors
-    *   [[cats.data.Ior Ior]] with the following:
-    *   - left: a [[cats.data.NonEmptyList NonEmptyList]] of
-    *     [[kinesis4cats.producer.Record Records]] that were too large to fit
-    *     into a single Kinesis request
-    *   - right: a [[cats.data.NonEmptyList NonEmptyList]] of
-    *     [[kinesis4cats.producer.Producer.FailedRecord Producer.FailedRecords]],
-    *     which represent records that failed to produce to Kinesis within a
-    *     given batch
+    * @param invalid
+    *   List of [[kinesis4cats.producer.Producer.InvalidRecord InvalidRecords]]
+    * @param failed
+    *   List of [[kinesis4cats.producer.Producer.FailedRecord FailedRecords]]
     */
-  final case class Error(errors: Option[Errs]) extends Exception {
+  final case class Error(
+      invalid: List[InvalidRecord],
+      failed: List[FailedRecord]
+  ) extends Exception {
     private[kinesis4cats] def add(that: Error): Error = Error(
-      errors.combine(that.errors)
+      invalid ++ that.invalid,
+      failed ++ that.failed
     )
 
-    override def getMessage: String = errors match {
-      case Some(Ior.Both(a, b)) =>
-        Error.invalidRecordsMessage(a) + "\n\nAND\n\n" + Error
-          .putFailuresMessage(b)
-      case Some(Ior.Left(a))  => Error.invalidRecordsMessage(a)
-      case Some(Ior.Right(b)) => Error.putFailuresMessage(b)
-      case None => s"Batcher returned no results at all, this is unexpected"
+    override def getMessage: String = (invalid, failed) match {
+      case (Nil, Nil) =>
+        s"Error captured but no invalid or failed records found. This is unexpected"
+      case (i, Nil) => Error.invalidRecordsMessage(i)
+      case (Nil, f) => Error.putFailuresMessage(f)
+      case (i, f) =>
+        Error.invalidRecordsMessage(i) +
+          "\n\nAND\n\n" +
+          Error.putFailuresMessage(f)
     }
   }
 
   object Error {
-    implicit val producerErrorSemigroup: Semigroup[Error] =
-      (x: Error, y: Error) => x.add(y)
-
     private def invalidRecordsMessage(
-        records: NonEmptyList[InvalidRecord]
+        records: List[InvalidRecord]
     ): String = {
       val prefix = s"${records.length} records were invalid."
       val recordsTooLarge = NonEmptyList
@@ -402,42 +480,13 @@ object Producer {
       prefix + recordsTooLarge + invalidPartitionKeys + invalidExplicitHashKeys
     }
 
-    private def putFailuresMessage(failures: NonEmptyList[FailedRecord]) =
+    private def putFailuresMessage(failures: List[FailedRecord]) =
       s"${failures.length} records received failures when producing to Kinesis.\n\t" +
-        failures.toList
+        failures
           .map(x =>
-            s"Error Code: ${x.errorCode}, Error Message: ${x.erorrMessage}"
+            s"Error Code: ${x.errorCode}, Error Message: ${x.errorMessage}"
           )
           .mkString("\n\t")
-
-    /** Create a [[kinesis4cats.producer.Producer.Error Producer.Error]] with
-      * records that were too large to fit into Kinesis
-      *
-      * @param records
-      *   a [[cats.data.NonEmptyList NonEmptyList]] of
-      *   [[kinesis4cats.producer.Record Records]] that were too large to fit
-      *   into a single Kinesis request
-      * @return
-      *   [[kinesis4cats.producer.Producer.Error Producer.Error]]
-      */
-    def invalidRecords(records: NonEmptyList[InvalidRecord]): Error = Error(
-      Some(Ior.left(records))
-    )
-
-    /** Create a [[kinesis4cats.producer.Producer.Error Producer.Error]] with
-      * records that failed during a batch put to Kinesis.
-      *
-      * @param records
-      *   a [[cats.data.NonEmptyList NonEmptyList]] of
-      *   [[kinesis4cats.producer.Producer.FailedRecord Producer.FailedRecords]],
-      *   which represent records that failed to produce to Kinesis within a
-      *   given batch
-      * @return
-      *   [[kinesis4cats.producer.Producer.Error Producer.Error]]
-      */
-    def putFailures(records: NonEmptyList[FailedRecord]): Error = Error(
-      Some(Ior.right(records))
-    )
   }
 
   /** Represents a record that failed to produce to Kinesis in a batch, with the
@@ -447,7 +496,7 @@ object Producer {
     *   [[kinesis4cats.producer.Record Record]] in the request that failed
     * @param errorCode
     *   The error code of the failure
-    * @param erorrMessage
+    * @param errorMessage
     *   The error message of the failure
     * @param requestIndex
     *   Index of record in the overarching request
@@ -455,15 +504,26 @@ object Producer {
   final case class FailedRecord(
       record: Record,
       errorCode: String,
-      erorrMessage: String,
+      errorMessage: String,
       requestIndex: Int
   )
+
+  object FailedRecord {
+    implicit val producerFailedRecordEq: Eq[FailedRecord] =
+      Eq.by(x => (x.record, x.errorCode, x.errorMessage, x.requestIndex))
+  }
 
   /** Represents a record that was invalid per the Kinesis limits
     */
   sealed trait InvalidRecord extends Product with Serializable
 
   object InvalidRecord {
+    implicit val producerInvalidRecordEq: Eq[InvalidRecord] = {
+      case (x: RecordTooLarge, y: RecordTooLarge)                 => x === y
+      case (x: InvalidPartitionKey, y: InvalidPartitionKey)       => x === y
+      case (x: InvalidExplicitHashKey, y: InvalidExplicitHashKey) => x === y
+      case _                                                      => false
+    }
 
     /** Represents a record that was too large to put into Kinesis
       *
@@ -471,6 +531,11 @@ object Producer {
       *   Invalid [[kinesis4cats.producer.Record Record]]
       */
     final case class RecordTooLarge(record: Record) extends InvalidRecord
+
+    object RecordTooLarge {
+      implicit val producerRecordTooLargeEq: Eq[RecordTooLarge] =
+        Eq.by(_.record)
+    }
 
     /** Represents a partition key that was not within the Kinesis limits
       *
@@ -480,6 +545,11 @@ object Producer {
     final case class InvalidPartitionKey(partitionKey: String)
         extends InvalidRecord
 
+    object InvalidPartitionKey {
+      implicit val producerInvalidPartitionKeyEq: Eq[InvalidPartitionKey] =
+        Eq.by(_.partitionKey)
+    }
+
     /** Represents an explicit hash key that is in an invalid format
       *
       * @param explicitHashKey
@@ -487,5 +557,11 @@ object Producer {
       */
     final case class InvalidExplicitHashKey(explicitHashKey: Option[String])
         extends InvalidRecord
+
+    object InvalidExplicitHashKey {
+      implicit val producerInvalidExplicitHashKeyEq
+          : Eq[InvalidExplicitHashKey] =
+        Eq.by(_.explicitHashKey)
+    }
   }
 }

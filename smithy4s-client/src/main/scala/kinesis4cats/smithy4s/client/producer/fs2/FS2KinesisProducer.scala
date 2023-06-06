@@ -58,7 +58,9 @@ final class FS2KinesisProducer[F[_]] private[kinesis4cats] (
     override protected val channel: Channel[F, Record],
     override protected val underlying: KinesisProducer[F]
 )(
-    override protected val callback: Producer.Res[PutRecordsOutput] => F[Unit]
+    override protected val callback: Producer.Result[PutRecordsOutput] => F[
+      Unit
+    ]
 )(implicit
     F: Async[F]
 ) extends FS2Producer[F, PutRecordsInput, PutRecordsOutput]
@@ -75,7 +77,7 @@ object FS2KinesisProducer {
       ]],
       encoders: KinesisProducer.LogEncoders[F],
       logRequestsResponses: Boolean,
-      callback: Producer.Res[PutRecordsOutput] => F[Unit]
+      callback: Producer.Result[PutRecordsOutput] => F[Unit]
   )(implicit F: Async[F]) {
     def withConfig(config: FS2Producer.Config[F]): Builder[F] =
       copy(config = config)
@@ -125,7 +127,7 @@ object FS2KinesisProducer {
       backend => AwsCredentialsProvider.default(backend),
       KinesisProducer.LogEncoders.show[F],
       true,
-      (_: Producer.Res[PutRecordsOutput]) => F.unit
+      (_: Producer.Result[PutRecordsOutput]) => F.unit
     )
 
     @annotation.unused

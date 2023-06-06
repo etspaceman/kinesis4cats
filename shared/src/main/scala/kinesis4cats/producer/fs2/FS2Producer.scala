@@ -54,7 +54,7 @@ abstract class FS2Producer[F[_], PutReq, PutRes](implicit
 
   /** A user defined function that can be run against the results of a request
     */
-  protected def callback: Producer.Res[PutRes] => F[Unit]
+  protected def callback: Producer.Result[PutRes] => F[Unit]
 
   protected def underlying: Producer[F, PutReq, PutRes]
 
@@ -98,7 +98,9 @@ abstract class FS2Producer[F[_], PutReq, PutRes](implicit
 
   /** Start the processing of records
     */
-  private[kinesis4cats] def start(): F[Unit] = {
+  private[kinesis4cats] def start(
+      deferredError: Deferred[F, Throwable]
+  ): F[Unit] = {
     val ctx = LogContext()
 
     for {
@@ -108,29 +110,34 @@ abstract class FS2Producer[F[_], PutReq, PutRes](implicit
         .groupWithin(config.putMaxChunk, config.putMaxWait)
         .evalMap { x =>
           val c = ctx.addEncoded("batchSize", x.size)
-          x.toNel.fold(F.unit) { records =>
-            for {
-              _ <- logger.debug(c.context)(
-                "Received batch to process"
-              )
-              _ <- underlying
-                .put(records)
-                .flatMap(callback)
-                .void
-              _ <- logger.debug(c.context)(
-                "Finished processing batch"
-              )
-            } yield ()
-          }
+          x.toNel
+            .fold(F.unit) { records =>
+              for {
+                _ <- logger.debug(c.context)(
+                  "Received batch to process"
+                )
+                _ <- underlying
+                  .put(records)
+                  .flatMap(callback)
+                _ <- logger.debug(c.context)(
+                  "Finished processing batch"
+                )
+              } yield ()
+            }
+            .onError { case e: Throwable => deferredError.complete(e).void }
         }
         .compile
         .drain
     } yield ()
   }
 
-  private[kinesis4cats] def resource: Resource[F, Unit] =
-    Resource.make(start().start)(stop).void
-
+  private[kinesis4cats] def resource: Resource[F, Unit] = for {
+    deferredError <- Deferred[F, Throwable].toResource
+    _ <- Resource
+      .make(start(deferredError).start)(stop)
+      .void
+      .race(deferredError.get.flatMap(F.raiseError[Unit]).toResource)
+  } yield ()
 }
 
 object FS2Producer {

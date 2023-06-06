@@ -18,14 +18,14 @@ package kinesis4cats.compat.retry
 
 import scala.concurrent.duration.FiniteDuration
 
-private[kinesis4cats] sealed trait RetryDetails {
+sealed trait RetryDetails {
   def retriesSoFar: Int
   def cumulativeDelay: FiniteDuration
   def givingUp: Boolean
   def upcomingDelay: Option[FiniteDuration]
 }
 
-private[kinesis4cats] object RetryDetails {
+object RetryDetails {
   final case class GivingUp(
       totalRetries: Int,
       totalDelay: FiniteDuration

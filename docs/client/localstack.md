@@ -12,7 +12,6 @@ libraryDependencies += "io.github.etspaceman" %% "kinesis4cats-kinesis-client-lo
 
 ```scala mdoc:compile-only
 import cats.effect.IO
-import cats.effect.syntax.all._
 
 import kinesis4cats.client.localstack.LocalstackKinesisClient
 import kinesis4cats.client.producer.localstack.LocalstackKinesisProducer

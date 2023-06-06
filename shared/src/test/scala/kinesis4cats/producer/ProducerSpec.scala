@@ -19,7 +19,6 @@ package kinesis4cats.producer
 import java.time.Instant
 
 import cats.Eq
-import cats.data.Ior
 import cats.data.NonEmptyList
 import cats.effect.IO
 import cats.effect.Resource
@@ -29,7 +28,6 @@ import org.typelevel.log4cats.StructuredLogger
 import org.typelevel.log4cats.noop.NoOpLogger
 
 import kinesis4cats.compat.retry._
-import kinesis4cats.instances.eq._
 import kinesis4cats.models.HashKeyRange
 import kinesis4cats.models.ShardId
 import kinesis4cats.models.StreamNameOrArn
@@ -52,31 +50,6 @@ class ProducerSpec extends munit.CatsEffectSuite {
       record3,
       record4,
       record5
-    )
-
-    val failed1 = Producer.FailedRecord(
-      record2,
-      "ProvisionedThroughputExceededException",
-      "Throughput was exceeded",
-      1
-    )
-    val failed2 = Producer.FailedRecord(
-      record3,
-      "ProvisionedThroughputExceededException",
-      "Throughput was exceeded",
-      2
-    )
-    val failed3 = Producer.FailedRecord(
-      record4,
-      "ProvisionedThroughputExceededException",
-      "Throughput was exceeded",
-      3
-    )
-    val failed4 = Producer.FailedRecord(
-      record5,
-      "ProvisionedThroughputExceededException",
-      "Throughput was exceeded",
-      4
     )
 
     val response1 = MockPutResponse(
@@ -104,30 +77,14 @@ class ProducerSpec extends munit.CatsEffectSuite {
       List.empty
     )
 
-    val expected: Ior[Producer.Error, NonEmptyList[MockPutResponse]] = Ior.both(
-      Producer.Error(
-        Some(
-          Ior.Right(
-            NonEmptyList.of(
-              failed1,
-              failed2,
-              failed3,
-              failed4,
-              failed2,
-              failed3,
-              failed4,
-              failed3,
-              failed4,
-              failed4
-            )
-          )
-        )
-      ),
-      NonEmptyList.of(response1, response2, response3, response4, response5)
+    val expected: Producer.Result[MockPutResponse] = Producer.Result(
+      List(response1, response2, response3, response4, response5),
+      Nil,
+      Nil
     )
 
     producer.put(data).map { res =>
-      assert(res === expected)
+      assert(res === expected, s"res: $res\nexp: $expected")
     }
   }
 }
@@ -199,7 +156,10 @@ object MockProducer {
       .build
     defaultConfig = Producer.Config
       .default[IO](StreamNameOrArn.Name("foo"))
-      .copy(retryPolicy = RetryPolicies.limitRetries[IO](5))
+      .copy(
+        retryPolicy = RetryPolicies.limitRetries[IO](5),
+        raiseOnExhaustedRetries = true
+      )
   } yield new MockProducer(
     logger,
     shardMapCache,
@@ -218,7 +178,6 @@ case class MockPutResponse(
 )
 
 object MockPutResponse {
-  implicit val mockPutResponseEq: Eq[MockPutResponse] = (x, y) =>
-    x.successRecords === y.successRecords &&
-      x.failedRecords === y.failedRecords
+  implicit val mockPutResponseEq: Eq[MockPutResponse] =
+    Eq.by(x => (x.successRecords, x.failedRecords))
 }

@@ -18,9 +18,9 @@ package kinesis4cats.compat.retry
 
 import scala.concurrent.duration.FiniteDuration
 
-private[kinesis4cats] sealed trait PolicyDecision
+sealed trait PolicyDecision
 
-private[kinesis4cats] object PolicyDecision {
+object PolicyDecision {
   case object GiveUp extends PolicyDecision
 
   final case class DelayAndRetry(
