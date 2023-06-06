@@ -12,7 +12,6 @@ libraryDependencies += "io.github.etspaceman" %% "kinesis4cats-smithy4s-client-l
 
 ```scala mdoc:compile-only
 import cats.effect._
-import cats.effect.syntax.all._
 import org.http4s.blaze.client.BlazeClientBuilder
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 import smithy4s.aws._

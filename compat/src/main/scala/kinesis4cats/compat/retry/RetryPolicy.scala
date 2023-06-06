@@ -27,7 +27,7 @@ import cats.{Applicative, Apply, Functor, Monad}
 
 import kinesis4cats.compat.retry.PolicyDecision._
 
-private[kinesis4cats] case class RetryPolicy[M[_]](
+case class RetryPolicy[M[_]](
     decideNextRetry: RetryStatus => M[PolicyDecision]
 ) {
   def show: String = toString
@@ -105,7 +105,7 @@ private[kinesis4cats] case class RetryPolicy[M[_]](
     )
 }
 
-private[kinesis4cats] object RetryPolicy {
+object RetryPolicy {
   def lift[M[_]](
       f: RetryStatus => PolicyDecision
   )(implicit

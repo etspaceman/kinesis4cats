@@ -40,7 +40,6 @@ It is not recommended to use this in production as scaling the application becom
 
 ```scala mdoc:compile-only
 import cats.effect._
-import cats.effect.syntax.all._
 import cats.syntax.all._
 import software.amazon.kinesis.common._
 

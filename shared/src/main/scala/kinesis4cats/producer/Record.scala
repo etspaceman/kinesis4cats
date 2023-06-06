@@ -19,6 +19,8 @@ package kinesis4cats.producer
 import java.math.BigInteger
 import java.nio.charset.StandardCharsets
 
+import cats.Eq
+import cats.syntax.all._
 import com.google.protobuf.ByteString
 
 import kinesis4cats.Utils
@@ -31,6 +33,7 @@ final case class Record(
     explicitHashKey: Option[String] = None,
     sequenceNumberForOrdering: Option[String] = None
 ) {
+
   private val partitionKeyBytes = partitionKey.getBytes(StandardCharsets.UTF_8)
   private val partitionKeyLength = partitionKeyBytes.length
 
@@ -64,6 +67,12 @@ final case class Record(
 }
 
 object Record {
+  implicit val recordEq: Eq[Record] = (x, y) =>
+    x.data.sameElements(y.data) &&
+      x.explicitHashKey === y.explicitHashKey &&
+      x.partitionKey === y.partitionKey &&
+      x.sequenceNumberForOrdering === y.sequenceNumberForOrdering
+
   private val unit128Max = BigInt(List.fill(16)("FF").mkString, 16)
 
   // See https://github.com/awslabs/kinesis-aggregation/blob/2.0.3/java/KinesisAggregatorV2/src/main/java/com/amazonaws/kinesis/agg/AggRecord.java#L280

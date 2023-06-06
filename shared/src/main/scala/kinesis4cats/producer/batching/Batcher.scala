@@ -17,11 +17,11 @@
 package kinesis4cats.producer
 package batching
 
+import cats.Eq
 import cats.data._
 import cats.syntax.all._
 
 import kinesis4cats.producer.Producer.InvalidRecord
-import kinesis4cats.syntax.id._
 
 /** A batcher of records against configured limits.
   *
@@ -36,16 +36,12 @@ private[kinesis4cats] final class Batcher(config: Batcher.Config) {
     *   [[cats.data.NonEmptyList NonEmptyList]] of
     *   [[kinesis4cats.producer.Record.WithShard records]]
     * @return
-    *   [[cats.data.Ior Ior]] with the following:
-    *   - left: a [[kinesis4cats.producer.Producer.Error Producer.Error]], which
-    *     represents records that were invalid for Kinesis puts.
-    *   - right: a [[cats.data.NonEmptyList NonEmptyList]] of compliant Kinesis
-    *     [[kinesis4cats.producer.batching.Batch batches]]
+    *   [[kinesis4cats.producer.batching.Batcher.Result Batcher.Result]]
     */
   def batch(
       records: NonEmptyList[Record.WithShard]
-  ): Ior[Producer.Error, NonEmptyList[Batch]] = {
-    val errors = NonEmptyList.fromList(records.collect {
+  ): Batcher.Result = {
+    val errors = records.collect {
       case record
           if !record.record
             .isValidPayloadSize(config.maxPayloadSizePerRecord) =>
@@ -58,42 +54,24 @@ private[kinesis4cats] final class Batcher(config: Batcher.Config) {
         InvalidRecord.InvalidPartitionKey(record.record.partitionKey)
       case record if !record.record.isValidExplicitHashKey =>
         InvalidRecord.InvalidExplicitHashKey(record.record.explicitHashKey)
-    })
+    }
 
-    val valid = NonEmptyList.fromList(
-      records.filter(
-        _.record.isValid(
-          config.maxPayloadSizePerRecord,
-          config.minPartitionKeySize,
-          config.maxPartitionKeySize
-        )
+    val valid = records.filter(
+      _.record.isValid(
+        config.maxPayloadSizePerRecord,
+        config.minPartitionKeySize,
+        config.maxPartitionKeySize
       )
     )
 
-    (errors, valid) match {
-      case (None, None) => Ior.left(Producer.Error(None))
-      case (Some(es), None) =>
-        Ior.left(Producer.Error.invalidRecords(es))
-      case (es, Some(recs)) =>
-        val batchRes: Option[NonEmptyList[Batch]] =
-          if (config.aggregate) _aggregateAndBatch(recs) else _batch(recs)
+    val batchRes: List[Batch] = NonEmptyList
+      .fromList(valid)
+      .flatMap(x => if (config.aggregate) _aggregateAndBatch(x) else _batch(x))
+      .map(_.toList)
+      .getOrElse(Nil)
 
-        (es, batchRes) match {
-          case (None, None) =>
-            Ior.left[Producer.Error, NonEmptyList[Batch]](Producer.Error(None))
-          case (Some(ers), None) =>
-            Ior.left[Producer.Error, NonEmptyList[Batch]](
-              Producer.Error.invalidRecords(ers)
-            )
-          case (ers, Some(x)) =>
-            Ior
-              .right[Producer.Error, NonEmptyList[Batch]](x)
-              .maybeTransform(ers) { case (a, b) =>
-                a.putLeft(Producer.Error.invalidRecords(b))
+    Batcher.Result(errors, batchRes)
 
-              }
-        }
-    }
   }
 
   /** Aggregate a list of [[kinesis4cats.producer.Record.WithShard records]],
@@ -184,6 +162,21 @@ private[kinesis4cats] final class Batcher(config: Batcher.Config) {
 
 object Batcher {
 
+  private[kinesis4cats] final case class Result(
+      invalid: List[Producer.InvalidRecord],
+      batches: List[Batch]
+  ) {
+    val hasInvalid: Boolean = invalid.nonEmpty
+    val hasBatches: Boolean = batches.nonEmpty
+    val isSuccessful: Boolean = hasBatches && !hasInvalid
+    val isPartiallySuccessful: Boolean = hasBatches && hasInvalid
+  }
+
+  object Result {
+    implicit val batcherResultEq: Eq[Result] =
+      Eq.by(x => (x.invalid, x.batches))
+  }
+
   /** Configuration for the Batcher
     *
     * @param maxRecordsPerRequest
@@ -217,6 +210,8 @@ object Batcher {
   )
 
   object Config {
+
+    implicit val batcherConfigEq: Eq[Config] = Eq.fromUniversalEquals
 
     /** A default instance for the Batcher which uses the Kinesis limits
       */

@@ -19,10 +19,7 @@ package kinesis4cats
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
 
-import cats.syntax.all._
 import org.scalacheck.Prop._
-
-import kinesis4cats.instances.eq._
 
 class MD5Spec extends munit.ScalaCheckSuite {
 
@@ -32,7 +29,9 @@ class MD5Spec extends munit.ScalaCheckSuite {
       val res = MD5.compute(bytes)
       val expected = MessageDigest.getInstance("MD5").digest(bytes)
 
-      (res === expected) :| s"res: ${res.mkString}\nexp: ${res.mkString}"
+      (res.sameElements(
+        expected
+      )) :| s"res: ${res.mkString}\nexp: ${res.mkString}"
     }
   }
 }

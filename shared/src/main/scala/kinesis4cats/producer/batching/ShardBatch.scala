@@ -17,6 +17,7 @@
 package kinesis4cats.producer
 package batching
 
+import cats.Eq
 import cats.data.NonEmptyList
 
 import kinesis4cats.models.ShardId
@@ -79,6 +80,9 @@ private[kinesis4cats] final case class ShardBatch private[kinesis4cats] (
 }
 
 private[kinesis4cats] object ShardBatch {
+
+  implicit val shardBatchEq: Eq[ShardBatch] =
+    Eq.by(x => (x.shardId.shardId, x.records, x.count, x.batchSize, x.config))
 
   /** Create a fresh batch with a new record
     *

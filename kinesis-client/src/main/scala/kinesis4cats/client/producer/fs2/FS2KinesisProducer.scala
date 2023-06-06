@@ -52,7 +52,9 @@ final class FS2KinesisProducer[F[_]] private[kinesis4cats] (
     override protected val channel: Channel[F, Record],
     override protected val underlying: KinesisProducer[F]
 )(
-    override protected val callback: Producer.Res[PutRecordsResponse] => F[Unit]
+    override protected val callback: Producer.Result[PutRecordsResponse] => F[
+      Unit
+    ]
 )(implicit
     F: Async[F]
 ) extends FS2Producer[F, PutRecordsRequest, PutRecordsResponse]
@@ -63,7 +65,7 @@ object FS2KinesisProducer {
       clientResource: Resource[F, KinesisClient[F]],
       encoders: KinesisProducer.LogEncoders,
       logger: StructuredLogger[F],
-      callback: Producer.Res[PutRecordsResponse] => F[Unit]
+      callback: Producer.Result[PutRecordsResponse] => F[Unit]
   )(implicit F: Async[F]) {
     def withConfig(config: FS2Producer.Config[F]): Builder[F] = copy(
       config = config
@@ -108,7 +110,7 @@ object FS2KinesisProducer {
       KinesisClient.Builder.default.build,
       KinesisProducer.LogEncoders.show,
       Slf4jLogger.getLogger,
-      (_: Producer.Res[PutRecordsResponse]) => F.unit
+      (_: Producer.Result[PutRecordsResponse]) => F.unit
     )
 
     @annotation.unused
