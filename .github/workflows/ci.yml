@@ -29,7 +29,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        scala: [2.13.10]
+        scala: [2.13.11]
         java: [temurin@17]
         project: [root-jvm-212, root-jvm-213, root-jvm-3, root-js-212, root-js-213, root-js-3, root-native-212, root-native-213, root-native-3]
     runs-on: ${{ matrix.os }}
