@@ -28,7 +28,7 @@ import kinesis4cats.compat.DurationConverters._
   * [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/processor/FormerStreamsLeasesDeletionStrategy.java AutoDetectionAndDeferredDeletionStrategy]]
   *
   * @param deleteInterval
-  *   [[https://www.scala-lang.org/api/2.13.11/scala/concurrent/duration/FiniteDuration.html FiniteDuration]]
+  *   [[https://www.scala-lang.org/api/2.13.10/scala/concurrent/duration/FiniteDuration.html FiniteDuration]]
   *   indicating the delay between lease deletion attempts
   */
 final case class DetectAndDefer(deleteInterval: FiniteDuration)
