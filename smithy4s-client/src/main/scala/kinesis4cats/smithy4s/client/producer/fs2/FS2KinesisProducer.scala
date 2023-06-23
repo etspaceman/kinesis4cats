@@ -77,7 +77,8 @@ object FS2KinesisProducer {
       ]],
       encoders: KinesisProducer.LogEncoders[F],
       logRequestsResponses: Boolean,
-      callback: Producer.Result[PutRecordsOutput] => F[Unit]
+      callback: Producer.Result[PutRecordsOutput] => F[Unit],
+      underlyingConfig: Producer.Config[F]
   )(implicit F: Async[F]) {
     def withConfig(config: FS2Producer.Config[F]): Builder[F] =
       copy(config = config)
@@ -95,6 +96,8 @@ object FS2KinesisProducer {
       copy(encoders = encoders)
     def withLogRequestsResponses(logRequestsResponses: Boolean): Builder[F] =
       copy(logRequestsResponses = logRequestsResponses)
+    def withUnderlyingConfig(underlyingConfig: Producer.Config[F]): Builder[F] =
+      copy(underlyingConfig = underlyingConfig)
     def enableLogging: Builder[F] = withLogRequestsResponses(true)
     def disableLogging: Builder[F] = withLogRequestsResponses(false)
 
@@ -102,6 +105,7 @@ object FS2KinesisProducer {
       underlying <- KinesisProducer.Builder
         .default[F](config.producerConfig.streamNameOrArn, client, region)
         .withLogger(logger)
+        .withConfig(underlyingConfig)
         .withCredentials(credentialsResourceF)
         .withLogEncoders(encoders)
         .withLogRequestsResponses(logRequestsResponses)
@@ -127,7 +131,8 @@ object FS2KinesisProducer {
       backend => AwsCredentialsProvider.default(backend),
       KinesisProducer.LogEncoders.show[F],
       true,
-      (_: Producer.Result[PutRecordsOutput]) => F.unit
+      (_: Producer.Result[PutRecordsOutput]) => F.unit,
+      Producer.Config.default(streamNameOrArn)
     )
 
     @annotation.unused
