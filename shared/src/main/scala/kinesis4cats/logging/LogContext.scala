@@ -17,7 +17,10 @@
 package kinesis4cats
 package logging
 
+import cats.implicits.*
+
 import kinesis4cats.Utils
+import kinesis4cats.compat.retry
 
 // $COVERAGE-OFF$
 /** Class that represents a structured logging context.
@@ -50,9 +53,21 @@ final class LogContext private (val context: Map[String, String]) {
   def addEncoded[A](
       key: String,
       a: A
-  )(implicit E: LogEncoder[A]): LogContext = new LogContext(
-    context + (key -> Option(a).fold("null")(x => E.encode(x)))
-  )
+  )(implicit E: LogEncoder[A]): LogContext =
+    add(Map(key -> Option(a).fold("null")(x => E.encode(x))))
+
+  def addRetryDetails(details: retry.RetryDetails): LogContext =
+    add(
+      Map(
+        "retriesSoFar" -> details.retriesSoFar.toString().some,
+        "givingUp" -> details.givingUp.toString().some,
+        "cumulatitiveDelay" -> details.cumulativeDelay.toString().some,
+        "upcomingDelay" -> details.upcomingDelay.map(_.toString())
+      ).flattenOption
+    )
+
+  private def add(kvs: Map[String, String]) =
+    new LogContext(context ++ kvs)
 }
 
 object LogContext {

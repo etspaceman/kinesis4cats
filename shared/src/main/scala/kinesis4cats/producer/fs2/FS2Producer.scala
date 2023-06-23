@@ -22,10 +22,14 @@ import scala.concurrent.duration._
 import _root_.fs2.concurrent.Channel
 import cats.Applicative
 import cats.effect._
+import cats.effect.kernel.Outcome.Canceled
+import cats.effect.kernel.Outcome.Errored
+import cats.effect.kernel.Outcome.Succeeded
 import cats.effect.syntax.all._
 import cats.syntax.all._
 import org.typelevel.log4cats.StructuredLogger
 
+import kinesis4cats.compat.retry
 import kinesis4cats.logging.LogContext
 import kinesis4cats.models.StreamNameOrArn
 
@@ -98,9 +102,7 @@ abstract class FS2Producer[F[_], PutReq, PutRes](implicit
 
   /** Start the processing of records
     */
-  private[kinesis4cats] def start(
-      deferredError: Deferred[F, Throwable]
-  ): F[Unit] = {
+  private[kinesis4cats] def start: F[Unit] = {
     val ctx = LogContext()
 
     for {
@@ -124,20 +126,32 @@ abstract class FS2Producer[F[_], PutReq, PutRes](implicit
                 )
               } yield ()
             }
-            .onError { case e: Throwable => deferredError.complete(e).void }
         }
         .compile
         .drain
     } yield ()
   }
 
-  private[kinesis4cats] def resource: Resource[F, Unit] = for {
-    deferredError <- Deferred[F, Throwable].toResource
-    _ <- Resource
-      .make(start(deferredError).start)(stop)
-      .void
-      .race(deferredError.get.flatMap(F.raiseError[Unit]).toResource)
-  } yield ()
+  private[kinesis4cats] def resource: Resource[F, Unit] = {
+    val loop =
+      retry.retryingOnAllErrors(
+        retry.RetryPolicies.constantDelay[F](500.millis),
+        (_: Throwable, details: retry.RetryDetails) =>
+          logger
+            .info(LogContext().addRetryDetails(details).context)(
+              "FS2Producer loop retrying."
+            )
+      )(
+        start.guaranteeCase {
+          case Canceled() => logger.warn("FS2Producer loop cancelled.")
+          case Errored(ex) =>
+            logger.error(ex)("FS2Producer loop failed with error")
+          case Succeeded(_) => logger.warn("FS2 Producer loop ended.")
+        }
+      )
+    Resource.make(loop.start)(stop).void
+
+  }
 }
 
 object FS2Producer {
