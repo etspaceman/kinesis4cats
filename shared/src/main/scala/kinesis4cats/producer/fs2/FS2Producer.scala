@@ -172,11 +172,6 @@ object FS2Producer {
     *   Max records to buffer before running a put request
     * @param putMaxWait
     *   Max time to wait before running a put request
-    * @param putMaxRetries
-    *   Number of retries for the underlying put request. None means infinite
-    *   retries.
-    * @param putRetryInterval
-    *   Delay between retries
     * @param producerConfig
     *   [[kinesis4cats.producer.Producer.Config Producer.Config]]
     */
@@ -184,8 +179,6 @@ object FS2Producer {
       queueSize: Int,
       putMaxChunk: Int,
       putMaxWait: FiniteDuration,
-      putMaxRetries: Option[Int],
-      putRetryInterval: FiniteDuration,
       producerConfig: Producer.Config[F],
       gracefulShutdownWait: FiniteDuration
   )
@@ -197,8 +190,6 @@ object FS2Producer {
       1000,
       500,
       100.millis,
-      Some(5),
-      0.seconds,
       Producer.Config.default[F](streamNameOrArn),
       30.seconds
     )
