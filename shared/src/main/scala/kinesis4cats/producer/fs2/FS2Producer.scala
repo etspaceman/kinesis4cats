@@ -134,7 +134,7 @@ abstract class FS2Producer[F[_], PutReq, PutRes](implicit
   private[kinesis4cats] def resource: Resource[F, Unit] = for {
     deferredError <- Deferred[F, Throwable].toResource
     _ <- Resource
-      .make(start(deferredError).start)(stop)
+      .make(start(deferredError))(stop)
       .void
       .race(deferredError.get.flatMap(F.raiseError[Unit]).toResource)
   } yield ()
