@@ -133,16 +133,23 @@ abstract class FS2Producer[F[_], PutReq, PutRes](implicit
   }
 
   private[kinesis4cats] def resource: Resource[F, Unit] = {
+    def retryCtx(details: retry.RetryDetails) =
+      LogContext().addRetryDetails(details).context
     val loop =
-      retry.retryingOnAllErrors(
-        retry.RetryPolicies.constantDelay[F](500.millis),
-        (_: Throwable, details: retry.RetryDetails) =>
+      retry.retryingOnFailuresAndAllErrors(
+        policy = retry.RetryPolicies.constantDelay[F](500.millis),
+        wasSuccessful = (_: Unit) => false.pure[F],
+        onError = (ex: Throwable, details: retry.RetryDetails) =>
           logger
-            .info(LogContext().addRetryDetails(details).context)(
-              "FS2Producer loop retrying."
-            )
+            .error(retryCtx(details), ex)(
+              "Retrying FS2Producer because of error."
+            ),
+        onFailure = (_: Unit, details: retry.RetryDetails) =>
+          logger.info(retryCtx(details))(
+            "Retrying FS2Producer because of it finished unexpectedly."
+          )
       )(
-        start.guaranteeCase {
+        start.void.guaranteeCase {
           case Canceled() => logger.warn("FS2Producer loop cancelled.")
           case Errored(ex) =>
             logger.error(ex)("FS2Producer loop failed with error")
