@@ -98,6 +98,10 @@ object FS2KinesisProducer {
       copy(logRequestsResponses = logRequestsResponses)
     def withUnderlyingConfig(underlyingConfig: Producer.Config[F]): Builder[F] =
       copy(underlyingConfig = underlyingConfig)
+    def withCallback(
+        callback: Producer.Result[PutRecordsOutput] => F[Unit]
+    ): Builder[F] =
+      copy(callback = callback)
     def enableLogging: Builder[F] = withLogRequestsResponses(true)
     def disableLogging: Builder[F] = withLogRequestsResponses(false)
 
