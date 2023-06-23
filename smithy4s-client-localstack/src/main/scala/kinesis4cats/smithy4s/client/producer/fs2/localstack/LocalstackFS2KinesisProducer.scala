@@ -109,7 +109,7 @@ object LocalstackFS2KinesisProducer {
         .withShardMapF(shardMapF)
         .build
       channel <- Channel
-        .bounded[F, Record](config.queueSize)
+        .bounded[F, (Record, Deferred[F, F[Unit]])](config.queueSize)
         .toResource
       producer = new FS2KinesisProducer[F](
         logger,

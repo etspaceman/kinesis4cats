@@ -55,7 +55,7 @@ import kinesis4cats.producer.fs2.FS2Producer
 final class FS2KinesisProducer[F[_]] private[kinesis4cats] (
     override val logger: StructuredLogger[F],
     override val config: FS2Producer.Config[F],
-    override protected val channel: Channel[F, Record],
+    override protected val channel: Channel[F, (Record, Deferred[F, F[Unit]])],
     override protected val underlying: KinesisProducer[F]
 )(
     override protected val callback: Producer.Result[PutRecordsOutput] => F[
@@ -114,7 +114,9 @@ object FS2KinesisProducer {
         .withLogEncoders(encoders)
         .withLogRequestsResponses(logRequestsResponses)
         .build
-      channel <- Channel.bounded[F, Record](config.queueSize).toResource
+      channel <- Channel
+        .bounded[F, (Record, Deferred[F, F[Unit]])](config.queueSize)
+        .toResource
       producer = new FS2KinesisProducer[F](logger, config, channel, underlying)(
         callback
       )
