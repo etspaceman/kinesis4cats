@@ -143,7 +143,9 @@
           <li class="level1"><a href="#installation">Installation</a></li>
           <li class="level1"><a href="#usage">Usage</a></li>
           <li class="level1"><a href="#producer">Producer</a></li>
+          <li class="level2"><a href="#failures-vs-exceptions">Failures vs Exceptions</a></li>
           <li class="level1"><a href="#fs2-producer">FS2 Producer</a></li>
+          <li class="level2"><a href="#callbacks">Callbacks</a></li>
         </ul>
 
         <p class="footer"></p>
@@ -222,13 +224,68 @@
       )
 }</span></code></pre>
         
+        <h3 id="failures-vs-exceptions" class="section">Failures vs Exceptions<a class="anchor-link right" href="#failures-vs-exceptions"><i class="icofont-laika">&#xef71;</i></a></h3>
+        <p>The Producer interface works with the <a href="https://docs.aws.amazon.com/kinesis/latest/APIReference/API_PutRecords.html">PutRecords</a> API. This API can yield two possible error paths:</p>
+        <ol class="arabic">
+          <li><strong>Exceptions:</strong> Exceptions raised when interacting with the API. These are rare.</li>
+          <li><strong>Failures:</strong> Successful API responses, but with a partially-failed response.</li>
+        </ol>
+        <p>In the 2nd case, the <code>put</code> method will return a result that contains:
+        - Successfully produced records
+        - Invalid records (records that do not conform to the Kinesis requirements for PutRecords)
+        - Failed records (records that could not be produced to the Kinesis stream)</p>
+        <p>The Producer offering here allows users to handle these failure paths in multiple ways.</p>
+        
+        <h4 id="retrying-failures" class="section">Retrying failures<a class="anchor-link right" href="#retrying-failures"><i class="icofont-laika">&#xef71;</i></a></h4>
+        <p>A user can supply a <a href="https://github.com/etspaceman/kinesis4cats/blob/main/compat/src/main/scala/kinesis4cats/compat/retry/RetryPolicy.scala">RetryPolicy</a> that can be used to retry both error paths until a fully successful response is received. </p>
+        <p>In the event of a partially-failed response, the retry routine will only retry the failed records.</p>
+        <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">effect</span><span>.</span><span class="identifier">_</span><span>
+
+</span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">client</span><span>.</span><span class="identifier">producer</span><span>.</span><span class="type-name">KinesisProducer</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">compat</span><span>.</span><span class="identifier">retry</span><span>.</span><span class="identifier">_</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">models</span><span>.</span><span class="type-name">StreamNameOrArn</span><span>
+
+</span><span class="comment">// Retry 5 times with no delay between retries
+</span><span class="keyword">val</span><span> </span><span class="identifier">policy</span><span> = </span><span class="type-name">RetryPolicies</span><span>.</span><span class="identifier">limitRetries</span><span>[</span><span class="type-name">IO</span><span>](</span><span class="number-literal">5</span><span>)
+
+</span><span class="type-name">KinesisProducer</span><span>.</span><span class="type-name">Builder</span><span>
+  .</span><span class="keyword">default</span><span>[</span><span class="type-name">IO</span><span>](</span><span class="type-name">StreamNameOrArn</span><span>.</span><span class="type-name">Name</span><span>(</span><span class="string-literal">&quot;my-stream&quot;</span><span>))
+  .</span><span class="identifier">transformConfig</span><span>(</span><span class="identifier">x</span><span> =&gt; </span><span class="identifier">x</span><span>.</span><span class="identifier">copy</span><span>(</span><span class="identifier">retryPolicy</span><span> = </span><span class="identifier">policy</span><span>))
+  .</span><span class="identifier">build</span></code></pre>
+        
+        <h4 id="raising-exceptions" class="section">Raising exceptions<a class="anchor-link right" href="#raising-exceptions"><i class="icofont-laika">&#xef71;</i></a></h4>
+        <p>A user can configure the producer to raise an exception if any of the error paths are detected (including partially failed records).</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">effect</span><span>.</span><span class="identifier">_</span><span>
+
+</span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">client</span><span>.</span><span class="identifier">producer</span><span>.</span><span class="type-name">KinesisProducer</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">models</span><span>.</span><span class="type-name">StreamNameOrArn</span><span>
+
+</span><span class="type-name">KinesisProducer</span><span>.</span><span class="type-name">Builder</span><span>
+  .</span><span class="keyword">default</span><span>[</span><span class="type-name">IO</span><span>](</span><span class="type-name">StreamNameOrArn</span><span>.</span><span class="type-name">Name</span><span>(</span><span class="string-literal">&quot;my-stream&quot;</span><span>))
+  .</span><span class="identifier">transformConfig</span><span>(</span><span class="identifier">x</span><span> =&gt; </span><span class="identifier">x</span><span>.</span><span class="identifier">copy</span><span>(</span><span class="identifier">raiseOnFailures</span><span> = </span><span class="boolean-literal">true</span><span>))
+  .</span><span class="identifier">build</span></code></pre>
+        <p>This can be done along with configuring a retry policy, in which case an error would be raised after all retries are exhausted.</p>
+        <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">effect</span><span>.</span><span class="identifier">_</span><span>
+
+</span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">client</span><span>.</span><span class="identifier">producer</span><span>.</span><span class="type-name">KinesisProducer</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">compat</span><span>.</span><span class="identifier">retry</span><span>.</span><span class="identifier">_</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">models</span><span>.</span><span class="type-name">StreamNameOrArn</span><span>
+
+</span><span class="comment">// Retry 5 times with no delay between retries
+</span><span class="keyword">val</span><span> </span><span class="identifier">policy</span><span> = </span><span class="type-name">RetryPolicies</span><span>.</span><span class="identifier">limitRetries</span><span>[</span><span class="type-name">IO</span><span>](</span><span class="number-literal">5</span><span>)
+
+</span><span class="type-name">KinesisProducer</span><span>.</span><span class="type-name">Builder</span><span>
+  .</span><span class="keyword">default</span><span>[</span><span class="type-name">IO</span><span>](</span><span class="type-name">StreamNameOrArn</span><span>.</span><span class="type-name">Name</span><span>(</span><span class="string-literal">&quot;my-stream&quot;</span><span>))
+  .</span><span class="identifier">transformConfig</span><span>(</span><span class="identifier">x</span><span> =&gt; </span><span class="identifier">x</span><span>.</span><span class="identifier">copy</span><span>(</span><span class="identifier">retryPolicy</span><span> = </span><span class="identifier">policy</span><span>, </span><span class="identifier">raiseOnFailures</span><span> = </span><span class="boolean-literal">true</span><span>))
+  .</span><span class="identifier">build</span></code></pre>
+        
         <h2 id="fs2-producer" class="section">FS2 Producer<a class="anchor-link right" href="#fs2-producer"><i class="icofont-laika">&#xef71;</i></a></h2>
         <p>This package provides a <a href="https://github.com/awslabs/amazon-kinesis-producer">KPL-like</a> producer via implementing <a href="https://github.com/etspaceman/kinesis4cats/blob/main/shared/src/main/scala/kinesis4cats/producer/fs2/FS2Producer.scala">FS2Producer</a>. This interface receives records from a user, enqueues them into a Queue and puts them as batches to Kinesis on a configured interval. This leverages all of the functionality of the <a href="https://github.com/etspaceman/kinesis4cats/blob/main/shared/src/main/scala/kinesis4cats/producer/Producer.scala">Producer</a> interface, including batching, aggregation and retries. </p>
         <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">effect</span><span>.</span><span class="identifier">_</span><span>
 
 </span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">client</span><span>.</span><span class="identifier">producer</span><span>.</span><span class="identifier">fs2</span><span>.</span><span class="type-name">FS2KinesisProducer</span><span>
-</span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">producer</span><span>.</span><span class="identifier">_</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">models</span><span>.</span><span class="type-name">StreamNameOrArn</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">producer</span><span>.</span><span class="type-name">Record</span><span>
 
 </span><span class="keyword">object</span><span> </span><span class="type-name">MyApp</span><span> </span><span class="keyword">extends</span><span> </span><span class="type-name">IOApp</span><span> {
     </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">run</span><span>(</span><span class="identifier">args</span><span>: </span><span class="type-name">List</span><span>[</span><span class="type-name">String</span><span>]) = 
@@ -248,6 +305,33 @@
                 )
             } </span><span class="keyword">yield</span><span> </span><span class="type-name">ExitCode</span><span>.</span><span class="type-name">Success</span><span>
         )
+}</span></code></pre>
+        
+        <h3 id="callbacks" class="section">Callbacks<a class="anchor-link right" href="#callbacks"><i class="icofont-laika">&#xef71;</i></a></h3>
+        <p>Kinesis4Cats offers a nested effect as the return type for the FS2Producer&#39;s <code>put</code> method. This nested effect serves as a callback for users to interact with the put result and any errors that occurred with the puts. For example:</p>
+        <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">effect</span><span>.</span><span class="identifier">_</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">syntax</span><span>.</span><span class="identifier">all</span><span>.</span><span class="identifier">_</span><span>
+
+</span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">client</span><span>.</span><span class="identifier">producer</span><span>.</span><span class="identifier">fs2</span><span>.</span><span class="type-name">FS2KinesisProducer</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">models</span><span>.</span><span class="type-name">StreamNameOrArn</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">producer</span><span>.</span><span class="type-name">Record</span><span>
+
+</span><span class="keyword">object</span><span> </span><span class="type-name">MyApp</span><span> </span><span class="keyword">extends</span><span> </span><span class="type-name">IOApp</span><span> {
+    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">run</span><span>(</span><span class="identifier">args</span><span>: </span><span class="type-name">List</span><span>[</span><span class="type-name">String</span><span>]) = 
+        </span><span class="type-name">FS2KinesisProducer</span><span>.</span><span class="type-name">Builder</span><span>
+          .</span><span class="keyword">default</span><span>[</span><span class="type-name">IO</span><span>](</span><span class="type-name">StreamNameOrArn</span><span>.</span><span class="type-name">Name</span><span>(</span><span class="string-literal">&quot;my-stream&quot;</span><span>))
+          .</span><span class="identifier">build</span><span>
+          .</span><span class="identifier">use</span><span> { </span><span class="identifier">producer</span><span> =&gt;
+            </span><span class="keyword">val</span><span> </span><span class="identifier">records</span><span> = </span><span class="type-name">List</span><span>(
+              </span><span class="type-name">Record</span><span>(</span><span class="string-literal">&quot;my-data&quot;</span><span>.</span><span class="identifier">getBytes</span><span>(), </span><span class="string-literal">&quot;some-partition-key&quot;</span><span>),
+              </span><span class="type-name">Record</span><span>(</span><span class="string-literal">&quot;my-data-2&quot;</span><span>.</span><span class="identifier">getBytes</span><span>(), </span><span class="string-literal">&quot;some-partition-key-2&quot;</span><span>),
+              </span><span class="type-name">Record</span><span>(</span><span class="string-literal">&quot;my-data-3&quot;</span><span>.</span><span class="identifier">getBytes</span><span>(), </span><span class="string-literal">&quot;some-partition-key-3&quot;</span><span>)
+            )
+            </span><span class="keyword">for</span><span> {
+              </span><span class="identifier">callbacks</span><span> &lt;- </span><span class="identifier">records</span><span>.</span><span class="identifier">traverse</span><span>(</span><span class="identifier">producer</span><span>.</span><span class="identifier">put</span><span>)
+              </span><span class="identifier">_</span><span> &lt;- </span><span class="identifier">callbacks</span><span>.</span><span class="identifier">traverse</span><span>(</span><span class="identifier">cb</span><span> =&gt; </span><span class="identifier">cb</span><span>.</span><span class="identifier">attempt</span><span>.</span><span class="identifier">flatMap</span><span>(</span><span class="identifier">x</span><span> =&gt; </span><span class="type-name">IO</span><span>.</span><span class="identifier">println</span><span>(</span><span class="string-literal">s&quot;Response: </span><span class="substitution">$x</span><span class="string-literal">&quot;</span><span>)))
+            } </span><span class="keyword">yield</span><span> </span><span class="type-name">ExitCode</span><span>.</span><span class="type-name">Success</span><span>
+        }
 }</span></code></pre>
 
         <hr style="margin-top: 30px"/>
