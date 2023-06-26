@@ -51,11 +51,8 @@ abstract class FS2Producer[F[_], PutReq, PutRes](implicit
 
   /** The underlying queue of records to process
     */
-  protected def channel: Channel[F, (Record, Deferred[F, F[Unit]])]
-
-  /** A user defined function that can be run against the results of a request
-    */
-  protected def callback: Producer.Result[PutRes] => F[Unit]
+  protected def channel
+      : Channel[F, (Record, Deferred[F, F[Producer.Result[PutRes]]])]
 
   protected def underlying: Producer[F, PutReq, PutRes]
 
@@ -68,12 +65,12 @@ abstract class FS2Producer[F[_], PutReq, PutRes](implicit
     *   F of F of unit. Inner F represents a `deferred.get` call, which will
     *   complete when the record has been published.
     */
-  def put(record: Record): F[F[Unit]] = {
+  def put(record: Record): F[F[Producer.Result[PutRes]]] = {
     val ctx = LogContext()
 
     for {
       _ <- logger.debug(ctx.context)("Received record to put")
-      deferred <- Deferred[F, F[Unit]]
+      deferred <- Deferred[F, F[Producer.Result[PutRes]]]
       res <- channel.send(record -> deferred)
       _ <- res.bitraverse(
         _ =>
@@ -112,22 +109,23 @@ abstract class FS2Producer[F[_], PutReq, PutRes](implicit
         .evalMap { x =>
           val c = ctx.addEncoded("batchSize", x.size)
           x.toNel
-            .fold(F.unit) { x =>
-              val records = x.map(_._1)
-              val deferreds = x.map(_._2)
+            .traverse_ { x =>
+              val (records, deferreds) = x.unzip
               for {
                 _ <- logger.debug(c.context)(
                   "Received batch to process"
                 )
-                _ <- F.guaranteeCase(
-                  underlying
-                    .put(records)
-                    .flatMap(callback)
-                ) {
-                  case Canceled() | Succeeded(_) =>
-                    deferreds.traverse_(_.complete(F.unit))
+                _ <- underlying.put(records).guaranteeCase {
+                  case Succeeded(x) =>
+                    deferreds.traverse_(_.complete(x))
+                  case Canceled() =>
+                    val failedF =
+                      F.canceled >> F.raiseError[Producer.Result[PutRes]](
+                        new RuntimeException("Put request was cancelled")
+                      )
+                    deferreds.traverse_(_.complete(failedF))
                   case Errored(e) =>
-                    val failedF = F.raiseError(e).void
+                    val failedF = F.raiseError[Producer.Result[PutRes]](e)
                     deferreds.traverse_(d => d.complete(failedF))
                 }
                 _ <- logger.debug(c.context)(

@@ -56,8 +56,7 @@ object LocalstackFS2KinesisProducer {
       shardMapF: (
           KinesisClient[F],
           StreamNameOrArn
-      ) => F[Either[ShardMapCache.Error, ShardMap]],
-      callback: Producer.Result[PutRecordsOutput] => F[Unit]
+      ) => F[Either[ShardMapCache.Error, ShardMap]]
   )(implicit F: Async[F]) {
 
     def withLocalstackConfig(localstackConfig: LocalstackConfig): Builder[F] =
@@ -87,11 +86,6 @@ object LocalstackFS2KinesisProducer {
     ): Builder[F] = copy(
       shardMapF = shardMapF
     )
-    def withCallback(
-        callback: Producer.Result[PutRecordsOutput] => F[Unit]
-    ): Builder[F] = copy(
-      callback = callback
-    )
 
     def build: Resource[F, FS2KinesisProducer[F]] = for {
       underlying <- LocalstackKinesisProducer.Builder
@@ -109,15 +103,16 @@ object LocalstackFS2KinesisProducer {
         .withShardMapF(shardMapF)
         .build
       channel <- Channel
-        .bounded[F, (Record, Deferred[F, F[Unit]])](config.queueSize)
+        .bounded[
+          F,
+          (Record, Deferred[F, F[Producer.Result[PutRecordsOutput]]])
+        ](config.queueSize)
         .toResource
       producer = new FS2KinesisProducer[F](
         logger,
         config,
         channel,
         underlying
-      )(
-        callback
       )
       _ <- producer.resource
     } yield producer
@@ -153,8 +148,7 @@ object LocalstackFS2KinesisProducer {
         true,
         Nil,
         (client: KinesisClient[F], snoa: StreamNameOrArn) =>
-          KinesisProducer.getShardMap(client, snoa),
-        (_: Producer.Result[PutRecordsOutput]) => F.unit
+          KinesisProducer.getShardMap(client, snoa)
       )
 
     @annotation.unused

@@ -158,7 +158,7 @@ object MockProducer {
       .default[IO](StreamNameOrArn.Name("foo"))
       .copy(
         retryPolicy = RetryPolicies.limitRetries[IO](5),
-        raiseOnExhaustedRetries = true
+        raiseOnFailures = true
       )
   } yield new MockProducer(
     logger,

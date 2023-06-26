@@ -106,7 +106,7 @@ abstract class Producer[F[_], PutReq, PutRes] private[kinesis4cats] (
       resp: PutRes
   ): Option[NonEmptyList[Producer.FailedRecord]]
 
-  def _put(
+  private def _put(
       records: NonEmptyList[Record]
   ): F[Producer.Result[PutRes]] = {
     val ctx = LogContext()
@@ -140,22 +140,14 @@ abstract class Producer[F[_], PutReq, PutRes] private[kinesis4cats] (
             batch.shardBatches.toList
               .map(_.records)
               .parTraverseN(config.shardParallelism) { shardBatch =>
-                for {
-                  resp <- putImpl(asPutRequest(shardBatch))
-                  result = failedRecords(records, resp)
-                    .map(Producer.Result.putFailures[PutRes])
-                    .fold(
-                      Producer.Result.success(resp)
-                    )(e => Producer.Result.success(resp) |+| e)
-                  _ <- result.error.traverse { e =>
-                    if (config.raiseOnFailures) F.raiseError[Unit](e)
-                    else if (config.warnOnBatchFailures)
-                      logger.warn(ctx.context, e)(
-                        "Some records had errors when processing a batch"
-                      )
-                    else F.unit
-                  }
-                } yield result
+                putImpl(asPutRequest(shardBatch))
+                  .map(resp =>
+                    failedRecords(records, resp)
+                      .map(Producer.Result.putFailures[PutRes])
+                      .fold(
+                        Producer.Result.success(resp)
+                      )(e => Producer.Result.success(resp) |+| e)
+                  )
               }
           )
           .map(x =>
@@ -195,7 +187,7 @@ abstract class Producer[F[_], PutReq, PutRes] private[kinesis4cats] (
                 "Failed records empty, this should never happen"
               )
             )
-            _ <- logger.debug(ctx.addEncoded("retryDetails", details).context)(
+            _ <- logger.warn(ctx.addEncoded("retryDetails", details).context)(
               s"Failures with ${failed.length} records detected, retrying failed records"
             )
             _ <- ref.update(current =>
@@ -214,13 +206,13 @@ abstract class Producer[F[_], PutReq, PutRes] private[kinesis4cats] (
             )
           } yield (),
         (e: Throwable, details: RetryDetails) =>
-          logger.error(ctx.addEncoded("retryDetails", details).context, e)(
+          logger.warn(ctx.addEncoded("retryDetails", details).context, e)(
             "Exception when putting records, retrying"
           )
       )(ref.get.flatMap(x => _put(x.inputRecords)))
       _ <-
         if (finalRes.hasFailed) {
-          if (config.raiseOnExhaustedRetries) {
+          if (config.raiseOnFailures) {
             finalRes.error.traverse(F.raiseError[Unit]).void
           } else {
             logger
@@ -230,6 +222,7 @@ abstract class Producer[F[_], PutReq, PutRes] private[kinesis4cats] (
               )
           }
         } else F.unit
+
       res <- ref.modify { current =>
         val result = current.res.fold(finalRes)(currentResult =>
           Producer.Result(
@@ -365,9 +358,6 @@ object Producer {
     * @param warnOnShardCacheMisses
     *   If true, a warning message will appear if a record was not matched with
     *   a shard in the cache
-    * @param warnOnBatchFailures
-    *   If true, a warning message will appear if the producer failed to produce
-    *   some records in a batch
     * @param shardParallelism
     *   Determines how many shards to concurrently put batches of data to
     * @param raiseOnFailures
@@ -379,23 +369,17 @@ object Producer {
     * @param streamNameOrArn
     *   [[kinesis4cats.models.StreamNameOrArn StreamNameOrArn]] either a stream
     *   name or a stream ARN for the producer.
-    * @param raiseOnExhaustedRetries
-    *   If true, an exception will be raised if a
-    *   [[kinesis4cats.producer.Producer.Error Producer.Error]] is detected in
-    *   the final batch of retried put requests
     * @param retryPolicy
     *   [[https://github.com/etspaceman/kinesis4cats/blob/main/compat/src/main/scala/kinesis4cats/compat/retry/RetryPolicy.scala RetryPolicy]]
     *   for retrying put requests
     */
   final case class Config[F[_]](
       warnOnShardCacheMisses: Boolean,
-      warnOnBatchFailures: Boolean,
       shardParallelism: Int,
       raiseOnFailures: Boolean,
       shardMapCacheConfig: ShardMapCache.Config,
       batcherConfig: Batcher.Config,
       streamNameOrArn: StreamNameOrArn,
-      raiseOnExhaustedRetries: Boolean,
       retryPolicy: RetryPolicy[F]
   )
 
@@ -414,13 +398,11 @@ object Producer {
         streamNameOrArn: StreamNameOrArn
     )(implicit F: Applicative[F]): Config[F] = Config[F](
       warnOnShardCacheMisses = true,
-      warnOnBatchFailures = true,
       shardParallelism = 8,
       raiseOnFailures = false,
       shardMapCacheConfig = ShardMapCache.Config.default,
       batcherConfig = Batcher.Config.default,
       streamNameOrArn = streamNameOrArn,
-      raiseOnExhaustedRetries = false,
       retryPolicy = RetryPolicies.alwaysGiveUp[F]
     )
   }

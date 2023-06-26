@@ -62,7 +62,7 @@ private[kinesis4cats] abstract class FS2ProducerSpec[PutReq, PutRes, A]
         )
       )
       x <- records.traverse(resources.producer.put)
-      _ <- x.traverse(identity)
+      _ <- x.sequence_
       retryPolicy = limitRetries[IO](30).join(constantDelay(1.second))
       size <- retryingOnFailures(
         retryPolicy,

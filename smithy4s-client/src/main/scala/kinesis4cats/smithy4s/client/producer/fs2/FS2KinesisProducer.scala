@@ -55,12 +55,11 @@ import kinesis4cats.producer.fs2.FS2Producer
 final class FS2KinesisProducer[F[_]] private[kinesis4cats] (
     override val logger: StructuredLogger[F],
     override val config: FS2Producer.Config[F],
-    override protected val channel: Channel[F, (Record, Deferred[F, F[Unit]])],
+    override protected val channel: Channel[
+      F,
+      (Record, Deferred[F, F[Producer.Result[PutRecordsOutput]]])
+    ],
     override protected val underlying: KinesisProducer[F]
-)(
-    override protected val callback: Producer.Result[PutRecordsOutput] => F[
-      Unit
-    ]
 )(implicit
     F: Async[F]
 ) extends FS2Producer[F, PutRecordsInput, PutRecordsOutput]
@@ -76,12 +75,15 @@ object FS2KinesisProducer {
         AwsCredentials
       ]],
       encoders: KinesisProducer.LogEncoders[F],
-      logRequestsResponses: Boolean,
-      callback: Producer.Result[PutRecordsOutput] => F[Unit],
-      underlyingConfig: Producer.Config[F]
+      logRequestsResponses: Boolean
   )(implicit F: Async[F]) {
     def withConfig(config: FS2Producer.Config[F]): Builder[F] =
       copy(config = config)
+    def transformConfig(
+        f: FS2Producer.Config[F] => FS2Producer.Config[F]
+    ): Builder[F] = copy(
+      config = f(config)
+    )
     def withClient(client: Client[F]): Builder[F] = copy(client = client)
     def withRegion(region: AwsRegion): Builder[F] = copy(region = region)
     def withLogger(logger: StructuredLogger[F]): Builder[F] =
@@ -97,11 +99,9 @@ object FS2KinesisProducer {
     def withLogRequestsResponses(logRequestsResponses: Boolean): Builder[F] =
       copy(logRequestsResponses = logRequestsResponses)
     def withUnderlyingConfig(underlyingConfig: Producer.Config[F]): Builder[F] =
-      copy(underlyingConfig = underlyingConfig)
-    def withCallback(
-        callback: Producer.Result[PutRecordsOutput] => F[Unit]
-    ): Builder[F] =
-      copy(callback = callback)
+      copy(config = config.copy(producerConfig = underlyingConfig))
+    def transformUnderlyingConfig(f: Producer.Config[F] => Producer.Config[F]) =
+      copy(config = config.copy(producerConfig = f(config.producerConfig)))
     def enableLogging: Builder[F] = withLogRequestsResponses(true)
     def disableLogging: Builder[F] = withLogRequestsResponses(false)
 
@@ -109,17 +109,18 @@ object FS2KinesisProducer {
       underlying <- KinesisProducer.Builder
         .default[F](config.producerConfig.streamNameOrArn, client, region)
         .withLogger(logger)
-        .withConfig(underlyingConfig)
+        .withConfig(config.producerConfig)
         .withCredentials(credentialsResourceF)
         .withLogEncoders(encoders)
         .withLogRequestsResponses(logRequestsResponses)
         .build
       channel <- Channel
-        .bounded[F, (Record, Deferred[F, F[Unit]])](config.queueSize)
+        .bounded[
+          F,
+          (Record, Deferred[F, F[Producer.Result[PutRecordsOutput]]])
+        ](config.queueSize)
         .toResource
-      producer = new FS2KinesisProducer[F](logger, config, channel, underlying)(
-        callback
-      )
+      producer = new FS2KinesisProducer[F](logger, config, channel, underlying)
       _ <- producer.resource
     } yield producer
   }
@@ -136,9 +137,7 @@ object FS2KinesisProducer {
       NoOpLogger[F],
       backend => AwsCredentialsProvider.default(backend),
       KinesisProducer.LogEncoders.show[F],
-      true,
-      (_: Producer.Result[PutRecordsOutput]) => F.unit,
-      Producer.Config.default(streamNameOrArn)
+      true
     )
 
     @annotation.unused
