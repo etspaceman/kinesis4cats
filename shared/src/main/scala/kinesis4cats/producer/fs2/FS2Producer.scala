@@ -202,7 +202,7 @@ object FS2Producer {
       Producer.Config.default[F](streamNameOrArn),
       30.seconds,
       retry.RetryPolicies.capDelay(
-        30.seconds,
+        5.seconds,
         retry.RetryPolicies.exponentialBackoff[F](100.millis)
       )
     )
