@@ -31,6 +31,7 @@ import org.typelevel.log4cats.StructuredLogger
 
 import kinesis4cats.compat.retry
 import kinesis4cats.logging.LogContext
+import kinesis4cats.logging.LogEncoder
 import kinesis4cats.models.StreamNameOrArn
 
 /** An interface that runs a [[kinesis4cats.producer.Producer Producer's]] put
@@ -133,29 +134,31 @@ abstract class FS2Producer[F[_], PutReq, PutRes](implicit
   }
 
   private[kinesis4cats] def resource: Resource[F, Unit] = {
+    import FS2Producer.LogEncoders.show._
     def retryCtx(details: retry.RetryDetails) =
-      LogContext().addRetryDetails(details).context
+      LogContext().addEncoded("retryDetails", details).context
     val loop =
-      retry.retryingOnFailuresAndAllErrors(
-        policy = retry.RetryPolicies.constantDelay[F](500.millis),
-        wasSuccessful = (_: Unit) => false.pure[F],
-        onError = (ex: Throwable, details: retry.RetryDetails) =>
-          logger
-            .error(retryCtx(details), ex)(
-              "Retrying FS2Producer because of error."
-            ),
-        onFailure = (_: Unit, details: retry.RetryDetails) =>
-          logger.info(retryCtx(details))(
-            "Retrying FS2Producer because of it finished unexpectedly."
-          )
-      )(
-        start.void.guaranteeCase {
+      retry
+        .retryingOnFailuresAndAllErrors(
+          policy = config.producerLoopRetryPolicy,
+          wasSuccessful = (_: Unit) => false.pure[F],
+          onError = (ex: Throwable, details: retry.RetryDetails) =>
+            logger
+              .error(retryCtx(details), ex)(
+                "Retrying FS2Producer because of error."
+              ),
+          onFailure = (_: Unit, details: retry.RetryDetails) =>
+            logger.info(retryCtx(details))(
+              "Retrying FS2Producer because it finished unexpectedly."
+            )
+        )(start)
+        .guaranteeCase {
           case Canceled() => logger.warn("FS2Producer loop cancelled.")
           case Errored(ex) =>
             logger.error(ex)("FS2Producer loop failed with error")
           case Succeeded(_) => logger.warn("FS2 Producer loop ended.")
         }
-      )
+
     Resource.make(loop.start)(stop).void
 
   }
@@ -180,7 +183,8 @@ object FS2Producer {
       putMaxChunk: Int,
       putMaxWait: FiniteDuration,
       producerConfig: Producer.Config[F],
-      gracefulShutdownWait: FiniteDuration
+      gracefulShutdownWait: FiniteDuration,
+      producerLoopRetryPolicy: retry.RetryPolicy[F]
   )
 
   object Config {
@@ -191,8 +195,24 @@ object FS2Producer {
       500,
       100.millis,
       Producer.Config.default[F](streamNameOrArn),
-      30.seconds
+      30.seconds,
+      retry.RetryPolicies.capDelay(
+        30.seconds,
+        retry.RetryPolicies.exponentialBackoff[F](100.millis)
+      )
     )
+  }
+
+  final class LogEncoders(implicit
+      val retryDetails: LogEncoder[retry.RetryDetails]
+  )
+
+  object LogEncoders {
+    val show = {
+      import kinesis4cats.logging.instances.show._
+
+      new LogEncoders()
+    }
   }
 
 }
