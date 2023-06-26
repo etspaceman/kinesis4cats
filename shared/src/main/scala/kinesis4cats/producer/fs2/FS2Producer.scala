@@ -76,17 +76,19 @@ abstract class FS2Producer[F[_], PutReq, PutRes](implicit
 
     for {
       _ <- logger.debug(ctx.context)("Received record to put")
-      res <- channel.send(record)
-      _ <- res.bitraverse(
-        _ =>
-          logger.warn(ctx.context)(
-            "Producer has been shut down and will not accept further requests"
-          ),
-        _ =>
-          logger.debug(ctx.context)(
-            "Successfully put record into processing queue"
-          )
-      )
+      res <- channel.send(record).race(channel.closed)
+      _ <- res
+        .bifoldMap(identity, _ => Channel.Closed.asLeft)
+        .bitraverse(
+          _ =>
+            logger.warn(ctx.context)(
+              "Producer has been shut down and will not accept further requests"
+            ),
+          _ =>
+            logger.debug(ctx.context)(
+              "Successfully put record into processing queue"
+            )
+        )
     } yield ()
   }
 
@@ -152,13 +154,16 @@ abstract class FS2Producer[F[_], PutReq, PutRes](implicit
               "Retrying FS2Producer because it finished unexpectedly."
             )
         )(start)
-        .guaranteeCase {
-          case Canceled() => logger.warn("FS2Producer loop cancelled.")
-          case Errored(ex) =>
-            logger.error(ex)("FS2Producer loop failed with error")
-          case Succeeded(_) => logger.warn("FS2 Producer loop ended.")
+        .guaranteeCase { outcome =>
+          val log =
+            outcome match {
+              case Canceled() => logger.warn("FS2Producer loop cancelled.")
+              case Errored(ex) =>
+                logger.error(ex)("FS2Producer loop failed with error")
+              case Succeeded(_) => logger.warn("FS2 Producer loop ended.")
+            }
+          channel.close >> log
         }
-
     Resource.make(loop.start)(stop).void
 
   }
