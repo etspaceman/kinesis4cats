@@ -127,7 +127,7 @@ abstract class FS2Producer[F[_], PutReq, PutRes](implicit
                   case Canceled() | Succeeded(_) =>
                     deferreds.traverse_(_.complete(F.unit))
                   case Errored(e) =>
-                   val failedF = F.raiseError(e)
+                    val failedF = F.raiseError(e).void
                     deferreds.traverse_(d => d.complete(failedF))
                 }
                 _ <- logger.debug(c.context)(
