@@ -21,6 +21,7 @@ package fs2
 
 import _root_.fs2.concurrent.Channel
 import cats.effect._
+import cats.effect.kernel.DeferredSink
 import cats.effect.syntax.all._
 import org.typelevel.log4cats.StructuredLogger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
@@ -51,7 +52,7 @@ final class FS2KinesisProducer[F[_]] private[kinesis4cats] (
     override val config: FS2Producer.Config[F],
     override protected val channel: Channel[
       F,
-      (Record, Deferred[F, F[Producer.Result[PutRecordsResponse]]])
+      (Record, DeferredSink[F, F[Producer.Result[PutRecordsResponse]]])
     ],
     override protected val underlying: KinesisProducer[F]
 )(implicit
@@ -103,7 +104,7 @@ object FS2KinesisProducer {
       channel <- Channel
         .bounded[
           F,
-          (Record, Deferred[F, F[Producer.Result[PutRecordsResponse]]])
+          (Record, DeferredSink[F, F[Producer.Result[PutRecordsResponse]]])
         ](config.queueSize)
         .toResource
       producer = new FS2KinesisProducer[F](logger, config, channel, underlying)

@@ -21,6 +21,7 @@ package localstack
 
 import _root_.fs2.concurrent.Channel
 import cats.effect._
+import cats.effect.kernel.DeferredSink
 import cats.effect.syntax.all._
 import cats.syntax.all._
 import com.amazonaws.kinesis.PutRecordsOutput
@@ -105,7 +106,7 @@ object LocalstackFS2KinesisProducer {
       channel <- Channel
         .bounded[
           F,
-          (Record, Deferred[F, F[Producer.Result[PutRecordsOutput]]])
+          (Record, DeferredSink[F, F[Producer.Result[PutRecordsOutput]]])
         ](config.queueSize)
         .toResource
       producer = new FS2KinesisProducer[F](

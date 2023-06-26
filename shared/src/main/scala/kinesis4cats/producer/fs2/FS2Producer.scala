@@ -23,6 +23,7 @@ import _root_.fs2.concurrent.Channel
 import cats.Applicative
 import cats.effect.Outcome._
 import cats.effect._
+import cats.effect.kernel.DeferredSink
 import cats.effect.syntax.all._
 import cats.syntax.all._
 import org.typelevel.log4cats.StructuredLogger
@@ -52,7 +53,7 @@ abstract class FS2Producer[F[_], PutReq, PutRes](implicit
   /** The underlying queue of records to process
     */
   protected def channel
-      : Channel[F, (Record, Deferred[F, F[Producer.Result[PutRes]]])]
+      : Channel[F, (Record, DeferredSink[F, F[Producer.Result[PutRes]]])]
 
   protected def underlying: Producer[F, PutReq, PutRes]
 
