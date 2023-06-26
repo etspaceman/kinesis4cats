@@ -63,8 +63,8 @@ abstract class FS2Producer[F[_], PutReq, PutRes](implicit
     * @param record
     *   [[kinesis4cats.producer.Record Record]]
     * @return
-    *   F of F of unit. Inner F represents a `deferred.get` call, which will
-    *   complete when the record has been published.
+    *   F of F of Producer.Result. Inner F represents a `deferred.get` call,
+    *   which will complete when the record has been published.
     */
   def put(record: Record): F[F[Producer.Result[PutRes]]] = {
     val ctx = LogContext()
@@ -84,6 +84,47 @@ abstract class FS2Producer[F[_], PutReq, PutRes](implicit
           )
       )
     } yield deferred.get.flatten
+  }
+
+  /** Attempts to put a record into the producer's buffer, to be batched and
+    * produced at a defined interval.
+    *
+    * @param record
+    *   [[kinesis4cats.producer.Record Record]]
+    * @return
+    *   F of Option of F of Producer.Result. Inner F represents a `deferred.get`
+    *   call, which will complete when the record has been published. F[None]
+    *   means the producer queue is full or has been shut down.
+    */
+  def tryPut(record: Record): F[Option[F[Producer.Result[PutRes]]]] = {
+    val ctx = LogContext()
+
+    for {
+      _ <- logger.debug(ctx.context)("Received record to put")
+      deferred <- Deferred[F, F[Producer.Result[PutRes]]]
+      sendRes <- channel.trySend(record -> deferred)
+      res <- sendRes.fold(
+        _ =>
+          logger
+            .warn(ctx.context)(
+              "Producer has been shut down and will not accept further requests"
+            )
+            .as(none[F[Producer.Result[PutRes]]]),
+        wasEnqueued =>
+          if (wasEnqueued)
+            logger
+              .debug(ctx.context)(
+                "Successfully put record into processing queue"
+              )
+              .as(deferred.get.flatten.some)
+          else
+            logger
+              .warn(ctx.context)(
+                "Producer queue is full"
+              )
+              .as(none[F[Producer.Result[PutRes]]])
+      )
+    } yield res
   }
 
   /** Stop the processing of records
