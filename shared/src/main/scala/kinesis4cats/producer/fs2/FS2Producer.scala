@@ -21,7 +21,9 @@ import scala.concurrent.duration._
 
 import _root_.fs2.concurrent.Channel
 import cats.Applicative
+import cats.effect.Outcome._
 import cats.effect._
+import cats.effect.kernel.DeferredSink
 import cats.effect.syntax.all._
 import cats.syntax.all._
 import org.typelevel.log4cats.StructuredLogger
@@ -50,11 +52,8 @@ abstract class FS2Producer[F[_], PutReq, PutRes](implicit
 
   /** The underlying queue of records to process
     */
-  protected def channel: Channel[F, Record]
-
-  /** A user defined function that can be run against the results of a request
-    */
-  protected def callback: Producer.Result[PutRes] => F[Unit]
+  protected def channel
+      : Channel[F, (Record, DeferredSink[F, F[Producer.Result[PutRes]]])]
 
   protected def underlying: Producer[F, PutReq, PutRes]
 
@@ -64,14 +63,16 @@ abstract class FS2Producer[F[_], PutReq, PutRes](implicit
     * @param record
     *   [[kinesis4cats.producer.Record Record]]
     * @return
-    *   F of Unit
+    *   F of F of unit. Inner F represents a `deferred.get` call, which will
+    *   complete when the record has been published.
     */
-  def put(record: Record): F[Unit] = {
+  def put(record: Record): F[F[Producer.Result[PutRes]]] = {
     val ctx = LogContext()
 
     for {
       _ <- logger.debug(ctx.context)("Received record to put")
-      res <- channel.send(record)
+      deferred <- Deferred[F, F[Producer.Result[PutRes]]]
+      res <- channel.send(record -> deferred)
       _ <- res.bitraverse(
         _ =>
           logger.warn(ctx.context)(
@@ -82,7 +83,7 @@ abstract class FS2Producer[F[_], PutReq, PutRes](implicit
             "Successfully put record into processing queue"
           )
       )
-    } yield ()
+    } yield deferred.get.flatten
   }
 
   /** Stop the processing of records
@@ -98,9 +99,7 @@ abstract class FS2Producer[F[_], PutReq, PutRes](implicit
 
   /** Start the processing of records
     */
-  private[kinesis4cats] def start(
-      deferredError: Deferred[F, Throwable]
-  ): F[Unit] = {
+  private[kinesis4cats] def start(): F[Unit] = {
     val ctx = LogContext()
 
     for {
@@ -111,33 +110,38 @@ abstract class FS2Producer[F[_], PutReq, PutRes](implicit
         .evalMap { x =>
           val c = ctx.addEncoded("batchSize", x.size)
           x.toNel
-            .fold(F.unit) { records =>
+            .traverse_ { x =>
+              val (records, deferreds) = x.unzip
               for {
                 _ <- logger.debug(c.context)(
                   "Received batch to process"
                 )
-                _ <- underlying
-                  .put(records)
-                  .flatMap(callback)
+                _ <- underlying.put(records).guaranteeCase {
+                  case Succeeded(x) =>
+                    deferreds.traverse_(_.complete(x))
+                  case Canceled() =>
+                    val failedF =
+                      F.canceled >> F.raiseError[Producer.Result[PutRes]](
+                        new RuntimeException("Put request was cancelled")
+                      )
+                    deferreds.traverse_(_.complete(failedF))
+                  case Errored(e) =>
+                    val failedF = F.raiseError[Producer.Result[PutRes]](e)
+                    deferreds.traverse_(d => d.complete(failedF))
+                }
                 _ <- logger.debug(c.context)(
                   "Finished processing batch"
                 )
               } yield ()
             }
-            .onError { case e: Throwable => deferredError.complete(e).void }
         }
         .compile
         .drain
     } yield ()
   }
 
-  private[kinesis4cats] def resource: Resource[F, Unit] = for {
-    deferredError <- Deferred[F, Throwable].toResource
-    _ <- Resource
-      .make(start(deferredError).start)(stop)
-      .void
-      .race(deferredError.get.flatMap(F.raiseError[Unit]).toResource)
-  } yield ()
+  private[kinesis4cats] def resource: Resource[F, Unit] =
+    Resource.make(start().start)(stop).void
 }
 
 object FS2Producer {

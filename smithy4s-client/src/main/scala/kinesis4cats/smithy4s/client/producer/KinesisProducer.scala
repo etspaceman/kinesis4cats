@@ -116,6 +116,9 @@ object KinesisProducer {
   )(implicit F: Async[F]) {
     def withConfig(config: Producer.Config[F]): Builder[F] =
       copy(config = config)
+    def transformConfig(f: Producer.Config[F] => Producer.Config[F]) = copy(
+      config = f(config)
+    )
     def withClient(client: Client[F]): Builder[F] = copy(client = client)
     def withRegion(region: AwsRegion): Builder[F] = copy(region = region)
     def withLogger(logger: StructuredLogger[F]): Builder[F] =

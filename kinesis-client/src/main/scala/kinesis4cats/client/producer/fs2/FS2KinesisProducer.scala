@@ -21,6 +21,7 @@ package fs2
 
 import _root_.fs2.concurrent.Channel
 import cats.effect._
+import cats.effect.kernel.DeferredSink
 import cats.effect.syntax.all._
 import org.typelevel.log4cats.StructuredLogger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
@@ -49,12 +50,11 @@ import kinesis4cats.producer.fs2.FS2Producer
 final class FS2KinesisProducer[F[_]] private[kinesis4cats] (
     override val logger: StructuredLogger[F],
     override val config: FS2Producer.Config[F],
-    override protected val channel: Channel[F, Record],
+    override protected val channel: Channel[
+      F,
+      (Record, DeferredSink[F, F[Producer.Result[PutRecordsResponse]]])
+    ],
     override protected val underlying: KinesisProducer[F]
-)(
-    override protected val callback: Producer.Result[PutRecordsResponse] => F[
-      Unit
-    ]
 )(implicit
     F: Async[F]
 ) extends FS2Producer[F, PutRecordsRequest, PutRecordsResponse]
@@ -64,11 +64,15 @@ object FS2KinesisProducer {
       config: FS2Producer.Config[F],
       clientResource: Resource[F, KinesisClient[F]],
       encoders: KinesisProducer.LogEncoders,
-      logger: StructuredLogger[F],
-      callback: Producer.Result[PutRecordsResponse] => F[Unit]
+      logger: StructuredLogger[F]
   )(implicit F: Async[F]) {
     def withConfig(config: FS2Producer.Config[F]): Builder[F] = copy(
       config = config
+    )
+    def transformConfig(
+        f: FS2Producer.Config[F] => FS2Producer.Config[F]
+    ): Builder[F] = copy(
+      config = f(config)
     )
     def withClient(
         client: => KinesisAsyncClient,
@@ -84,7 +88,10 @@ object FS2KinesisProducer {
       copy(encoders = encoders)
     def withLogger(logger: StructuredLogger[F]): Builder[F] =
       copy(logger = logger)
-
+    def withUnderlyingConfig(underlyingConfig: Producer.Config[F]): Builder[F] =
+      copy(config = config.copy(producerConfig = underlyingConfig))
+    def transformUnderlyingConfig(f: Producer.Config[F] => Producer.Config[F]) =
+      copy(config = config.copy(producerConfig = f(config.producerConfig)))
     def build: Resource[F, FS2KinesisProducer[F]] = for {
       client <- clientResource
       underlying <- KinesisProducer.Builder
@@ -94,10 +101,13 @@ object FS2KinesisProducer {
         .withLogger(logger)
         .withClient(client)
         .build
-      channel <- Channel.bounded[F, Record](config.queueSize).toResource
-      producer = new FS2KinesisProducer[F](logger, config, channel, underlying)(
-        callback
-      )
+      channel <- Channel
+        .bounded[
+          F,
+          (Record, DeferredSink[F, F[Producer.Result[PutRecordsResponse]]])
+        ](config.queueSize)
+        .toResource
+      producer = new FS2KinesisProducer[F](logger, config, channel, underlying)
       _ <- producer.resource
     } yield producer
   }
@@ -109,8 +119,7 @@ object FS2KinesisProducer {
       FS2Producer.Config.default(streamNameOrArn),
       KinesisClient.Builder.default.build,
       KinesisProducer.LogEncoders.show,
-      Slf4jLogger.getLogger,
-      (_: Producer.Result[PutRecordsResponse]) => F.unit
+      Slf4jLogger.getLogger
     )
 
     @annotation.unused
