@@ -72,17 +72,19 @@ abstract class FS2Producer[F[_], PutReq, PutRes](implicit
     for {
       _ <- logger.debug(ctx.context)("Received record to put")
       deferred <- Deferred[F, F[Producer.Result[PutRes]]]
-      res <- channel.send(record -> deferred)
-      _ <- res.bitraverse(
-        _ =>
-          logger.warn(ctx.context)(
-            "Producer has been shut down and will not accept further requests"
-          ),
-        _ =>
-          logger.debug(ctx.context)(
-            "Successfully put record into processing queue"
-          )
-      )
+      res <- channel.send(record -> deferred).race(channel.closed)
+      _ <- res
+        .bifoldMap(identity, _ => Channel.Closed.asLeft)
+        .bitraverse(
+          _ =>
+            logger.warn(ctx.context)(
+              "Producer has been shut down and will not accept further requests"
+            ),
+          _ =>
+            logger.debug(ctx.context)(
+              "Successfully put record into processing queue"
+            )
+        )
     } yield deferred.get.flatten
   }
 
@@ -153,31 +155,35 @@ abstract class FS2Producer[F[_], PutReq, PutRes](implicit
           x.toNel
             .traverse_ { x =>
               val (records, deferreds) = x.unzip
-              for {
-                _ <- logger.debug(c.context)(
-                  "Received batch to process"
-                )
-                _ <- underlying.put(records).guaranteeCase {
-                  case Succeeded(x) =>
-                    deferreds.traverse_(_.complete(x))
-                  case Canceled() =>
-                    val failedF =
-                      F.canceled >> F.raiseError[Producer.Result[PutRes]](
-                        new RuntimeException("Put request was cancelled")
-                      )
-                    deferreds.traverse_(_.complete(failedF))
-                  case Errored(e) =>
-                    val failedF = F.raiseError[Producer.Result[PutRes]](e)
-                    deferreds.traverse_(d => d.complete(failedF))
-                }
-                _ <- logger.debug(c.context)(
-                  "Finished processing batch"
-                )
-              } yield ()
+              val action =
+                for {
+                  _ <- logger.debug(c.context)("Received batch to process")
+                  result <- underlying.put(records)
+                  _ <- logger.debug(c.context)("Finished processing batch")
+                } yield result
+              def complete(f: F[Producer.Result[PutRes]]) =
+                deferreds.traverse_(_.complete(f))
+              action.attempt.guaranteeCase {
+                case Succeeded(x) =>
+                  x.flatMap {
+                    case Left(e)  => complete(F.raiseError(e))
+                    case Right(v) => complete(v.pure[F])
+                  }
+                case Canceled() =>
+                  complete(
+                    F.raiseError(
+                      new RuntimeException("Put request was cancelled")
+                    )
+                  )
+                case Errored(e) => complete(F.raiseError(e))
+              }
             }
         }
         .compile
         .drain
+        .onError { case e =>
+          logger.error(ctx.context, e)("FS2Producer loop failed")
+        }
     } yield ()
   }
 
