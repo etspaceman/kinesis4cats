@@ -171,7 +171,7 @@ abstract class FS2Producer[F[_], PutReq, PutRes](implicit
                   }
                 case Canceled() =>
                   complete(
-                    F.raiseError(
+                    F.cancelled >> F.raiseError(
                       new RuntimeException("Put request was cancelled")
                     )
                   )
