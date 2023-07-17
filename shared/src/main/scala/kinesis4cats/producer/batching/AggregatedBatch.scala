@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package kinesis4cats.producer
+package kinesis4cats
+package producer
 package batching
 
 import java.io.ByteArrayOutputStream
 
 import cats.data.NonEmptyList
-import cats.syntax.all._
 
 import kinesis4cats.Utils
 import kinesis4cats.models.ShardId
@@ -61,9 +61,9 @@ private[kinesis4cats] final case class AggregatedBatch private (
 
   // See https://github.com/awslabs/kinesis-aggregation/blob/2.0.3/java/KinesisAggregatorV2/src/main/java/com/amazonaws/kinesis/agg/AggRecord.java#L127
   def getSizeBytes: Int =
-    AggregatedBatch.magicBytes.length +
+    Aggregation.magicBytes.length +
       aggregatedMessageSize +
-      16 // MD5 digest length
+      Aggregation.digestSize
 
   // See https://github.com/awslabs/kinesis-aggregation/blob/2.0.3/java/KinesisAggregatorV2/src/main/java/com/amazonaws/kinesis/agg/AggRecord.java#L330
   def canAdd(record: Record.WithShard): Boolean =
@@ -113,9 +113,9 @@ private[kinesis4cats] final case class AggregatedBatch private (
 
     val baos: ByteArrayOutputStream = new ByteArrayOutputStream(getSizeBytes)
     baos.write(
-      AggregatedBatch.magicBytes,
+      Aggregation.magicBytes,
       0,
-      AggregatedBatch.magicBytes.length
+      Aggregation.magicBytes.length
     )
     baos.write(messageBody, 0, messageBody.length)
     baos.write(messageDigest, 0, messageDigest.length)
@@ -148,8 +148,4 @@ private[kinesis4cats] object AggregatedBatch {
       config
     )
   }
-
-  // From https://github.com/awslabs/amazon-kinesis-producer/blob/master/aggregation-format.md
-  val magicBytes: Array[Byte] =
-    Array(0xf3, 0x89, 0x9a, 0xc2).map(_.toByte)
 }

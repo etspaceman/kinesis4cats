@@ -66,7 +66,8 @@ lazy val `shared-circe` = projectMatrix
     description := "Common shared utilities for Circe",
     libraryDependencies ++= Seq(
       Circe.core.value,
-      Circe.parser.value
+      Circe.parser.value,
+      Circe.scodec.value
     )
   )
   .jvmPlatform(allScalaVersions)
