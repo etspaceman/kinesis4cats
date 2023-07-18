@@ -150,6 +150,38 @@ pull_request_rules:
       add:
       - docs
       remove: []
+- name: Label feral PRs
+  conditions:
+  - files~=^feral/
+  actions:
+    label:
+      add:
+      - feral
+      remove: []
+- name: Label feral3 PRs
+  conditions:
+  - files~=^.sbt/matrix/feral3/
+  actions:
+    label:
+      add:
+      - feral3
+      remove: []
+- name: Label feralJS PRs
+  conditions:
+  - files~=^.sbt/matrix/feralJS/
+  actions:
+    label:
+      add:
+      - feralJS
+      remove: []
+- name: Label feralJS3 PRs
+  conditions:
+  - files~=^.sbt/matrix/feralJS3/
+  actions:
+    label:
+      add:
+      - feralJS3
+      remove: []
 - name: Label integration-tests PRs
   conditions:
   - files~=^integration-tests/

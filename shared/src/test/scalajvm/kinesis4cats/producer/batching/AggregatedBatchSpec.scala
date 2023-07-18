@@ -33,7 +33,7 @@ import kinesis4cats.models.ShardId
 import kinesis4cats.syntax.bytebuffer._
 
 @SuppressWarnings(Array("scalafix:DisableSyntax.null"))
-class AggregatedBatchSpec extends munit.CatsEffectSuite {
+class AggregatedBatchSpec extends munit.FunSuite {
   val config = Batcher.Config.default
   test("It calculate the record sizes to be the same") {
     val data1 = Array.fill[Byte](500)(1)

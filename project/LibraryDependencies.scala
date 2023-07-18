@@ -80,11 +80,17 @@ object LibraryDependencies {
     val circeVersion = "0.14.5"
     val core = Def.setting("io.circe" %%% "circe-core" % circeVersion)
     val parser = Def.setting("io.circe" %%% "circe-parser" % circeVersion)
+    val scodec = Def.setting("io.circe" %%% "circe-scodec" % circeVersion)
   }
 
   object Ciris {
     val cirisVersion = "3.2.0"
     val core = Def.setting("is.cir" %%% "ciris" % cirisVersion)
+  }
+
+  object Feral {
+    val feralVersion = "0.2.2"
+    val lambda = Def.setting("org.typelevel" %%% "feral-lambda" % feralVersion)
   }
 
   object Http4s {
