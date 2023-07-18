@@ -88,6 +88,11 @@ object LibraryDependencies {
     val core = Def.setting("is.cir" %%% "ciris" % cirisVersion)
   }
 
+  object Feral {
+    val feralVersion = "0.2.2"
+    val lambda = Def.setting("org.typelevel" %%% "feral-lambda" % feralVersion)
+  }
+
   object Http4s {
     val http4sVersion = "0.23.22"
     val emberServer =

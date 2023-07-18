@@ -363,6 +363,19 @@ lazy val integrationTestsJvmSettings: Seq[Setting[_]] = Seq(
   tlJdkRelease := Some(11)
 )
 
+lazy val feral = projectMatrix
+  .settings(
+    description := "Interfaces for constructing AWS Lambda functions via Feral",
+    libraryDependencies ++= Seq(
+      Circe.core.value,
+      Circe.scodec.value,
+      Feral.lambda.value
+    )
+  )
+  .jvmPlatform(last2ScalaVersions)
+  .jsPlatform(last2ScalaVersions)
+  .dependsOn(`shared-circe`)
+
 lazy val integrationTestsJvmDependencies = List(
   `kcl-http4s`,
   `kcl-localstack`
@@ -496,7 +509,8 @@ lazy val docs = projectMatrix
     `kinesis-client-localstack`,
     `smithy4s-client`,
     `smithy4s-client-logging-circe`,
-    `smithy4s-client-localstack`
+    `smithy4s-client-localstack`,
+    feral
   )
 
 lazy val unidocs = projectMatrix
@@ -527,7 +541,8 @@ lazy val unidocs = projectMatrix
         `kinesis-client-localstack`,
         `smithy4s-client`,
         `smithy4s-client-logging-circe`,
-        `smithy4s-client-localstack`
+        `smithy4s-client-localstack`,
+        feral
       ).map(_.jvm(Scala213).project): _*
     )
   )
@@ -556,6 +571,7 @@ lazy val allProjects = Seq(
   `smithy4s-client`,
   `smithy4s-client-logging-circe`,
   `smithy4s-client-localstack`,
+  feral,
   `integration-tests`,
   unidocs
 )
