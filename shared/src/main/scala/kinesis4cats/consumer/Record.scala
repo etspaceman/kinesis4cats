@@ -22,6 +22,7 @@ import scala.util.Try
 
 import java.time.Instant
 
+import cats.data.Chain
 import cats.syntax.all._
 import scodec.bits.ByteVector
 
@@ -37,48 +38,50 @@ final case class Record(
     subSequenceNumber: Option[Long],
     explicitHashKey: Option[String]
 ) {
-  val aggregated: Boolean =
+  val isAggregated: Boolean =
     if (data.length >= Aggregation.aggregatedByteSize) {
-      data.take(
-        Aggregation.magicBytes.length.toLong
-      ) == Aggregation.magicByteVector
+      data.startsWith(Aggregation.magicByteVector)
     } else false
+
+  private val dataSize = data.length.toInt - Aggregation.aggregatedByteSize
+
+  private val dataArray = {
+    val arr = new Array[Byte](dataSize)
+    data.copyToArray(arr, 0, Aggregation.magicBytes.length.toLong, dataSize)
+    arr
+  }
 }
 
 object Record {
   def deaggregate(records: List[Record]): Try[List[Record]] =
     records.flatTraverse {
-      case record if !record.aggregated => Success(List(record))
+      case record if !record.isAggregated => Success(List(record))
       case record =>
-        Try(
-          messages.AggregatedRecord.parseFrom(
-            record.data
-              .drop(Aggregation.magicBytes.length.toLong)
-              .dropRight(Aggregation.digestSize.toLong)
-              .toArray
-          )
-        ).flatMap { ar =>
-          val pks = ar.partitionKeyTable.toList
-          val ehks = ar.explicitHashKeyTable.toList
+        Try(messages.AggregatedRecord.parseFrom(record.dataArray)).flatMap {
+          ar =>
+            val pks = ar.partitionKeyTable.toList
+            val ehks = ar.explicitHashKeyTable.toList
 
-          ar.records.toList.zipWithIndex.traverse { case (r, i) =>
-            Try {
-              val partitionKey = pks(r.partitionKeyIndex.toInt)
-              val explicitHashKey =
-                r.explicitHashKeyIndex.map(x => ehks(x.toInt))
+            Chain
+              .traverseViaChain(ar.records.toIndexedSeq.zipWithIndex) {
+                case (r, i) =>
+                  Try {
+                    val partitionKey = pks(r.partitionKeyIndex.toInt)
+                    val explicitHashKey =
+                      r.explicitHashKeyIndex.map(x => ehks(x.toInt))
 
-              Record(
-                record.sequenceNumber,
-                record.approximateArrivalTimestamp,
-                ByteVector(r.data.toByteArray()),
-                partitionKey,
-                record.encryptionType,
-                Some(i.toLong),
-                explicitHashKey
-              )
-            }
-
-          }
+                    Record(
+                      record.sequenceNumber,
+                      record.approximateArrivalTimestamp,
+                      ByteVector(r.data.toByteArray()),
+                      partitionKey,
+                      record.encryptionType,
+                      Some(i.toLong),
+                      explicitHashKey
+                    )
+                  }
+              }
+              .map(_.toList)
         }
     }
 }
