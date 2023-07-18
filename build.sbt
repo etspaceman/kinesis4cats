@@ -473,7 +473,8 @@ lazy val docs = projectMatrix
       ),
       "circe" -> url("https://circe.github.io/circe/"),
       "ciris" -> url("https://cir.is/"),
-      "localstack" -> url("https://localstack.cloud/")
+      "localstack" -> url("https://localstack.cloud/"),
+      "feral" -> url("https://github.com/typelevel/feral")
     ),
     laikaConfig := LaikaConfig.defaults.withConfigValue(
       LinkConfig(sourceLinks =
