@@ -5,7 +5,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="Laika 0.18.1 + Helium Theme" />
-    <title>Circe Logging</title>
+    <title>Feral</title>
     
       <meta name="author" content="Eric Meisel"/>
     
@@ -81,17 +81,17 @@
       <ul class="nav-list">
         <li class="level1"><a href="../index.html">Overview</a></li>
         <li class="level1 nav-header">Kinesis Client Library (KCL)</li>
-        <li class="level2"><a href="getting-started.html">Getting Started</a></li>
-        <li class="level2"><a href="http4s.html">Http4s</a></li>
-        <li class="level2"><a href="ciris.html">Ciris</a></li>
-        <li class="level2 active"><a href="#">Circe Logging</a></li>
-        <li class="level2"><a href="localstack.html">Localstack</a></li>
+        <li class="level2"><a href="../kcl/getting-started.html">Getting Started</a></li>
+        <li class="level2"><a href="../kcl/http4s.html">Http4s</a></li>
+        <li class="level2"><a href="../kcl/ciris.html">Ciris</a></li>
+        <li class="level2"><a href="../kcl/circe.html">Circe Logging</a></li>
+        <li class="level2"><a href="../kcl/localstack.html">Localstack</a></li>
         <li class="level1 nav-header">Smithy4s</li>
         <li class="level2"><a href="../smithy4s/getting-started.html">Getting Started</a></li>
         <li class="level2"><a href="../smithy4s/circe.html">Circe Logging</a></li>
         <li class="level2"><a href="../smithy4s/localstack.html">Localstack</a></li>
         <li class="level1 nav-header">Feral</li>
-        <li class="level2"><a href="../feral/getting-started.html">Feral</a></li>
+        <li class="level2 active"><a href="#">Feral</a></li>
         <li class="level1 nav-header">Kinesis Producer Library (KPL)</li>
         <li class="level2"><a href="../kpl/getting-started.html">Getting Started</a></li>
         <li class="level2"><a href="../kpl/ciris.html">Ciris</a></li>
@@ -141,7 +141,7 @@
     <div id="container">
 
       <nav id="page-nav">
-        <p class="header"><a href="#">Circe Logging</a></p>
+        <p class="header"><a href="#">Feral</a></p>
 
         <ul class="nav-list">
           <li class="level1"><a href="#installation">Installation</a></li>
@@ -153,35 +153,26 @@
 
       <main class="content">
 
-        <h1 id="circe-logging" class="title">Circe Logging</h1>
-        <p>Circe instances for the KCL LogEncoders. Offers a richer experience with log ingestors that can work with JSON data easily.</p>
+        <h1 id="feral" class="title">Feral</h1>
+        <p>AWS offers the ability to consume Kinesis events via an <a href="https://docs.aws.amazon.com/lambda/latest/dg/with-kinesis.html">AWS Lambda</a>.</p>
+        <p>kinesis4cats offers an <a href="https://github.com/etspaceman/kinesis4cats/blob/main/feral/src/main/scala/kinesis4cats/consumer/feral/KinesisStreamRecordPayload.scala">KinesisStreamRecordPayload</a> that maps to the event structure received in the lambda. This can be used in a <a href="https://github.com/typelevel/feral">Feral</a> instance.</p>
+        <p>Feral does offer a similar event, in which you can see an example usage <a href="https://github.com/typelevel/feral/blob/main/examples/src/main/scala/feral/examples/KinesisLambda.scala">here</a>. However, one common problem that users have with Kinesis Lambda functions is that they do not perform <a href="https://github.com/awslabs/kinesis-aggregation#deaggregation">record deaggregation</a>. kinesis4cats offers a <code>deaggregate</code> function in its <code>KinesisStreamEvent</code> class, which users can leverage to resolve this problem.</p>
         
         <h2 id="installation" class="section">Installation<a class="anchor-link right" href="#installation"><i class="icofont-laika">&#xef71;</i></a></h2>
-        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">libraryDependencies</span><span> += </span><span class="string-literal">&quot;io.github.etspaceman&quot;</span><span> %% </span><span class="string-literal">&quot;kinesis4cats-kcl-logging-circe&quot;</span><span> % </span><span class="string-literal">&quot;0.0.23&quot;</span></code></pre>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">libraryDependencies</span><span> += </span><span class="string-literal">&quot;io.github.etspaceman&quot;</span><span> %% </span><span class="string-literal">&quot;kinesis4cats-feral&quot;</span><span> % </span><span class="string-literal">&quot;0.0.23&quot;</span></code></pre>
         
         <h2 id="usage" class="section">Usage<a class="anchor-link right" href="#usage"><i class="icofont-laika">&#xef71;</i></a></h2>
-        <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">effect</span><span>.</span><span class="identifier">_</span><span>
-</span><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">syntax</span><span>.</span><span class="identifier">all</span><span>.</span><span class="identifier">_</span><span>
-</span><span class="keyword">import</span><span> </span><span class="identifier">software</span><span>.</span><span class="identifier">amazon</span><span>.</span><span class="identifier">kinesis</span><span>.</span><span class="identifier">processor</span><span>.</span><span class="type-name">SingleStreamTracker</span><span>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">effect</span><span>.</span><span class="identifier">_</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">feral</span><span>.</span><span class="identifier">lambda</span><span>.</span><span class="identifier">_</span><span>
 
-</span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">kcl</span><span>.</span><span class="identifier">_</span><span>
-</span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">kcl</span><span>.</span><span class="identifier">logging</span><span>.</span><span class="identifier">instances</span><span>.</span><span class="identifier">circe</span><span>.</span><span class="identifier">_</span><span>
-</span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">syntax</span><span>.</span><span class="identifier">bytebuffer</span><span>.</span><span class="identifier">_</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">consumer</span><span>.</span><span class="identifier">feral</span><span>.</span><span class="type-name">KinesisStreamEvent</span><span>
 
-</span><span class="keyword">object</span><span> </span><span class="type-name">MyApp</span><span> </span><span class="keyword">extends</span><span> </span><span class="type-name">ResourceApp</span><span>.</span><span class="type-name">Forever</span><span> {
-    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">run</span><span>(</span><span class="identifier">args</span><span>: </span><span class="type-name">List</span><span>[</span><span class="type-name">String</span><span>]) = </span><span class="keyword">for</span><span> {
-        </span><span class="identifier">consumer</span><span> &lt;- </span><span class="type-name">KCLConsumer</span><span>.</span><span class="type-name">Builder</span><span>.</span><span class="keyword">default</span><span>[</span><span class="type-name">IO</span><span>](
-                </span><span class="keyword">new</span><span> </span><span class="type-name">SingleStreamTracker</span><span>(</span><span class="string-literal">&quot;my-stream&quot;</span><span>),
-                </span><span class="string-literal">&quot;my-app-name&quot;</span><span>,
-            )
-            .</span><span class="identifier">withCallback</span><span>(
-                (</span><span class="identifier">records</span><span>: </span><span class="type-name">List</span><span>[</span><span class="type-name">CommittableRecord</span><span>[</span><span class="type-name">IO</span><span>]]) =&gt;
-                    </span><span class="identifier">records</span><span>.</span><span class="identifier">traverse_</span><span>(</span><span class="identifier">r</span><span> =&gt; </span><span class="type-name">IO</span><span>.</span><span class="identifier">println</span><span>(</span><span class="identifier">r</span><span>.</span><span class="identifier">data</span><span>.</span><span class="identifier">asString</span><span>))
-            )
-            .</span><span class="identifier">configure</span><span>(</span><span class="identifier">_</span><span>.</span><span class="identifier">withLogEncoders</span><span>(</span><span class="identifier">kclCirceEncoders</span><span>))
-            .</span><span class="identifier">build</span><span>
-        </span><span class="identifier">_</span><span> &lt;- </span><span class="identifier">consumer</span><span>.</span><span class="identifier">run</span><span>()
-    } </span><span class="keyword">yield</span><span> ()
+</span><span class="keyword">object</span><span> </span><span class="identifier">kinesisHandler</span><span> </span><span class="keyword">extends</span><span> </span><span class="type-name">IOLambda</span><span>.</span><span class="type-name">Simple</span><span>[</span><span class="type-name">KinesisStreamEvent</span><span>, </span><span class="type-name">INothing</span><span>] {
+  </span><span class="keyword">type</span><span> </span><span class="type-name">Init</span><span>
+  </span><span class="keyword">def</span><span> </span><span class="declaration-name">apply</span><span>(</span><span class="identifier">event</span><span>: </span><span class="type-name">KinesisStreamEvent</span><span>, </span><span class="identifier">context</span><span>: </span><span class="type-name">Context</span><span>[</span><span class="type-name">IO</span><span>], </span><span class="identifier">init</span><span>: </span><span class="type-name">Init</span><span>) = </span><span class="keyword">for</span><span> {
+    </span><span class="identifier">records</span><span> &lt;- </span><span class="type-name">IO</span><span>.</span><span class="identifier">fromTry</span><span>(</span><span class="identifier">event</span><span>.</span><span class="identifier">deaggregate</span><span>)
+    </span><span class="identifier">_</span><span> &lt;- </span><span class="type-name">IO</span><span>.</span><span class="identifier">println</span><span>(</span><span class="string-literal">s&quot;Received event with </span><span class="substitution">${records.size}</span><span class="string-literal"> records&quot;</span><span>).</span><span class="identifier">as</span><span>(</span><span class="type-name">None</span><span>)
+  } </span><span class="keyword">yield</span><span> </span><span class="type-name">None</span><span>
 }</span></code></pre>
 
         <hr style="margin-top: 30px"/>
