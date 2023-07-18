@@ -5,7 +5,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="Laika 0.18.1 + Helium Theme" />
-    <title>AWS V1</title>
+    <title>Feral</title>
     
       <meta name="author" content="Eric Meisel"/>
     
@@ -81,7 +81,7 @@
       <ul class="nav-list">
         <li class="level1"><a href="../index.html">Overview</a></li>
         <li class="level1 nav-header">Feral</li>
-        <li class="level2"><a href="../lambda/getting-started.html">Feral</a></li>
+        <li class="level2 active"><a href="#">Feral</a></li>
         <li class="level1 nav-header">Kinesis Client Library (KCL)</li>
         <li class="level2"><a href="../kcl/getting-started.html">Getting Started</a></li>
         <li class="level2"><a href="../kcl/http4s.html">Http4s</a></li>
@@ -102,9 +102,9 @@
         <li class="level2"><a href="../client/circe.html">Circe Logging</a></li>
         <li class="level2"><a href="../client/localstack.html">Localstack</a></li>
         <li class="level1 nav-header">Localstack</li>
-        <li class="level2"><a href="getting-started.html">Localstack</a></li>
-        <li class="level2 active"><a href="#">AWS V1</a></li>
-        <li class="level2"><a href="aws-v2.html">AWS V2</a></li>
+        <li class="level2"><a href="../localstack/getting-started.html">Localstack</a></li>
+        <li class="level2"><a href="../localstack/aws-v1.html">AWS V1</a></li>
+        <li class="level2"><a href="../localstack/aws-v2.html">AWS V2</a></li>
       </ul>
 
       <ul class="nav-list">
@@ -141,7 +141,7 @@
     <div id="container">
 
       <nav id="page-nav">
-        <p class="header"><a href="#">AWS V1</a></p>
+        <p class="header"><a href="#">Feral</a></p>
 
         <ul class="nav-list">
           <li class="level1"><a href="#installation">Installation</a></li>
@@ -153,32 +153,27 @@
 
       <main class="content">
 
-        <h1 id="aws-v1" class="title">AWS V1</h1>
-        <p>This module allows users to configure common clients for the <a href="https://docs.aws.amazon.com/sdk-for-java/v1/developer-guide/welcome.html">V1 AWS SDK</a> that are compliant with <a href="https://localstack.cloud/">Localstack</a>.</p>
+        <h1 id="feral" class="title">Feral</h1>
+        <p>AWS offers the ability to consume Kinesis events via an <a href="https://docs.aws.amazon.com/lambda/latest/dg/with-kinesis.html">AWS Lambda</a>.</p>
+        <p>kinesis4cats offers an <a href="https://github.com/etspaceman/kinesis4cats/blob/main/shared/src/main/scala/kinesis4cats/consumer/lambda/KinesisStreamRecordPayload.scala">KinesisStreamRecordPayload</a> that maps to the event structure received in the lambda. This can be used in a <a href="https://github.com/typelevel/feral">Feral</a> instance.</p>
+        <p>Feral does offer a similar event, in which you can see an example usage <a href="https://github.com/typelevel/feral/blob/main/examples/src/main/scala/feral/examples/KinesisLambda.scala">here</a>. However, one common problem that users have with Kinesis Lambda functions is that they do not perform <a href="https://github.com/awslabs/kinesis-aggregation#deaggregation">record deaggregation</a>. kinesis4cats offers a <code>deaggregate</code> function in its <code>KinesisStreamEvent</code> class, which users can leverage to resolve this problem.</p>
         
         <h2 id="installation" class="section">Installation<a class="anchor-link right" href="#installation"><i class="icofont-laika">&#xef71;</i></a></h2>
-        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">libraryDependencies</span><span> += </span><span class="string-literal">&quot;io.github.etspaceman&quot;</span><span> %% </span><span class="string-literal">&quot;kinesis4cats-aws-v1-localstack&quot;</span><span> % </span><span class="string-literal">&quot;0.0.22&quot;</span></code></pre>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">libraryDependencies</span><span> += </span><span class="string-literal">&quot;io.github.etspaceman&quot;</span><span> %% </span><span class="string-literal">&quot;kinesis4cats-feral&quot;</span><span> % </span><span class="string-literal">&quot;0.0.22&quot;</span></code></pre>
         
         <h2 id="usage" class="section">Usage<a class="anchor-link right" href="#usage"><i class="icofont-laika">&#xef71;</i></a></h2>
-        <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">effect</span><span>.</span><span class="type-name">IO</span><span>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">effect</span><span>.</span><span class="identifier">_</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">feral</span><span>.</span><span class="identifier">lambda</span><span>.</span><span class="identifier">_</span><span>
 
-</span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">localstack</span><span>.</span><span class="identifier">aws</span><span>.</span><span class="identifier">v1</span><span>.</span><span class="type-name">AwsClients</span><span>
-</span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">localstack</span><span>.</span><span class="type-name">TestStreamConfig</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">consumer</span><span>.</span><span class="identifier">feral</span><span>.</span><span class="type-name">KinesisStreamEvent</span><span>
 
-</span><span class="comment">// Load an AmazonKinesisAsync as an effect
-</span><span class="type-name">AwsClients</span><span>.</span><span class="identifier">kinesisClient</span><span>[</span><span class="type-name">IO</span><span>]()
-
-</span><span class="comment">// Load an AmazonKinesisAsync as a resource
-</span><span class="type-name">AwsClients</span><span>.</span><span class="identifier">kinesisClientResource</span><span>[</span><span class="type-name">IO</span><span>]()
-
-</span><span class="comment">// Load a AmazonKinesisAsync as a resource.
-// Also creates and deletes streams during it&#39;s usage. Useful for tests.
-</span><span class="type-name">AwsClients</span><span>.</span><span class="identifier">kinesisStreamResource</span><span>[</span><span class="type-name">IO</span><span>](
-  </span><span class="type-name">List</span><span>(
-    </span><span class="type-name">TestStreamConfig</span><span>.</span><span class="keyword">default</span><span>[</span><span class="type-name">IO</span><span>](</span><span class="string-literal">&quot;my-stream&quot;</span><span>, </span><span class="number-literal">1</span><span>),
-    </span><span class="type-name">TestStreamConfig</span><span>.</span><span class="keyword">default</span><span>[</span><span class="type-name">IO</span><span>](</span><span class="string-literal">&quot;my-stream-2&quot;</span><span>, </span><span class="number-literal">1</span><span>)
-  )
-)</span></code></pre>
+</span><span class="keyword">object</span><span> </span><span class="identifier">kinesisHandler</span><span> </span><span class="keyword">extends</span><span> </span><span class="type-name">IOLambda</span><span>.</span><span class="type-name">Simple</span><span>[</span><span class="type-name">KinesisStreamEvent</span><span>, </span><span class="type-name">INothing</span><span>] {
+  </span><span class="keyword">type</span><span> </span><span class="type-name">Init</span><span>
+  </span><span class="keyword">def</span><span> </span><span class="declaration-name">apply</span><span>(</span><span class="identifier">event</span><span>: </span><span class="type-name">KinesisStreamEvent</span><span>, </span><span class="identifier">context</span><span>: </span><span class="type-name">Context</span><span>[</span><span class="type-name">IO</span><span>], </span><span class="identifier">init</span><span>: </span><span class="type-name">Init</span><span>) = </span><span class="keyword">for</span><span> {
+    </span><span class="identifier">records</span><span> &lt;- </span><span class="type-name">IO</span><span>.</span><span class="identifier">fromTry</span><span>(</span><span class="identifier">event</span><span>.</span><span class="identifier">deaggregate</span><span>)
+    </span><span class="identifier">_</span><span> &lt;- </span><span class="type-name">IO</span><span>.</span><span class="identifier">println</span><span>(</span><span class="string-literal">s&quot;Received event with </span><span class="substitution">${records.size}</span><span class="string-literal"> records&quot;</span><span>).</span><span class="identifier">as</span><span>(</span><span class="type-name">None</span><span>)
+  } </span><span class="keyword">yield</span><span> </span><span class="type-name">None</span><span>
+}</span></code></pre>
 
         <hr style="margin-top: 30px"/>
         <footer style="font-size: 90%; text-align: center">
