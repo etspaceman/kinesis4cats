@@ -13,7 +13,7 @@ libraryDependencies += "io.github.etspaceman" %% "kinesis4cats-aws-v2-localstack
 ```scala mdoc:compile-only
 import cats.effect.IO
 
-import kinesis4cats.localstack.aws.v1.AwsClients
+import kinesis4cats.localstack.aws.v2.AwsClients
 import kinesis4cats.localstack.TestStreamConfig
 
 // Load a KinesisAsyncClient as an effect
