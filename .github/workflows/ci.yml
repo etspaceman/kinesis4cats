@@ -80,6 +80,8 @@ jobs:
 
       - name: Docker Compose Up
         if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-latest'
+        env:
+          GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         uses: nick-fields/retry@v2
         with:
           timeout_minutes: 15
@@ -94,6 +96,8 @@ jobs:
 
       - name: Link Native
         if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-latest' && startsWith(matrix.project, 'root-native')
+        env:
+          GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         uses: nick-fields/retry@v2
         with:
           timeout_minutes: 25

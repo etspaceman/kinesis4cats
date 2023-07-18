@@ -119,7 +119,8 @@ object Kinesis4CatsPlugin extends AutoPlugin {
             "command" -> "sbt 'project ${{ matrix.project }}' dockerComposeUp",
             "retry_on" -> "error",
             "on_retry_command" -> "sbt 'project ${{ matrix.project }}' dockerComposeDown"
-          )
+          ),
+          env = Map("GITHUB_API_TOKEN" -> "${{ secrets.GITHUB_TOKEN }}")
         ),
         WorkflowStep.Sbt(
           List("Test/fastLinkJS"),
@@ -135,7 +136,8 @@ object Kinesis4CatsPlugin extends AutoPlugin {
             "max_attempts" -> "3",
             "command" -> "sbt 'project ${{ matrix.project }}' Test/nativeLink",
             "retry_on" -> "error"
-          )
+          ),
+          env = Map("GITHUB_API_TOKEN" -> "${{ secrets.GITHUB_TOKEN }}")
         ),
         WorkflowStep.Sbt(
           List(
