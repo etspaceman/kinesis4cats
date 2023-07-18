@@ -155,7 +155,7 @@
 
         <h1 id="feral" class="title">Feral</h1>
         <p>AWS offers the ability to consume Kinesis events via an <a href="https://docs.aws.amazon.com/lambda/latest/dg/with-kinesis.html">AWS Lambda</a>.</p>
-        <p>kinesis4cats offers an <a href="https://github.com/etspaceman/kinesis4cats/blob/main/shared/src/main/scala/kinesis4cats/consumer/feral/KinesisStreamRecordPayload.scala">KinesisStreamRecordPayload</a> that maps to the event structure received in the lambda. This can be used in a <a href="https://github.com/typelevel/feral">Feral</a> instance.</p>
+        <p>kinesis4cats offers an <a href="https://github.com/etspaceman/kinesis4cats/blob/main/feral/src/main/scala/kinesis4cats/consumer/feral/KinesisStreamRecordPayload.scala">KinesisStreamRecordPayload</a> that maps to the event structure received in the lambda. This can be used in a <a href="https://github.com/typelevel/feral">Feral</a> instance.</p>
         <p>Feral does offer a similar event, in which you can see an example usage <a href="https://github.com/typelevel/feral/blob/main/examples/src/main/scala/feral/examples/KinesisLambda.scala">here</a>. However, one common problem that users have with Kinesis Lambda functions is that they do not perform <a href="https://github.com/awslabs/kinesis-aggregation#deaggregation">record deaggregation</a>. kinesis4cats offers a <code>deaggregate</code> function in its <code>KinesisStreamEvent</code> class, which users can leverage to resolve this problem.</p>
         
         <h2 id="installation" class="section">Installation<a class="anchor-link right" href="#installation"><i class="icofont-laika">&#xef71;</i></a></h2>
