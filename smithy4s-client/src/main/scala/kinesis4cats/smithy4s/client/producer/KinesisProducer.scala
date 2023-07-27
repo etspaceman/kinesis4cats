@@ -93,8 +93,8 @@ final class KinesisProducer[F[_]] private[kinesis4cats] (
             if respEntry.errorCode.nonEmpty && respEntry.errorMessage.nonEmpty =>
           Producer.FailedRecord(
             record,
-            respEntry.errorCode.get.value,
-            respEntry.errorMessage.get.value,
+            respEntry.errorCode.get,
+            respEntry.errorMessage.get,
             index
           )
       }
