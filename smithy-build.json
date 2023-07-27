@@ -2,7 +2,7 @@
 	"imports": ["./kcl-http4s/src/main/smithy"],
     "mavenDependencies": [
         "software.amazon.smithy:smithy-rules-engine:1.27.2",
-        "com.disneystreaming.smithy4s:smithy4s-protocol:0.17.3",
+        "com.disneystreaming.smithy4s:smithy4s-protocol:0.17.12",
         "com.disneystreaming.smithy:aws-kinesis-spec:2023.02.10",
         "com.disneystreaming.alloy:alloy-core:0.1.11"
     ]

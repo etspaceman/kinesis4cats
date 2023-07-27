@@ -87,13 +87,13 @@ abstract class KinesisClientSpec extends munit.CatsEffectSuite {
         )
       _ <- client
         .increaseStreamRetentionPeriod(
-          RetentionPeriodHours(48),
+          48,
           Some(StreamName(streamName))
         )
       _ <- IO.sleep(1.second)
       _ <- client
         .decreaseStreamRetentionPeriod(
-          RetentionPeriodHours(24),
+          24,
           Some(StreamName(streamName))
         )
       _ <- IO.sleep(1.second)
