@@ -11,24 +11,6 @@ object DockerComposePlugin extends AutoPlugin {
   import DockerImagePlugin.autoImport._
   import autoImport._
 
-  val createNetworkTask: Def.Initialize[Task[Unit]] = Def.task {
-    val log = sbt.Keys.streams.value.log
-    val cmd = s"docker network create ${networkName.value}"
-    log.info(s"Running $cmd")
-    val res = cmd.!
-    if (res != 0)
-      log.warn(s"docker network create returned $res. Ignoring and proceeding.")
-  }
-
-  val removeNetworkTask: Def.Initialize[Task[Unit]] = Def.task {
-    val log = sbt.Keys.streams.value.log
-    val cmd = s"docker network rm ${networkName.value}"
-    log.info(s"Running $cmd")
-    val res = cmd.!
-    if (res != 0)
-      log.warn(s"docker network create returned $res. Ignoring and proceeding.")
-  }
-
   val composeFile: Def.Initialize[Task[String]] =
     Def.task(s"${composeFileLocation.value}${composeFileName.value}")
 
@@ -42,13 +24,11 @@ object DockerComposePlugin extends AutoPlugin {
         cmd,
         None,
         "DOCKER_TAG_VERSION" -> (ThisBuild / version).value,
-        "DOCKER_NET_NAME" -> networkName.value,
         "COMPOSE_PROJECT_NAME" -> composeProjectName.value
       ).!
       if (res != 0)
         throw new IllegalStateException(s"docker-compose up returned $res")
     }
-    .dependsOn(createNetworkTask)
 
   val dockerComposeUpTask: Def.Initialize[Task[Unit]] = Def.taskDyn {
     if (buildImage.value) {
@@ -66,7 +46,6 @@ object DockerComposePlugin extends AutoPlugin {
       cmd,
       None,
       "DOCKER_TAG_VERSION" -> (ThisBuild / version).value,
-      "DOCKER_NET_NAME" -> networkName.value,
       "COMPOSE_PROJECT_NAME" -> composeProjectName.value
     ).!
     if (res != 0)
@@ -81,7 +60,6 @@ object DockerComposePlugin extends AutoPlugin {
       cmd,
       None,
       "DOCKER_TAG_VERSION" -> (ThisBuild / version).value,
-      "DOCKER_NET_NAME" -> networkName.value,
       "COMPOSE_PROJECT_NAME" -> composeProjectName.value
     ).!
     if (res != 0)
@@ -91,8 +69,7 @@ object DockerComposePlugin extends AutoPlugin {
   val dockerComposeDownTask: Def.Initialize[Task[Unit]] =
     Def.sequential(
       dockerComposeKillTask,
-      dockerComposeDownBaseTask,
-      removeNetworkTask
+      dockerComposeDownBaseTask
     )
 
   val dockerComposeRestartTask: Def.Initialize[Task[Unit]] =
@@ -107,7 +84,6 @@ object DockerComposePlugin extends AutoPlugin {
       cmd,
       None,
       "DOCKER_TAG_VERSION" -> (ThisBuild / version).value,
-      "DOCKER_NET_NAME" -> networkName.value,
       "COMPOSE_PROJECT_NAME" -> composeProjectName.value
     ).!
     if (res != 0)
@@ -123,7 +99,6 @@ object DockerComposePlugin extends AutoPlugin {
       cmd,
       None,
       "DOCKER_TAG_VERSION" -> (ThisBuild / version).value,
-      "DOCKER_NET_NAME" -> networkName.value,
       "COMPOSE_PROJECT_NAME" -> composeProjectName.value
     ).!
     if (res != 0)
@@ -135,8 +110,6 @@ object DockerComposePlugin extends AutoPlugin {
       projects: List[Project]
   ): Seq[Setting[_]] =
     Seq(
-      createNetwork := createNetworkTask.value,
-      removeNetwork := removeNetworkTask.value,
       dockerComposeUp := dockerComposeUpTask.value,
       dockerComposeDown := dockerComposeDownTask.value,
       dockerComposeRestart := dockerComposeRestartTask.value,
@@ -144,8 +117,6 @@ object DockerComposePlugin extends AutoPlugin {
       dockerComposePs := dockerComposePsTask.value,
       composeFileLocation := "docker/",
       composeFileName := s"docker-compose.yml",
-      networkName := sys.env
-        .getOrElse("DOCKER_NET_NAME", "kinesis4cats_network"),
       composeProjectName := sys.env
         .getOrElse("COMPOSE_PROJECT_NAME", "kinesis4cats"),
       buildImage := build,
@@ -158,15 +129,12 @@ object DockerComposePluginKeys {
     settingKey[String]("Path to docker-compose files, e.g. docker/")
   val composeFileName =
     settingKey[String]("File name of the compose file, e.g. docker-compose.yml")
-  val networkName = settingKey[String]("Name of network to create")
   val composeProjectName =
     settingKey[String]("Name of project for docker-compose.")
   val buildImage = settingKey[Boolean](
     "Determines if dockerComposeUp should also build a docker image via the DockerImagePlugin"
   )
   val projectsToBuild = settingKey[Seq[Project]]("Projects to build images for")
-  val createNetwork = taskKey[Unit]("Creates a docker network")
-  val removeNetwork = taskKey[Unit]("Removes a docker network")
   val dockerComposeTestQuick =
     taskKey[Unit]("Brings up docker, runs 'test', brings down docker")
   val dockerComposeUp =
