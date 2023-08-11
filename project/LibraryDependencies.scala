@@ -2,7 +2,7 @@ import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport._
 import sbt._
 
 object LibraryDependencies {
-  val Logback = "ch.qos.logback" % "logback-classic" % "1.4.8"
+  val Logback = "ch.qos.logback" % "logback-classic" % "1.4.11"
   val JavaXMLBind = "javax.xml.bind" % "jaxb-api" % "2.3.1"
   val Scalacheck = Def.setting("org.scalacheck" %%% "scalacheck" % "1.17.0")
   val Epollcat = Def.setting("com.armanbilge" %%% "epollcat" % "0.1.5")
@@ -65,7 +65,7 @@ object LibraryDependencies {
     }
 
     val kpl = "com.amazonaws" % "amazon-kinesis-producer" % "0.15.7"
-    val kcl = "software.amazon.kinesis" % "amazon-kinesis-client" % "2.5.1"
+    val kcl = "software.amazon.kinesis" % "amazon-kinesis-client" % "2.5.2"
   }
 
   object Cats {
