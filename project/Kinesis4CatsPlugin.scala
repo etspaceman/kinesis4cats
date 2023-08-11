@@ -239,18 +239,19 @@ object Kinesis4CatsPlugin extends AutoPlugin {
 
   override def projectSettings = Seq(
     Test / testOptions ++= {
-      List(Tests.Argument(MUnitFramework, "+l"))
+      List(Tests.Argument(TestFrameworks.MUnit, "+l"))
     },
     // Workaround for https://github.com/typelevel/sbt-typelevel/issues/464
     scalacOptions ++= {
       if (tlIsScala3.value)
         Seq(
           "-language:implicitConversions",
-          "-Ykind-projector",
-          "-source:3.0-migration"
+          "-Ykind-projector"
         )
       else
-        Seq("-language:_", "-Wconf:src=src_managed/.*:silent", "-Xsource:3")
+        Seq(
+          "-Wconf:src=src_managed/.*:silent"
+        )
     },
     scalacOptions -= "-Ykind-projector:underscores",
     ThisBuild / semanticdbEnabled := true,
@@ -316,8 +317,6 @@ object Kinesis4CatsPluginKeys {
 
   val allScalaVersions = List(Scala213, Scala3, Scala212)
   val last2ScalaVersions = List(Scala213, Scala3)
-
-  val MUnitFramework = new TestFramework("munit.Framework")
 
   import de.heikoseeberger.sbtheader.HeaderPlugin.autoImport._
   import scalafix.sbt.ScalafixPlugin.autoImport._

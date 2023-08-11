@@ -30,7 +30,6 @@ import io.circe.syntax._
 import org.http4s.ember.client.EmberClientBuilder
 import org.scalacheck.Arbitrary
 
-import kinesis4cats.Utils
 import kinesis4cats.logging.ConsoleLogger
 import kinesis4cats.models.StreamArn
 import kinesis4cats.smithy4s.client.localstack.LocalstackKinesisClient
@@ -197,7 +196,10 @@ abstract class KinesisClientSpec extends munit.CatsEffectSuite {
       shards2response <- client.listShards(Some(StreamName(streamName)))
       shards2 = shards2response.shards.getOrElse(fail("No shards returned"))
       newShards = shards2.takeRight(2)
-      shard2 :: shard3 :: Nil = newShards
+      (shard2, shard3) = newShards match {
+        case s2 :: s3 :: Nil => (s2, s3)
+        case _               => (null, null) // scalafix:ok
+      }
       _ <- client
         .mergeShards(
           shard2.shardId,

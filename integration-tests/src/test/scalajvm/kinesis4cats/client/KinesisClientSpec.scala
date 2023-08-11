@@ -27,7 +27,6 @@ import org.scalacheck.Arbitrary
 import software.amazon.awssdk.core.SdkBytes
 import software.amazon.awssdk.services.kinesis.model._
 
-import kinesis4cats.Utils
 import kinesis4cats.client.localstack.LocalstackKinesisClient
 import kinesis4cats.models.{AwsRegion, StreamArn}
 import kinesis4cats.syntax.scalacheck._
@@ -266,7 +265,10 @@ class KinesisClientSpec extends munit.CatsEffectSuite {
       )
       shards2 = shards2response.shards().asScala.toList
       newShards = shards2.takeRight(2)
-      shard2 :: shard3 :: Nil = newShards
+      (shard2, shard3) = newShards match {
+        case s2 :: s3 :: Nil => (s2, s3)
+        case _               => (null, null) // scalafix:ok
+      }
       _ <- client.mergeShards(
         MergeShardsRequest
           .builder()

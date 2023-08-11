@@ -31,7 +31,6 @@ import software.amazon.awssdk.services.kinesis.model.PutRecordRequest
 import software.amazon.kinesis.common._
 import software.amazon.kinesis.processor.SingleStreamTracker
 
-import kinesis4cats.Utils
 import kinesis4cats.client.KinesisClient
 import kinesis4cats.client.localstack.LocalstackKinesisClient
 import kinesis4cats.compat.retry

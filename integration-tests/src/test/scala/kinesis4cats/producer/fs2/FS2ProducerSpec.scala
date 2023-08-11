@@ -28,7 +28,6 @@ import io.circe.parser._
 import io.circe.syntax._
 import org.scalacheck.Arbitrary
 
-import kinesis4cats.Utils
 import kinesis4cats.compat.retry.RetryPolicies._
 import kinesis4cats.compat.retry._
 import kinesis4cats.syntax.scalacheck._

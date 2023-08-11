@@ -26,7 +26,6 @@ import com.amazonaws.services.kinesis.producer._
 import io.circe.syntax._
 import org.scalacheck.Arbitrary
 
-import kinesis4cats.Utils
 import kinesis4cats.kpl.localstack.LocalstackKPLProducer
 import kinesis4cats.localstack.TestStreamConfig
 import kinesis4cats.syntax.scalacheck._
