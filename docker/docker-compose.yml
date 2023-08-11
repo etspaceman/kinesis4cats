@@ -1,7 +1,7 @@
-version: '2.4'
+version: '3.8'
 services:
   localstack:
-    image: "localstack/localstack:latest"
+    image: "localstack/localstack:2.2.0"
     environment:
       - "SERVICES=cloudwatch,kinesis,dynamodb,sts"
       - "KINESIS_LATENCY=0"
@@ -40,4 +40,3 @@ services:
         condition: service_healthy
 networks:
   default:
-    name: ${DOCKER_NET_NAME}
