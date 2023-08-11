@@ -29,7 +29,6 @@ import cats.effect.{Async, Ref}
 import cats.syntax.all._
 import org.typelevel.log4cats.StructuredLogger
 
-import kinesis4cats.Utils
 import kinesis4cats.logging.{LogContext, LogEncoder}
 import kinesis4cats.models._
 

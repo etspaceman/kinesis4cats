@@ -21,7 +21,6 @@ import cats.effect.kernel.Clock
 import cats.effect.{IO, SyncIO}
 import software.amazon.awssdk.services.cloudwatch.model._
 
-import kinesis4cats.Utils
 import kinesis4cats.client.localstack.LocalstackCloudWatchClient
 
 class CloudWatchClientSpec extends munit.CatsEffectSuite {

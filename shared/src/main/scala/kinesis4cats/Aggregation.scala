@@ -16,7 +16,6 @@
 
 package kinesis4cats
 
-import cats.syntax.all._
 import scodec.bits.ByteVector
 
 private[kinesis4cats] object Aggregation {

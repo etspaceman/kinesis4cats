@@ -1,4 +1,7 @@
 import LibraryDependencies.{Smithy4s => S4S, _}
+import laika.helium.Helium
+import laika.helium.config.TextLink
+import laika.helium.config.ThemeNavigationSection
 import laika.rewrite.link._
 import sbt.Package.FixedTimestamp
 import sbt.Package.JarManifest
@@ -9,6 +12,11 @@ lazy val compat = projectMatrix
   .settings(
     description := "Code to maintain compatability across major scala versions",
     scalacOptions --= Seq("-deprecation", "-Xlint:deprecation", "-Xsource:3"),
+    scalacOptions --= {
+      if (scalaVersion.value == Scala212)
+        scalacOptions.value.filter(opt => opt.startsWith("-Ywarn-unused"))
+      else Nil
+    },
     Compile / doc / sources := Seq.empty
   )
   .jvmPlatform(allScalaVersions)
@@ -25,7 +33,11 @@ lazy val shared = projectMatrix
     ),
     Compile / PB.targets := Seq(
       scalapb.gen() -> (Compile / sourceManaged).value / "scalapb"
-    )
+    ),
+    scalacOptions --= {
+      if (tlIsScala3.value) Seq("-Wvalue-discard")
+      else Nil
+    }
   )
   .jvmPlatform(
     allScalaVersions,
@@ -453,29 +465,48 @@ lazy val docs = projectMatrix
       Http4s.emberClient.value,
       Http4s.blazeClient.value
     ),
-    tlFatalWarningsInCi := false,
+    tlFatalWarnings := false,
     tlSiteApiPackage := Some("kinesis4cats"),
-    tlSiteRelatedProjects ++= Seq(
-      TypelevelProject.CatsEffect,
-      TypelevelProject.Fs2,
-      TypelevelProject.Http4s,
-      "kcl" -> url(
-        "https://docs.aws.amazon.com/streams/latest/dev/shared-throughput-kcl-consumers.html"
+    tlSiteHelium := tlSiteHelium.value.site
+      .mainNavigation(appendLinks =
+        Seq(
+          ThemeNavigationSection(
+            "Related Projects",
+            TextLink.external(
+              "https://docs.aws.amazon.com/streams/latest/dev/shared-throughput-kcl-consumers.html",
+              "kcl"
+            ),
+            TextLink.external(
+              "https://docs.aws.amazon.com/streams/latest/dev/developing-producers-with-kpl.html",
+              "kpl"
+            ),
+            TextLink.external(
+              "https://docs.aws.amazon.com/sdk-for-java/v1/developer-guide/welcome.html",
+              "aws-java-sdk-v1"
+            ),
+            TextLink.external(
+              "https://docs.aws.amazon.com/sdk-for-java/latest/developer-guide/home.html",
+              "aws-java-sdk-v2"
+            ),
+            TextLink.external(
+              "https://circe.github.io/circe/",
+              "circe"
+            ),
+            TextLink.external(
+              "https://cir.is/",
+              "ciris"
+            ),
+            TextLink.external(
+              "https://localstack.cloud/",
+              "localstack"
+            ),
+            TextLink.external(
+              "https://github.com/typelevel/feral",
+              "feral"
+            )
+          )
+        )
       ),
-      "kpl" -> url(
-        "https://docs.aws.amazon.com/streams/latest/dev/developing-producers-with-kpl.html"
-      ),
-      "aws-java-sdk-v1" -> url(
-        "https://docs.aws.amazon.com/sdk-for-java/v1/developer-guide/welcome.html"
-      ),
-      "aws-java-sdk-v2" -> url(
-        "https://docs.aws.amazon.com/sdk-for-java/latest/developer-guide/home.html"
-      ),
-      "circe" -> url("https://circe.github.io/circe/"),
-      "ciris" -> url("https://cir.is/"),
-      "localstack" -> url("https://localstack.cloud/"),
-      "feral" -> url("https://github.com/typelevel/feral")
-    ),
     laikaConfig := LaikaConfig.defaults.withConfigValue(
       LinkConfig(sourceLinks =
         Seq(

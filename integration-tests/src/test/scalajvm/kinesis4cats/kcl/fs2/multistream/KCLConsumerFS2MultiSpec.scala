@@ -30,7 +30,6 @@ import software.amazon.awssdk.core.SdkBytes
 import software.amazon.awssdk.services.kinesis.model.PutRecordRequest
 import software.amazon.kinesis.common._
 
-import kinesis4cats.Utils
 import kinesis4cats.client.KinesisClient
 import kinesis4cats.client.localstack.LocalstackKinesisClient
 import kinesis4cats.kcl.CommittableRecord

@@ -22,7 +22,6 @@ import java.io.ByteArrayOutputStream
 
 import cats.data.NonEmptyList
 
-import kinesis4cats.Utils
 import kinesis4cats.models.ShardId
 import kinesis4cats.protobuf.messages.AggregatedRecord
 

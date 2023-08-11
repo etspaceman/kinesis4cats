@@ -22,7 +22,6 @@ import scala.jdk.CollectionConverters._
 import cats.effect.{IO, SyncIO}
 import software.amazon.awssdk.services.dynamodb.model._
 
-import kinesis4cats.Utils
 import kinesis4cats.client.localstack.LocalstackDynamoClient
 
 class DynamoClientSpec extends munit.CatsEffectSuite {

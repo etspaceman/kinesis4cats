@@ -197,6 +197,7 @@ object show {
   implicit val streamTrackerShow: Show[StreamTracker] = {
     case x: MultiStreamTracker  => mutliStreamTrackerShow.show(x)
     case x: SingleStreamTracker => singleStreamTrackerShow.show(x)
+    case x                      => x.toString
   }
 
   implicit val retrievalConfigShow: Show[RetrievalConfig] = x =>

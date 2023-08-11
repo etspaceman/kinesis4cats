@@ -1194,7 +1194,7 @@ trait Priority1FunctionConverters extends Priority2FunctionConverters {
 
 }
 
-package object FunctionConverters extends Priority1FunctionConverters {
+object FunctionConverters extends Priority1FunctionConverters {
   import functionConverterImpls._
   @inline def asScalaFromBiConsumer[T, U](
       jf: java.util.function.BiConsumer[T, U]
