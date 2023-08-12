@@ -27,6 +27,7 @@ object Kinesis4CatsPlugin extends AutoPlugin {
   import TypelevelKernelPlugin.autoImport._
   import TypelevelSettingsPlugin.autoImport._
   import TypelevelSitePlugin.autoImport._
+  import TypelevelSonatypePlugin.autoImport._
   import TypelevelVersioningPlugin.autoImport._
   import autoImport._
   import com.armanbilge.sbt.ScalaNativeBrewedGithubActionsPlugin.autoImport._
@@ -71,6 +72,7 @@ object Kinesis4CatsPlugin extends AutoPlugin {
     crossScalaVersions := Seq(Scala213),
     scalaVersion := Scala213,
     tlCiMimaBinaryIssueCheck := tlBaseVersion.value != "0.0",
+    tlSonatypeUseLegacyHost := true,
     resolvers += "s01 snapshots" at "https://s01.oss.sonatype.org/content/repositories/snapshots/",
     resolvers += "jitpack" at "https://jitpack.io",
     Global / concurrentRestrictions += Tags.limit(NativeTags.Link, 1),
