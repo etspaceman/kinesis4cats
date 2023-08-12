@@ -2,5 +2,10 @@
 // README at: https://github.com/devcontainers/templates/tree/main/src/java
 {
 	"name": "Scala",
-	"image": "ghcr.io/etspaceman/devcontainer-scala:latest"
+	"image": "ghcr.io/etspaceman/devcontainer-scala:latest",
+    "customizations": {
+        "vscode": {
+            "extensions": ["scala-lang.scala", "scalameta.metals", "disneystreaming.smithy"]
+        }
+    }
 }
