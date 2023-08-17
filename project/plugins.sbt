@@ -6,7 +6,7 @@ addSbtPlugin("ch.epfl.scala" % "sbt-scalafix" % "0.11.0")
 addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "2.1.1")
 addSbtPlugin("org.portable-scala" % "sbt-crossproject" % "1.3.2")
 addSbtPlugin(
-  "com.disneystreaming.smithy4s" % "smithy4s-sbt-codegen" % "0.17.16"
+  "com.disneystreaming.smithy4s" % "smithy4s-sbt-codegen" % "0.17.17"
 )
 addSbtPlugin("com.eed3si9n" % "sbt-buildinfo" % "0.11.0")
 addSbtPlugin("com.eed3si9n" % "sbt-projectmatrix" % "0.9.1")
