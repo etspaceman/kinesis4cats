@@ -160,7 +160,7 @@ object MultiStreamTracker {
     *   [[kinesis4cats.kcl.multistream.MultiStreamConfig MultiStreamConfig]] to
     *   consume
     * @param deleteInterval
-    *   [[https://www.scala-lang.org/api/2.13.11/scala/concurrent/duration/FiniteDuration.html FiniteDuration]]
+    *   [[https://www.scala-lang.org/api/2.13.12/scala/concurrent/duration/FiniteDuration.html FiniteDuration]]
     *   indicating the delay between lease deletion attempts
     * @return
     *   [[kinesis4cats.kcl.multistream.MultiStreamTracker MultiStreamTracker]]
@@ -191,7 +191,7 @@ object MultiStreamTracker {
     * @param arns
     *   List of [[kinesis4cats.models.StreamArn StreamArn]] to consume
     * @param deleteInterval
-    *   [[https://www.scala-lang.org/api/2.13.11/scala/concurrent/duration/FiniteDuration.html FiniteDuration]]
+    *   [[https://www.scala-lang.org/api/2.13.12/scala/concurrent/duration/FiniteDuration.html FiniteDuration]]
     *   indicating the delay between lease deletion attempts
     * @param F
     *   [[cats.effect.Async Async]]
@@ -220,7 +220,7 @@ object MultiStreamTracker {
     *   [[kinesis4cats.kcl.multistream.MultiStreamConfig MultiStreamConfig]] to
     *   consume
     * @param deleteInterval
-    *   [[https://www.scala-lang.org/api/2.13.11/scala/concurrent/duration/FiniteDuration.html FiniteDuration]]
+    *   [[https://www.scala-lang.org/api/2.13.12/scala/concurrent/duration/FiniteDuration.html FiniteDuration]]
     *   indicating the delay between lease deletion attempts
     * @param identifyStreamsToDelete
     *   User-defined function to produce a list of
@@ -261,7 +261,7 @@ object MultiStreamTracker {
     * @param arns
     *   List of [[kinesis4cats.models.StreamArn StreamArn]] to consume
     * @param deleteInterval
-    *   [[https://www.scala-lang.org/api/2.13.11/scala/concurrent/duration/FiniteDuration.html FiniteDuration]]
+    *   [[https://www.scala-lang.org/api/2.13.12/scala/concurrent/duration/FiniteDuration.html FiniteDuration]]
     *   indicating the delay between lease deletion attempts
     * @param identifyStreamsToDelete
     *   User-defined function to produce a list of
