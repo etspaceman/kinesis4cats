@@ -13,7 +13,7 @@ object LibraryDependencies {
   }
 
   object FS2 {
-    val fs2Version = "3.9.1"
+    val fs2Version = "3.9.2"
     val core = Def.setting("co.fs2" %%% "fs2-core" % fs2Version)
     val reactiveStreams = "co.fs2" %% "fs2-reactive-streams" % fs2Version
   }
