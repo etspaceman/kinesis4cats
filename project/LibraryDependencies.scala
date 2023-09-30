@@ -89,7 +89,7 @@ object LibraryDependencies {
   }
 
   object Feral {
-    val feralVersion = "0.2.3"
+    val feralVersion = "0.2.4"
     val lambda = Def.setting("org.typelevel" %%% "feral-lambda" % feralVersion)
   }
 
