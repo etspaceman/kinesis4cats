@@ -18,11 +18,12 @@ package kinesis4cats
 package smithy4s.client
 
 import _root_.smithy4s.aws._
-import _root_.smithy4s.aws.http4s._
 import cats.Show
 import cats.effect.{Async, Resource}
 import cats.syntax.all._
 import com.amazonaws.kinesis._
+import fs2.compression.Compression
+import fs2.io.file.Files
 import org.http4s.client.Client
 import org.http4s.{Request, Response}
 import org.typelevel.log4cats.StructuredLogger
@@ -47,11 +48,11 @@ import kinesis4cats.smithy4s.client.middleware.RequestResponseLogger
   */
 object KinesisClient {
 
-  final case class Builder[F[_]] private (
+  final case class Builder[F[_]: Compression: Files] private (
       client: Client[F],
       region: AwsRegion,
       logger: StructuredLogger[F],
-      credentialsResourceF: SimpleHttpClient[F] => Resource[F, F[
+      credentialsResourceF: Client[F] => Resource[F, F[
         AwsCredentials
       ]],
       encoders: LogEncoders[F],
@@ -63,7 +64,7 @@ object KinesisClient {
     def withLogger(logger: StructuredLogger[F]): Builder[F] =
       copy(logger = logger)
     def withCredentials(
-        credentialsResourceF: SimpleHttpClient[F] => Resource[F, F[
+        credentialsResourceF: Client[F] => Resource[F, F[
           AwsCredentials
         ]]
     ): Builder[F] =
@@ -80,24 +81,23 @@ object KinesisClient {
         if (logRequestsResponses)
           RequestResponseLogger(logger, encoders)(client)
         else client
-      val backend =
-        AwsHttp4sBackend[F](RequestResponseLogger(logger, encoders)(clnt))
       for {
-        credentials <- credentialsResourceF(backend)
+        credentials <- credentialsResourceF(client)
         environment = AwsEnvironment.make[F](
-          backend,
+          clnt,
           F.pure(region),
           credentials,
           F.realTime.map(_.toSeconds).map(Timestamp(_, 0))
         )
-        awsClient <- AwsClient.simple(Kinesis.service, environment)
+        awsClient <- AwsClient(Kinesis.service, environment)
       } yield awsClient
     }
   }
 
   object Builder {
-    def default[F[_]](client: Client[F], region: AwsRegion)(implicit
-        F: Async[F]
+    def default[F[_]: Async: Compression: Files](
+        client: Client[F],
+        region: AwsRegion
     ): Builder[F] =
       Builder[F](
         client,

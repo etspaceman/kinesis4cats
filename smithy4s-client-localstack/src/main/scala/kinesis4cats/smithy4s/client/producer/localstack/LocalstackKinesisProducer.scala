@@ -18,6 +18,8 @@ package kinesis4cats.smithy4s.client
 package producer
 package localstack
 
+import _root_.fs2.compression.Compression
+import _root_.fs2.io.file.Files
 import cats.effect._
 import cats.syntax.all._
 import org.http4s.client.Client
@@ -51,7 +53,7 @@ object LocalstackKinesisProducer {
     )
   }
 
-  final case class Builder[F[_]] private (
+  final case class Builder[F[_]: Compression: Files] private (
       client: Client[F],
       region: AwsRegion,
       localstackConfig: LocalstackConfig,
@@ -125,24 +127,20 @@ object LocalstackKinesisProducer {
   }
 
   object Builder {
-    def default[F[_]](
+    def default[F[_]: Async: Compression: Files](
         client: Client[F],
         region: AwsRegion,
         streamNameOrArn: StreamNameOrArn,
         prefix: Option[String] = None
-    )(implicit
-        F: Async[F]
     ): F[Builder[F]] = LocalstackConfig
       .load(prefix)
       .map(default(client, region, streamNameOrArn, _))
 
-    def default[F[_]](
+    def default[F[_]: Async: Compression: Files](
         client: Client[F],
         region: AwsRegion,
         streamNameOrArn: StreamNameOrArn,
         config: LocalstackConfig
-    )(implicit
-        F: Async[F]
     ): Builder[F] =
       Builder[F](
         client,

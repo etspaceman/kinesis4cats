@@ -18,7 +18,9 @@ package kinesis4cats.smithy4s.client
 package producer
 package fs2
 
+import _root_.fs2.compression.Compression
 import _root_.fs2.concurrent.Channel
+import _root_.fs2.io.file.Files
 import cats.effect._
 import cats.effect.kernel.DeferredSink
 import cats.effect.syntax.all._
@@ -28,7 +30,6 @@ import org.http4s.client.Client
 import org.typelevel.log4cats.StructuredLogger
 import org.typelevel.log4cats.noop.NoOpLogger
 import smithy4s.aws.AwsCredentialsProvider
-import smithy4s.aws.SimpleHttpClient
 import smithy4s.aws.kernel.AwsCredentials
 import smithy4s.aws.kernel.AwsRegion
 
@@ -67,12 +68,12 @@ final class FS2KinesisProducer[F[_]] private[kinesis4cats] (
 
 object FS2KinesisProducer {
 
-  final case class Builder[F[_]] private (
+  final case class Builder[F[_]: Compression: Files] private (
       config: FS2Producer.Config[F],
       client: Client[F],
       region: AwsRegion,
       logger: StructuredLogger[F],
-      credentialsResourceF: SimpleHttpClient[F] => Resource[F, F[
+      credentialsResourceF: Client[F] => Resource[F, F[
         AwsCredentials
       ]],
       encoders: KinesisProducer.LogEncoders[F],
@@ -90,7 +91,7 @@ object FS2KinesisProducer {
     def withLogger(logger: StructuredLogger[F]): Builder[F] =
       copy(logger = logger)
     def withCredentials(
-        credentialsResourceF: SimpleHttpClient[F] => Resource[F, F[
+        credentialsResourceF: Client[F] => Resource[F, F[
           AwsCredentials
         ]]
     ): Builder[F] =
@@ -127,11 +128,11 @@ object FS2KinesisProducer {
   }
 
   object Builder {
-    def default[F[_]](
+    def default[F[_]: Async: Compression: Files](
         streamNameOrArn: models.StreamNameOrArn,
         client: Client[F],
         region: AwsRegion
-    )(implicit F: Async[F]): Builder[F] = Builder[F](
+    ): Builder[F] = Builder[F](
       FS2Producer.Config.default(streamNameOrArn),
       client,
       region,

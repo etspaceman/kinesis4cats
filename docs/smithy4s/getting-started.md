@@ -9,7 +9,7 @@ This module intends to be a native Scala implementation of a Kinesis Client usin
 Some known issues:
 
 - [SubscribeToShard](https://docs.aws.amazon.com/kinesis/latest/APIReference/API_SubscribeToShard.html) will not work properly as it uses the http2 protocl.
-- Updates to the smithy file(s) in this module are not intended to be backwards compatible. 
+- Updates to the smithy file(s) in this module are not intended to be backwards compatible.
 
 ## Installation
 
@@ -25,7 +25,7 @@ import com.amazonaws.kinesis._
 import org.http4s.blaze.client.BlazeClientBuilder
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 import smithy4s.aws._
-import smithy4s.ByteArray
+import smithy4s.Blob
 
 import kinesis4cats.smithy4s.client.KinesisClient
 
@@ -40,7 +40,7 @@ object MyApp extends IOApp {
         for {
             _ <- client.createStream(StreamName("my-stream"), Some(1))
             _ <- client.putRecord(
-                Data(ByteArray("my-data".getBytes())),
+                Data(Blob("my-data".getBytes())),
                 PartitionKey("some-partitionk-key"),
                 Some(StreamName("my-stream"))
             )
@@ -114,7 +114,7 @@ The Producer offering here allows users to handle these failure paths in multipl
 
 #### Retrying failures
 
-A user can supply a @:source(compat.src.main.scala.kinesis4cats.compat.retry.RetryPolicy) that can be used to retry both error paths until a fully successful response is received. 
+A user can supply a @:source(compat.src.main.scala.kinesis4cats.compat.retry.RetryPolicy) that can be used to retry both error paths until a fully successful response is received.
 
 In the event of a partially-failed response, the retry routine will only retry the failed records.
 
@@ -200,7 +200,7 @@ BlazeClientBuilder[IO].resource.flatMap(client =>
 
 ## FS2
 
-This package provides a [KPL-like](https://github.com/awslabs/amazon-kinesis-producer) producer via implementing @:source(shared.src.main.scala.kinesis4cats.producer.fs2.FS2Producer). This interface receives records from a user, enqueues them into a Queue and puts them as batches to Kinesis on a configured interval. This leverages all of the functionality of the @:source(shared.src.main.scala.kinesis4cats.producer.Producer) interface, including batching, aggregation and retries. 
+This package provides a [KPL-like](https://github.com/awslabs/amazon-kinesis-producer) producer via implementing @:source(shared.src.main.scala.kinesis4cats.producer.fs2.FS2Producer). This interface receives records from a user, enqueues them into a Queue and puts them as batches to Kinesis on a configured interval. This leverages all of the functionality of the @:source(shared.src.main.scala.kinesis4cats.producer.Producer) interface, including batching, aggregation and retries.
 
 ### Usage
 
@@ -215,7 +215,7 @@ import kinesis4cats.models.StreamNameOrArn
 import kinesis4cats.producer.Record
 
 object MyApp extends IOApp {
-    override def run(args: List[String]) = 
+    override def run(args: List[String]) =
         BlazeClientBuilder[IO].resource.flatMap(client =>
             FS2KinesisProducer.Builder
                 .default[IO](
@@ -258,7 +258,7 @@ import kinesis4cats.models.StreamNameOrArn
 import kinesis4cats.producer.Record
 
 object MyApp extends IOApp {
-    override def run(args: List[String]) = 
+    override def run(args: List[String]) =
         BlazeClientBuilder[IO].resource.flatMap(client =>
             FS2KinesisProducer.Builder
                 .default[IO](
