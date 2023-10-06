@@ -33,6 +33,7 @@ object Kinesis4CatsPlugin extends AutoPlugin {
   import com.armanbilge.sbt.ScalaNativeBrewedGithubActionsPlugin.autoImport._
   import de.heikoseeberger.sbtheader.HeaderPlugin.autoImport._
   import org.scalafmt.sbt.ScalafmtPlugin.autoImport._
+  import org.scalajs.sbtplugin.ScalaJSPlugin.autoImport._
   import sbtassembly.AssemblyPlugin.autoImport._
   import scalafix.sbt.ScalafixPlugin.autoImport._
 
@@ -219,7 +220,15 @@ object Kinesis4CatsPlugin extends AutoPlugin {
       MergifyStewardConfig(action =
         MergifyAction.Merge(method = Some("squash"))
       )
-    )
+    ),
+    jsEnv := {
+      import org.scalajs.jsenv.nodejs.NodeJSEnv
+      new NodeJSEnv(
+        NodeJSEnv
+          .Config()
+          .withArgs(List("--dns-result-order=ipv4first"))
+      )
+    }
   ) ++ tlReplaceCommandAlias(
     "prePR",
     mkCommand(
