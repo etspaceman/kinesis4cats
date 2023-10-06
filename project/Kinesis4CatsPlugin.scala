@@ -76,8 +76,12 @@ object Kinesis4CatsPlugin extends AutoPlugin {
     resolvers += "s01 snapshots" at "https://s01.oss.sonatype.org/content/repositories/snapshots/",
     resolvers += "jitpack" at "https://jitpack.io",
     githubWorkflowBuildPreamble ++= nativeBrewInstallWorkflowSteps.value ++ Seq(
-      WorkflowStep.Use(
-        UseRef.Public("douglascamata", "setup-docker-macos-action", "v1-alpha"),
+      WorkflowStep.Run(
+        List(
+          "brew install docker docker-compose && " +
+            "colima start && " +
+            "sudo ln -sf $HOME/.colima/default/docker.sock /var/run/docker.sock"
+        ),
         name = Some("Setup Docker")
       )
     ),
