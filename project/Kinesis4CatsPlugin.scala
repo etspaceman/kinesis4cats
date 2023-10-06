@@ -75,7 +75,12 @@ object Kinesis4CatsPlugin extends AutoPlugin {
     tlSonatypeUseLegacyHost := true,
     resolvers += "s01 snapshots" at "https://s01.oss.sonatype.org/content/repositories/snapshots/",
     resolvers += "jitpack" at "https://jitpack.io",
-    githubWorkflowBuildPreamble ++= nativeBrewInstallWorkflowSteps.value,
+    githubWorkflowBuildPreamble ++= nativeBrewInstallWorkflowSteps.value ++ Seq(
+      WorkflowStep.Use(
+        UseRef.Public("crazy-max", "ghaction-setup-docker", "v2"),
+        name = Some("Setup Docker")
+      )
+    ),
     githubWorkflowBuildMatrixFailFast := Some(false),
     githubWorkflowOSes := Seq("macos-latest"),
     githubWorkflowBuild := {

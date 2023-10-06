@@ -57,6 +57,9 @@ jobs:
         if: startsWith(matrix.os, 'macos')
         run: brew install openssl s2n
 
+      - name: Setup Docker
+        uses: crazy-max/ghaction-setup-docker@v2
+
       - name: Check that workflows are up to date
         run: sbt githubWorkflowCheck
 
