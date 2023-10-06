@@ -165,7 +165,7 @@ object LocalstackConfig {
   def defaultHost(prefix: Option[String] = None): ConfigValue[Effect, String] =
     CirisReader.readDefaulted(
       List("localstack", "host"),
-      "localhost",
+      "127.0.0.1",
       prefix
     )
 
