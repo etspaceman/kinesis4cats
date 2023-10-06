@@ -77,7 +77,7 @@ object Kinesis4CatsPlugin extends AutoPlugin {
     resolvers += "jitpack" at "https://jitpack.io",
     githubWorkflowBuildPreamble ++= nativeBrewInstallWorkflowSteps.value ++ Seq(
       WorkflowStep.Use(
-        UseRef.Public("crazy-max", "ghaction-setup-docker", "v2"),
+        UseRef.Public("douglascamata", "setup-docker-macos-action", "v1"),
         name = Some("Setup Docker")
       )
     ),
