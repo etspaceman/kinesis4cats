@@ -58,7 +58,7 @@ jobs:
         run: brew install openssl s2n
 
       - name: Setup Docker
-        uses: douglascamata/setup-docker-macos-action@v1
+        uses: douglascamata/setup-docker-macos-action@v1-alpha
 
       - name: Check that workflows are up to date
         run: sbt githubWorkflowCheck
