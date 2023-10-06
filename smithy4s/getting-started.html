@@ -150,7 +150,7 @@
         <p>Some known issues:</p>
         <ul>
           <li><a href="https://docs.aws.amazon.com/kinesis/latest/APIReference/API_SubscribeToShard.html">SubscribeToShard</a> will not work properly as it uses the http2 protocl.</li>
-          <li>Updates to the smithy file(s) in this module are not intended to be backwards compatible. </li>
+          <li>Updates to the smithy file(s) in this module are not intended to be backwards compatible.</li>
         </ul>
         
         <h2 id="installation" class="section"><a class="anchor-link left" href="#installation"><i class="icofont-laika link">&#xef71;</i></a>Installation</h2>
@@ -162,7 +162,7 @@
 </span><span class="keyword">import</span><span> </span><span class="identifier">org</span><span>.</span><span class="identifier">http4s</span><span>.</span><span class="identifier">blaze</span><span>.</span><span class="identifier">client</span><span>.</span><span class="type-name">BlazeClientBuilder</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">org</span><span>.</span><span class="identifier">typelevel</span><span>.</span><span class="identifier">log4cats</span><span>.</span><span class="identifier">slf4j</span><span>.</span><span class="type-name">Slf4jLogger</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">smithy4s</span><span>.</span><span class="identifier">aws</span><span>.</span><span class="identifier">_</span><span>
-</span><span class="keyword">import</span><span> </span><span class="identifier">smithy4s</span><span>.</span><span class="type-name">ByteArray</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">smithy4s</span><span>.</span><span class="type-name">Blob</span><span>
 
 </span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">smithy4s</span><span>.</span><span class="identifier">client</span><span>.</span><span class="type-name">KinesisClient</span><span>
 
@@ -177,7 +177,7 @@
         </span><span class="keyword">for</span><span> {
             </span><span class="identifier">_</span><span> &lt;- </span><span class="identifier">client</span><span>.</span><span class="identifier">createStream</span><span>(</span><span class="type-name">StreamName</span><span>(</span><span class="string-literal">&quot;my-stream&quot;</span><span>), </span><span class="type-name">Some</span><span>(</span><span class="number-literal">1</span><span>))
             </span><span class="identifier">_</span><span> &lt;- </span><span class="identifier">client</span><span>.</span><span class="identifier">putRecord</span><span>(
-                </span><span class="type-name">Data</span><span>(</span><span class="type-name">ByteArray</span><span>(</span><span class="string-literal">&quot;my-data&quot;</span><span>.</span><span class="identifier">getBytes</span><span>())),
+                </span><span class="type-name">Data</span><span>(</span><span class="type-name">Blob</span><span>(</span><span class="string-literal">&quot;my-data&quot;</span><span>.</span><span class="identifier">getBytes</span><span>())),
                 </span><span class="type-name">PartitionKey</span><span>(</span><span class="string-literal">&quot;some-partitionk-key&quot;</span><span>),
                 </span><span class="type-name">Some</span><span>(</span><span class="type-name">StreamName</span><span>(</span><span class="string-literal">&quot;my-stream&quot;</span><span>))
             )
@@ -244,7 +244,7 @@
         <p>The Producer offering here allows users to handle these failure paths in multiple ways.</p>
         
         <h4 id="retrying-failures" class="section"><a class="anchor-link left" href="#retrying-failures"><i class="icofont-laika link">&#xef71;</i></a>Retrying failures</h4>
-        <p>A user can supply a <a class="source" href="https://github.com/etspaceman/kinesis4cats/blob/main/compat/src/main/scala/kinesis4cats/compat/retry/RetryPolicy.scala">RetryPolicy</a> that can be used to retry both error paths until a fully successful response is received. </p>
+        <p>A user can supply a <a class="source" href="https://github.com/etspaceman/kinesis4cats/blob/main/compat/src/main/scala/kinesis4cats/compat/retry/RetryPolicy.scala">RetryPolicy</a> that can be used to retry both error paths until a fully successful response is received.</p>
         <p>In the event of a partially-failed response, the retry routine will only retry the failed records.</p>
         <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">effect</span><span>.</span><span class="identifier">_</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">org</span><span>.</span><span class="identifier">http4s</span><span>.</span><span class="identifier">blaze</span><span>.</span><span class="identifier">client</span><span>.</span><span class="type-name">BlazeClientBuilder</span><span>
@@ -317,7 +317,7 @@
 )</span></code></pre>
         
         <h2 id="fs2" class="section"><a class="anchor-link left" href="#fs2"><i class="icofont-laika link">&#xef71;</i></a>FS2</h2>
-        <p>This package provides a <a href="https://github.com/awslabs/amazon-kinesis-producer">KPL-like</a> producer via implementing <a class="source" href="https://github.com/etspaceman/kinesis4cats/blob/main/shared/src/main/scala/kinesis4cats/producer/fs2/FS2Producer.scala">FS2Producer</a>. This interface receives records from a user, enqueues them into a Queue and puts them as batches to Kinesis on a configured interval. This leverages all of the functionality of the <a class="source" href="https://github.com/etspaceman/kinesis4cats/blob/main/shared/src/main/scala/kinesis4cats/producer/Producer.scala">Producer</a> interface, including batching, aggregation and retries. </p>
+        <p>This package provides a <a href="https://github.com/awslabs/amazon-kinesis-producer">KPL-like</a> producer via implementing <a class="source" href="https://github.com/etspaceman/kinesis4cats/blob/main/shared/src/main/scala/kinesis4cats/producer/fs2/FS2Producer.scala">FS2Producer</a>. This interface receives records from a user, enqueues them into a Queue and puts them as batches to Kinesis on a configured interval. This leverages all of the functionality of the <a class="source" href="https://github.com/etspaceman/kinesis4cats/blob/main/shared/src/main/scala/kinesis4cats/producer/Producer.scala">Producer</a> interface, including batching, aggregation and retries.</p>
         
         <h3 id="usage-2" class="section"><a class="anchor-link left" href="#usage-2"><i class="icofont-laika link">&#xef71;</i></a>Usage</h3>
         <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">effect</span><span>.</span><span class="identifier">_</span><span>
@@ -330,7 +330,7 @@
 </span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">producer</span><span>.</span><span class="type-name">Record</span><span>
 
 </span><span class="keyword">object</span><span> </span><span class="type-name">MyApp</span><span> </span><span class="keyword">extends</span><span> </span><span class="type-name">IOApp</span><span> {
-    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">run</span><span>(</span><span class="identifier">args</span><span>: </span><span class="type-name">List</span><span>[</span><span class="type-name">String</span><span>]) = 
+    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">run</span><span>(</span><span class="identifier">args</span><span>: </span><span class="type-name">List</span><span>[</span><span class="type-name">String</span><span>]) =
         </span><span class="type-name">BlazeClientBuilder</span><span>[</span><span class="type-name">IO</span><span>].</span><span class="identifier">resource</span><span>.</span><span class="identifier">flatMap</span><span>(</span><span class="identifier">client</span><span> =&gt;
             </span><span class="type-name">FS2KinesisProducer</span><span>.</span><span class="type-name">Builder</span><span>
                 .</span><span class="keyword">default</span><span>[</span><span class="type-name">IO</span><span>](
@@ -368,7 +368,7 @@
 </span><span class="keyword">import</span><span> </span><span class="identifier">kinesis4cats</span><span>.</span><span class="identifier">producer</span><span>.</span><span class="type-name">Record</span><span>
 
 </span><span class="keyword">object</span><span> </span><span class="type-name">MyApp</span><span> </span><span class="keyword">extends</span><span> </span><span class="type-name">IOApp</span><span> {
-    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">run</span><span>(</span><span class="identifier">args</span><span>: </span><span class="type-name">List</span><span>[</span><span class="type-name">String</span><span>]) = 
+    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">run</span><span>(</span><span class="identifier">args</span><span>: </span><span class="type-name">List</span><span>[</span><span class="type-name">String</span><span>]) =
         </span><span class="type-name">BlazeClientBuilder</span><span>[</span><span class="type-name">IO</span><span>].</span><span class="identifier">resource</span><span>.</span><span class="identifier">flatMap</span><span>(</span><span class="identifier">client</span><span> =&gt;
             </span><span class="type-name">FS2KinesisProducer</span><span>.</span><span class="type-name">Builder</span><span>
                 .</span><span class="keyword">default</span><span>[</span><span class="type-name">IO</span><span>](
