@@ -508,12 +508,10 @@ lazy val docs = projectMatrix
         )
       ),
     laikaConfig := LaikaConfig.defaults.withConfigValue(
-      LinkConfig(sourceLinks =
-        Seq(
-          SourceLinks(
-            baseUri = "https://github.com/etspaceman/kinesis4cats/blob/main/",
-            suffix = "scala"
-          )
+      LinkConfig.empty.addSourceLinks(
+        SourceLinks(
+          baseUri = "https://github.com/etspaceman/kinesis4cats/blob/main/",
+          suffix = "scala"
         )
       )
     )

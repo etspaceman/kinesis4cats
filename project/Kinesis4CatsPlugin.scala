@@ -75,9 +75,9 @@ object Kinesis4CatsPlugin extends AutoPlugin {
     tlSonatypeUseLegacyHost := true,
     resolvers += "s01 snapshots" at "https://s01.oss.sonatype.org/content/repositories/snapshots/",
     resolvers += "jitpack" at "https://jitpack.io",
-    Global / concurrentRestrictions += Tags.limit(NativeTags.Link, 1),
     githubWorkflowBuildPreamble ++= nativeBrewInstallWorkflowSteps.value,
     githubWorkflowBuildMatrixFailFast := Some(false),
+    githubWorkflowOSes := Seq("macos-latest"),
     githubWorkflowBuild := {
       val style = (tlCiHeaderCheck.value, tlCiScalafmtCheck.value) match {
         case (true, true) => // headers + formatting
@@ -310,6 +310,10 @@ object Kinesis4CatsPlugin extends AutoPlugin {
       ";clean;coverage;test;coverageReport;coverageOff"
     )
   ).flatten
+
+  override def globalSettings: Seq[Setting[_]] = Seq(
+    concurrentRestrictions += Tags.limit(NativeTags.Link, 1)
+  )
 }
 
 object Kinesis4CatsPluginKeys {
