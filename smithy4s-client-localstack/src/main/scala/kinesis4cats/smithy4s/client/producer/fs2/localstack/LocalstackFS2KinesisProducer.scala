@@ -19,7 +19,9 @@ package producer
 package fs2
 package localstack
 
+import _root_.fs2.compression.Compression
 import _root_.fs2.concurrent.Channel
+import _root_.fs2.io.file.Files
 import cats.effect._
 import cats.effect.kernel.DeferredSink
 import cats.effect.syntax.all._
@@ -45,7 +47,7 @@ import kinesis4cats.smithy4s.client.producer.localstack.LocalstackKinesisProduce
   * middleware, and leverages mock AWS credentials
   */
 object LocalstackFS2KinesisProducer {
-  final case class Builder[F[_]] private (
+  final case class Builder[F[_]: Compression: Files] private (
       client: Client[F],
       region: AwsRegion,
       localstackConfig: LocalstackConfig,
@@ -120,24 +122,20 @@ object LocalstackFS2KinesisProducer {
   }
 
   object Builder {
-    def default[F[_]](
+    def default[F[_]: Async: Compression: Files](
         client: Client[F],
         region: AwsRegion,
         streamNameOrArn: StreamNameOrArn,
         prefix: Option[String] = None
-    )(implicit
-        F: Async[F]
     ): F[Builder[F]] = LocalstackConfig
       .load(prefix)
       .map(default(client, region, streamNameOrArn, _))
 
-    def default[F[_]](
+    def default[F[_]: Async: Compression: Files](
         client: Client[F],
         region: AwsRegion,
         streamNameOrArn: StreamNameOrArn,
         config: LocalstackConfig
-    )(implicit
-        F: Async[F]
     ): Builder[F] =
       Builder[F](
         client,

@@ -21,6 +21,8 @@ import cats.effect.Async
 import cats.effect.Resource
 import cats.syntax.all._
 import com.amazonaws.kinesis._
+import fs2.compression.Compression
+import fs2.io.file.Files
 import org.http4s.client.Client
 import org.typelevel.log4cats.StructuredLogger
 import org.typelevel.log4cats.noop.NoOpLogger
@@ -51,7 +53,7 @@ object LocalstackKinesisClient {
     )
   }
 
-  final case class Builder[F[_]] private (
+  final case class Builder[F[_]: Compression: Files] private (
       client: Client[F],
       region: AwsRegion,
       localstackConfig: LocalstackConfig,
@@ -101,22 +103,18 @@ object LocalstackKinesisClient {
   }
 
   object Builder {
-    def default[F[_]](
+    def default[F[_]: Async: Compression: Files](
         client: Client[F],
         region: AwsRegion,
         prefix: Option[String] = None
-    )(implicit
-        F: Async[F]
     ): F[Builder[F]] = LocalstackConfig
       .load(prefix)
       .map(default(client, region, _))
 
-    def default[F[_]](
+    def default[F[_]: Async: Compression: Files](
         client: Client[F],
         region: AwsRegion,
         config: LocalstackConfig
-    )(implicit
-        F: Async[F]
     ): Builder[F] =
       Builder[F](
         client,

@@ -19,6 +19,8 @@ package producer
 
 import java.time.Instant
 
+import _root_.fs2.compression.Compression
+import _root_.fs2.io.file.Files
 import cats.data.NonEmptyList
 import cats.effect.Resource
 import cats.effect._
@@ -27,9 +29,8 @@ import com.amazonaws.kinesis._
 import org.http4s.client.Client
 import org.typelevel.log4cats.StructuredLogger
 import org.typelevel.log4cats.noop.NoOpLogger
-import smithy4s.ByteArray
+import smithy4s.Blob
 import smithy4s.aws.AwsCredentialsProvider
-import smithy4s.aws.SimpleHttpClient
 import smithy4s.aws.kernel.AwsCredentials
 import smithy4s.aws.kernel.AwsRegion
 
@@ -69,7 +70,7 @@ final class KinesisProducer[F[_]] private[kinesis4cats] (
 
   def toEntry(record: Rec): PutRecordsRequestEntry =
     PutRecordsRequestEntry(
-      Data(ByteArray(record.data)),
+      Data(Blob(record.data)),
       PartitionKey(record.partitionKey),
       record.explicitHashKey.map(HashKey(_))
     )
@@ -103,12 +104,12 @@ final class KinesisProducer[F[_]] private[kinesis4cats] (
 
 object KinesisProducer {
 
-  final case class Builder[F[_]] private (
+  final case class Builder[F[_]: Compression: Files] private (
       config: Producer.Config[F],
       client: Client[F],
       region: AwsRegion,
       logger: StructuredLogger[F],
-      credentialsResourceF: SimpleHttpClient[F] => Resource[F, F[
+      credentialsResourceF: Client[F] => Resource[F, F[
         AwsCredentials
       ]],
       encoders: LogEncoders[F],
@@ -124,7 +125,7 @@ object KinesisProducer {
     def withLogger(logger: StructuredLogger[F]): Builder[F] =
       copy(logger = logger)
     def withCredentials(
-        credentialsResourceF: SimpleHttpClient[F] => Resource[F, F[
+        credentialsResourceF: Client[F] => Resource[F, F[
           AwsCredentials
         ]]
     ): Builder[F] =
@@ -158,11 +159,11 @@ object KinesisProducer {
   }
 
   object Builder {
-    def default[F[_]](
+    def default[F[_]: Async: Compression: Files](
         streamNameOrArn: models.StreamNameOrArn,
         client: Client[F],
         region: AwsRegion
-    )(implicit F: Async[F]): Builder[F] = Builder[F](
+    ): Builder[F] = Builder[F](
       Producer.Config.default(streamNameOrArn),
       client,
       region,

@@ -19,11 +19,12 @@ package smithy4s.client
 
 import scala.concurrent.duration._
 
-import _root_.smithy4s.ByteArray
+import _root_.smithy4s.Blob
 import _root_.smithy4s.aws.AwsRegion
 import cats.effect._
 import cats.syntax.all._
 import com.amazonaws.kinesis._
+import fs2.io.compression._
 import fs2.io.net.tls.TLSContext
 import io.circe.jawn._
 import io.circe.syntax._
@@ -123,7 +124,7 @@ abstract class KinesisClientSpec extends munit.CatsEffectSuite {
       record1 <- IO(Arbitrary.arbitrary[TestData].one)
       _ <- client
         .putRecord(
-          Data(ByteArray(record1.asJson.noSpaces.getBytes())),
+          Data(Blob(record1.asJson.noSpaces.getBytes())),
           PartitionKey("foo"),
           Some(StreamName(streamName))
         )
@@ -133,11 +134,11 @@ abstract class KinesisClientSpec extends munit.CatsEffectSuite {
         .putRecords(
           List(
             PutRecordsRequestEntry(
-              Data(ByteArray(record2.asJson.noSpaces.getBytes())),
+              Data(Blob(record2.asJson.noSpaces.getBytes())),
               PartitionKey("foo")
             ),
             PutRecordsRequestEntry(
-              Data(ByteArray(record3.asJson.noSpaces.getBytes())),
+              Data(Blob(record3.asJson.noSpaces.getBytes())),
               PartitionKey("foo")
             )
           ),
@@ -158,7 +159,7 @@ abstract class KinesisClientSpec extends munit.CatsEffectSuite {
           streamARN = Some(StreamARN(streamArn))
         )
       recordBytes = records.records
-        .map(x => new String(x.data.value.array))
+        .map(x => x.data.value.toUTF8String)
       recordsParsed <- recordBytes.traverse(bytes =>
         IO.fromEither(decode[TestData](bytes))
       )
