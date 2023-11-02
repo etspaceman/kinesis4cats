@@ -64,7 +64,7 @@ object LibraryDependencies {
         "com.github.awslabs.kinesis-aggregation" % "amazon-kinesis-aggregator" % "2.0.3-deagg"
     }
 
-    val kpl = "com.amazonaws" % "amazon-kinesis-producer" % "0.15.7"
+    val kpl = "com.amazonaws" % "amazon-kinesis-producer" % "0.15.8"
     val kcl = "software.amazon.kinesis" % "amazon-kinesis-client" % "2.5.2"
   }
 
@@ -112,7 +112,7 @@ object LibraryDependencies {
   }
 
   object Smithy4s {
-    val smithySpecVersion = "2023.09.22"
+    val smithySpecVersion = "2023.23.30"
 
     val kinesis =
       "com.disneystreaming.smithy" % "aws-kinesis-spec" % smithySpecVersion
