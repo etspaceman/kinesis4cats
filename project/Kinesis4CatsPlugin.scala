@@ -216,8 +216,9 @@ object Kinesis4CatsPlugin extends AutoPlugin {
     githubWorkflowArtifactDownloadExtraKeys += "project",
     tlCiScalafixCheck := true,
     mergifyStewardConfig := Some(
-      MergifyStewardConfig(action =
-        MergifyAction.Merge(method = Some("squash"))
+      MergifyStewardConfig(
+        action = MergifyAction.Merge(method = Some("squash")),
+        author = "etspaceman-scala-steward-app[bot]"
       )
     )
   ) ++ tlReplaceCommandAlias(
