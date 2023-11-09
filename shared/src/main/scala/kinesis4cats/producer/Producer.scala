@@ -142,7 +142,7 @@ abstract class Producer[F[_], PutReq, PutRes] private[kinesis4cats] (
               .parTraverseN(config.shardParallelism) { shardBatch =>
                 putImpl(asPutRequest(shardBatch))
                   .map(resp =>
-                    failedRecords(records, resp)
+                    failedRecords(shardBatch, resp)
                       .map(Producer.Result.putFailures[PutRes])
                       .fold(
                         Producer.Result.success(resp)
