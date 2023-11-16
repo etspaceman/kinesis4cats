@@ -1,8 +1,8 @@
 import LibraryDependencies.{Smithy4s => S4S, _}
+import laika.config._
 import laika.helium.Helium
 import laika.helium.config.TextLink
 import laika.helium.config.ThemeNavigationSection
-import laika.config._
 import sbt.Package.FixedTimestamp
 import sbt.Package.JarManifest
 import sbt.Package.MainClass
