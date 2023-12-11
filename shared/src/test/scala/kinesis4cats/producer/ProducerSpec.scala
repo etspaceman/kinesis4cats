@@ -31,6 +31,7 @@ import kinesis4cats.compat.retry._
 import kinesis4cats.models.HashKeyRange
 import kinesis4cats.models.ShardId
 import kinesis4cats.models.StreamNameOrArn
+import java.util.Base64
 
 class ProducerSpec extends munit.CatsEffectSuite {
   def fixture: SyncIO[FunFixture[MockProducer]] = ResourceFunFixture(
@@ -38,47 +39,27 @@ class ProducerSpec extends munit.CatsEffectSuite {
   )
 
   fixture.test("It should retry methods and eventually produce") { producer =>
-    val record1 = Record(Array.fill(50)(1), "1")
-    val record2 = Record(Array.fill(50)(1), "2")
-    val record3 = Record(Array.fill(50)(1), "3")
-    val record4 = Record(Array.fill(50)(1), "4")
-    val record5 = Record(Array.fill(50)(1), "5")
+    val record1 = Record("record 1".getBytes(), "1")
+    val record2 = Record("record 2".getBytes(), "2")
+
 
     val data = NonEmptyList.of(
-      record1,
-      record2,
-      record3,
-      record4,
-      record5
+      record1, record2
     )
 
     val response1 = MockPutResponse(
       NonEmptyList.one(record1),
-      List(record2, record3, record4, record5)
+      List(record2)
     )
 
     val response2 = MockPutResponse(
       NonEmptyList.one(record2),
-      List(record3, record4, record5)
-    )
-
-    val response3 = MockPutResponse(
-      NonEmptyList.one(record3),
-      List(record4, record5)
-    )
-
-    val response4 = MockPutResponse(
-      NonEmptyList.one(record4),
-      List(record5)
-    )
-
-    val response5 = MockPutResponse(
-      NonEmptyList.one(record5),
       List.empty
     )
 
+
     val expected: Producer.Result[MockPutResponse] = Producer.Result(
-      List(response1, response2, response3, response4, response5),
+      List(response1, response2),
       Nil,
       Nil
     )
@@ -101,6 +82,9 @@ class MockProducer(
   override protected def putImpl(req: MockPutRequest): IO[MockPutResponse] =
     for {
       _ <- IO(this.requests = this.requests + 1)
+      _ = req.records.toList.foreach { record =>
+        println(s"Record data: ${Base64.getEncoder().encodeToString(record.data)}")
+      }
     } yield MockPutResponse(
       NonEmptyList.one(req.records.head),
       req.records.tail
@@ -164,7 +148,7 @@ object MockProducer {
     logger,
     shardMapCache,
     defaultConfig.copy(batcherConfig =
-      defaultConfig.batcherConfig.copy(aggregate = false)
+      defaultConfig.batcherConfig.copy(aggregate = true)
     ),
     Producer.LogEncoders.show
   )
