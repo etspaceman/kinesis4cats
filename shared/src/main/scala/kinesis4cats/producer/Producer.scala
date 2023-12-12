@@ -65,7 +65,9 @@ abstract class Producer[F[_], PutReq, PutRes] private[kinesis4cats] (
 
   def config: Producer.Config[F]
 
-  private lazy val batcher: Batcher = new Batcher(config.batcherConfig)
+  private[kinesis4cats] lazy val batcher: Batcher = new Batcher(
+    config.batcherConfig
+  )
 
   /** Underlying implementation for putting a batch request to Kinesis
     *

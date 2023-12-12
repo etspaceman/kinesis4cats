@@ -17,7 +17,6 @@
 package kinesis4cats.producer
 
 import java.time.Instant
-import java.util.Base64
 
 import cats.Eq
 import cats.data.NonEmptyList
@@ -34,11 +33,66 @@ import kinesis4cats.models.ShardId
 import kinesis4cats.models.StreamNameOrArn
 
 class ProducerSpec extends munit.CatsEffectSuite {
-  def fixture: SyncIO[FunFixture[MockProducer]] = ResourceFunFixture(
-    MockProducer()
-  )
+  def fixture(aggregate: Boolean): SyncIO[FunFixture[MockProducer]] =
+    ResourceFunFixture(
+      MockProducer(aggregate)
+    )
 
-  fixture.test("It should retry methods and eventually produce") { producer =>
+  fixture(false).test("It should retry methods and eventually produce") {
+    producer =>
+      val record1 = Record(Array.fill(50)(1), "1")
+      val record2 = Record(Array.fill(50)(1), "2")
+      val record3 = Record(Array.fill(50)(1), "3")
+      val record4 = Record(Array.fill(50)(1), "4")
+      val record5 = Record(Array.fill(50)(1), "5")
+
+      val data = NonEmptyList.of(
+        record1,
+        record2,
+        record3,
+        record4,
+        record5
+      )
+
+      val response1 = MockPutResponse(
+        NonEmptyList.one(record1),
+        List(record2, record3, record4, record5)
+      )
+
+      val response2 = MockPutResponse(
+        NonEmptyList.one(record2),
+        List(record3, record4, record5)
+      )
+
+      val response3 = MockPutResponse(
+        NonEmptyList.one(record3),
+        List(record4, record5)
+      )
+
+      val response4 = MockPutResponse(
+        NonEmptyList.one(record4),
+        List(record5)
+      )
+
+      val response5 = MockPutResponse(
+        NonEmptyList.one(record5),
+        List.empty
+      )
+
+      val expected: Producer.Result[MockPutResponse] = Producer.Result(
+        List(response1, response2, response3, response4, response5),
+        Nil,
+        Nil
+      )
+
+      producer.put(data).map { res =>
+        assert(res === expected, s"res: $res\nexp: $expected")
+      }
+  }
+
+  fixture(true).test(
+    "It should retry methods and eventually produce when aggregated"
+  ) { producer =>
     val record1 = Record("record 1".getBytes(), "1")
     val record2 = Record("record 2".getBytes(), "2")
 
@@ -47,13 +101,34 @@ class ProducerSpec extends munit.CatsEffectSuite {
       record2
     )
 
+    val aggregatedRecord1 = producer.batcher
+      ._aggregateAndBatch(
+        NonEmptyList.one(Record.WithShard(record1, ShardId("1")))
+      )
+      .getOrElse(fail("Could not get aggregated batch"))
+      .head
+      .shardBatches
+      .head
+      ._2
+      .records
+    val aggregatedRecord2 = producer.batcher
+      ._aggregateAndBatch(
+        NonEmptyList.one(Record.WithShard(record2, ShardId("1")))
+      )
+      .getOrElse(fail("Could not get aggregated batch"))
+      .head
+      .shardBatches
+      .head
+      ._2
+      .records
+
     val response1 = MockPutResponse(
-      NonEmptyList.one(record1),
-      List(record2)
+      aggregatedRecord1,
+      aggregatedRecord2.toList
     )
 
     val response2 = MockPutResponse(
-      NonEmptyList.one(record2),
+      aggregatedRecord2,
       List.empty
     )
 
@@ -81,11 +156,6 @@ class MockProducer(
   override protected def putImpl(req: MockPutRequest): IO[MockPutResponse] =
     for {
       _ <- IO(this.requests = this.requests + 1)
-      _ <- req.records.toList.traverse { record =>
-        IO.println(
-          s"Record data: ${Base64.getEncoder().encodeToString(record.data)}"
-        )
-      }
     } yield MockPutResponse(
       NonEmptyList.one(req.records.head),
       req.records.tail
@@ -119,7 +189,7 @@ class MockProducer(
 }
 
 object MockProducer {
-  def apply(): Resource[IO, MockProducer] = for {
+  def apply(aggregate: Boolean): Resource[IO, MockProducer] = for {
     logger <- Resource.pure(NoOpLogger[IO])
     shardMapCache <- ShardMapCache.Builder
       .default[IO](
@@ -139,15 +209,18 @@ object MockProducer {
         logger
       )
       .build
-  } yield new MockProducer(
-    logger,
-    shardMapCache,
-    Producer.Config
+    defaultConfig = Producer.Config
       .default[IO](StreamNameOrArn.Name("foo"))
       .copy(
         retryPolicy = RetryPolicies.limitRetries[IO](5),
         raiseOnFailures = true
-      ),
+      )
+  } yield new MockProducer(
+    logger,
+    shardMapCache,
+    defaultConfig.copy(batcherConfig =
+      defaultConfig.batcherConfig.copy(aggregate = aggregate)
+    ),
     Producer.LogEncoders.show
   )
 }
