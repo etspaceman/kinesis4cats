@@ -245,7 +245,9 @@ object KCLConsumerFS2 {
         F: Async[F],
         P: Parallel[F]
     ): Builder[F] = Builder(
-      config = KCLConsumer.BuilderConfig.Make.default(appName, streamTracker),
+      config = KCLConsumer.BuilderConfig.Make
+        .default(appName, streamTracker)
+        .andThen(_.withProcessConfig(defaultProcessConfig)),
       mkKinesisClient = Resource.fromAutoCloseable(
         Sync[F].delay(KinesisAsyncClient.create())
       ),
