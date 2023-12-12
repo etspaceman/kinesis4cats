@@ -35,11 +35,15 @@ private[kinesis4cats] final class Batcher(config: Batcher.Config) {
     * @param records
     *   [[cats.data.NonEmptyList NonEmptyList]] of
     *   [[kinesis4cats.producer.Record.WithShard records]]
+    * @param retrying
+    *   Determines if the batcher is being executed during a retry. This helps
+    *   to avoid re-aggregation of data during retries
     * @return
     *   [[kinesis4cats.producer.batching.Batcher.Result Batcher.Result]]
     */
   def batch(
-      records: NonEmptyList[Record.WithShard]
+      records: NonEmptyList[Record.WithShard],
+      retrying: Boolean
   ): Batcher.Result = {
     val errors = records.collect {
       case record
@@ -66,7 +70,10 @@ private[kinesis4cats] final class Batcher(config: Batcher.Config) {
 
     val batchRes: List[Batch] = NonEmptyList
       .fromList(valid)
-      .flatMap(x => if (config.aggregate) _aggregateAndBatch(x) else _batch(x))
+      .flatMap(x =>
+        if (config.aggregate && !retrying) _aggregateAndBatch(x)
+        else _batch(x)
+      )
       .map(_.toList)
       .getOrElse(Nil)
 
@@ -85,7 +92,7 @@ private[kinesis4cats] final class Batcher(config: Batcher.Config) {
     * @return
     *   List of batches
     */
-  private def _aggregateAndBatch(
+  private[kinesis4cats] def _aggregateAndBatch(
       records: NonEmptyList[Record.WithShard]
   ): Option[NonEmptyList[Batch]] = {
     val aggregated =
