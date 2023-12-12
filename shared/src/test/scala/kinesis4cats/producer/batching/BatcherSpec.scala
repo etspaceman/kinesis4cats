@@ -59,7 +59,7 @@ class BatcherSpec extends munit.CatsEffectSuite {
         )
     )
 
-    val res = batcher.batch(records)
+    val res = batcher.batch(records, false)
     assert(res.isSuccessful)
     assert(res === expected, s"res: $res\nexp: $expected")
   }
@@ -101,7 +101,7 @@ class BatcherSpec extends munit.CatsEffectSuite {
         )
     )
 
-    val res = batcher.batch(records.map(_._2))
+    val res = batcher.batch(records.map(_._2), false)
     assert(res.isSuccessful)
     assert(res === expected, s"res: $res\nexp: $expected")
   }
@@ -137,7 +137,7 @@ class BatcherSpec extends munit.CatsEffectSuite {
         )
     )
 
-    val res = batcher.batch(records)
+    val res = batcher.batch(records, false)
     assert(res.isSuccessful)
     assert(res === expected, s"res: $res\nexp: $expected")
   }
@@ -179,7 +179,7 @@ class BatcherSpec extends munit.CatsEffectSuite {
         )
     )
 
-    val res = batcher.batch(records.map(_._2))
+    val res = batcher.batch(records.map(_._2), false)
     assert(res.isSuccessful)
     assert(res === expected, s"res: $res\nexp: $expected")
   }
@@ -197,7 +197,7 @@ class BatcherSpec extends munit.CatsEffectSuite {
       records.map(x => Producer.InvalidRecord.RecordTooLarge(x.record)).toList,
       Nil
     )
-    val res = batcher.batch(records)
+    val res = batcher.batch(records, false)
     assert(res.hasInvalid)
     assert(res === expected, s"res: $res\nexp: $expected")
   }
@@ -242,7 +242,7 @@ class BatcherSpec extends munit.CatsEffectSuite {
       }
     )
 
-    val res = batcher.batch(badRecords ::: goodRecords.map(_._2))
+    val res = batcher.batch(badRecords ::: goodRecords.map(_._2), false)
     assert(res.isPartiallySuccessful)
     assert(res === expected, s"res: $res\nexp: $expected")
   }

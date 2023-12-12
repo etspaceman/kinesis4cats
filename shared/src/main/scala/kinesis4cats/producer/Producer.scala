@@ -107,7 +107,8 @@ abstract class Producer[F[_], PutReq, PutRes] private[kinesis4cats] (
   ): Option[NonEmptyList[Producer.FailedRecord]]
 
   private def _put(
-      records: NonEmptyList[Record]
+      records: NonEmptyList[Record],
+      retrying: Boolean
   ): F[Producer.Result[PutRes]] = {
     val ctx = LogContext()
 
@@ -133,7 +134,7 @@ abstract class Producer[F[_], PutReq, PutRes] private[kinesis4cats] (
             else F.unit
         } yield Record.WithShard.fromOption(rec, shardRes.toOption)
       )
-      batched = batcher.batch(withShards)
+      batched = batcher.batch(withShards, retrying)
       res <-
         batched.batches
           .flatTraverse(batch =>
@@ -174,7 +175,7 @@ abstract class Producer[F[_], PutReq, PutRes] private[kinesis4cats] (
     val ctx = LogContext()
 
     for {
-      ref <- Ref.of(Producer.RetryState[PutRes](records, None))
+      ref <- Ref.of(Producer.RetryState[PutRes](records, None, false))
       finalRes <- retryingOnFailuresAndAllErrors(
         config.retryPolicy,
         (x: Producer.Result[PutRes]) =>
@@ -201,7 +202,8 @@ abstract class Producer[F[_], PutReq, PutRes] private[kinesis4cats] (
                       failed.toList // Only use failed from most recent result
                     )
                   )
-                }
+                },
+                true
               )
             )
           } yield (),
@@ -209,7 +211,7 @@ abstract class Producer[F[_], PutReq, PutRes] private[kinesis4cats] (
           logger.warn(ctx.addEncoded("retryDetails", details).context, e)(
             "Exception when putting records, retrying"
           )
-      )(ref.get.flatMap(x => _put(x.inputRecords)))
+      )(ref.get.flatMap(x => _put(x.inputRecords, x.retrying)))
       _ <-
         if (finalRes.hasFailed) {
           if (config.raiseOnFailures) {
@@ -234,7 +236,8 @@ abstract class Producer[F[_], PutReq, PutRes] private[kinesis4cats] (
         (
           Producer.RetryState(
             current.inputRecords,
-            Some(result)
+            Some(result),
+            current.retrying
           ),
           result
         )
@@ -247,7 +250,8 @@ object Producer {
 
   final private case class RetryState[A](
       inputRecords: NonEmptyList[Record],
-      res: Option[Result[A]]
+      res: Option[Result[A]],
+      retrying: Boolean
   )
 
   private[kinesis4cats] final case class Result[A](
