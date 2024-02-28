@@ -139,7 +139,7 @@ object FS2KinesisProducer {
       NoOpLogger[F],
       backend => AwsCredentialsProvider.default(backend),
       KinesisProducer.LogEncoders.show[F],
-      true
+      logRequestsResponses = true
     )
 
     @annotation.unused

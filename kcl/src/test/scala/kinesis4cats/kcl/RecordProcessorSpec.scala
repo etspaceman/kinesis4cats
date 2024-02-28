@@ -40,7 +40,7 @@ class RecordProcessorSpec extends munit.CatsEffectSuite {
         .Factory[IO](
           RecordProcessor.Config.default,
           deferredException,
-          true
+          raiseOnError = true
         )(recs => resultsQueue.tryOfferN(recs).void)
         .use { factory =>
           for {
@@ -98,7 +98,7 @@ class RecordProcessorSpec extends munit.CatsEffectSuite {
         .Factory[IO](
           RecordProcessor.Config.default,
           deferredException,
-          true
+          raiseOnError = true
         )(_ => IO.raiseError(expected))
         .use { factory =>
           for {

@@ -55,7 +55,7 @@ object LocalstackCloudWatchClient {
       underlying <- clientResource
       client <- CloudWatchClient.Builder
         .default[F]
-        .withClient(underlying, false)
+        .withClient(underlying, managed = false)
         .withLogEncoders(encoders)
         .withLogger(logger)
         .build

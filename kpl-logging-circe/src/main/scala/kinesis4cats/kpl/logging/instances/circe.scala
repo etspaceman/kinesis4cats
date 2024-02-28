@@ -38,7 +38,7 @@ object circe {
           .safeAdd("errorCode", x.getErrorCode())
           .safeAdd("errorMessage", x.getErrorMessage())
 
-      Json.obj(fields.toSeq: _*)
+      Json.obj(fields.toSeq*)
     }
 
     implicit val schemaEncoder: Encoder[Schema] = x => {
@@ -49,7 +49,7 @@ object circe {
           .safeAdd("schemaDefinition", x.getSchemaDefinition())
           .safeAdd("schemaName", x.getSchemaName())
 
-      Json.obj(fields.toSeq: _*)
+      Json.obj(fields.toSeq*)
     }
 
     implicit val userRecordEncoder: Encoder[UserRecord] = x => {
@@ -62,7 +62,7 @@ object circe {
           .safeAdd("schema", x.getSchema())
           .safeAdd("streamName", x.getStreamName())
 
-      Json.obj(fields.toSeq: _*)
+      Json.obj(fields.toSeq*)
     }
 
     implicit val userRecordResultEncoder: Encoder[UserRecordResult] = x => {
@@ -74,7 +74,7 @@ object circe {
           .safeAdd("sequenceNumber", x.getSequenceNumber())
           .safeAdd("shardId", x.getShardId())
 
-      Json.obj(fields.toSeq: _*)
+      Json.obj(fields.toSeq*)
     }
 
     new KPLProducer.LogEncoders()

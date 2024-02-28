@@ -73,5 +73,5 @@ private[kinesis4cats] object ShowBuilder {
     *   [[kinesis4cats.ShowBuilder ShowBuilder]]
     */
   def apply(className: String): ShowBuilder =
-    ShowBuilder(s"$className(", true)
+    ShowBuilder(s"$className(", isEmpty = true)
 }

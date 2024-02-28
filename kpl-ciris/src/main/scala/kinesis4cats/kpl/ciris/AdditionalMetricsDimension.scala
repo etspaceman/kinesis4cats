@@ -16,7 +16,6 @@
 
 package kinesis4cats.kpl.ciris
 
-import cats.syntax.all._
 import ciris._
 
 final case class AdditionalMetricsDimension(

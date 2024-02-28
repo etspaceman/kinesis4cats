@@ -122,7 +122,7 @@ object LocalstackKinesisClient {
         config,
         NoOpLogger[F],
         LogEncoders.show,
-        true,
+        logRequestsResponses = true,
         Nil
       )
 

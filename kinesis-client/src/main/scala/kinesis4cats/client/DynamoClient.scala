@@ -416,7 +416,7 @@ object DynamoClient {
         case (k, v) :: t =>
           val vStr = attributeValueShowImpl(v)
           val newRes = if (empty) s"$res$k=$vStr" else s"$res,$k=$vStr"
-          attributeValueMapShowImpl(t, newRes, true)
+          attributeValueMapShowImpl(t, newRes, empty = true)
       })
 
       def attributeValueListShowImpl(
@@ -428,7 +428,7 @@ object DynamoClient {
         case v :: t =>
           val vStr = attributeValueShowImpl(v)
           val newRes = if (empty) s"$res$vStr" else s"$res,$vStr"
-          attributeValueListShowImpl(t, newRes, true)
+          attributeValueListShowImpl(t, newRes, empty = true)
       })
 
       def attributeValueShowImpl(x: AttributeValue): Eval[String] =
