@@ -35,6 +35,10 @@ jobs:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     steps:
+      - name: Install sbt
+        if: contains(runner.os, 'macos')
+        run: brew install sbt
+
       - name: Checkout current branch (full)
         uses: actions/checkout@v4
         with:
@@ -124,7 +128,7 @@ jobs:
 
       - name: Upload target directories
         if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main')
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: target-${{ matrix.os }}-${{ matrix.java }}-${{ matrix.scala }}-${{ matrix.project }}
           path: targets.tar
@@ -139,6 +143,10 @@ jobs:
         java: [temurin@17]
     runs-on: ${{ matrix.os }}
     steps:
+      - name: Install sbt
+        if: contains(runner.os, 'macos')
+        run: brew install sbt
+
       - name: Checkout current branch (full)
         uses: actions/checkout@v4
         with:
@@ -158,7 +166,7 @@ jobs:
         run: sbt +update
 
       - name: Download target directories (2.13, root-jvm-212)
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: target-${{ matrix.os }}-${{ matrix.java }}-2.13-root-jvm-212
 
@@ -168,7 +176,7 @@ jobs:
           rm targets.tar
 
       - name: Download target directories (2.13, root-jvm-213)
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: target-${{ matrix.os }}-${{ matrix.java }}-2.13-root-jvm-213
 
@@ -178,7 +186,7 @@ jobs:
           rm targets.tar
 
       - name: Download target directories (2.13, root-jvm-3)
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: target-${{ matrix.os }}-${{ matrix.java }}-2.13-root-jvm-3
 
@@ -188,7 +196,7 @@ jobs:
           rm targets.tar
 
       - name: Download target directories (2.13, root-js-212)
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: target-${{ matrix.os }}-${{ matrix.java }}-2.13-root-js-212
 
@@ -198,7 +206,7 @@ jobs:
           rm targets.tar
 
       - name: Download target directories (2.13, root-js-213)
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: target-${{ matrix.os }}-${{ matrix.java }}-2.13-root-js-213
 
@@ -208,7 +216,7 @@ jobs:
           rm targets.tar
 
       - name: Download target directories (2.13, root-js-3)
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: target-${{ matrix.os }}-${{ matrix.java }}-2.13-root-js-3
 
@@ -218,7 +226,7 @@ jobs:
           rm targets.tar
 
       - name: Download target directories (2.13, root-native-212)
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: target-${{ matrix.os }}-${{ matrix.java }}-2.13-root-native-212
 
@@ -228,7 +236,7 @@ jobs:
           rm targets.tar
 
       - name: Download target directories (2.13, root-native-213)
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: target-${{ matrix.os }}-${{ matrix.java }}-2.13-root-native-213
 
@@ -238,7 +246,7 @@ jobs:
           rm targets.tar
 
       - name: Download target directories (2.13, root-native-3)
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: target-${{ matrix.os }}-${{ matrix.java }}-2.13-root-native-3
 
@@ -280,6 +288,10 @@ jobs:
         java: [temurin@17]
     runs-on: ${{ matrix.os }}
     steps:
+      - name: Install sbt
+        if: contains(runner.os, 'macos')
+        run: brew install sbt
+
       - name: Checkout current branch (full)
         uses: actions/checkout@v4
         with:
@@ -337,6 +349,10 @@ jobs:
         java: [temurin@17]
     runs-on: ${{ matrix.os }}
     steps:
+      - name: Install sbt
+        if: contains(runner.os, 'macos')
+        run: brew install sbt
+
       - name: Checkout current branch (full)
         uses: actions/checkout@v4
         with:
