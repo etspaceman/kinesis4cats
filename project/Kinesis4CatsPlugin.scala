@@ -75,18 +75,8 @@ object Kinesis4CatsPlugin extends AutoPlugin {
     tlSonatypeUseLegacyHost := true,
     resolvers += "s01 snapshots" at "https://s01.oss.sonatype.org/content/repositories/snapshots/",
     resolvers += "jitpack" at "https://jitpack.io",
-    githubWorkflowBuildPreamble ++= nativeBrewInstallWorkflowSteps.value ++ Seq(
-      WorkflowStep.Run(
-        List(
-          "brew install docker docker-compose && " +
-            "colima start && " +
-            "sudo ln -sf $HOME/.colima/default/docker.sock /var/run/docker.sock"
-        ),
-        name = Some("Setup Docker")
-      )
-    ),
+    githubWorkflowBuildPreamble ++= nativeBrewInstallWorkflowSteps.value,
     githubWorkflowBuildMatrixFailFast := Some(false),
-    githubWorkflowOSes := Seq("macos-latest"),
     githubWorkflowBuild := {
       val style = (tlCiHeaderCheck.value, tlCiScalafmtCheck.value) match {
         case (true, true) => // headers + formatting

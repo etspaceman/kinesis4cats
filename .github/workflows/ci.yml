@@ -28,17 +28,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-latest]
+        os: [ubuntu-latest]
         scala: [2.13]
         java: [temurin@17]
         project: [root-jvm-212, root-jvm-213, root-jvm-3, root-js-212, root-js-213, root-js-3, root-native-212, root-native-213, root-native-3]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     steps:
-      - name: Install sbt
-        if: contains(runner.os, 'macos')
-        run: brew install sbt
-
       - name: Checkout current branch (full)
         uses: actions/checkout@v4
         with:
@@ -57,22 +53,19 @@ jobs:
         if: matrix.java == 'temurin@17' && steps.setup-java-temurin-17.outputs.cache-hit == 'false'
         run: sbt +update
 
-      - name: Install brew formulae (macOS)
-        if: startsWith(matrix.os, 'macos')
-        run: brew install openssl s2n
-
-      - name: Setup Docker
-        run: brew install docker docker-compose && colima start && sudo ln -sf $HOME/.colima/default/docker.sock /var/run/docker.sock
+      - name: Install brew formulae (ubuntu)
+        if: startsWith(matrix.os, 'ubuntu')
+        run: /home/linuxbrew/.linuxbrew/bin/brew install openssl s2n
 
       - name: Check that workflows are up to date
         run: sbt githubWorkflowCheck
 
       - name: Check headers and formatting
-        if: matrix.java == 'temurin@17' && matrix.os == 'macos-latest'
+        if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-latest'
         run: sbt 'project ${{ matrix.project }}' headerCheckAll fmtCheck
 
       - name: Docker Compose Up
-        if: matrix.java == 'temurin@17' && matrix.os == 'macos-latest'
+        if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-latest'
         env:
           GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         uses: nick-fields/retry@v2
@@ -84,11 +77,11 @@ jobs:
           max_attempts: 3
 
       - name: Link JS
-        if: matrix.java == 'temurin@17' && matrix.os == 'macos-latest' && startsWith(matrix.project, 'root-js')
+        if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-latest' && startsWith(matrix.project, 'root-js')
         run: sbt 'project ${{ matrix.project }}' Test/fastLinkJS
 
       - name: Link Native
-        if: matrix.java == 'temurin@17' && matrix.os == 'macos-latest' && startsWith(matrix.project, 'root-native')
+        if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-latest' && startsWith(matrix.project, 'root-native')
         env:
           GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         uses: nick-fields/retry@v2
@@ -99,7 +92,7 @@ jobs:
           retry_on: error
 
       - name: Test
-        if: matrix.java == 'temurin@17' && matrix.os == 'macos-latest'
+        if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-latest'
         run: sbt 'project ${{ matrix.project }}' test
 
       - name: Print docker logs and container listing
@@ -107,15 +100,15 @@ jobs:
         run: sbt 'project ${{ matrix.project }}' dockerComposePs dockerComposeLogs
 
       - name: Remove docker containers
-        if: matrix.java == 'temurin@17' && matrix.os == 'macos-latest'
+        if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-latest'
         run: sbt 'project ${{ matrix.project }}' dockerComposeDown
 
       - name: Check scalafix lints
-        if: matrix.java == 'temurin@17' && matrix.os == 'macos-latest' && matrix.scala != '3.3.1'
+        if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-latest' && matrix.scala != '3.3.1'
         run: sbt 'project ${{ matrix.project }}' fixCheck
 
       - name: Generate API documentation
-        if: matrix.java == 'temurin@17' && matrix.os == 'macos-latest'
+        if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-latest'
         run: sbt 'project ${{ matrix.project }}' doc
 
       - name: Make target directories
@@ -139,14 +132,10 @@ jobs:
     if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main')
     strategy:
       matrix:
-        os: [macos-latest]
+        os: [ubuntu-latest]
         java: [temurin@17]
     runs-on: ${{ matrix.os }}
     steps:
-      - name: Install sbt
-        if: contains(runner.os, 'macos')
-        run: brew install sbt
-
       - name: Checkout current branch (full)
         uses: actions/checkout@v4
         with:
@@ -288,10 +277,6 @@ jobs:
         java: [temurin@17]
     runs-on: ${{ matrix.os }}
     steps:
-      - name: Install sbt
-        if: contains(runner.os, 'macos')
-        run: brew install sbt
-
       - name: Checkout current branch (full)
         uses: actions/checkout@v4
         with:
@@ -349,10 +334,6 @@ jobs:
         java: [temurin@17]
     runs-on: ${{ matrix.os }}
     steps:
-      - name: Install sbt
-        if: contains(runner.os, 'macos')
-        run: brew install sbt
-
       - name: Checkout current branch (full)
         uses: actions/checkout@v4
         with:
