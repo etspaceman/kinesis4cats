@@ -177,7 +177,9 @@ abstract class Producer[F[_], PutReq, PutRes] private[kinesis4cats] (
     val ctx = LogContext()
 
     for {
-      ref <- Ref.of(Producer.RetryState[PutRes](records, None, false))
+      ref <- Ref.of(
+        Producer.RetryState[PutRes](records, None, retrying = false)
+      )
       finalRes <- retryingOnFailuresAndAllErrors(
         config.retryPolicy,
         (x: Producer.Result[PutRes]) =>
@@ -205,7 +207,7 @@ abstract class Producer[F[_], PutReq, PutRes] private[kinesis4cats] (
                     )
                   )
                 },
-                true
+                retrying = true
               )
             )
           } yield (),

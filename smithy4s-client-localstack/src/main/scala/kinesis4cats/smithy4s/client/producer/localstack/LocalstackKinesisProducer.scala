@@ -149,7 +149,7 @@ object LocalstackKinesisProducer {
         Producer.Config.default[F](streamNameOrArn),
         NoOpLogger[F],
         LogEncoders.show,
-        true,
+        logRequestsResponses = true,
         Nil,
         (client: KinesisClient[F], snoa: StreamNameOrArn) =>
           KinesisProducer.getShardMap(client, snoa)

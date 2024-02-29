@@ -230,7 +230,7 @@ object Batcher {
       1000,
       256,
       1,
-      true
+      aggregate = true
     )
   }
 }

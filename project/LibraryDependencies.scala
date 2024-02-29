@@ -2,7 +2,7 @@ import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport._
 import sbt._
 
 object LibraryDependencies {
-  val Logback = "ch.qos.logback" % "logback-classic" % "1.4.14"
+  val Logback = "ch.qos.logback" % "logback-classic" % "1.5.1"
   val JavaXMLBind = "javax.xml.bind" % "jaxb-api" % "2.3.1"
   val Scalacheck = Def.setting("org.scalacheck" %%% "scalacheck" % "1.17.0")
   val Epollcat = Def.setting("com.armanbilge" %%% "epollcat" % "0.1.6")
@@ -13,7 +13,7 @@ object LibraryDependencies {
   }
 
   object FS2 {
-    val fs2Version = "3.9.3"
+    val fs2Version = "3.9.4"
     val core = Def.setting("co.fs2" %%% "fs2-core" % fs2Version)
     val reactiveStreams = "co.fs2" %% "fs2-reactive-streams" % fs2Version
   }
@@ -28,7 +28,7 @@ object LibraryDependencies {
   }
 
   object Munit {
-    val munitVersion = "1.0.0-M10"
+    val munitVersion = "1.0.0-M11"
     val core = Def.setting("org.scalameta" %%% "munit" % munitVersion)
     val scalacheck =
       Def.setting("org.scalameta" %%% "munit-scalacheck" % munitVersion)
@@ -64,13 +64,15 @@ object LibraryDependencies {
         "com.github.awslabs.kinesis-aggregation" % "amazon-kinesis-aggregator" % "2.0.3-deagg"
     }
 
+    // Can't use 0.15.9, waiting until 0.15.10
+    // See https://github.com/awslabs/amazon-kinesis-producer/issues/559
     val kpl = "com.amazonaws" % "amazon-kinesis-producer" % "0.15.8"
     val kcl = "software.amazon.kinesis" % "amazon-kinesis-client" % "2.5.4"
   }
 
   object Cats {
     val catsVersion = "2.10.0"
-    val catsEffectVersion = "3.5.2"
+    val catsEffectVersion = "3.5.3"
     val core = Def.setting("org.typelevel" %%% "cats-core" % catsVersion)
     val effect =
       Def.setting("org.typelevel" %%% "cats-effect" % catsEffectVersion)
@@ -94,13 +96,13 @@ object LibraryDependencies {
   }
 
   object Http4s {
-    val http4sVersion = "0.23.24"
+    val http4sVersion = "0.23.25"
     val emberServer =
       Def.setting("org.http4s" %%% "http4s-ember-server" % http4sVersion)
     val emberClient =
       Def.setting("org.http4s" %%% "http4s-ember-client" % http4sVersion)
     val blazeClient =
-      Def.setting("org.http4s" %%% "http4s-blaze-client" % "0.23.15")
+      Def.setting("org.http4s" %%% "http4s-blaze-client" % "0.23.16")
     val circe = Def.setting("org.http4s" %%% "http4s-circe" % http4sVersion)
   }
 

@@ -51,7 +51,7 @@ object circe {
           .safeAdd("extendedRequestId", x.extendedRequestId())
           .safeAdd("requestId", x.requestId())
 
-      Json.obj(fields.toSeq: _*)
+      Json.obj(fields.toSeq*)
     }
 
     implicit val streamModeDetailsEncoder: Encoder[kin.StreamModeDetails] = x =>
@@ -60,7 +60,7 @@ object circe {
           .empty[String, Json]
           .safeAdd("streamMode", x.streamModeAsString())
 
-        Json.obj(fields.toSeq: _*)
+        Json.obj(fields.toSeq*)
       }
 
     implicit val enhancedMonitoringEncoder: Encoder[kin.EnhancedMetrics] = x =>
@@ -70,7 +70,7 @@ object circe {
           .safeAdd("hasShardLevelMetrics", x.hasShardLevelMetrics())
           .safeAdd("shardLevelMetrics", x.shardLevelMetricsAsStrings())
 
-        Json.obj(fields.toSeq: _*)
+        Json.obj(fields.toSeq*)
       }
 
     implicit val hashKeyRangeEncoder: Encoder[kin.HashKeyRange] = x => {
@@ -79,7 +79,7 @@ object circe {
         .safeAdd("endingHashKey", x.endingHashKey())
         .safeAdd("startingHashKey", x.startingHashKey())
 
-      Json.obj(fields.toSeq: _*)
+      Json.obj(fields.toSeq*)
     }
 
     implicit val sequenceNumberRangeEncoder: Encoder[kin.SequenceNumberRange] =
@@ -89,7 +89,7 @@ object circe {
           .safeAdd("endingSequenceNumber", x.endingSequenceNumber())
           .safeAdd("startingSequenceNumber", x.startingSequenceNumber())
 
-        Json.obj(fields.toSeq: _*)
+        Json.obj(fields.toSeq*)
       }
 
     implicit val shardEncoder: Encoder[kin.Shard] = x => {
@@ -101,7 +101,7 @@ object circe {
         .safeAdd("sequenceNumberRange", x.sequenceNumberRange())
         .safeAdd("shardId", x.shardId())
 
-      Json.obj(fields.toSeq: _*)
+      Json.obj(fields.toSeq*)
     }
 
     implicit val streamDescriptionEncoder: Encoder[kin.StreamDescription] = x =>
@@ -122,7 +122,7 @@ object circe {
           .safeAdd("streamName", x.streamName())
           .safeAdd("streamStatus", x.streamStatusAsString())
 
-        Json.obj(fields.toSeq: _*)
+        Json.obj(fields.toSeq*)
       }
 
     implicit val streamDescriptionSummaryEncoder
@@ -143,7 +143,7 @@ object circe {
           .safeAdd("streamName", x.streamName())
           .safeAdd("streamStatus", x.streamStatusAsString())
 
-        Json.obj(fields.toSeq: _*)
+        Json.obj(fields.toSeq*)
       }
 
     implicit val consumerDescriptionEncoder: Encoder[kin.ConsumerDescription] =
@@ -156,7 +156,7 @@ object circe {
           .safeAdd("consumerStatus", x.consumerStatusAsString())
           .safeAdd("streamARN", x.streamARN())
 
-        Json.obj(fields.toSeq: _*)
+        Json.obj(fields.toSeq*)
       }
 
     implicit val childShardEncoder: Encoder[kin.ChildShard] = x => {
@@ -167,7 +167,7 @@ object circe {
         .safeAdd("parentShards", x.parentShards())
         .safeAdd("shardId", x.shardId())
 
-      Json.obj(fields.toSeq: _*)
+      Json.obj(fields.toSeq*)
     }
 
     implicit val consumerEncoder: Encoder[kin.Consumer] = x => {
@@ -178,7 +178,7 @@ object circe {
         .safeAdd("consumerName", x.consumerName())
         .safeAdd("consumerStatus", x.consumerStatusAsString())
 
-      Json.obj(fields.toSeq: _*)
+      Json.obj(fields.toSeq*)
     }
 
     implicit val recordEncoder: Encoder[kin.Record] = x => {
@@ -193,7 +193,7 @@ object circe {
         .safeAdd("partitionKey", x.partitionKey())
         .safeAdd("sequenceNumber", x.sequenceNumber())
 
-      Json.obj(fields.toSeq: _*)
+      Json.obj(fields.toSeq*)
     }
 
     implicit val shardFilterEncoder: Encoder[kin.ShardFilter] = x => {
@@ -203,7 +203,7 @@ object circe {
         .safeAdd("timestamp", x.timestamp())
         .safeAdd("type", x.typeAsString())
 
-      Json.obj(fields.toSeq: _*)
+      Json.obj(fields.toSeq*)
     }
 
     implicit val streamSummaryEncoder: Encoder[kin.StreamSummary] = x => {
@@ -215,7 +215,7 @@ object circe {
         .safeAdd("streamName", x.streamName())
         .safeAdd("streamStatus", x.streamStatusAsString())
 
-      Json.obj(fields.toSeq: _*)
+      Json.obj(fields.toSeq*)
     }
 
     implicit val tagEncoder: Encoder[kin.Tag] = x => {
@@ -224,7 +224,7 @@ object circe {
         .safeAdd("key", x.key())
         .safeAdd("value", x.value())
 
-      Json.obj(fields.toSeq: _*)
+      Json.obj(fields.toSeq*)
     }
 
     implicit val putRecordsRequestEntryEncoder
@@ -236,7 +236,7 @@ object circe {
           .safeAdd("explicitHashKey", x.explicitHashKey())
           .safeAdd("partitionKey", x.partitionKey())
 
-        Json.obj(fields.toSeq: _*)
+        Json.obj(fields.toSeq*)
       }
 
     implicit val putRecordsResultEntryEncoder
@@ -249,7 +249,7 @@ object circe {
           .safeAdd("sequenceNumber", x.sequenceNumber())
           .safeAdd("shardId", x.shardId())
 
-        Json.obj(fields.toSeq: _*)
+        Json.obj(fields.toSeq*)
       }
 
     implicit val startingPositionEncoder: Encoder[kin.StartingPosition] = x => {
@@ -259,7 +259,7 @@ object circe {
         .safeAdd("timestamp", x.timestamp())
         .safeAdd("typeAsString", x.typeAsString())
 
-      Json.obj(fields.toSeq: _*)
+      Json.obj(fields.toSeq*)
     }
 
     implicit val addTagsToStreamRequestEncoder
@@ -271,7 +271,7 @@ object circe {
           .safeAdd("tags", x.tags())
           .safeAdd("streamARN", x.streamARN())
 
-        Json.obj(fields.toSeq: _*)
+        Json.obj(fields.toSeq*)
       }
 
     implicit val addTagsToStreamResponseEncoder
@@ -280,7 +280,7 @@ object circe {
         .empty[String, Json]
         .safeAdd("responseMetadata", x.responseMetadata())
 
-      Json.obj(fields.toSeq: _*)
+      Json.obj(fields.toSeq*)
     }
 
     implicit val createStreamRequestEncoder: Encoder[kin.CreateStreamRequest] =
@@ -291,7 +291,7 @@ object circe {
           .safeAdd("shardCount", x.shardCount())
           .safeAdd("streamARN", x.streamModeDetails())
 
-        Json.obj(fields.toSeq: _*)
+        Json.obj(fields.toSeq*)
       }
 
     implicit val createStreamResponseEncoder
@@ -301,7 +301,7 @@ object circe {
           .empty[String, Json]
           .safeAdd("responseMetadata", x.responseMetadata())
 
-        Json.obj(fields.toSeq: _*)
+        Json.obj(fields.toSeq*)
       }
 
     implicit val decreaseStreamRetentionPeriodRequestEncoder
@@ -312,7 +312,7 @@ object circe {
         .safeAdd("streamName", x.streamName())
         .safeAdd("retentionPeriodHours", x.retentionPeriodHours())
 
-      Json.obj(fields.toSeq: _*)
+      Json.obj(fields.toSeq*)
     }
 
     implicit val decreaseStreamRetentionPeriodResponseEncoder
@@ -321,7 +321,7 @@ object circe {
         .empty[String, Json]
         .safeAdd("responseMetadata", x.responseMetadata())
 
-      Json.obj(fields.toSeq: _*)
+      Json.obj(fields.toSeq*)
     }
 
     implicit val deleteStreamRequestEncoder: Encoder[kin.DeleteStreamRequest] =
@@ -332,7 +332,7 @@ object circe {
           .safeAdd("streamName", x.streamName())
           .safeAdd("enforceConsumerDeletion", x.enforceConsumerDeletion())
 
-        Json.obj(fields.toSeq: _*)
+        Json.obj(fields.toSeq*)
       }
 
     implicit val deleteStreamResponseEncoder
@@ -342,7 +342,7 @@ object circe {
           .empty[String, Json]
           .safeAdd("responseMetadata", x.responseMetadata())
 
-        Json.obj(fields.toSeq: _*)
+        Json.obj(fields.toSeq*)
       }
 
     implicit val deregisterStreamConsumerRequestEncoder
@@ -353,7 +353,7 @@ object circe {
         .safeAdd("consumerName", x.consumerName())
         .safeAdd("consumerARN", x.consumerARN())
 
-      Json.obj(fields.toSeq: _*)
+      Json.obj(fields.toSeq*)
     }
 
     implicit val deregisterStreamConsumerResponseEncoder
@@ -362,7 +362,7 @@ object circe {
         .empty[String, Json]
         .safeAdd("responseMetadata", x.responseMetadata())
 
-      Json.obj(fields.toSeq: _*)
+      Json.obj(fields.toSeq*)
     }
 
     implicit val describeLimitsRequestEncoder
@@ -380,7 +380,7 @@ object circe {
           .safeAdd("shardLimit", x.shardLimit())
           .safeAdd("responseMetadata", x.responseMetadata())
 
-        Json.obj(fields.toSeq: _*)
+        Json.obj(fields.toSeq*)
       }
 
     implicit val describeStreamRequestEncoder
@@ -393,7 +393,7 @@ object circe {
           .safeAdd("streamARN", x.streamARN())
           .safeAdd("streamName", x.streamName())
 
-        Json.obj(fields.toSeq: _*)
+        Json.obj(fields.toSeq*)
       }
 
     implicit val describeStreamResponseEncoder
@@ -404,7 +404,7 @@ object circe {
           .safeAdd("streamDescription", x.streamDescription())
           .safeAdd("responseMetadata", x.responseMetadata())
 
-        Json.obj(fields.toSeq: _*)
+        Json.obj(fields.toSeq*)
       }
 
     implicit val describeStreamConsumerRequestEncoder
@@ -415,7 +415,7 @@ object circe {
         .safeAdd("consumerARN", x.consumerARN())
         .safeAdd("consumerName", x.consumerName())
 
-      Json.obj(fields.toSeq: _*)
+      Json.obj(fields.toSeq*)
     }
 
     implicit val describeStreamConsumerResponseEncoder
@@ -425,7 +425,7 @@ object circe {
         .safeAdd("consumerDescription", x.consumerDescription())
         .safeAdd("responseMetadata", x.responseMetadata())
 
-      Json.obj(fields.toSeq: _*)
+      Json.obj(fields.toSeq*)
     }
 
     implicit val describeStreamSummaryRequestEncoder
@@ -435,7 +435,7 @@ object circe {
         .safeAdd("streamARN", x.streamARN())
         .safeAdd("streamName", x.streamName())
 
-      Json.obj(fields.toSeq: _*)
+      Json.obj(fields.toSeq*)
     }
 
     implicit val describeStreamSummaryResponseEncoder
@@ -445,7 +445,7 @@ object circe {
         .safeAdd("streamDescriptionSummary", x.streamDescriptionSummary())
         .safeAdd("responseMetadata", x.responseMetadata())
 
-      Json.obj(fields.toSeq: _*)
+      Json.obj(fields.toSeq*)
     }
 
     implicit val disableEnhancedMonitoringEncoder
@@ -456,7 +456,7 @@ object circe {
         .safeAdd("streamName", x.streamName())
         .safeAdd("streamARN", x.streamARN())
 
-      Json.obj(fields.toSeq: _*)
+      Json.obj(fields.toSeq*)
     }
 
     implicit val disableEnhancedMonitoringResponseEncoder
@@ -483,7 +483,7 @@ object circe {
         .safeAdd("streamName", x.streamName())
         .safeAdd("responseMetadata", x.responseMetadata())
 
-      Json.obj(fields.toSeq: _*)
+      Json.obj(fields.toSeq*)
     }
 
     implicit val enableEnhancedMonitoringEncoder
@@ -494,7 +494,7 @@ object circe {
         .safeAdd("streamName", x.streamName())
         .safeAdd("streamARN", x.streamARN())
 
-      Json.obj(fields.toSeq: _*)
+      Json.obj(fields.toSeq*)
     }
 
     implicit val enableEnhancedMonitoringResponseEncoder
@@ -521,7 +521,7 @@ object circe {
         .safeAdd("streamName", x.streamName())
         .safeAdd("responseMetadata", x.responseMetadata())
 
-      Json.obj(fields.toSeq: _*)
+      Json.obj(fields.toSeq*)
     }
 
     implicit val getRecordsRequestEncoder: Encoder[kin.GetRecordsRequest] = x =>
@@ -532,7 +532,7 @@ object circe {
           .safeAdd("shardIterator", x.shardIterator())
           .safeAdd("streamARN", x.streamARN())
 
-        Json.obj(fields.toSeq: _*)
+        Json.obj(fields.toSeq*)
       }
 
     implicit val getRecordsResponseEncoder: Encoder[kin.GetRecordsResponse] =
@@ -547,7 +547,7 @@ object circe {
           .safeAdd("records", x.records())
           .safeAdd("responseMetadata", x.responseMetadata())
 
-        Json.obj(fields.toSeq: _*)
+        Json.obj(fields.toSeq*)
       }
 
     implicit val getShardIteratorRequestEncoder
@@ -561,7 +561,7 @@ object circe {
         .safeAdd("streamName", x.streamName())
         .safeAdd("timestamp", x.timestamp())
 
-      Json.obj(fields.toSeq: _*)
+      Json.obj(fields.toSeq*)
     }
 
     implicit val getShardIteratorResponseEncoder
@@ -571,7 +571,7 @@ object circe {
           .empty[String, Json]
           .safeAdd("shardIterator", x.shardIterator())
 
-        Json.obj(fields.toSeq: _*)
+        Json.obj(fields.toSeq*)
       }
 
     implicit val increaseStreamRetentionPeriodRequestEncoder
@@ -582,7 +582,7 @@ object circe {
         .safeAdd("streamName", x.streamName())
         .safeAdd("retentionPeriodHours", x.retentionPeriodHours())
 
-      Json.obj(fields.toSeq: _*)
+      Json.obj(fields.toSeq*)
     }
 
     implicit val increaseStreamRetentionPeriodResponseEncoder
@@ -591,7 +591,7 @@ object circe {
         .empty[String, Json]
         .safeAdd("responseMetadata", x.responseMetadata())
 
-      Json.obj(fields.toSeq: _*)
+      Json.obj(fields.toSeq*)
     }
 
     implicit val listShardsRequestEncoder: Encoder[kin.ListShardsRequest] = x =>
@@ -605,7 +605,7 @@ object circe {
           .safeAdd("streamCreationTimestamp", x.streamCreationTimestamp())
           .safeAdd("streamName", x.streamName())
 
-        Json.obj(fields.toSeq: _*)
+        Json.obj(fields.toSeq*)
       }
 
     implicit val listShardsResponseEncoder: Encoder[kin.ListShardsResponse] =
@@ -617,7 +617,7 @@ object circe {
           .safeAdd("shards", x.shards())
           .safeAdd("responseMetadata", x.responseMetadata())
 
-        Json.obj(fields.toSeq: _*)
+        Json.obj(fields.toSeq*)
       }
 
     implicit val listStreamConsumersRequestEncoder
@@ -629,7 +629,7 @@ object circe {
         .safeAdd("streamARN", x.streamARN())
         .safeAdd("streamCreationTimestamp", x.streamCreationTimestamp())
 
-      Json.obj(fields.toSeq: _*)
+      Json.obj(fields.toSeq*)
     }
 
     implicit val listStreamConsumersResponseEncoder
@@ -641,7 +641,7 @@ object circe {
         .safeAdd("nextToken", x.nextToken())
         .safeAdd("responseMetadata", x.responseMetadata())
 
-      Json.obj(fields.toSeq: _*)
+      Json.obj(fields.toSeq*)
     }
 
     implicit val listStreamsRequestEncoder: Encoder[kin.ListStreamsRequest] =
@@ -652,7 +652,7 @@ object circe {
           .safeAdd("limit", x.limit())
           .safeAdd("nextToken", x.nextToken())
 
-        Json.obj(fields.toSeq: _*)
+        Json.obj(fields.toSeq*)
       }
 
     implicit val listStreamsResponseEncoder: Encoder[kin.ListStreamsResponse] =
@@ -667,7 +667,7 @@ object circe {
           .safeAdd("streamSummaries", x.streamSummaries())
           .safeAdd("responseMetadata", x.responseMetadata())
 
-        Json.obj(fields.toSeq: _*)
+        Json.obj(fields.toSeq*)
       }
 
     implicit val listTagsForStreamRequestEncoder
@@ -680,7 +680,7 @@ object circe {
           .safeAdd("streamARN", x.streamARN())
           .safeAdd("streamName", x.streamName())
 
-        Json.obj(fields.toSeq: _*)
+        Json.obj(fields.toSeq*)
       }
 
     implicit val listTagsForStreamResponseEncoder
@@ -693,7 +693,7 @@ object circe {
           .safeAdd("tags", x.tags())
           .safeAdd("responseMetadata", x.responseMetadata())
 
-        Json.obj(fields.toSeq: _*)
+        Json.obj(fields.toSeq*)
       }
 
     implicit val mergeShardsRequestEncoder: Encoder[kin.MergeShardsRequest] =
@@ -705,7 +705,7 @@ object circe {
           .safeAdd("streamARN", x.streamARN())
           .safeAdd("streamName", x.streamName())
 
-        Json.obj(fields.toSeq: _*)
+        Json.obj(fields.toSeq*)
       }
 
     implicit val mergeShardsResponseEncoder: Encoder[kin.MergeShardsResponse] =
@@ -714,7 +714,7 @@ object circe {
           .empty[String, Json]
           .safeAdd("responseMetadata", x.responseMetadata())
 
-        Json.obj(fields.toSeq: _*)
+        Json.obj(fields.toSeq*)
       }
 
     implicit val putRecordRequestEncoder: Encoder[kin.PutRecordRequest] =
@@ -728,7 +728,7 @@ object circe {
           .safeAdd("streamARN", x.streamARN())
           .safeAdd("streamName", x.streamName())
 
-        Json.obj(fields.toSeq: _*)
+        Json.obj(fields.toSeq*)
       }
 
     implicit val putRecordResponseEncoder: Encoder[kin.PutRecordResponse] =
@@ -740,7 +740,7 @@ object circe {
           .safeAdd("shardId", x.shardId())
           .safeAdd("responseMetadata", x.responseMetadata())
 
-        Json.obj(fields.toSeq: _*)
+        Json.obj(fields.toSeq*)
       }
 
     implicit val putRecordsRequestEncoder: Encoder[kin.PutRecordsRequest] =
@@ -752,7 +752,7 @@ object circe {
           .safeAdd("streamARN", x.streamARN())
           .safeAdd("streamName", x.streamName())
 
-        Json.obj(fields.toSeq: _*)
+        Json.obj(fields.toSeq*)
       }
 
     implicit val putRecordsResponseEncoder: Encoder[kin.PutRecordsResponse] =
@@ -765,7 +765,7 @@ object circe {
           .safeAdd("records", x.records())
           .safeAdd("responseMetadata", x.responseMetadata())
 
-        Json.obj(fields.toSeq: _*)
+        Json.obj(fields.toSeq*)
       }
 
     implicit val registerStreamConsumerRequestEncoder
@@ -776,7 +776,7 @@ object circe {
           .safeAdd("consumerName", x.consumerName())
           .safeAdd("streamARN", x.streamARN())
 
-        Json.obj(fields.toSeq: _*)
+        Json.obj(fields.toSeq*)
       }
 
     implicit val registerStreamConsumerResponseEncoder
@@ -787,7 +787,7 @@ object circe {
           .safeAdd("consumer", x.consumer())
           .safeAdd("responseMetadata", x.responseMetadata())
 
-        Json.obj(fields.toSeq: _*)
+        Json.obj(fields.toSeq*)
       }
 
     implicit val removeTagsFromStreamRequestEncoder
@@ -799,7 +799,7 @@ object circe {
         .safeAdd("streamARN", x.streamARN())
         .safeAdd("tagKeys", x.tagKeys())
 
-      Json.obj(fields.toSeq: _*)
+      Json.obj(fields.toSeq*)
     }
 
     implicit val removeTagsFromStreamResponseEncoder
@@ -808,7 +808,7 @@ object circe {
         .empty[String, Json]
         .safeAdd("responseMetadata", x.responseMetadata())
 
-      Json.obj(fields.toSeq: _*)
+      Json.obj(fields.toSeq*)
     }
 
     implicit val splitShardRequestEncoder: Encoder[kin.SplitShardRequest] = x =>
@@ -820,7 +820,7 @@ object circe {
           .safeAdd("streamName", x.streamName())
           .safeAdd("streamARN", x.streamARN())
 
-        Json.obj(fields.toSeq: _*)
+        Json.obj(fields.toSeq*)
       }
 
     implicit val splitShardResponseEncoder: Encoder[kin.SplitShardResponse] =
@@ -829,7 +829,7 @@ object circe {
           .empty[String, Json]
           .safeAdd("responseMetadata", x.responseMetadata())
 
-        Json.obj(fields.toSeq: _*)
+        Json.obj(fields.toSeq*)
       }
 
     implicit val startStreamEncryptionRequestEncoder
@@ -841,7 +841,7 @@ object circe {
         .safeAdd("streamName", x.streamName())
         .safeAdd("streamARN", x.streamARN())
 
-      Json.obj(fields.toSeq: _*)
+      Json.obj(fields.toSeq*)
     }
 
     implicit val startStreamEncryptionResponseEncoder
@@ -850,7 +850,7 @@ object circe {
         .empty[String, Json]
         .safeAdd("responseMetadata", x.responseMetadata())
 
-      Json.obj(fields.toSeq: _*)
+      Json.obj(fields.toSeq*)
     }
 
     implicit val stopStreamEncryptionRequestEncoder
@@ -862,7 +862,7 @@ object circe {
         .safeAdd("streamName", x.streamName())
         .safeAdd("streamARN", x.streamARN())
 
-      Json.obj(fields.toSeq: _*)
+      Json.obj(fields.toSeq*)
     }
 
     implicit val stopStreamEncryptionResponseEncoder
@@ -871,7 +871,7 @@ object circe {
         .empty[String, Json]
         .safeAdd("responseMetadata", x.responseMetadata())
 
-      Json.obj(fields.toSeq: _*)
+      Json.obj(fields.toSeq*)
     }
 
     implicit val subscribeToShardRequestEncoder
@@ -882,7 +882,7 @@ object circe {
         .safeAdd("shardId", x.shardId())
         .safeAdd("startingPosition", x.startingPosition())
 
-      Json.obj(fields.toSeq: _*)
+      Json.obj(fields.toSeq*)
     }
 
     implicit val subscribeToShardResponseEncoder
@@ -892,7 +892,7 @@ object circe {
           .empty[String, Json]
           .safeAdd("responseMetadata", x.responseMetadata())
 
-        Json.obj(fields.toSeq: _*)
+        Json.obj(fields.toSeq*)
       }
 
     implicit val updateShardCountRequestEncoder
@@ -904,7 +904,7 @@ object circe {
         .safeAdd("streamName", x.streamName())
         .safeAdd("targetShardCount", x.targetShardCount())
 
-      Json.obj(fields.toSeq: _*)
+      Json.obj(fields.toSeq*)
     }
 
     implicit val updateShardCountResponseEncoder
@@ -918,7 +918,7 @@ object circe {
           .safeAdd("targetShardCount", x.targetShardCount())
           .safeAdd("responseMetadata", x.responseMetadata())
 
-        Json.obj(fields.toSeq: _*)
+        Json.obj(fields.toSeq*)
       }
 
     implicit val updateStreamModeRequestEncoder
@@ -928,7 +928,7 @@ object circe {
         .safeAdd("streamARN", x.streamARN())
         .safeAdd("streamModeDetails", x.streamModeDetails())
 
-      Json.obj(fields.toSeq: _*)
+      Json.obj(fields.toSeq*)
     }
 
     implicit val updateStreamModeResponseEncoder
@@ -938,7 +938,7 @@ object circe {
           .empty[String, Json]
           .safeAdd("responseMetadata", x.responseMetadata())
 
-        Json.obj(fields.toSeq: _*)
+        Json.obj(fields.toSeq*)
       }
 
     implicit val sdkEventTypeEncoder
@@ -957,7 +957,7 @@ object circe {
         .safeAdd("records", x.records())
         .safeAdd("sdkEventType", x.sdkEventType())
 
-      Json.obj(fields.toSeq: _*)
+      Json.obj(fields.toSeq*)
     }
 
     new KinesisClient.LogEncoders()
@@ -971,7 +971,7 @@ object circe {
           .safeAdd("attributeName", x.attributeName())
           .safeAdd("attributeType", x.attributeTypeAsString())
 
-        Json.obj(fields.toSeq: _*)
+        Json.obj(fields.toSeq*)
       }
 
     implicit val keySchemaElementEncoder: Encoder[ddb.KeySchemaElement] = x => {
@@ -980,7 +980,7 @@ object circe {
         .safeAdd("attributeName", x.attributeName())
         .safeAdd("keyType", x.keyTypeAsString())
 
-      Json.obj(fields.toSeq: _*)
+      Json.obj(fields.toSeq*)
     }
 
     implicit val projectionEncoder: Encoder[ddb.Projection] = x => {
@@ -990,7 +990,7 @@ object circe {
         .safeAdd("nonKeyAttributes", x.nonKeyAttributes())
         .safeAdd("projectionType", x.projectionTypeAsString())
 
-      Json.obj(fields.toSeq: _*)
+      Json.obj(fields.toSeq*)
     }
 
     implicit val provisionedThroughputEncoder
@@ -1000,7 +1000,7 @@ object circe {
         .safeAdd("readCapacityUnits", x.readCapacityUnits())
         .safeAdd("writeCapacityUnits", x.writeCapacityUnits())
 
-      Json.obj(fields.toSeq: _*)
+      Json.obj(fields.toSeq*)
     }
 
     implicit val globalSecondaryIndexEncoder
@@ -1014,7 +1014,7 @@ object circe {
           .safeAdd("projection", x.projection())
           .safeAdd("provisionedThroughput", x.provisionedThroughput())
 
-        Json.obj(fields.toSeq: _*)
+        Json.obj(fields.toSeq*)
       }
 
     implicit val localSecondaryIndexEncoder: Encoder[ddb.LocalSecondaryIndex] =
@@ -1026,7 +1026,7 @@ object circe {
           .safeAdd("keySchema", x.keySchema())
           .safeAdd("projection", x.projection())
 
-        Json.obj(fields.toSeq: _*)
+        Json.obj(fields.toSeq*)
       }
 
     implicit val sseSpecificationEncoder: Encoder[ddb.SSESpecification] = x => {
@@ -1036,7 +1036,7 @@ object circe {
         .safeAdd("kmsMasterKeyId", x.kmsMasterKeyId())
         .safeAdd("sseType", x.sseTypeAsString())
 
-      Json.obj(fields.toSeq: _*)
+      Json.obj(fields.toSeq*)
     }
 
     implicit val streamSpecificationEncoder: Encoder[ddb.StreamSpecification] =
@@ -1046,7 +1046,7 @@ object circe {
           .safeAdd("streamEnabled", x.streamEnabled())
           .safeAdd("streamViewType", x.streamViewTypeAsString())
 
-        Json.obj(fields.toSeq: _*)
+        Json.obj(fields.toSeq*)
       }
 
     implicit val ddbTagEncoder: Encoder[ddb.Tag] = x => {
@@ -1055,7 +1055,7 @@ object circe {
         .safeAdd("key", x.key())
         .safeAdd("value", x.value())
 
-      Json.obj(fields.toSeq: _*)
+      Json.obj(fields.toSeq*)
     }
 
     implicit val archivalSummaryEncoder: Encoder[ddb.ArchivalSummary] = x => {
@@ -1065,7 +1065,7 @@ object circe {
         .safeAdd("archivalDateTime", x.archivalDateTime())
         .safeAdd("archivalReason", x.archivalReason())
 
-      Json.obj(fields.toSeq: _*)
+      Json.obj(fields.toSeq*)
     }
 
     implicit val billingModeSummaryEncoder: Encoder[ddb.BillingModeSummary] =
@@ -1078,7 +1078,7 @@ object circe {
             x.lastUpdateToPayPerRequestDateTime()
           )
 
-        Json.obj(fields.toSeq: _*)
+        Json.obj(fields.toSeq*)
       }
 
     implicit val provisionedThroughputDescriptionEncoder
@@ -1091,7 +1091,7 @@ object circe {
         .safeAdd("readCapacityUnits", x.readCapacityUnits())
         .safeAdd("writeCapacityUnits", x.writeCapacityUnits())
 
-      Json.obj(fields.toSeq: _*)
+      Json.obj(fields.toSeq*)
     }
 
     implicit val globalSecondaryIndexDescriptionEncoder
@@ -1109,7 +1109,7 @@ object circe {
         .safeAdd("projection", x.projection())
         .safeAdd("provisionedThroughput", x.provisionedThroughput())
 
-      Json.obj(fields.toSeq: _*)
+      Json.obj(fields.toSeq*)
     }
 
     implicit val localSecondaryIndexDescriptionEncoder
@@ -1124,7 +1124,7 @@ object circe {
         .safeAdd("keySchema", x.keySchema())
         .safeAdd("projection", x.projection())
 
-      Json.obj(fields.toSeq: _*)
+      Json.obj(fields.toSeq*)
     }
 
     implicit val provisionedThroughputOverrideEncoder
@@ -1133,7 +1133,7 @@ object circe {
         .empty[String, Json]
         .safeAdd("readCapacityUnits", x.readCapacityUnits())
 
-      Json.obj(fields.toSeq: _*)
+      Json.obj(fields.toSeq*)
     }
 
     implicit val replicaGlobalSecondaryIndexDescriptionEncoder
@@ -1146,7 +1146,7 @@ object circe {
           x.provisionedThroughputOverride()
         )
 
-      Json.obj(fields.toSeq: _*)
+      Json.obj(fields.toSeq*)
     }
 
     implicit val tableClassSummaryEncoder: Encoder[ddb.TableClassSummary] = x =>
@@ -1156,7 +1156,7 @@ object circe {
           .safeAdd("lastUpdateDateTime", x.lastUpdateDateTime())
           .safeAdd("tableClass", x.tableClassAsString())
 
-        Json.obj(fields.toSeq: _*)
+        Json.obj(fields.toSeq*)
       }
 
     implicit val replicaDescriptionEncoder: Encoder[ddb.ReplicaDescription] =
@@ -1183,7 +1183,7 @@ object circe {
           )
           .safeAdd("replicaTableClassSummary", x.replicaTableClassSummary())
 
-        Json.obj(fields.toSeq: _*)
+        Json.obj(fields.toSeq*)
       }
 
     implicit val restoreSummaryEncoder: Encoder[ddb.RestoreSummary] = x => {
@@ -1194,7 +1194,7 @@ object circe {
         .safeAdd("sourceBackupArn", x.sourceBackupArn())
         .safeAdd("sourceTableArn", x.sourceTableArn())
 
-      Json.obj(fields.toSeq: _*)
+      Json.obj(fields.toSeq*)
     }
 
     implicit val sseDescriptionEncoder: Encoder[ddb.SSEDescription] = x => {
@@ -1208,7 +1208,7 @@ object circe {
         .safeAdd("sseType", x.sseTypeAsString())
         .safeAdd("status", x.statusAsString())
 
-      Json.obj(fields.toSeq: _*)
+      Json.obj(fields.toSeq*)
     }
 
     implicit val tableDescriptionEncoder: Encoder[ddb.TableDescription] = x => {
@@ -1242,7 +1242,7 @@ object circe {
         .safeAdd("tableSizeBytes", x.tableSizeBytes())
         .safeAdd("tableStatus", x.tableStatusAsString())
 
-      Json.obj(fields.toSeq: _*)
+      Json.obj(fields.toSeq*)
     }
 
     def attributeValueMapJsonImpl(
@@ -1311,7 +1311,7 @@ object circe {
           .safeAdd("action", x.actionAsString())
           .safeAdd("value", x.value())
 
-        Json.obj(fields.toSeq: _*)
+        Json.obj(fields.toSeq*)
       }
 
     implicit val capacityEncoder: Encoder[ddb.Capacity] = x => {
@@ -1321,7 +1321,7 @@ object circe {
         .safeAdd("readCapacityUnits", x.readCapacityUnits())
         .safeAdd("writeCapacityUnits", x.writeCapacityUnits())
 
-      Json.obj(fields.toSeq: _*)
+      Json.obj(fields.toSeq*)
     }
 
     implicit val consumedCapacityEncoder: Encoder[ddb.ConsumedCapacity] = x => {
@@ -1337,7 +1337,7 @@ object circe {
         .safeAdd("tableName", x.tableName())
         .safeAdd("writeCapacityUnits", x.writeCapacityUnits())
 
-      Json.obj(fields.toSeq: _*)
+      Json.obj(fields.toSeq*)
     }
 
     implicit val ddbConditionEncoder: Encoder[ddb.Condition] = x => {
@@ -1347,7 +1347,7 @@ object circe {
         .safeAdd("comparisonOperator", x.comparisonOperatorAsString())
         .safeAdd("hasAttributeValueList", x.hasAttributeValueList())
 
-      Json.obj(fields.toSeq: _*)
+      Json.obj(fields.toSeq*)
     }
 
     implicit val expectedAttributeValueEncoder
@@ -1361,7 +1361,7 @@ object circe {
           .safeAdd("hasAttributeValueList", x.hasAttributeValueList())
           .safeAdd("value", x.value())
 
-        Json.obj(fields.toSeq: _*)
+        Json.obj(fields.toSeq*)
       }
 
     implicit val itemCollectionMetricsEncoder
@@ -1373,7 +1373,7 @@ object circe {
         .safeAdd("itemCollectionKey", x.itemCollectionKey())
         .safeAdd("sizeEstimateRangeGB", x.sizeEstimateRangeGB())
 
-      Json.obj(fields.toSeq: _*)
+      Json.obj(fields.toSeq*)
     }
 
     implicit val createTableRequestEncoder: Encoder[ddb.CreateTableRequest] =
@@ -1397,7 +1397,7 @@ object circe {
           .safeAdd("tableName", x.tableName())
           .safeAdd("tags", x.tags())
 
-        Json.obj(fields.toSeq: _*)
+        Json.obj(fields.toSeq*)
       }
 
     implicit val createTableResponseEncoder: Encoder[ddb.CreateTableResponse] =
@@ -1406,7 +1406,7 @@ object circe {
           .empty[String, Json]
           .safeAdd("tableDescription", x.tableDescription())
 
-        Json.obj(fields.toSeq: _*)
+        Json.obj(fields.toSeq*)
       }
 
     implicit val describeTableRequestEncoder
@@ -1416,7 +1416,7 @@ object circe {
           .empty[String, Json]
           .safeAdd("tableName", x.tableName())
 
-        Json.obj(fields.toSeq: _*)
+        Json.obj(fields.toSeq*)
       }
 
     implicit val describeTableResponseEncoder
@@ -1425,7 +1425,7 @@ object circe {
         .empty[String, Json]
         .safeAdd("table", x.table())
 
-      Json.obj(fields.toSeq: _*)
+      Json.obj(fields.toSeq*)
     }
 
     implicit val scanRequestEncoder: Encoder[ddb.ScanRequest] = x => {
@@ -1455,7 +1455,7 @@ object circe {
         .safeAdd("tableName", x.tableName())
         .safeAdd("totalSegments", x.totalSegments())
 
-      Json.obj(fields.toSeq: _*)
+      Json.obj(fields.toSeq*)
     }
 
     implicit val scanResponseEncoder: Encoder[ddb.ScanResponse] = x => {
@@ -1469,7 +1469,7 @@ object circe {
         .safeAdd("lastEvaluatedKey", x.lastEvaluatedKey())
         .safeAdd("scannedCount", x.scannedCount())
 
-      Json.obj(fields.toSeq: _*)
+      Json.obj(fields.toSeq*)
     }
 
     implicit val updateItemRequestEncoder: Encoder[ddb.UpdateItemRequest] = x =>
@@ -1503,7 +1503,7 @@ object circe {
           .safeAdd("tableName", x.tableName())
           .safeAdd("updateExpression", x.updateExpression())
 
-        Json.obj(fields.toSeq: _*)
+        Json.obj(fields.toSeq*)
       }
 
     implicit val updateItemResponseEncoder: Encoder[ddb.UpdateItemResponse] =
@@ -1515,7 +1515,7 @@ object circe {
           .safeAdd("hasAttributes", x.hasAttributes())
           .safeAdd("itemCollectionMetrics", x.itemCollectionMetrics())
 
-        Json.obj(fields.toSeq: _*)
+        Json.obj(fields.toSeq*)
       }
 
     implicit val putItemRequestEncoder: Encoder[ddb.PutItemRequest] = x => {
@@ -1541,7 +1541,7 @@ object circe {
         .safeAdd("returnValues", x.returnValuesAsString())
         .safeAdd("tableName", x.tableName())
 
-      Json.obj(fields.toSeq: _*)
+      Json.obj(fields.toSeq*)
     }
 
     implicit val putItemResponseEncoder: Encoder[ddb.PutItemResponse] = x => {
@@ -1552,7 +1552,7 @@ object circe {
         .safeAdd("hasAttributes", x.hasAttributes())
         .safeAdd("itemCollectionMetrics", x.itemCollectionMetrics())
 
-      Json.obj(fields.toSeq: _*)
+      Json.obj(fields.toSeq*)
     }
 
     implicit val deleteTableRequestEncoder: Encoder[ddb.DeleteTableRequest] =
@@ -1561,7 +1561,7 @@ object circe {
           .empty[String, Json]
           .safeAdd("tableName", x.tableName())
 
-        Json.obj(fields.toSeq: _*)
+        Json.obj(fields.toSeq*)
       }
 
     implicit val deleteTableResponseEncoder: Encoder[ddb.DeleteTableResponse] =
@@ -1570,7 +1570,7 @@ object circe {
           .empty[String, Json]
           .safeAdd("tableDescription", x.tableDescription())
 
-        Json.obj(fields.toSeq: _*)
+        Json.obj(fields.toSeq*)
       }
 
     new DynamoClient.LogEncoders()
@@ -1583,7 +1583,7 @@ object circe {
         .safeAdd("name", x.name())
         .safeAdd("value", x.value())
 
-      Json.obj(fields.toSeq: _*)
+      Json.obj(fields.toSeq*)
     }
 
     implicit val statisticSetEncoder: Encoder[cw.StatisticSet] = x => {
@@ -1594,7 +1594,7 @@ object circe {
         .safeAdd("sampleCount", x.sampleCount())
         .safeAdd("sum", x.sum())
 
-      Json.obj(fields.toSeq: _*)
+      Json.obj(fields.toSeq*)
     }
 
     implicit val metricDatumEncoder: Encoder[cw.MetricDatum] = x => {
@@ -1613,7 +1613,7 @@ object circe {
         .safeAdd("value", x.value())
         .safeAdd("values", x.values())
 
-      Json.obj(fields.toSeq: _*)
+      Json.obj(fields.toSeq*)
     }
 
     implicit val putMetricDataRequestEncoder: Encoder[cw.PutMetricDataRequest] =
@@ -1624,7 +1624,7 @@ object circe {
           .safeAdd("metricData", x.metricData())
           .safeAdd("namespace", x.namespace())
 
-        Json.obj(fields.toSeq: _*)
+        Json.obj(fields.toSeq*)
       }
 
     implicit val putMetricDataResponseEncoder
@@ -1633,7 +1633,7 @@ object circe {
         val fields: Map[String, Json] = Map
           .empty[String, Json]
 
-        Json.obj(fields.toSeq: _*)
+        Json.obj(fields.toSeq*)
       }
 
     new CloudWatchClient.LogEncoders()

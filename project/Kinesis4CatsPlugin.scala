@@ -221,32 +221,6 @@ object Kinesis4CatsPlugin extends AutoPlugin {
         author = "etspaceman-scala-steward-app[bot]"
       )
     )
-  ) ++ tlReplaceCommandAlias(
-    "prePR",
-    mkCommand(
-      List(
-        "reload",
-        "project /",
-        "clean",
-        "cpl",
-        "pretty",
-        "set ThisBuild / tlFatalWarnings := tlFatalWarningsInCi.value",
-        "doc",
-        "session clear"
-      )
-    )
-  ) ++ tlReplaceCommandAlias(
-    "tlRelease",
-    mkCommand(
-      List(
-        "reload",
-        "project /",
-        // Uncomment this when 0.1.x
-        // "+mimaReportBinaryIssues",
-        "+publish",
-        "tlSonatypeBundleReleaseIfRelevant"
-      )
-    )
   )
 
   override def projectSettings = Seq(
@@ -322,13 +296,33 @@ object Kinesis4CatsPlugin extends AutoPlugin {
   ).flatten
 
   override def globalSettings: Seq[Setting[_]] = Seq(
-    concurrentRestrictions += Tags.limit(NativeTags.Link, 1)
+    concurrentRestrictions += Tags.limit(NativeTags.Link, 1),
+    tlCommandAliases ++= Map(
+      "prePR" -> List(
+        "reload",
+        "project /",
+        "clean",
+        "cpl",
+        "pretty",
+        "set ThisBuild / tlFatalWarnings := tlFatalWarningsInCi.value",
+        "doc",
+        "session clear"
+      ),
+      "tlRelease" -> List(
+        "reload",
+        "project /",
+        // Uncomment this when 0.1.x
+        // "+mimaReportBinaryIssues",
+        "+publish",
+        "tlSonatypeBundleReleaseIfRelevant"
+      )
+    )
   )
 }
 
 object Kinesis4CatsPluginKeys {
-  val Scala212 = "2.12.18"
-  val Scala213 = "2.13.12"
+  val Scala212 = "2.12.19"
+  val Scala213 = "2.13.13"
   val Scala3 = "3.3.1"
 
   val allScalaVersions = List(Scala213, Scala3, Scala212)

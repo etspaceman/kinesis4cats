@@ -59,7 +59,7 @@ class BatcherSpec extends munit.CatsEffectSuite {
         )
     )
 
-    val res = batcher.batch(records, false)
+    val res = batcher.batch(records, retrying = false)
     assert(res.isSuccessful)
     assert(res === expected, s"res: $res\nexp: $expected")
   }
@@ -93,7 +93,7 @@ class BatcherSpec extends munit.CatsEffectSuite {
         .toList
         .map(x =>
           Batch(
-            NonEmptyMap.of(x.head, x.tail: _*),
+            NonEmptyMap.of(x.head, x.tail*),
             x.length,
             x.map(_._2.batchSize).sumAll,
             config
@@ -101,7 +101,7 @@ class BatcherSpec extends munit.CatsEffectSuite {
         )
     )
 
-    val res = batcher.batch(records.map(_._2), false)
+    val res = batcher.batch(records.map(_._2), retrying = false)
     assert(res.isSuccessful)
     assert(res === expected, s"res: $res\nexp: $expected")
   }
@@ -137,7 +137,7 @@ class BatcherSpec extends munit.CatsEffectSuite {
         )
     )
 
-    val res = batcher.batch(records, false)
+    val res = batcher.batch(records, retrying = false)
     assert(res.isSuccessful)
     assert(res === expected, s"res: $res\nexp: $expected")
   }
@@ -171,7 +171,7 @@ class BatcherSpec extends munit.CatsEffectSuite {
         .toList
         .map(x =>
           Batch(
-            NonEmptyMap.of(x.head, x.tail: _*),
+            NonEmptyMap.of(x.head, x.tail*),
             x.length,
             x.map(_._2.batchSize).sumAll,
             config
@@ -179,7 +179,7 @@ class BatcherSpec extends munit.CatsEffectSuite {
         )
     )
 
-    val res = batcher.batch(records.map(_._2), false)
+    val res = batcher.batch(records.map(_._2), retrying = false)
     assert(res.isSuccessful)
     assert(res === expected, s"res: $res\nexp: $expected")
   }
@@ -197,7 +197,7 @@ class BatcherSpec extends munit.CatsEffectSuite {
       records.map(x => Producer.InvalidRecord.RecordTooLarge(x.record)).toList,
       Nil
     )
-    val res = batcher.batch(records, false)
+    val res = batcher.batch(records, retrying = false)
     assert(res.hasInvalid)
     assert(res === expected, s"res: $res\nexp: $expected")
   }
@@ -242,7 +242,8 @@ class BatcherSpec extends munit.CatsEffectSuite {
       }
     )
 
-    val res = batcher.batch(badRecords ::: goodRecords.map(_._2), false)
+    val res =
+      batcher.batch(badRecords ::: goodRecords.map(_._2), retrying = false)
     assert(res.isPartiallySuccessful)
     assert(res === expected, s"res: $res\nexp: $expected")
   }

@@ -54,7 +54,7 @@ object LocalstackDynamoClient {
       underlying <- clientResource
       client <- DynamoClient.Builder
         .default[F]
-        .withClient(underlying, false)
+        .withClient(underlying, managed = false)
         .withLogEncoders(encoders)
         .withLogger(logger)
         .build

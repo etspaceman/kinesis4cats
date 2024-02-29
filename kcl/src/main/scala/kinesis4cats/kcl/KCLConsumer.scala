@@ -364,7 +364,7 @@ object KCLConsumer {
 
   object ProcessConfig {
     val default: ProcessConfig =
-      ProcessConfig(true, RecordProcessor.Config.default, None)
+      ProcessConfig(raiseOnError = true, RecordProcessor.Config.default, None)
   }
 
   object Config {

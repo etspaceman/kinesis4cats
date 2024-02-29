@@ -28,7 +28,7 @@ class ShowBuilderSpec extends munit.FunSuite {
   }
 
   test("It should build a string properly") {
-    val x = TestData("foo", 2.0, 5, true).asString()
+    val x = TestData("foo", 2.0, 5, b = true).asString()
     assert(
       x == "TestData(s=foo,d=2.0,l=5,b=true)" ||
         x == "TestData(s=foo,d=2,l=5,b=true)" // ScalaJS handles doubles poorly

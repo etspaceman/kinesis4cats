@@ -284,7 +284,7 @@ object RecordProcessor {
   )
 
   object Config {
-    val default = Config(None, 5, 0.seconds, true)
+    val default = Config(None, 5, 0.seconds, autoCommit = true)
   }
 
   /** An implementation of the

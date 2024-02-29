@@ -170,7 +170,7 @@ object KinesisProducer {
       NoOpLogger[F],
       backend => AwsCredentialsProvider.default(backend),
       LogEncoders.show[F],
-      true
+      logRequestsResponses = true
     )
 
     @annotation.unused

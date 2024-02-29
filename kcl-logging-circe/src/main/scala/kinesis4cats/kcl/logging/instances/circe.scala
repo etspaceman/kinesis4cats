@@ -44,7 +44,7 @@ object circe {
           .safeAdd("schemaDefinition", x.getSchemaDefinition())
           .safeAdd("schemaName", x.getSchemaName())
 
-      Json.obj(fields.toSeq: _*)
+      Json.obj(fields.toSeq*)
     }
 
     implicit val hashKeyRangeEncoder: Encoder[HashKeyRange] = x => {
@@ -54,7 +54,7 @@ object circe {
           .safeAdd("endingHashKey", x.endingHashKey())
           .safeAdd("startingHashKey", x.startingHashKey())
 
-      Json.obj(fields.toSeq: _*)
+      Json.obj(fields.toSeq*)
     }
 
     implicit val childShardEncoder: Encoder[ChildShard] = x => {
@@ -66,7 +66,7 @@ object circe {
           .safeAdd("parentShards", x.parentShards())
           .safeAdd("shardId", x.shardId())
 
-      Json.obj(fields.toSeq: _*)
+      Json.obj(fields.toSeq*)
     }
 
     implicit val extendedSequenceNumberEncoder
@@ -78,7 +78,7 @@ object circe {
             .safeAdd("sequenceNumber", x.sequenceNumber())
             .safeAdd("subSequenceNumber", x.subSequenceNumber())
 
-        Json.obj(fields.toSeq: _*)
+        Json.obj(fields.toSeq*)
       }
 
     implicit val initializationInputEncoder: Encoder[InitializationInput] = x =>
@@ -93,7 +93,7 @@ object circe {
               x.pendingCheckpointSequenceNumber()
             )
 
-        Json.obj(fields.toSeq: _*)
+        Json.obj(fields.toSeq*)
       }
 
     implicit val processRecordsInputEncoder: Encoder[ProcessRecordsInput] = x =>
@@ -108,7 +108,7 @@ object circe {
             .safeAdd("millisBehindLatest", x.millisBehindLatest())
             .safeAdd("timeSpentInCache", x.timeSpentInCache())
 
-        Json.obj(fields.toSeq: _*)
+        Json.obj(fields.toSeq*)
       }
 
     implicit val kinesisClientRecordEncoder: Encoder[KinesisClientRecord] = x =>
@@ -129,7 +129,7 @@ object circe {
             .safeAdd("subSequenceNumber", x.subSequenceNumber())
             .safeAdd("data", x.data())
 
-        Json.obj(fields.toSeq: _*)
+        Json.obj(fields.toSeq*)
       }
 
     new RecordProcessor.LogEncoders
