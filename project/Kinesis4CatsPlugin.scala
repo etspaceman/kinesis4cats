@@ -86,7 +86,6 @@ object Kinesis4CatsPlugin extends AutoPlugin {
       )
     ),
     githubWorkflowBuildMatrixFailFast := Some(false),
-    githubWorkflowOSes := Seq("macos-latest"),
     githubWorkflowBuild := {
       val style = (tlCiHeaderCheck.value, tlCiScalafmtCheck.value) match {
         case (true, true) => // headers + formatting
