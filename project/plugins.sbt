@@ -9,7 +9,7 @@ addSbtPlugin(
   "com.disneystreaming.smithy4s" % "smithy4s-sbt-codegen" % "0.18.10"
 )
 addSbtPlugin("com.eed3si9n" % "sbt-buildinfo" % "0.11.0")
-addSbtPlugin("com.eed3si9n" % "sbt-projectmatrix" % "0.9.2")
+addSbtPlugin("com.eed3si9n" % "sbt-projectmatrix" % "0.10.0")
 addSbtPlugin("org.scala-native" % "sbt-scala-native" % "0.4.17")
 addSbtPlugin("org.scala-js" % "sbt-scalajs" % "1.15.0")
 addSbtPlugin("com.armanbilge" % "sbt-scala-native-config-brew" % "0.2.0-RC1")
