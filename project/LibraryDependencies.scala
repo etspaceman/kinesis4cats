@@ -51,7 +51,7 @@ object LibraryDependencies {
 
     object V2 {
       val awssdkVersion =
-        "2.20.43" // Should be the same as the version in the KCL
+        "2.25.3" // Should be the same as the version in the KCL
       val kinesis = "software.amazon.awssdk" % "kinesis" % awssdkVersion
       val dynamo = "software.amazon.awssdk" % "dynamodb" % awssdkVersion
       val cloudwatch = "software.amazon.awssdk" % "cloudwatch" % awssdkVersion
@@ -64,10 +64,8 @@ object LibraryDependencies {
         "com.github.awslabs.kinesis-aggregation" % "amazon-kinesis-aggregator" % "2.0.3-deagg"
     }
 
-    // Can't use 0.15.9, waiting until 0.15.10
-    // See https://github.com/awslabs/amazon-kinesis-producer/issues/559
     val kpl = "com.amazonaws" % "amazon-kinesis-producer" % "0.15.10"
-    val kcl = "software.amazon.kinesis" % "amazon-kinesis-client" % "2.5.4"
+    val kcl = "software.amazon.kinesis" % "amazon-kinesis-client" % "2.5.5"
   }
 
   object Cats {

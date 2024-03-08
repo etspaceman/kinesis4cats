@@ -877,7 +877,7 @@ object KCLCiris {
           prefix
         )
       metricsEnabledDimensions <- CirisReader
-        .readOptional[java.util.Set[String]](
+        .readOptional[java.util.HashSet[String]](
           List("kcl", "metrics", "enabled", "dimensions"),
           prefix
         )

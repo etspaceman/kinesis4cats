@@ -77,6 +77,14 @@ object ciris {
       CDA: ConfigDecoder[String, A]
   ): ConfigDecoder[String, java.util.Set[A]] = setDecoder[A].map(_.asJava)
 
+  implicit def javaHashSetDecoder[A](implicit
+      CDA: ConfigDecoder[String, A]
+  ): ConfigDecoder[String, java.util.HashSet[A]] = setDecoder[A].map { x =>
+    val hs = new java.util.HashSet[A]
+    hs.addAll(x.asJava)
+    hs
+  }
+
   implicit def mapConfigDecoder[A, B](implicit
       CDA: ConfigDecoder[String, A],
       CDB: ConfigDecoder[String, B]
