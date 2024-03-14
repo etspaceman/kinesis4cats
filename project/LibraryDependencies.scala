@@ -67,7 +67,7 @@ object LibraryDependencies {
     // Can't use 0.15.9, waiting until 0.15.10
     // See https://github.com/awslabs/amazon-kinesis-producer/issues/559
     val kpl = "com.amazonaws" % "amazon-kinesis-producer" % "0.15.8"
-    val kcl = "software.amazon.kinesis" % "amazon-kinesis-client" % "2.5.4"
+    val kcl = "software.amazon.kinesis" % "amazon-kinesis-client" % "2.5.6"
   }
 
   object Cats {
