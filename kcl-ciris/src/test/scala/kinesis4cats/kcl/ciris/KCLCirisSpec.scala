@@ -300,7 +300,10 @@ class KCLCirisSpec extends munit.CatsEffectSuite {
           new PollingConfig(BuildInfo.pollingKclStreamName, kinesisClient)
             .safeTransform(
               BuildInfo.pollingKclRetrievalPollingMaxRecords.toInt
-            )(_.maxRecords(_))
+            ) { case (pollingConfig, mr) =>
+              pollingConfig.maxRecords(mr)
+              pollingConfig
+            }
             .safeTransform(
               BuildInfo.pollingKclRetrievalPollingIdleTimeBetweenReads.asMillisUnsafe
             )(

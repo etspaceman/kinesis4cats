@@ -998,7 +998,10 @@ object KCLCiris {
         prefix
       )
     } yield new PollingConfig(streamName, kinesisClient)
-      .maybeTransform(maxRecords)(_.maxRecords(_))
+      .maybeTransform(maxRecords) { case (pollingConfig, mr) =>
+        pollingConfig.maxRecords(mr)
+        pollingConfig
+      }
       .maybeTransform(idleTimeBetweenReads)(_.idleTimeBetweenReadsInMillis(_))
       .maybeTransform(usePollingConfigIdleTimeValue)(
         _.usePollingConfigIdleTimeValue(_)
