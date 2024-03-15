@@ -249,9 +249,11 @@ class KCLCirisSpec extends munit.CatsEffectSuite {
         .safeTransform(MetricsLevel.valueOf(BuildInfo.kclMetricsLevel))(
           _.metricsLevel(_)
         )
-        .safeTransform(
-          BuildInfo.kclMetricsEnabledDimensions.asList.toSet.asJava
-        )(_.metricsEnabledDimensions(_))
+        .safeTransform {
+          val hs = new java.util.HashSet[String]
+          hs.addAll(BuildInfo.kclMetricsEnabledDimensions.asList.toSet.asJava)
+          hs
+        }(_.metricsEnabledDimensions(_))
         .safeTransform(BuildInfo.kclMetricsPublisherFlushBuffer.toInt)(
           _.publisherFlushBuffer(_)
         )
