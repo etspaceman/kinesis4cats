@@ -273,7 +273,7 @@ object KCLCirisSpecVars {
           ),
           CirisUtil.propAndEnv(
             List("kcl", "retrieval", "polling", "max", "records"),
-            "10001",
+            "10000",
             "polling.prop.",
             "POLLING_ENV_",
             Some("polling")
