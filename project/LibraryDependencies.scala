@@ -4,7 +4,7 @@ import sbt._
 object LibraryDependencies {
   val Logback = "ch.qos.logback" % "logback-classic" % "1.5.6"
   val JavaXMLBind = "javax.xml.bind" % "jaxb-api" % "2.3.1"
-  val Scalacheck = Def.setting("org.scalacheck" %%% "scalacheck" % "1.17.0")
+  val Scalacheck = Def.setting("org.scalacheck" %%% "scalacheck" % "1.17.1")
   val Epollcat = Def.setting("com.armanbilge" %%% "epollcat" % "0.1.6")
 
   object ScalaJS {
@@ -33,7 +33,7 @@ object LibraryDependencies {
     val scalacheck =
       Def.setting("org.scalameta" %%% "munit-scalacheck" % munitVersion)
     val catsEffect =
-      Def.setting("org.typelevel" %%% "munit-cats-effect" % "2.0.0-M4")
+      Def.setting("org.typelevel" %%% "munit-cats-effect" % "2.0.0-M5")
     val scalacheckEffect =
       Def.setting("org.typelevel" %%% "scalacheck-effect-munit" % "2.0.0-M2")
 
@@ -77,7 +77,7 @@ object LibraryDependencies {
   }
 
   object Circe {
-    val circeVersion = "0.14.6"
+    val circeVersion = "0.14.7"
     val core = Def.setting("io.circe" %%% "circe-core" % circeVersion)
     val parser = Def.setting("io.circe" %%% "circe-parser" % circeVersion)
     val scodec = Def.setting("io.circe" %%% "circe-scodec" % circeVersion)
@@ -94,7 +94,7 @@ object LibraryDependencies {
   }
 
   object Http4s {
-    val http4sVersion = "0.23.26"
+    val http4sVersion = "0.23.27"
     val emberServer =
       Def.setting("org.http4s" %%% "http4s-ember-server" % http4sVersion)
     val emberClient =
