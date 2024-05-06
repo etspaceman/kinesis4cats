@@ -19,7 +19,7 @@ object LibraryDependencies {
   }
 
   object Log4Cats {
-    val log4CatsVersion = "2.6.0"
+    val log4CatsVersion = "2.7.0"
     val core =
       Def.setting("org.typelevel" %%% "log4cats-core" % log4CatsVersion)
     val slf4j = "org.typelevel" %% "log4cats-slf4j" % log4CatsVersion
@@ -84,7 +84,7 @@ object LibraryDependencies {
   }
 
   object Ciris {
-    val cirisVersion = "3.5.0"
+    val cirisVersion = "3.6.0"
     val core = Def.setting("is.cir" %%% "ciris" % cirisVersion)
   }
 
