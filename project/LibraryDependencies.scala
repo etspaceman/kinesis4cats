@@ -2,7 +2,7 @@ import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport._
 import sbt._
 
 object LibraryDependencies {
-  val Logback = "ch.qos.logback" % "logback-classic" % "1.5.5"
+  val Logback = "ch.qos.logback" % "logback-classic" % "1.5.6"
   val JavaXMLBind = "javax.xml.bind" % "jaxb-api" % "2.3.1"
   val Scalacheck = Def.setting("org.scalacheck" %%% "scalacheck" % "1.17.0")
   val Epollcat = Def.setting("com.armanbilge" %%% "epollcat" % "0.1.6")
@@ -13,7 +13,7 @@ object LibraryDependencies {
   }
 
   object FS2 {
-    val fs2Version = "3.9.4"
+    val fs2Version = "3.10.2"
     val core = Def.setting("co.fs2" %%% "fs2-core" % fs2Version)
     val reactiveStreams = "co.fs2" %% "fs2-reactive-streams" % fs2Version
   }
