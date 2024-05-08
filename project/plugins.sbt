@@ -1,6 +1,6 @@
-addSbtPlugin("org.typelevel" % "sbt-typelevel" % "0.6.7")
-addSbtPlugin("org.typelevel" % "sbt-typelevel-site" % "0.6.7")
-addSbtPlugin("org.typelevel" % "sbt-typelevel-mergify" % "0.6.7")
+addSbtPlugin("org.typelevel" % "sbt-typelevel" % "0.7.1")
+addSbtPlugin("org.typelevel" % "sbt-typelevel-site" % "0.7.1")
+addSbtPlugin("org.typelevel" % "sbt-typelevel-mergify" % "0.7.1")
 addSbtPlugin("org.scalameta" % "sbt-scalafmt" % "2.5.2")
 addSbtPlugin("ch.epfl.scala" % "sbt-scalafix" % "0.12.1")
 addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "2.2.0")
@@ -12,9 +12,9 @@ addSbtPlugin("com.eed3si9n" % "sbt-buildinfo" % "0.12.0")
 addSbtPlugin("com.eed3si9n" % "sbt-projectmatrix" % "0.10.0")
 addSbtPlugin("org.scala-native" % "sbt-scala-native" % "0.4.17")
 addSbtPlugin("org.scala-js" % "sbt-scalajs" % "1.16.0")
-addSbtPlugin("com.armanbilge" % "sbt-scala-native-config-brew" % "0.2.0-RC1")
+addSbtPlugin("com.armanbilge" % "sbt-scala-native-config-brew" % "0.3.0")
 addSbtPlugin(
-  "com.armanbilge" % "sbt-scala-native-config-brew-github-actions" % "0.2.0-RC1"
+  "com.armanbilge" % "sbt-scala-native-config-brew-github-actions" % "0.3.0"
 )
 addSbtPlugin("com.thesamet" % "sbt-protoc" % "1.0.7")
 
