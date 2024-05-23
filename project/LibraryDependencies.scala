@@ -33,7 +33,7 @@ object LibraryDependencies {
     val scalacheck =
       Def.setting("org.scalameta" %%% "munit-scalacheck" % munitVersion)
     val catsEffect =
-      Def.setting("org.typelevel" %%% "munit-cats-effect" % "2.0.0-RC1")
+      Def.setting("org.typelevel" %%% "munit-cats-effect" % "2.0.0")
     val scalacheckEffect =
       Def.setting("org.typelevel" %%% "scalacheck-effect-munit" % "2.0.0-M2")
 
@@ -65,7 +65,7 @@ object LibraryDependencies {
     }
 
     val kpl = "com.amazonaws" % "amazon-kinesis-producer" % "0.15.10"
-    val kcl = "software.amazon.kinesis" % "amazon-kinesis-client" % "2.5.8"
+    val kcl = "software.amazon.kinesis" % "amazon-kinesis-client" % "2.6.0"
   }
 
   object Cats {
@@ -89,7 +89,7 @@ object LibraryDependencies {
   }
 
   object Feral {
-    val feralVersion = "0.2.4"
+    val feralVersion = "0.3.0"
     val lambda = Def.setting("org.typelevel" %%% "feral-lambda" % feralVersion)
   }
 
