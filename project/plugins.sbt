@@ -20,7 +20,7 @@ addSbtPlugin("com.thesamet" % "sbt-protoc" % "1.0.7")
 
 // Explicitly bumping until sbt-typelevel upgrades.
 // Older versions exit sbt on compilation failures.
-addSbtPlugin("org.scalameta" % "sbt-mdoc" % "2.5.2")
+addSbtPlugin("org.scalameta" % "sbt-mdoc" % "2.5.3")
 
 libraryDependencies ++= Seq(
   "com.thesamet.scalapb" %% "compilerplugin" % "0.11.15",
