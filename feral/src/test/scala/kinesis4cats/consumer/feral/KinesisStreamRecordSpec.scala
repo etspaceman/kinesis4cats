@@ -25,7 +25,7 @@ import kinesis4cats.consumer.feral.KinesisStreamRecord
 import kinesis4cats.consumer.feral.KinesisStreamRecordPayload
 
 class KinesisStreamRecordSpec extends munit.ScalaCheckSuite {
-  test("It should parse the event correctly from JSON".only) {
+  test("It should parse the event correctly from JSON") {
     val recordJson = """
     {
         "kinesis": {
