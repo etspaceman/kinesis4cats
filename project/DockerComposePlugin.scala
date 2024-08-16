@@ -128,7 +128,7 @@ object DockerComposePluginKeys {
   val composeFileLocation =
     settingKey[String]("Path to docker compose files, e.g. docker/")
   val composeFileName =
-    settingKey[String]("File name of the compose file, e.g. docker compose.yml")
+    settingKey[String]("File name of the compose file, e.g. docker-compose.yml")
   val composeProjectName =
     settingKey[String]("Name of project for docker compose.")
   val buildImage = settingKey[Boolean](
