@@ -116,7 +116,7 @@ object DockerComposePlugin extends AutoPlugin {
       dockerComposeLogs := dockerComposeLogsTask.value,
       dockerComposePs := dockerComposePsTask.value,
       composeFileLocation := "docker/",
-      composeFileName := s"docker compose.yml",
+      composeFileName := s"docker-compose.yml",
       composeProjectName := sys.env
         .getOrElse("COMPOSE_PROJECT_NAME", "kinesis4cats"),
       buildImage := build,
