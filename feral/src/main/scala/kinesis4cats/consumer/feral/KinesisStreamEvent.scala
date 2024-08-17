@@ -56,7 +56,7 @@ object KinesisStreamRecordPayload {
         val roundedSecondsDecimal = round(secondsDecimal)
         val seconds = roundedSecondsDecimal.toLongExact
         val nanos =
-          round((secondsDecimal - roundedSecondsDecimal) * 1e6).toLongExact
+          round((secondsDecimal - roundedSecondsDecimal) * 1e9).toLongExact
         Instant.ofEpochSecond(seconds, nanos)
       }
     }

@@ -57,7 +57,7 @@ class KinesisStreamRecordSpec extends munit.ScalaCheckSuite {
       invokeIdentityArn = "arn:aws:iam::123456789012:role/lambda-role",
       kinesis = KinesisStreamRecordPayload(
         approximateArrivalTimestamp =
-          Instant.ofEpochSecond(1723739794L, 987000L),
+          Instant.ofEpochSecond(1723739794L, 987000000L),
         data = ByteVector.fromValidBase64("SGVsbG8sIHRoaXMgaXMgYSB0ZXN0Lg=="),
         kinesisSchemaVersion = "1.0",
         partitionKey = "1",
