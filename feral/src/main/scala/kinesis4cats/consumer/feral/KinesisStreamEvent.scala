@@ -50,11 +50,13 @@ final case class KinesisStreamRecordPayload(
 
 object KinesisStreamRecordPayload {
   implicit private val instantCirceDecoder: Decoder[Instant] =
-    Decoder.decodeBigDecimal.emapTry { millis =>
+    Decoder.decodeBigDecimal.emapTry { secondsDecimal =>
       def round(x: BigDecimal) = x.setScale(0, BigDecimal.RoundingMode.DOWN)
       Try {
-        val seconds = round(millis / 1000).toLongExact
-        val nanos = round((millis % 1000) * 1e6).toLongExact
+        val roundedSecondsDecimal = round(secondsDecimal)
+        val seconds = roundedSecondsDecimal.toLongExact
+        val nanos =
+          round((secondsDecimal - roundedSecondsDecimal) * 1e9).toLongExact
         Instant.ofEpochSecond(seconds, nanos)
       }
     }
