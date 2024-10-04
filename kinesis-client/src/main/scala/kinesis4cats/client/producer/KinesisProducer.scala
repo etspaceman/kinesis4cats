@@ -22,7 +22,6 @@ import scala.jdk.CollectionConverters._
 import java.time.Instant
 
 import cats.data.NonEmptyList
-import cats.effect.Resource
 import cats.effect._
 import cats.syntax.all._
 import org.typelevel.log4cats.StructuredLogger
