@@ -114,7 +114,7 @@ class KPLCirisSpec extends munit.CatsEffectSuite {
       .safeTransform(BuildInfo.kplUserRecordTimeout.asMillisUnsafe)(
         _.setUserRecordTimeoutInMillis(_)
       ), KPLProducer.Config.GracefulShutdown(
-        BuildInfo.kplGracefulShutdownFlushAttempts.toInt, 
+        BuildInfo.kplGracefulShutdownFlushAttempts.toInt,
         BuildInfo.kplGracefulShutdownFlushInterval.asFiniteDurationUnsafe
       ))
     // format: on
