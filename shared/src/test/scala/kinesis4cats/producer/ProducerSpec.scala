@@ -142,6 +142,28 @@ class ProducerSpec extends munit.CatsEffectSuite {
       assert(res === expected, s"res: $res\nexp: $expected")
     }
   }
+
+  fixture(false).test("It should not retry when all Results are invalid") {
+    producer =>
+      val tooSmallPartitionKey = ""
+      val record = Record(Array.fill(50)(1), tooSmallPartitionKey)
+
+      val data = NonEmptyList.of(record, record, record)
+
+      val expected: Producer.Result[MockPutResponse] = Producer.Result(
+        successful = Nil,
+        invalid = List(
+          Producer.InvalidRecord.InvalidPartitionKey(tooSmallPartitionKey),
+          Producer.InvalidRecord.InvalidPartitionKey(tooSmallPartitionKey),
+          Producer.InvalidRecord.InvalidPartitionKey(tooSmallPartitionKey)
+        ),
+        failed = Nil
+      )
+
+      producer.put(data).map { res =>
+        assert(res === expected, s"res: $res\nexp: $expected")
+      }
+  }
 }
 
 class MockProducer(

@@ -182,8 +182,7 @@ abstract class Producer[F[_], PutReq, PutRes] private[kinesis4cats] (
       )
       finalRes <- retryingOnFailuresAndAllErrors(
         config.retryPolicy,
-        (x: Producer.Result[PutRes]) =>
-          F.pure(x.isSuccessful || (x.isPartiallySuccessful && !x.hasFailed)),
+        (x: Producer.Result[PutRes]) => F.pure(!x.hasFailed),
         (x: Producer.Result[PutRes], details: RetryDetails) =>
           for {
             failed <- F.fromOption(
