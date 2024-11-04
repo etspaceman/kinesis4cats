@@ -2,7 +2,7 @@ import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport._
 import sbt._
 
 object LibraryDependencies {
-  val Logback = "ch.qos.logback" % "logback-classic" % "1.5.10"
+  val Logback = "ch.qos.logback" % "logback-classic" % "1.5.12"
   val JavaXMLBind = "javax.xml.bind" % "jaxb-api" % "2.3.1"
   val Scalacheck = Def.setting("org.scalacheck" %%% "scalacheck" % "1.17.1")
   val Epollcat = Def.setting("com.armanbilge" %%% "epollcat" % "0.1.6")
@@ -70,7 +70,7 @@ object LibraryDependencies {
 
   object Cats {
     val catsVersion = "2.11.0"
-    val catsEffectVersion = "3.5.4"
+    val catsEffectVersion = "3.5.5"
     val core = Def.setting("org.typelevel" %%% "cats-core" % catsVersion)
     val effect =
       Def.setting("org.typelevel" %%% "cats-effect" % catsEffectVersion)
