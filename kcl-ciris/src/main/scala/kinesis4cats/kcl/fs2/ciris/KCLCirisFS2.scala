@@ -116,7 +116,6 @@ object KCLCirisFS2 {
       coordinatorFactory: Option[CoordinatorFactory] = None,
       customShardDetectorProvider: Option[StreamConfig => ShardDetector] = None,
       tableCreatorCallback: Option[TableCreatorCallback] = None,
-      hierarchicalShardSyncer: Option[HierarchicalShardSyncer] = None,
       leaseManagementFactory: Option[LeaseManagementFactory] = None,
       leaseExecutorService: Option[ExecutorService] = None,
       aggregatorUtil: Option[AggregatorUtil] = None,
@@ -153,7 +152,6 @@ object KCLCirisFS2 {
       coordinatorFactory,
       customShardDetectorProvider,
       tableCreatorCallback,
-      hierarchicalShardSyncer,
       leaseManagementFactory,
       leaseExecutorService,
       aggregatorUtil,
@@ -225,7 +223,6 @@ object KCLCirisFS2 {
       coordinatorFactory: Option[CoordinatorFactory],
       customShardDetectorProvider: Option[StreamConfig => ShardDetector],
       tableCreatorCallback: Option[TableCreatorCallback],
-      hierarchicalShardSyncer: Option[HierarchicalShardSyncer],
       leaseManagementFactory: Option[LeaseManagementFactory],
       leaseExecutorService: Option[ExecutorService],
       aggregatorUtil: Option[AggregatorUtil],
@@ -257,7 +254,6 @@ object KCLCirisFS2 {
       prefix,
       customShardDetectorProvider,
       tableCreatorCallback,
-      hierarchicalShardSyncer,
       leaseManagementFactory,
       leaseExecutorService
     )
