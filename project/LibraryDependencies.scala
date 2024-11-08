@@ -94,13 +94,13 @@ object LibraryDependencies {
   }
 
   object Http4s {
-    val http4sVersion = "0.23.28"
+    val http4sVersion = "0.23.29"
     val emberServer =
       Def.setting("org.http4s" %%% "http4s-ember-server" % http4sVersion)
     val emberClient =
       Def.setting("org.http4s" %%% "http4s-ember-client" % http4sVersion)
     val blazeClient =
-      Def.setting("org.http4s" %%% "http4s-blaze-client" % "0.23.16")
+      Def.setting("org.http4s" %%% "http4s-blaze-client" % "0.23.17")
     val circe = Def.setting("org.http4s" %%% "http4s-circe" % http4sVersion)
   }
 
