@@ -20,8 +20,8 @@ import scala.util.Try
 
 import _root_.ciris._
 import cats.syntax.all._
-import com.amazonaws.regions.RegionUtils
 import com.amazonaws.regions.Region
+import com.amazonaws.regions.RegionUtils
 import com.amazonaws.services.kinesis.producer.KinesisProducerConfiguration.ThreadingModel
 import com.amazonaws.services.schemaregistry.utils.AWSSchemaRegistryConstants.COMPRESSION
 import com.amazonaws.services.schemaregistry.utils._
