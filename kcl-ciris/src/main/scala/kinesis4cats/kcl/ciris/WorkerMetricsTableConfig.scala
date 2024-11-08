@@ -41,10 +41,8 @@ private[kinesis4cats] final class WorkerMetricsTableConfig(
       billingMode: BillingMode = self.billingMode,
       readCapacity: Long = self.readCapacity,
       writeCapacity: Long = self.writeCapacity,
-      pointInTimeRecoveryEnabled: Boolean =
-        self.pointInTimeRecoveryEnabled,
-      deletionProtectionEnabled: Boolean =
-        self.deletionProtectionEnabled,
+      pointInTimeRecoveryEnabled: Boolean = self.pointInTimeRecoveryEnabled,
+      deletionProtectionEnabled: Boolean = self.deletionProtectionEnabled,
       tags: Collection[Tag] = self.tags
   ): WorkerMetricsTableConfig = new WorkerMetricsTableConfig(
     appName,
