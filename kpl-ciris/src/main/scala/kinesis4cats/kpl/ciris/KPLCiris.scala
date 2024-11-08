@@ -24,7 +24,7 @@ import cats.effect.Async
 import cats.effect.Resource
 import cats.syntax.all._
 import com.amazonaws.auth.AWSCredentialsProvider
-import com.amazonaws.regions.Regions
+import com.amazonaws.regions.Region
 import com.amazonaws.services.kinesis.producer.KinesisProducerConfiguration
 import com.amazonaws.services.kinesis.producer.KinesisProducerConfiguration.ThreadingModel
 import com.amazonaws.services.schemaregistry.common.configs.GlueSchemaRegistryConfiguration
@@ -59,7 +59,7 @@ object KPLCiris {
       prefix: Option[String] = None
   ): ConfigValue[Effect, GlueSchemaRegistryConfiguration] =
     for {
-      region <- CirisReader.read[Regions](List("kpl", "glue", "region"), prefix)
+      region <- CirisReader.read[Region](List("kpl", "glue", "region"), prefix)
       compressionType <- CirisReader
         .readOptional[AWSSchemaRegistryConstants.COMPRESSION](
           List("kpl", "glue", "compression", "type"),
@@ -285,13 +285,13 @@ object KPLCiris {
       )
       .map(_.map(_.toMillis))
     region <- CirisReader
-      .readOptional[Regions](
+      .readOptional[Region](
         List("kpl", "aws", "region"),
         prefix
       )
       .or(
         CirisReader
-          .readOptional[Regions](
+          .readOptional[Region](
             List("aws", "region"),
             prefix
           )
