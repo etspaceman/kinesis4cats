@@ -23,7 +23,7 @@ import java.io.ByteArrayOutputStream
 import cats.data.NonEmptyList
 
 import kinesis4cats.models.ShardId
-import kinesis4cats.protobuf.messages.AggregatedRecord
+import kinesis4cats.protobuf.kinesisMessages.AggregatedRecord
 
 /** Represents records that can be aggregated into a single record using the
   * [[https://docs.aws.amazon.com/streams/latest/dev/kinesis-kpl-concepts.html#kinesis-kpl-concepts-aggretation KPL Aggregation Format]].
