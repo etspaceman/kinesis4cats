@@ -102,7 +102,6 @@ class KCLCirisSpec extends munit.CatsEffectSuite {
           None,
           None,
           None,
-          None,
           None
         )
         .load[IO]
@@ -114,12 +113,12 @@ class KCLCirisSpec extends munit.CatsEffectSuite {
           None,
           None,
           None,
-          None,
           None
         )
         .load[IO]
       expected = new LeaseManagementConfig(
         BuildInfo.kclLeaseTableName,
+        BuildInfo.kclAppName,
         dynamoClient,
         kinesisClient,
         BuildInfo.kclLeaseWorkerId
