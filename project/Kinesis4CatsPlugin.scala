@@ -216,9 +216,8 @@ object Kinesis4CatsPlugin extends AutoPlugin {
   )
 
   override def projectSettings = Seq(
-    Test / testOptions ++= {
-      List(Tests.Argument(TestFrameworks.MUnit, "+l"))
-    },
+    Test / testOptions ++=
+      List(Tests.Argument(TestFrameworks.MUnit, "+l")),
     // Workaround for https://github.com/typelevel/sbt-typelevel/issues/464
     scalacOptions ++= {
       if (tlIsScala3.value)
