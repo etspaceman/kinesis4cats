@@ -21,6 +21,7 @@ import scala.util.Try
 import _root_.ciris._
 import cats.syntax.all._
 import software.amazon.awssdk.services.dynamodb.model.BillingMode
+import software.amazon.awssdk.services.dynamodb.model.Tag
 import software.amazon.kinesis.common._
 import software.amazon.kinesis.metrics.MetricsLevel
 
@@ -84,5 +85,34 @@ object ciris {
           s"Could not decode metrics level $value: ${e.getMessage}"
         )
       )
+    }
+
+  val tagConfigDecoder: ConfigDecoder[String, Tag] =
+    ConfigDecoder[String].mapEither { case (_, value) =>
+      val split = value.split("=").toList
+
+      split match {
+        case k :: v :: Nil =>
+          Try(
+            Tag.builder().key(k.trim()).value(v.trim()).build()
+          ).toEither.leftMap(e =>
+            ConfigError(s"Could not construct Tag $value: ${e.getMessage}")
+          )
+        case _ =>
+          Left(
+            ConfigError(
+              s"Unexpected value for a Tag. Expected 'key=value', received '$value'"
+            )
+          )
+      }
+    }
+
+  implicit val tagsConfigDecoder: ConfigDecoder[String, List[Tag]] =
+    ConfigDecoder[String].mapEither { case (configKey, value) =>
+      value
+        .split(",")
+        .toList
+        .map(_.trim())
+        .traverse(x => tagConfigDecoder.decode(configKey, x))
     }
 }
