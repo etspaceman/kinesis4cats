@@ -1,7 +1,7 @@
 addSbtPlugin("org.typelevel" % "sbt-typelevel" % "0.7.5")
 addSbtPlugin("org.typelevel" % "sbt-typelevel-site" % "0.7.5")
 addSbtPlugin("org.typelevel" % "sbt-typelevel-mergify" % "0.7.5")
-addSbtPlugin("org.scalameta" % "sbt-scalafmt" % "2.5.3")
+addSbtPlugin("org.scalameta" % "sbt-scalafmt" % "2.5.4")
 addSbtPlugin("ch.epfl.scala" % "sbt-scalafix" % "0.13.0")
 addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "2.3.0")
 addSbtPlugin("org.portable-scala" % "sbt-crossproject" % "1.3.2")
