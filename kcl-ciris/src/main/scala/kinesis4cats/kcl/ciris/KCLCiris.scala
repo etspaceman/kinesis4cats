@@ -53,9 +53,9 @@ import kinesis4cats.kcl.instances.ciris._
 import kinesis4cats.models
 import kinesis4cats.syntax.id._
 
-/** Standard configuration loader of env variables and system properties for
-  * [[https://github.com/awslabs/amazon-kinesis-producer/blob/master/java/amazon-kinesis-producer/src/main/java/com/amazonaws/services/kinesis/producer/KinesisProducerConfiguration.java KinesisProducerConfiguration]]
-  * via [[https://cir.is/ Ciris]].
+/** Standard configuration loader of env variables and system properties for the
+  * [[https://github.com/awslabs/amazon-kinesis-client KCL]] via
+  * [[https://cir.is/ Ciris]].
   */
 object KCLCiris {
 

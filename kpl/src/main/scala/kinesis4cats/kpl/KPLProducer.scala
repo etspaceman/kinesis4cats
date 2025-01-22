@@ -26,10 +26,10 @@ import cats.Eq
 import cats.Show
 import cats.effect.{Async, Ref, Resource}
 import cats.syntax.all._
-import com.amazonaws.services.kinesis.producer._
 import com.amazonaws.services.schemaregistry.common.Schema
 import org.typelevel.log4cats.StructuredLogger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
+import software.amazon.kinesis.producer._
 
 import kinesis4cats.compat.retry.RetryPolicies._
 import kinesis4cats.compat.retry._
@@ -37,11 +37,11 @@ import kinesis4cats.kpl.syntax.listenableFuture._
 import kinesis4cats.logging.{LogContext, LogEncoder}
 
 /** Scala wrapper for the
-  * [[https://github.com/awslabs/amazon-kinesis-producer/blob/master/java/amazon-kinesis-producer/src/main/java/com/amazonaws/services/kinesis/producer/KinesisProducer.java KinesisProducer]]
+  * [[https://github.com/awslabs/amazon-kinesis-producer/blob/master/java/amazon-kinesis-producer/src/main/java/software/amazon/kinesis/producer/KinesisProducer.java KinesisProducer]]
   * All of the methods in this class are a mirror of the wrapped client.
   *
   * @param client
-  *   [[https://github.com/awslabs/amazon-kinesis-producer/blob/master/java/amazon-kinesis-producer/src/main/java/com/amazonaws/services/kinesis/producer/KinesisProducer.java KinesisProducer]]
+  *   [[https://github.com/awslabs/amazon-kinesis-producer/blob/master/java/amazon-kinesis-producer/src/main/java/software/amazon/kinesis/producer/KinesisProducer.java KinesisProducer]]
   * @param F
   *   F with an [[cats.effect.Async Async]] instance
   */
@@ -59,10 +59,10 @@ class KPLProducer[F[_]] private (
   /** Put data onto a Kinesis stream
     *
     * @param userRecord
-    *   [[https://github.com/awslabs/amazon-kinesis-producer/blob/master/java/amazon-kinesis-producer/src/main/java/com/amazonaws/services/kinesis/producer/UserRecord.java UserRecord]]
+    *   [[https://github.com/awslabs/amazon-kinesis-producer/blob/master/java/amazon-kinesis-producer/src/main/java/software/amazon/kinesis/producer/UserRecord.java UserRecord]]
     * @return
     *   F of
-    *   [[https://github.com/awslabs/amazon-kinesis-producer/blob/master/java/amazon-kinesis-producer/src/main/java/com/amazonaws/services/kinesis/producer/UserRecordResult.java UserRecordResult]]
+    *   [[https://github.com/awslabs/amazon-kinesis-producer/blob/master/java/amazon-kinesis-producer/src/main/java/software/amazon/kinesis/producer/UserRecordResult.java UserRecordResult]]
     */
   def put(userRecord: UserRecord): F[UserRecordResult] = {
     val ctx = LogContext()
@@ -101,7 +101,7 @@ class KPLProducer[F[_]] private (
     *   representing the data to be produced
     * @return
     *   F of
-    *   [[https://github.com/awslabs/amazon-kinesis-producer/blob/master/java/amazon-kinesis-producer/src/main/java/com/amazonaws/services/kinesis/producer/UserRecordResult.java UserRecordResult]]
+    *   [[https://github.com/awslabs/amazon-kinesis-producer/blob/master/java/amazon-kinesis-producer/src/main/java/software/amazon/kinesis/producer/UserRecordResult.java UserRecordResult]]
     */
   def put(
       stream: String,
@@ -162,7 +162,7 @@ class KPLProducer[F[_]] private (
     *   representing a glue schema for this event
     * @return
     *   F of
-    *   [[https://github.com/awslabs/amazon-kinesis-producer/blob/master/java/amazon-kinesis-producer/src/main/java/com/amazonaws/services/kinesis/producer/UserRecordResult.java UserRecordResult]]
+    *   [[https://github.com/awslabs/amazon-kinesis-producer/blob/master/java/amazon-kinesis-producer/src/main/java/software/amazon/kinesis/producer/UserRecordResult.java UserRecordResult]]
     */
   def put(
       stream: String,
@@ -253,7 +253,7 @@ class KPLProducer[F[_]] private (
     *   Fetch data from the last N seconds.
     * @return
     *   F of
-    *   [[https://github.com/awslabs/amazon-kinesis-producer/blob/master/java/amazon-kinesis-producer/src/main/java/com/amazonaws/services/kinesis/producer/Metric.java Metric]]
+    *   [[https://github.com/awslabs/amazon-kinesis-producer/blob/master/java/amazon-kinesis-producer/src/main/java/software/amazon/kinesis/producer/Metric.java Metric]]
     */
   def getMetrics(metricName: String, windowSeconds: Int): F[List[Metric]] = {
     val ctx = LogContext()
@@ -280,7 +280,7 @@ class KPLProducer[F[_]] private (
     *   Name of metric
     * @return
     *   F of a List of
-    *   [[https://github.com/awslabs/amazon-kinesis-producer/blob/master/java/amazon-kinesis-producer/src/main/java/com/amazonaws/services/kinesis/producer/Metric.java Metric]]
+    *   [[https://github.com/awslabs/amazon-kinesis-producer/blob/master/java/amazon-kinesis-producer/src/main/java/software/amazon/kinesis/producer/Metric.java Metric]]
     */
   def getMetrics(metricName: String): F[List[Metric]] = {
     val ctx = LogContext()
@@ -306,7 +306,7 @@ class KPLProducer[F[_]] private (
     *   Fetch data from the last N seconds.
     * @return
     *   F of a List of
-    *   [[https://github.com/awslabs/amazon-kinesis-producer/blob/master/java/amazon-kinesis-producer/src/main/java/com/amazonaws/services/kinesis/producer/Metric.java Metric]]
+    *   [[https://github.com/awslabs/amazon-kinesis-producer/blob/master/java/amazon-kinesis-producer/src/main/java/software/amazon/kinesis/producer/Metric.java Metric]]
     */
   def getMetrics(windowSeconds: Int): F[List[Metric]] = {
     val ctx = LogContext()
@@ -330,7 +330,7 @@ class KPLProducer[F[_]] private (
     *
     * @return
     *   F of a List of
-    *   [[https://github.com/awslabs/amazon-kinesis-producer/blob/master/java/amazon-kinesis-producer/src/main/java/com/amazonaws/services/kinesis/producer/Metric.java Metric]]
+    *   [[https://github.com/awslabs/amazon-kinesis-producer/blob/master/java/amazon-kinesis-producer/src/main/java/software/amazon/kinesis/producer/Metric.java Metric]]
     */
   def getMetrics(): F[List[Metric]] = {
     val ctx = LogContext()

@@ -22,9 +22,9 @@ import scala.concurrent.duration._
 import java.nio.ByteBuffer
 
 import cats.effect.{IO, SyncIO}
-import com.amazonaws.services.kinesis.producer._
 import io.circe.syntax._
 import org.scalacheck.Arbitrary
+import software.amazon.kinesis.producer._
 
 import kinesis4cats.kpl.localstack.LocalstackKPLProducer
 import kinesis4cats.localstack.TestStreamConfig

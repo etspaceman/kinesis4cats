@@ -19,12 +19,12 @@ package localstack
 
 import cats.effect.{Async, Resource}
 import cats.syntax.all._
-import com.amazonaws.services.kinesis.producer.KinesisProducerConfiguration
 import org.typelevel.log4cats.StructuredLogger
+import software.amazon.kinesis.producer.KinesisProducerConfiguration
 
 import kinesis4cats.localstack.LocalstackConfig
 import kinesis4cats.localstack.TestStreamConfig
-import kinesis4cats.localstack.aws.v1.{AwsClients, AwsCreds}
+import kinesis4cats.localstack.aws.v2.{AwsClients, AwsCreds}
 
 /** Helpers for constructing and leveraging the KPL with Localstack.
   */
@@ -74,13 +74,13 @@ object LocalstackKPLProducer {
     def unapply[F[_]](builder: Builder[F]): Unit = ()
   }
 
-  /** [[https://github.com/awslabs/amazon-kinesis-producer/blob/master/java/amazon-kinesis-producer/src/main/java/com/amazonaws/services/kinesis/producer/KinesisProducerConfiguration.java KinesisProducerConfiguration]]
+  /** [[https://github.com/awslabs/amazon-kinesis-producer/blob/master/java/amazon-kinesis-producer/src/main/java/software/amazon/kinesis/producer/KinesisProducerConfiguration.java KinesisProducerConfiguration]]
     * configuration compliant with Localstack
     *
     * @param config
     *   [[kinesis4cats.localstack.LocalstackConfig LocalstackConfig]]
     * @return
-    *   [[https://github.com/awslabs/amazon-kinesis-producer/blob/master/java/amazon-kinesis-producer/src/main/java/com/amazonaws/services/kinesis/producer/KinesisProducerConfiguration.java KinesisProducerConfiguration]]
+    *   [[https://github.com/awslabs/amazon-kinesis-producer/blob/master/java/amazon-kinesis-producer/src/main/java/software/amazon/kinesis/producer/KinesisProducerConfiguration.java KinesisProducerConfiguration]]
     */
   private def kplConfig(
       config: LocalstackConfig

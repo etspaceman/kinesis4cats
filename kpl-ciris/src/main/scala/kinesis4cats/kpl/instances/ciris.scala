@@ -20,12 +20,11 @@ import scala.util.Try
 
 import _root_.ciris._
 import cats.syntax.all._
-import com.amazonaws.regions.Region
-import com.amazonaws.regions.RegionUtils
-import com.amazonaws.services.kinesis.producer.KinesisProducerConfiguration.ThreadingModel
 import com.amazonaws.services.schemaregistry.utils.AWSSchemaRegistryConstants.COMPRESSION
 import com.amazonaws.services.schemaregistry.utils._
+import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.glue.model.Compatibility
+import software.amazon.kinesis.producer.KinesisProducerConfiguration.ThreadingModel
 
 object ciris {
   implicit val compressionConfigDecoder: ConfigDecoder[String, COMPRESSION] =
@@ -39,7 +38,7 @@ object ciris {
 
   implicit val regionsConfigDecoder: ConfigDecoder[String, Region] =
     ConfigDecoder[String].mapEither { case (_, value) =>
-      Try(RegionUtils.getRegion(value)).toEither.leftMap(e =>
+      Try(Region.of(value)).toEither.leftMap(e =>
         ConfigError(
           s"Could not parse $value as region: ${e.getMessage}"
         )

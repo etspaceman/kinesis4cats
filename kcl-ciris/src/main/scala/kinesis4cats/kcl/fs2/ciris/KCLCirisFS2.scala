@@ -45,9 +45,9 @@ import kinesis4cats.kcl.KCLConsumer
 import kinesis4cats.kcl.RecordProcessor
 import kinesis4cats.kcl.ciris.KCLCiris
 
-/** Standard configuration loader of env variables and system properties for
-  * [[https://github.com/awslabs/amazon-kinesis-producer/blob/master/java/amazon-kinesis-producer/src/main/java/com/amazonaws/services/kinesis/producer/KinesisProducerConfiguration.java KinesisProducerConfiguration]]
-  * via [[https://cir.is/ Ciris]] - FS2 offering.
+/** Standard configuration loader of env variables and system properties for the
+  * [[https://github.com/awslabs/amazon-kinesis-client KCL]] via
+  * [[https://cir.is/ Ciris]] - FS2 offering.
   */
 object KCLCirisFS2 {
 

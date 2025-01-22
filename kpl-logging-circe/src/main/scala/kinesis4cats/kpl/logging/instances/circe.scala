@@ -17,9 +17,9 @@
 package kinesis4cats.kpl
 package logging.instances
 
-import com.amazonaws.services.kinesis.producer._
 import com.amazonaws.services.schemaregistry.common.Schema
 import io.circe.{Encoder, Json}
+import software.amazon.kinesis.producer._
 
 import kinesis4cats.logging.instances.circe._
 import kinesis4cats.logging.syntax.circe._
