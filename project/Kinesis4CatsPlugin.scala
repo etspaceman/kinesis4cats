@@ -216,9 +216,8 @@ object Kinesis4CatsPlugin extends AutoPlugin {
   )
 
   override def projectSettings = Seq(
-    Test / testOptions ++= {
-      List(Tests.Argument(TestFrameworks.MUnit, "+l"))
-    },
+    Test / testOptions ++=
+      List(Tests.Argument(TestFrameworks.MUnit, "+l")),
     // Workaround for https://github.com/typelevel/sbt-typelevel/issues/464
     scalacOptions ++= {
       if (tlIsScala3.value)
@@ -314,7 +313,7 @@ object Kinesis4CatsPlugin extends AutoPlugin {
 
 object Kinesis4CatsPluginKeys {
   val Scala212 = "2.12.20"
-  val Scala213 = "2.13.15"
+  val Scala213 = "2.13.16"
   val Scala3 = "3.3.4"
 
   val allScalaVersions = List(Scala213, Scala3, Scala212)
