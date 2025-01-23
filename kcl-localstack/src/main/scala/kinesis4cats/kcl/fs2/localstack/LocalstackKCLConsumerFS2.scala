@@ -23,6 +23,7 @@ import cats.effect.{Async, Resource}
 import software.amazon.kinesis.processor.StreamTracker
 import software.amazon.kinesis.retrieval.polling.PollingConfig
 
+import kinesis4cats.kcl.localstack.LocalstackKCLConsumer
 import kinesis4cats.localstack.LocalstackConfig
 import kinesis4cats.localstack.aws.v2.AwsClients
 
@@ -66,7 +67,12 @@ object LocalstackKCLConsumerFS2 {
         .withDynamoClient(dynamoClient)
         .withCloudWatchClient(cloudWatchClient)
         .configure(
-          _.configureLeaseManagementConfig(_.shardSyncIntervalMillis(1000L))
+          _.configureLeaseManagementConfig(
+            LocalstackKCLConsumer.configureTopLevelLeaseManagementConfig
+          )
+            .configureLeaseManagementConfig(
+              LocalstackKCLConsumer.configureLeaseManagementFactory
+            )
             .configureCoordinatorConfig(_.parentShardPollIntervalMillis(1000L))
             .configureRetrievalConfig(
               _.retrievalSpecificConfig(retrievalConfig)

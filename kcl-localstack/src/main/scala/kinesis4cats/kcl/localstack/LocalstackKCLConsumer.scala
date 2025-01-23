@@ -37,14 +37,14 @@ import kinesis4cats.localstack.aws.v2.AwsClients
   */
 object LocalstackKCLConsumer {
 
-  private def configureTopLevelLeaseManagementConfig(
+  private[kcl] def configureTopLevelLeaseManagementConfig(
       defaultLeaseManagement: LeaseManagementConfig
   ): LeaseManagementConfig =
     defaultLeaseManagement
       .shardSyncIntervalMillis(1000L)
       .failoverTimeMillis(1000L)
 
-  private def configureLeaseManagementFactory(
+  private[kcl] def configureLeaseManagementFactory(
       defaultLeaseManagement: LeaseManagementConfig
   ): LeaseManagementConfig =
     defaultLeaseManagement.leaseManagementFactory(
