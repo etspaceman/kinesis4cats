@@ -17,10 +17,16 @@
 package kinesis4cats.kcl
 package localstack
 
+import scala.concurrent.duration._
+
 import cats.effect.std.Queue
 import cats.effect.syntax.all._
 import cats.effect.{Async, Deferred, Resource}
 import cats.syntax.all._
+import software.amazon.kinesis.common.LeaseCleanupConfig
+import software.amazon.kinesis.leases.LeaseManagementConfig
+import software.amazon.kinesis.leases.dynamodb.DynamoDBLeaseManagementFactory
+import software.amazon.kinesis.leases.dynamodb.DynamoDBLeaseSerializer
 import software.amazon.kinesis.processor.StreamTracker
 import software.amazon.kinesis.retrieval.polling.PollingConfig
 
@@ -31,6 +37,61 @@ import kinesis4cats.localstack.aws.v2.AwsClients
   */
 object LocalstackKCLConsumer {
 
+  private def configureTopLevelLeaseManagementConfig(
+      defaultLeaseManagement: LeaseManagementConfig
+  ): LeaseManagementConfig =
+    defaultLeaseManagement
+      .shardSyncIntervalMillis(1000L)
+      .failoverTimeMillis(1000L)
+
+  private def configureLeaseManagementFactory(
+      defaultLeaseManagement: LeaseManagementConfig
+  ): LeaseManagementConfig =
+    defaultLeaseManagement.leaseManagementFactory(
+      new DynamoDBLeaseManagementFactory(
+        defaultLeaseManagement.kinesisClient(),
+        defaultLeaseManagement.dynamoDBClient(),
+        defaultLeaseManagement.tableName(),
+        defaultLeaseManagement.workerIdentifier(),
+        defaultLeaseManagement.executorService(),
+        defaultLeaseManagement.failoverTimeMillis(),
+        defaultLeaseManagement.enablePriorityLeaseAssignment(),
+        defaultLeaseManagement.epsilonMillis(),
+        defaultLeaseManagement.maxLeasesForWorker(),
+        defaultLeaseManagement.maxLeasesToStealAtOneTime(),
+        defaultLeaseManagement.maxLeaseRenewalThreads(),
+        defaultLeaseManagement.cleanupLeasesUponShardCompletion(),
+        defaultLeaseManagement.ignoreUnexpectedChildShards(),
+        defaultLeaseManagement.shardSyncIntervalMillis(),
+        defaultLeaseManagement.consistentReads(),
+        defaultLeaseManagement.listShardsBackoffTimeInMillis(),
+        defaultLeaseManagement.maxListShardsRetryAttempts(),
+        defaultLeaseManagement.maxCacheMissesBeforeReload(),
+        defaultLeaseManagement.listShardsCacheAllowedAgeInSeconds(),
+        defaultLeaseManagement.cacheMissWarningModulus(),
+        defaultLeaseManagement.initialLeaseTableReadCapacity().toLong,
+        defaultLeaseManagement.initialLeaseTableWriteCapacity().toLong,
+        defaultLeaseManagement.tableCreatorCallback(),
+        defaultLeaseManagement.dynamoDbRequestTimeout(),
+        defaultLeaseManagement.billingMode(),
+        defaultLeaseManagement.leaseTableDeletionProtectionEnabled(),
+        defaultLeaseManagement.leaseTablePitrEnabled(),
+        defaultLeaseManagement.tags(),
+        new DynamoDBLeaseSerializer(),
+        defaultLeaseManagement.customShardDetectorProvider(),
+        false,
+        LeaseCleanupConfig
+          .builder()
+          .completedLeaseCleanupIntervalMillis(500L)
+          .garbageLeaseCleanupIntervalMillis(500L)
+          .leaseCleanupIntervalMillis(10.seconds.toMillis)
+          .build(),
+        defaultLeaseManagement
+          .workerUtilizationAwareAssignmentConfig()
+          .disableWorkerMetrics(true),
+        defaultLeaseManagement.gracefulLeaseHandoffConfig()
+      )
+    )
   final case class ConfigWithResults[F[_]](
       kclConfig: KCLConsumer.Config[F],
       resultsQueue: Queue[F, CommittableRecord[F]]
@@ -97,7 +158,11 @@ object LocalstackKCLConsumer {
           )
       initial = default
         .configure(x =>
-          x.configureLeaseManagementConfig(_.shardSyncIntervalMillis(1000L))
+          x
+            .configureLeaseManagementConfig(
+              configureTopLevelLeaseManagementConfig
+            )
+            .configureLeaseManagementConfig(configureLeaseManagementFactory)
             .configureCoordinatorConfig(_.parentShardPollIntervalMillis(1000L))
             .configureRetrievalConfig(
               _.retrievalSpecificConfig(retrievalConfig)
