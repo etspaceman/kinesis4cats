@@ -27,6 +27,7 @@ import software.amazon.kinesis.common.LeaseCleanupConfig
 import software.amazon.kinesis.leases.LeaseManagementConfig
 import software.amazon.kinesis.leases.dynamodb.DynamoDBLeaseManagementFactory
 import software.amazon.kinesis.leases.dynamodb.DynamoDBLeaseSerializer
+import software.amazon.kinesis.leases.dynamodb.DynamoDBMultiStreamLeaseSerializer
 import software.amazon.kinesis.processor.StreamTracker
 import software.amazon.kinesis.retrieval.polling.PollingConfig
 
@@ -78,7 +79,8 @@ object LocalstackKCLConsumer {
         defaultLeaseManagement.leaseTableDeletionProtectionEnabled(),
         defaultLeaseManagement.leaseTablePitrEnabled(),
         defaultLeaseManagement.tags(),
-        new DynamoDBLeaseSerializer(),
+        if (isMultiStream) new DynamoDBMultiStreamLeaseSerializer()
+        else new DynamoDBLeaseSerializer(),
         defaultLeaseManagement.customShardDetectorProvider(),
         isMultiStream,
         LeaseCleanupConfig
