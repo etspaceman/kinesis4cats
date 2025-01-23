@@ -21,9 +21,8 @@ package localstack
 import cats.Parallel
 import cats.effect.{Async, Resource}
 import software.amazon.kinesis.processor.StreamTracker
-import software.amazon.kinesis.retrieval.polling.PollingConfig
 
-import kinesis4cats.kcl.localstack.LocalstackKCLConsumer
+import kinesis4cats.kcl.localstack.Shared
 import kinesis4cats.localstack.LocalstackConfig
 import kinesis4cats.localstack.aws.v2.AwsClients
 
@@ -51,14 +50,7 @@ object LocalstackKCLConsumerFS2 {
       kinesisClient <- AwsClients.kinesisClientResource(localstackConfig)
       cloudWatchClient <- AwsClients.cloudwatchClientResource(localstackConfig)
       dynamoClient <- AwsClients.dynamoClientResource(localstackConfig)
-      retrievalConfig =
-        if (streamTracker.isMultiStream()) new PollingConfig(kinesisClient)
-        else
-          new PollingConfig(
-            streamTracker.streamConfigList.get(0).streamIdentifier.streamName,
-            kinesisClient
-          )
-      initial = KCLConsumerFS2.Builder
+      kclBuilder = KCLConsumerFS2.Builder
         .default(
           streamTracker,
           appName
@@ -68,32 +60,13 @@ object LocalstackKCLConsumerFS2 {
         .withCloudWatchClient(cloudWatchClient)
         .configure(
           _.configureLeaseManagementConfig(
-            LocalstackKCLConsumer.configureTopLevelLeaseManagementConfig
+            Shared.leaseManagement(_, streamTracker)
           )
-            .configureLeaseManagementConfig(x =>
-              LocalstackKCLConsumer.configureLeaseManagementFactory(
-                x,
-                streamTracker.isMultiStream()
-              )
-            )
-            .configureCoordinatorConfig(_.parentShardPollIntervalMillis(1000L))
+            .configureCoordinatorConfig(Shared.coordinatorConfig)
             .configureRetrievalConfig(
-              _.retrievalSpecificConfig(retrievalConfig)
-                .retrievalFactory(retrievalConfig.retrievalFactory())
+              Shared.retrievalConfig(_, streamTracker, kinesisClient)
             )
         )
-      kclBuilder =
-        if (streamTracker.isMultiStream()) initial
-        else
-          initial.configure(
-            _.configureLeaseManagementConfig(
-              _.initialPositionInStream(
-                streamTracker.streamConfigList
-                  .get(0)
-                  .initialPositionInStreamExtended()
-              )
-            )
-          )
     } yield Builder(kclBuilder)
 
     def default[F[_]](

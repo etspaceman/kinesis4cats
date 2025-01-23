@@ -17,19 +17,11 @@
 package kinesis4cats.kcl
 package localstack
 
-import scala.concurrent.duration._
-
 import cats.effect.std.Queue
 import cats.effect.syntax.all._
 import cats.effect.{Async, Deferred, Resource}
 import cats.syntax.all._
-import software.amazon.kinesis.common.LeaseCleanupConfig
-import software.amazon.kinesis.leases.LeaseManagementConfig
-import software.amazon.kinesis.leases.dynamodb.DynamoDBLeaseManagementFactory
-import software.amazon.kinesis.leases.dynamodb.DynamoDBLeaseSerializer
-import software.amazon.kinesis.leases.dynamodb.DynamoDBMultiStreamLeaseSerializer
 import software.amazon.kinesis.processor.StreamTracker
-import software.amazon.kinesis.retrieval.polling.PollingConfig
 
 import kinesis4cats.localstack.LocalstackConfig
 import kinesis4cats.localstack.aws.v2.AwsClients
@@ -37,64 +29,6 @@ import kinesis4cats.localstack.aws.v2.AwsClients
 /** Helpers for constructing and leveraging the KPL with Localstack.
   */
 object LocalstackKCLConsumer {
-
-  private[kcl] def configureTopLevelLeaseManagementConfig(
-      defaultLeaseManagement: LeaseManagementConfig
-  ): LeaseManagementConfig =
-    defaultLeaseManagement
-      .shardSyncIntervalMillis(1000L)
-      .failoverTimeMillis(1000L)
-
-  private[kcl] def configureLeaseManagementFactory(
-      defaultLeaseManagement: LeaseManagementConfig,
-      isMultiStream: Boolean
-  ): LeaseManagementConfig =
-    defaultLeaseManagement.leaseManagementFactory(
-      new DynamoDBLeaseManagementFactory(
-        defaultLeaseManagement.kinesisClient(),
-        defaultLeaseManagement.dynamoDBClient(),
-        defaultLeaseManagement.tableName(),
-        defaultLeaseManagement.workerIdentifier(),
-        defaultLeaseManagement.executorService(),
-        defaultLeaseManagement.failoverTimeMillis(),
-        defaultLeaseManagement.enablePriorityLeaseAssignment(),
-        defaultLeaseManagement.epsilonMillis(),
-        defaultLeaseManagement.maxLeasesForWorker(),
-        defaultLeaseManagement.maxLeasesToStealAtOneTime(),
-        defaultLeaseManagement.maxLeaseRenewalThreads(),
-        defaultLeaseManagement.cleanupLeasesUponShardCompletion(),
-        defaultLeaseManagement.ignoreUnexpectedChildShards(),
-        defaultLeaseManagement.shardSyncIntervalMillis(),
-        defaultLeaseManagement.consistentReads(),
-        defaultLeaseManagement.listShardsBackoffTimeInMillis(),
-        defaultLeaseManagement.maxListShardsRetryAttempts(),
-        defaultLeaseManagement.maxCacheMissesBeforeReload(),
-        defaultLeaseManagement.listShardsCacheAllowedAgeInSeconds(),
-        defaultLeaseManagement.cacheMissWarningModulus(),
-        defaultLeaseManagement.initialLeaseTableReadCapacity().toLong,
-        defaultLeaseManagement.initialLeaseTableWriteCapacity().toLong,
-        defaultLeaseManagement.tableCreatorCallback(),
-        defaultLeaseManagement.dynamoDbRequestTimeout(),
-        defaultLeaseManagement.billingMode(),
-        defaultLeaseManagement.leaseTableDeletionProtectionEnabled(),
-        defaultLeaseManagement.leaseTablePitrEnabled(),
-        defaultLeaseManagement.tags(),
-        if (isMultiStream) new DynamoDBMultiStreamLeaseSerializer()
-        else new DynamoDBLeaseSerializer(),
-        defaultLeaseManagement.customShardDetectorProvider(),
-        isMultiStream,
-        LeaseCleanupConfig
-          .builder()
-          .completedLeaseCleanupIntervalMillis(500L)
-          .garbageLeaseCleanupIntervalMillis(500L)
-          .leaseCleanupIntervalMillis(10.seconds.toMillis)
-          .build(),
-        defaultLeaseManagement
-          .workerUtilizationAwareAssignmentConfig()
-          .disableWorkerMetrics(true),
-        defaultLeaseManagement.gracefulLeaseHandoffConfig()
-      )
-    )
   final case class ConfigWithResults[F[_]](
       kclConfig: KCLConsumer.Config[F],
       resultsQueue: Queue[F, CommittableRecord[F]]
@@ -152,40 +86,17 @@ object LocalstackKCLConsumer {
         .withKinesisClient(kinesisClient)
         .withDynamoClient(dynamoClient)
         .withCloudWatchClient(cloudWatchClient)
-      retrievalConfig =
-        if (streamTracker.isMultiStream()) new PollingConfig(kinesisClient)
-        else
-          new PollingConfig(
-            streamTracker.streamConfigList.get(0).streamIdentifier.streamName,
-            kinesisClient
-          )
-      initial = default
+      kclBuilder = default
         .configure(x =>
           x
             .configureLeaseManagementConfig(
-              configureTopLevelLeaseManagementConfig
+              Shared.leaseManagement(_, streamTracker)
             )
-            .configureLeaseManagementConfig(x =>
-              configureLeaseManagementFactory(x, streamTracker.isMultiStream())
-            )
-            .configureCoordinatorConfig(_.parentShardPollIntervalMillis(1000L))
+            .configureCoordinatorConfig(Shared.coordinatorConfig)
             .configureRetrievalConfig(
-              _.retrievalSpecificConfig(retrievalConfig)
-                .retrievalFactory(retrievalConfig.retrievalFactory())
+              Shared.retrievalConfig(_, streamTracker, kinesisClient)
             )
         )
-      kclBuilder =
-        if (streamTracker.isMultiStream()) initial
-        else
-          initial.configure(
-            _.configureLeaseManagementConfig(
-              _.initialPositionInStream(
-                streamTracker.streamConfigList
-                  .get(0)
-                  .initialPositionInStreamExtended()
-              )
-            )
-          )
     } yield Builder(kclBuilder)
 
     def default[F[_]](
