@@ -70,8 +70,11 @@ object LocalstackKCLConsumerFS2 {
           _.configureLeaseManagementConfig(
             LocalstackKCLConsumer.configureTopLevelLeaseManagementConfig
           )
-            .configureLeaseManagementConfig(
-              LocalstackKCLConsumer.configureLeaseManagementFactory
+            .configureLeaseManagementConfig(x =>
+              LocalstackKCLConsumer.configureLeaseManagementFactory(
+                x,
+                streamTracker.isMultiStream()
+              )
             )
             .configureCoordinatorConfig(_.parentShardPollIntervalMillis(1000L))
             .configureRetrievalConfig(

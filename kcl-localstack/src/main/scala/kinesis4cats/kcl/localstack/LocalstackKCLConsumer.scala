@@ -45,7 +45,8 @@ object LocalstackKCLConsumer {
       .failoverTimeMillis(1000L)
 
   private[kcl] def configureLeaseManagementFactory(
-      defaultLeaseManagement: LeaseManagementConfig
+      defaultLeaseManagement: LeaseManagementConfig,
+      isMultiStream: Boolean
   ): LeaseManagementConfig =
     defaultLeaseManagement.leaseManagementFactory(
       new DynamoDBLeaseManagementFactory(
@@ -79,7 +80,7 @@ object LocalstackKCLConsumer {
         defaultLeaseManagement.tags(),
         new DynamoDBLeaseSerializer(),
         defaultLeaseManagement.customShardDetectorProvider(),
-        false,
+        isMultiStream,
         LeaseCleanupConfig
           .builder()
           .completedLeaseCleanupIntervalMillis(500L)
@@ -162,7 +163,9 @@ object LocalstackKCLConsumer {
             .configureLeaseManagementConfig(
               configureTopLevelLeaseManagementConfig
             )
-            .configureLeaseManagementConfig(configureLeaseManagementFactory)
+            .configureLeaseManagementConfig(x =>
+              configureLeaseManagementFactory(x, streamTracker.isMultiStream())
+            )
             .configureCoordinatorConfig(_.parentShardPollIntervalMillis(1000L))
             .configureRetrievalConfig(
               _.retrievalSpecificConfig(retrievalConfig)
