@@ -442,6 +442,20 @@
               <td><code>250</code></td>
               <td>Modulus to use against the number of cache misses before a warning is logged.</td>
             </tr>
+            <tr>
+              <td><code>KCL_LEASE_TABLE_DELETION_PROTECTION_ENABLED</code></td>
+              <td><code>kcl.lease.table.deletion.protection.enabled</code></td>
+              <td>No</td>
+              <td><code>false</code></td>
+              <td>Whether to enable deletion protection on the DynamoDB lease table created by KCL. This does not update already existing tables.</td>
+            </tr>
+            <tr>
+              <td><code>KCL_LEASE_TABLE_PITR_ENABLED</code></td>
+              <td><code>kcl.lease.table.pitr.enabled</code></td>
+              <td>No</td>
+              <td><code>false</code></td>
+              <td>Whether to enable PITR (point in time recovery) on the DynamoDB lease table created by KCL. If true, this can update existing table&#39;s PITR.</td>
+            </tr>
           </tbody>
         </table>
         
