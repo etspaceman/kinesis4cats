@@ -88,6 +88,8 @@ Currently the [CheckpointConfig](https://github.com/awslabs/amazon-kinesis-clien
 | `KCL_LEASE_MAX_CACHE_MISSES_BEFORE_RELOAD` | `kcl.lease.max.cache.misses.before.reload` | No | `1000` | Amount of cache misses before reloading the lease cache. |
 | `KCL_LEASE_LIST_SHARDS_CACHE_ALLOWED_AGE` | `kcl.lease.list.shards.cache.allowed.age` | No | `30 seconds` | Duration that the list shards cache is valid. |
 | `KCL_LEASE_CACHE_MISS_WARNING_MODULUS` | `kcl.lease.cache.miss.warning.modulus` | No | `250` | Modulus to use against the number of cache misses before a warning is logged. |
+| `KCL_LEASE_TABLE_DELETION_PROTECTION_ENABLED` | `kcl.lease.table.deletion.protection.enabled` | No | `false` | Whether to enable deletion protection on the DynamoDB lease table created by KCL. This does not update already existing tables. |
+| `KCL_LEASE_TABLE_PITR_ENABLED` | `kcl.lease.table.pitr.enabled` | No | `false` | Whether to enable PITR (point in time recovery) on the DynamoDB lease table created by KCL. If true, this can update existing table's PITR. |
 
 ### Lifecycle
 
