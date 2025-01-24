@@ -188,6 +188,14 @@ object KCLCirisSpecVars {
           "251"
         ),
         CirisUtil.propAndEnv(
+          List("kcl", "lease", "table", "deletion", "protection", "enabled"),
+          "true"
+        ),
+        CirisUtil.propAndEnv(
+          List("kcl", "lease", "table", "pitr", "enabled"),
+          "true"
+        ),
+        CirisUtil.propAndEnv(
           List(
             "kcl",
             "lease",
@@ -374,27 +382,6 @@ object KCLCirisSpecVars {
         CirisUtil.propAndEnv(
           List("kcl", "lease", "worker", "metrics", "table", "tags"),
           "tag1:value1,tag2:value2"
-        ),
-        CirisUtil.propAndEnv(
-          List(
-            "kcl",
-            "lease",
-            "table",
-            "deletion",
-            "protection",
-            "enabled"
-          ),
-          "true"
-        ),
-        CirisUtil.propAndEnv(
-          List(
-            "kcl",
-            "lease",
-            "table",
-            "pitr",
-            "enabled"
-          ),
-          "true"
         ),
         CirisUtil.propAndEnv(
           List(

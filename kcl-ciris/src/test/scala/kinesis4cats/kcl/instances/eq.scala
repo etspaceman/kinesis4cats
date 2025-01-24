@@ -107,6 +107,9 @@ object eq {
       x.streamName() === y.streamName() &&
       x.tableName() === y.tableName() &&
       x.workerIdentifier() === y.workerIdentifier() &&
+      x.leaseTableDeletionProtectionEnabled() === y
+        .leaseTableDeletionProtectionEnabled() &&
+      x.leaseTablePitrEnabled() === y.leaseTablePitrEnabled() &&
       x.workerUtilizationAwareAssignmentConfig
         .inMemoryWorkerMetricsCaptureFrequencyMillis() === y.workerUtilizationAwareAssignmentConfig
         .inMemoryWorkerMetricsCaptureFrequencyMillis() &&

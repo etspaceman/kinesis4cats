@@ -178,6 +178,12 @@ class KCLCirisSpec extends munit.CatsEffectSuite {
       ).safeTransform(BuildInfo.kclLeaseCacheMissWarningModulus.toInt)(
         _.cacheMissWarningModulus(_)
       ).safeTransform(
+        BuildInfo.kclLeaseTableDeletionProtectionEnabled.toBoolean
+      )(
+        _.leaseTableDeletionProtectionEnabled(_)
+      ).safeTransform(BuildInfo.kclLeaseTablePitrEnabled.toBoolean)(
+        _.leaseTablePitrEnabled(_)
+      ).safeTransform(
         (
           BuildInfo.kclAppName,
           BuildInfo.kclLeaseInMemoryWorkerMetricsCaptureFrequency.asMillisUnsafe,

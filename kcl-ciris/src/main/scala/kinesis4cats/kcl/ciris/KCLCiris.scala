@@ -652,6 +652,14 @@ object KCLCiris {
         List("kcl", "lease", "cache", "miss", "warning", "modulus"),
         prefix
       )
+      leaseTableDeletionProtectionEnabled <- CirisReader.readOptional[Boolean](
+        List("kcl", "lease", "table", "deletion", "protection", "enabled"),
+        prefix
+      )
+      leaseTablePitrEnabled <- CirisReader.readOptional[Boolean](
+        List("kcl", "lease", "table", "pitr", "enabled"),
+        prefix
+      )
       inMemoryWorkerMetricsCaptureFrequencyMillis <- CirisReader
         .readOptional[Duration](
           List(
@@ -924,29 +932,6 @@ object KCLCiris {
           )
           .maybeTransform(workerMetricsEMAAlpha)(_.workerMetricsEMAAlpha(_))
           .workerMetricsTableConfig(workerMetricsTableConfig)
-      leaseTableDeletionProtectionEnabled <- CirisReader
-        .readOptional[Boolean](
-          List(
-            "kcl",
-            "lease",
-            "table",
-            "deletion",
-            "protection",
-            "enabled"
-          ),
-          prefix
-        )
-      leaseTablePitrEnabled <- CirisReader
-        .readOptional[Boolean](
-          List(
-            "kcl",
-            "lease",
-            "table",
-            "pitr",
-            "enabled"
-          ),
-          prefix
-        )
       leasesRecoveryAuditorExecutionFrequencyMillis <- CirisReader
         .readOptional[Duration](
           List(
