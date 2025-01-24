@@ -186,6 +186,14 @@ object KCLCirisSpecVars {
         CirisUtil.propAndEnv(
           List("kcl", "lease", "cache", "miss", "warning", "modulus"),
           "251"
+        ),
+        CirisUtil.propAndEnv(
+          List("kcl", "lease", "table", "deletion", "protection", "enabled"),
+          "true"
+        ),
+        CirisUtil.propAndEnv(
+          List("kcl", "lease", "table", "pitr", "enabled"),
+          "true"
         )
       )
     )

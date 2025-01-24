@@ -177,6 +177,12 @@ class KCLCirisSpec extends munit.CatsEffectSuite {
         _.listShardsCacheAllowedAgeInSeconds(_)
       ).safeTransform(BuildInfo.kclLeaseCacheMissWarningModulus.toInt)(
         _.cacheMissWarningModulus(_)
+      ).safeTransform(
+        BuildInfo.kclLeaseTableDeletionProtectionEnabled.toBoolean
+      )(
+        _.leaseTableDeletionProtectionEnabled(_)
+      ).safeTransform(BuildInfo.kclLeaseTablePitrEnabled.toBoolean)(
+        _.leaseTablePitrEnabled(_)
       )
     } yield {
       assert(

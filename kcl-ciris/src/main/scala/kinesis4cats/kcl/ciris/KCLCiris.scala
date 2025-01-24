@@ -652,6 +652,14 @@ object KCLCiris {
         List("kcl", "lease", "cache", "miss", "warning", "modulus"),
         prefix
       )
+      leaseTableDeletionProtectionEnabled <- CirisReader.readOptional[Boolean](
+        List("kcl", "lease", "table", "deletion", "protection", "enabled"),
+        prefix
+      )
+      leaseTablePitrEnabled <- CirisReader.readOptional[Boolean](
+        List("kcl", "lease", "table", "pitr", "enabled"),
+        prefix
+      )
     } yield new LeaseManagementConfig(
       tableName,
       dynamoClient,
@@ -703,6 +711,10 @@ object KCLCiris {
       .maybeTransform(hierarchicalShardSyncer)(_.hierarchicalShardSyncer(_))
       .maybeTransform(executorService)(_.executorService(_))
       .maybeTransform(leaseManagementFactory)(_.leaseManagementFactory(_))
+      .maybeTransform(leaseTableDeletionProtectionEnabled)(
+        _.leaseTableDeletionProtectionEnabled(_)
+      )
+      .maybeTransform(leaseTablePitrEnabled)(_.leaseTablePitrEnabled(_))
 
     /** Reads the
       * [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/leases/LeaseManagementConfig.java LeaseManagementConfig]]

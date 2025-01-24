@@ -81,7 +81,10 @@ object eq {
       x.shardSyncIntervalMillis() === y.shardSyncIntervalMillis() &&
       x.streamName() === y.streamName() &&
       x.tableName() === y.tableName() &&
-      x.workerIdentifier() === y.workerIdentifier()
+      x.workerIdentifier() === y.workerIdentifier() &&
+      x.leaseTableDeletionProtectionEnabled() === y
+        .leaseTableDeletionProtectionEnabled() &&
+      x.leaseTablePitrEnabled() === y.leaseTablePitrEnabled()
 
   implicit val lifecycleConfigEq: Eq[LifecycleConfig] = (x, y) =>
     x.logWarningForTaskAfterMillis() == y.logWarningForTaskAfterMillis() &&
