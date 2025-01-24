@@ -25,7 +25,7 @@ import com.google.protobuf.ByteString
 
 import kinesis4cats.Utils
 import kinesis4cats.models.ShardId
-import kinesis4cats.protobuf.messages
+import kinesis4cats.protobuf.kinesisMessages
 
 final case class Record(
     data: Array[Byte],
@@ -193,7 +193,7 @@ object Record {
       pkSize + explicitHashKeySize + innerRecordSize
     }
 
-    def asEntry: messages.Record = messages.Record(
+    def asEntry: kinesisMessages.Record = kinesisMessages.Record(
       partitionKeyTableIndex.toLong,
       Some(explicitHashKeyTableIndex.toLong),
       ByteString.copyFrom(record.data)
