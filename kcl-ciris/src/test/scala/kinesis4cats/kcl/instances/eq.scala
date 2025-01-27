@@ -17,12 +17,16 @@
 package kinesis4cats.kcl.instances
 
 import scala.concurrent.duration.Duration
+import scala.jdk.CollectionConverters._
 
 import cats.Eq
 import cats.syntax.all._
+import software.amazon.awssdk.services.dynamodb.model.BillingMode
+import software.amazon.awssdk.services.dynamodb.model.Tag
 import software.amazon.kinesis.common.InitialPositionInStreamExtended
 import software.amazon.kinesis.coordinator.CoordinatorConfig
 import software.amazon.kinesis.leases.LeaseManagementConfig
+import software.amazon.kinesis.leases.LeaseManagementConfig.WorkerMetricsTableConfig
 import software.amazon.kinesis.lifecycle.LifecycleConfig
 import software.amazon.kinesis.metrics.MetricsConfig
 import software.amazon.kinesis.retrieval._
@@ -54,8 +58,29 @@ object eq {
       x.skipShardSyncAtWorkerInitializationIfLeasesExist() === y
         .skipShardSyncAtWorkerInitializationIfLeasesExist()
 
+  implicit val tagEq: Eq[Tag] = Eq.by(x => (x.key, x.value))
+
+  implicit def collectionEq[A](implicit
+      eqA: Eq[A]
+  ): Eq[java.util.Collection[A]] = Eq.by(x => x.asScala.toList)
+
+  implicit val billingModeEq: Eq[BillingMode] = Eq.fromUniversalEquals
+
+  implicit val workerMetricsTableConfigEq: Eq[WorkerMetricsTableConfig] =
+    Eq.by(x =>
+      (
+        x.tableName(),
+        x.billingMode(),
+        x.readCapacity(),
+        x.writeCapacity(),
+        x.pointInTimeRecoveryEnabled(),
+        x.deletionProtectionEnabled(),
+        x.tags()
+      )
+    )
+
   implicit val leaseManagementConfigEq: Eq[LeaseManagementConfig] = (x, y) =>
-    x.billingMode() == y.billingMode() &&
+    x.billingMode() === y.billingMode() &&
       x.cacheMissWarningModulus() === y.cacheMissWarningModulus() &&
       x.cleanupLeasesUponShardCompletion() === y
         .cleanupLeasesUponShardCompletion() &&
@@ -84,7 +109,43 @@ object eq {
       x.workerIdentifier() === y.workerIdentifier() &&
       x.leaseTableDeletionProtectionEnabled() === y
         .leaseTableDeletionProtectionEnabled() &&
-      x.leaseTablePitrEnabled() === y.leaseTablePitrEnabled()
+      x.leaseTablePitrEnabled() === y.leaseTablePitrEnabled() &&
+      x.workerUtilizationAwareAssignmentConfig
+        .inMemoryWorkerMetricsCaptureFrequencyMillis() === y.workerUtilizationAwareAssignmentConfig
+        .inMemoryWorkerMetricsCaptureFrequencyMillis() &&
+      x.workerUtilizationAwareAssignmentConfig
+        .workerMetricsReporterFreqInMillis() === y.workerUtilizationAwareAssignmentConfig
+        .workerMetricsReporterFreqInMillis() &&
+      x.workerUtilizationAwareAssignmentConfig
+        .noOfPersistedMetricsPerWorkerMetrics() === y.workerUtilizationAwareAssignmentConfig
+        .noOfPersistedMetricsPerWorkerMetrics() &&
+      x.workerUtilizationAwareAssignmentConfig
+        .disableWorkerMetrics() === y.workerUtilizationAwareAssignmentConfig
+        .disableWorkerMetrics() &&
+      x.workerUtilizationAwareAssignmentConfig
+        .maxThroughputPerHostKBps() === y.workerUtilizationAwareAssignmentConfig
+        .maxThroughputPerHostKBps() &&
+      x.workerUtilizationAwareAssignmentConfig
+        .dampeningPercentage() === y.workerUtilizationAwareAssignmentConfig
+        .dampeningPercentage() &&
+      x.workerUtilizationAwareAssignmentConfig
+        .reBalanceThresholdPercentage() === y.workerUtilizationAwareAssignmentConfig
+        .reBalanceThresholdPercentage() &&
+      x.workerUtilizationAwareAssignmentConfig
+        .allowThroughputOvershoot() === y.workerUtilizationAwareAssignmentConfig
+        .allowThroughputOvershoot() &&
+      x.workerUtilizationAwareAssignmentConfig
+        .staleWorkerMetricsEntryCleanupDuration() === y.workerUtilizationAwareAssignmentConfig
+        .staleWorkerMetricsEntryCleanupDuration() &&
+      x.workerUtilizationAwareAssignmentConfig
+        .workerMetricsTableConfig() === y.workerUtilizationAwareAssignmentConfig
+        .workerMetricsTableConfig() &&
+      x.workerUtilizationAwareAssignmentConfig
+        .varianceBalancingFrequency() === y.workerUtilizationAwareAssignmentConfig
+        .varianceBalancingFrequency() &&
+      x.workerUtilizationAwareAssignmentConfig
+        .workerMetricsEMAAlpha() === y.workerUtilizationAwareAssignmentConfig
+        .workerMetricsEMAAlpha()
 
   implicit val lifecycleConfigEq: Eq[LifecycleConfig] = (x, y) =>
     x.logWarningForTaskAfterMillis() == y.logWarningForTaskAfterMillis() &&

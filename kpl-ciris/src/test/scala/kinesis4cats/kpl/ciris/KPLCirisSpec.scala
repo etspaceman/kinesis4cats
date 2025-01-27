@@ -20,11 +20,11 @@ import scala.jdk.CollectionConverters._
 
 import cats.effect.IO
 import cats.syntax.all._
-import com.amazonaws.services.kinesis.producer.KinesisProducerConfiguration
 import com.amazonaws.services.schemaregistry.common.configs.GlueSchemaRegistryConfiguration
 import com.amazonaws.services.schemaregistry.utils.AWSSchemaRegistryConstants.COMPRESSION
 import com.amazonaws.services.schemaregistry.utils._
 import software.amazon.awssdk.services.glue.model.Compatibility
+import software.amazon.kinesis.producer.KinesisProducerConfiguration
 
 import kinesis4cats.kpl.KPLProducer
 import kinesis4cats.kpl.instances.eq._
