@@ -103,6 +103,7 @@ class KCLCirisSpec extends munit.CatsEffectSuite {
           None,
           None,
           None,
+          None,
           None
         )
         .load[IO]
@@ -111,6 +112,7 @@ class KCLCirisSpec extends munit.CatsEffectSuite {
           dynamoClient,
           kinesisClient,
           Some("prop"),
+          None,
           None,
           None,
           None,

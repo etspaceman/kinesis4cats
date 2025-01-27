@@ -43,6 +43,7 @@ import software.amazon.kinesis.processor.SingleStreamTracker
 import software.amazon.kinesis.retrieval.fanout.FanOutConfig
 import software.amazon.kinesis.retrieval.polling.PollingConfig
 import software.amazon.kinesis.retrieval.{AggregatorUtil, RetrievalConfig}
+import software.amazon.kinesis.worker.metric.WorkerMetric
 
 import kinesis4cats.Utils
 import kinesis4cats.ciris.CirisReader
@@ -106,6 +107,10 @@ object KCLCiris {
     * @param LE
     *   [[kinesis4cats.kcl.RecordProcessor.LogEncoders RecordProcessor.LogEncoders]]
     *   for encoding structured logs
+    * @param workerMetrics
+    *   List of
+    *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/worker/metric/WorkerMetric.java WorkerMetrics]]
+    *   for the application
     * @return
     *   [[cats.effect.Resource Resource]] containing the
     *   [[kinesis4cats.kcl.KCLConsumer KCLConsumer]]
@@ -130,7 +135,8 @@ object KCLCiris {
       glueSchemaRegistryDeserializer: Option[GlueSchemaRegistryDeserializer] =
         None,
       encoders: RecordProcessor.LogEncoders = RecordProcessor.LogEncoders.show,
-      managedClients: Boolean = true
+      managedClients: Boolean = true,
+      workerMetrics: Option[List[WorkerMetric]] = None
   )(cb: List[CommittableRecord[F]] => F[Unit])(implicit
       F: Async[F]
   ): Resource[F, KCLConsumer[F]] = for {
@@ -159,6 +165,7 @@ object KCLCiris {
       tableCreatorCallback,
       leaseManagementFactory,
       leaseExecutorService,
+      workerMetrics,
       aggregatorUtil,
       taskExecutionListener,
       metricsFactory,
@@ -197,6 +204,10 @@ object KCLCiris {
     * @param leaseExecutorService
     *   [[https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/ExecutorService.html ExecutorService]]
     *   for the lease management
+    * @param workerMetrics
+    *   List of
+    *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/worker/metric/WorkerMetric.java WorkerMetrics]]
+    *   for the application
     * @param aggregatorUtil
     *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/retrieval/AggregatorUtil.java AggregatorUtil]]
     * @param taskExecutionListener
@@ -230,6 +241,7 @@ object KCLCiris {
       tableCreatorCallback: Option[TableCreatorCallback],
       leaseManagementFactory: Option[LeaseManagementFactory],
       leaseExecutorService: Option[ExecutorService],
+      workerMetrics: Option[List[WorkerMetric]],
       aggregatorUtil: Option[AggregatorUtil],
       taskExecutionListener: Option[TaskExecutionListener],
       metricsFactory: Option[MetricsFactory],
@@ -252,7 +264,8 @@ object KCLCiris {
       customShardDetectorProvider,
       tableCreatorCallback,
       leaseManagementFactory,
-      leaseExecutorService
+      leaseExecutorService,
+      workerMetrics
     )
     lifecycleConfig <- Lifecycle
       .resource[F](prefix, aggregatorUtil, taskExecutionListener)
@@ -498,9 +511,13 @@ object KCLCiris {
       *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/leases/HierarchicalShardSyncer.java HierarchicalShardSyncer]]
       * @param leaseManagementFactory
       *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/leases/LeaseManagementFactory.java LeaseManagementFactory]]
-      * @param leaseExecutorService
+      * @param executorService
       *   [[https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/ExecutorService.html ExecutorService]]
       *   for the lease management
+      * @param workerMetrics
+      *   List of
+      *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/worker/metric/WorkerMetric.java WorkerMetrics]]
+      *   for the application
       * @return
       *   [[https://cir.is/api/ciris/ConfigDecoder.html ConfigDecoder]] of
       *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/leases/LeaseManagementConfig.java LeaseManagementConfig]]
@@ -512,7 +529,8 @@ object KCLCiris {
         customShardDetectorProvider: Option[StreamConfig => ShardDetector],
         tableCreatorCallback: Option[TableCreatorCallback],
         leaseManagementFactory: Option[LeaseManagementFactory],
-        executorService: Option[ExecutorService]
+        executorService: Option[ExecutorService],
+        workerMetrics: Option[List[WorkerMetric]]
     ): ConfigValue[Effect, LeaseManagementConfig] = for {
       appName <- Common.readAppName(prefix)
       tableName <- CirisReader
@@ -928,6 +946,9 @@ object KCLCiris {
             _.varianceBalancingFrequency(_)
           )
           .maybeTransform(workerMetricsEMAAlpha)(_.workerMetricsEMAAlpha(_))
+          .maybeTransform(workerMetrics) { (conf, workerMetricList) =>
+            conf.workerMetricList(workerMetricList.asJava)
+          }
           .workerMetricsTableConfig(workerMetricsTableConfig)
       leasesRecoveryAuditorExecutionFrequencyMillis <- CirisReader
         .readOptional[Duration](
@@ -1028,9 +1049,13 @@ object KCLCiris {
       *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/leases/HierarchicalShardSyncer.java HierarchicalShardSyncer]]
       * @param leaseManagementFactory
       *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/leases/LeaseManagementFactory.java LeaseManagementFactory]]
-      * @param leaseExecutorService
+      * @param executorService
       *   [[https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/ExecutorService.html ExecutorService]]
       *   for the lease management
+      * @param workerMetrics
+      *   List of
+      *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/worker/metric/WorkerMetric.java WorkerMetrics]]
+      *   for the application
       * @param F
       *   [[cats.effect.Async Async]]
       * @return
@@ -1044,7 +1069,8 @@ object KCLCiris {
         customShardDetectorProvider: Option[StreamConfig => ShardDetector],
         tableCreatorCallback: Option[TableCreatorCallback],
         leaseManagementFactory: Option[LeaseManagementFactory],
-        executorService: Option[ExecutorService]
+        executorService: Option[ExecutorService],
+        workerMetrics: Option[List[WorkerMetric]]
     )(implicit F: Async[F]): Resource[F, LeaseManagementConfig] = read(
       dynamoClient,
       kinesisClient,
@@ -1052,7 +1078,8 @@ object KCLCiris {
       customShardDetectorProvider,
       tableCreatorCallback,
       leaseManagementFactory,
-      executorService
+      executorService,
+      workerMetrics
     ).resource[F]
   }
 
