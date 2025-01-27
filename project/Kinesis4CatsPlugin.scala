@@ -6,6 +6,7 @@ import org.typelevel.sbt.mergify._
 import sbt.Keys._
 import sbt._
 import sbt.internal.ProjectMatrix
+import xerial.sbt.Sonatype
 
 object Kinesis4CatsPlugin extends AutoPlugin {
   override def trigger = allRequirements
@@ -22,6 +23,7 @@ object Kinesis4CatsPlugin extends AutoPlugin {
   import DockerImagePlugin.autoImport._
   import GenerativePlugin.autoImport._
   import MergifyPlugin.autoImport._
+  import Sonatype.autoImport._
   import TypelevelCiPlugin.autoImport._
   import TypelevelGitHubPlugin.autoImport._
   import TypelevelKernelPlugin.autoImport._
@@ -72,7 +74,7 @@ object Kinesis4CatsPlugin extends AutoPlugin {
     crossScalaVersions := Seq(Scala213),
     scalaVersion := Scala213,
     tlCiMimaBinaryIssueCheck := tlBaseVersion.value != "0.0",
-    tlSonatypeUseLegacyHost := true,
+    sonatypeCredentialHost := Sonatype.sonatypeLegacy,
     resolvers += "s01 snapshots" at "https://s01.oss.sonatype.org/content/repositories/snapshots/",
     resolvers += "jitpack" at "https://jitpack.io",
     githubWorkflowBuildPreamble ++= nativeBrewInstallWorkflowSteps.value,
@@ -214,9 +216,8 @@ object Kinesis4CatsPlugin extends AutoPlugin {
   )
 
   override def projectSettings = Seq(
-    Test / testOptions ++= {
-      List(Tests.Argument(TestFrameworks.MUnit, "+l"))
-    },
+    Test / testOptions ++=
+      List(Tests.Argument(TestFrameworks.MUnit, "+l")),
     // Workaround for https://github.com/typelevel/sbt-typelevel/issues/464
     scalacOptions ++= {
       if (tlIsScala3.value)
@@ -312,7 +313,7 @@ object Kinesis4CatsPlugin extends AutoPlugin {
 
 object Kinesis4CatsPluginKeys {
   val Scala212 = "2.12.20"
-  val Scala213 = "2.13.15"
+  val Scala213 = "2.13.16"
   val Scala3 = "3.3.4"
 
   val allScalaVersions = List(Scala213, Scala3, Scala212)

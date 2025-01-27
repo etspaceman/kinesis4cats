@@ -221,6 +221,7 @@ object KCLConsumer {
     }
     private[kinesis4cats] object Make {
       def default[F[_]: InvariantMonoidal](
+          dynamoTableName: String,
           appName: String,
           streamTracker: StreamTracker
       ): Make[F] =
@@ -228,7 +229,13 @@ object KCLConsumer {
           BuilderConfig(
             new CheckpointConfig(),
             new CoordinatorConfig(appName),
-            new LeaseManagementConfig(appName, dClient, kClient, workerId),
+            new LeaseManagementConfig(
+              dynamoTableName,
+              appName,
+              dClient,
+              kClient,
+              workerId
+            ),
             new LifecycleConfig(),
             new MetricsConfig(cClient, appName),
             new RetrievalConfig(kClient, streamTracker, appName),
@@ -278,15 +285,23 @@ object KCLConsumer {
   }
 
   object Builder {
-
     def default[F[_]](
         streamTracker: StreamTracker,
         appName: String
     )(implicit
         F: Async[F]
+    ): Builder[F] = default(streamTracker, appName, appName)
+
+    def default[F[_]](
+        streamTracker: StreamTracker,
+        dynamoTableName: String,
+        appName: String
+    )(implicit
+        F: Async[F]
     ): Builder[F] =
       Builder(
-        config = BuilderConfig.Make.default(appName, streamTracker),
+        config =
+          BuilderConfig.Make.default(dynamoTableName, appName, streamTracker),
         mkKinesisClient = Resource.fromAutoCloseable(
           Sync[F].delay(KinesisAsyncClient.create())
         ),

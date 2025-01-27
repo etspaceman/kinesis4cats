@@ -22,7 +22,6 @@ import cats.effect.syntax.all._
 import cats.effect.{Async, Deferred, Resource}
 import cats.syntax.all._
 import software.amazon.kinesis.processor.StreamTracker
-import software.amazon.kinesis.retrieval.polling.PollingConfig
 
 import kinesis4cats.localstack.LocalstackConfig
 import kinesis4cats.localstack.aws.v2.AwsClients
@@ -30,7 +29,6 @@ import kinesis4cats.localstack.aws.v2.AwsClients
 /** Helpers for constructing and leveraging the KPL with Localstack.
   */
 object LocalstackKCLConsumer {
-
   final case class ConfigWithResults[F[_]](
       kclConfig: KCLConsumer.Config[F],
       resultsQueue: Queue[F, CommittableRecord[F]]
@@ -88,34 +86,17 @@ object LocalstackKCLConsumer {
         .withKinesisClient(kinesisClient)
         .withDynamoClient(dynamoClient)
         .withCloudWatchClient(cloudWatchClient)
-      retrievalConfig =
-        if (streamTracker.isMultiStream()) new PollingConfig(kinesisClient)
-        else
-          new PollingConfig(
-            streamTracker.streamConfigList.get(0).streamIdentifier.streamName,
-            kinesisClient
-          )
-      initial = default
+      kclBuilder = default
         .configure(x =>
-          x.configureLeaseManagementConfig(_.shardSyncIntervalMillis(1000L))
-            .configureCoordinatorConfig(_.parentShardPollIntervalMillis(1000L))
+          x
+            .configureLeaseManagementConfig(
+              Shared.leaseManagement(_, streamTracker)
+            )
+            .configureCoordinatorConfig(Shared.coordinatorConfig)
             .configureRetrievalConfig(
-              _.retrievalSpecificConfig(retrievalConfig)
-                .retrievalFactory(retrievalConfig.retrievalFactory())
+              Shared.retrievalConfig(_, streamTracker, kinesisClient)
             )
         )
-      kclBuilder =
-        if (streamTracker.isMultiStream()) initial
-        else
-          initial.configure(
-            _.configureLeaseManagementConfig(
-              _.initialPositionInStream(
-                streamTracker.streamConfigList
-                  .get(0)
-                  .initialPositionInStreamExtended()
-              )
-            )
-          )
     } yield Builder(kclBuilder)
 
     def default[F[_]](

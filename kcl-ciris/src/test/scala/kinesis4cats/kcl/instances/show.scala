@@ -91,6 +91,11 @@ object show {
       .add("streamName", x.streamName())
       .add("tableName", x.tableName())
       .add("workerIdentifier", x.workerIdentifier())
+      .add(
+        "leaseTableDeletionProtectionEnabled",
+        x.leaseTableDeletionProtectionEnabled()
+      )
+      .add("leaseTablePitrEnabled", x.leaseTablePitrEnabled())
       .build
 
   implicit val lifecycleConfigShow: Show[LifecycleConfig] = x =>

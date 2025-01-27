@@ -2,7 +2,7 @@ import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport._
 import sbt._
 
 object LibraryDependencies {
-  val Logback = "ch.qos.logback" % "logback-classic" % "1.5.12"
+  val Logback = "ch.qos.logback" % "logback-classic" % "1.5.16"
   val JavaXMLBind = "javax.xml.bind" % "jaxb-api" % "2.3.1"
   val Scalacheck = Def.setting("org.scalacheck" %%% "scalacheck" % "1.17.1")
   val Epollcat = Def.setting("com.armanbilge" %%% "epollcat" % "0.1.6")
@@ -43,7 +43,7 @@ object LibraryDependencies {
 
     object V1 {
       val awsVersion =
-        "1.12.382" // Should be the same as the version in the KPL
+        "1.12.780"
       val kinesis = "com.amazonaws" % "aws-java-sdk-kinesis" % awsVersion
       val dynamo = "com.amazonaws" % "aws-java-sdk-dynamodb" % awsVersion
       val cloudwatch = "com.amazonaws" % "aws-java-sdk-cloudwatch" % awsVersion
@@ -51,7 +51,7 @@ object LibraryDependencies {
 
     object V2 {
       val awssdkVersion =
-        "2.25.11" // Should be the same as the version in the KCL
+        "2.29.24" // Should be the same as the latest version in the KCL or KPL
       val kinesis = "software.amazon.awssdk" % "kinesis" % awssdkVersion
       val dynamo = "software.amazon.awssdk" % "dynamodb" % awssdkVersion
       val cloudwatch = "software.amazon.awssdk" % "cloudwatch" % awssdkVersion
@@ -64,13 +64,13 @@ object LibraryDependencies {
         "com.github.awslabs.kinesis-aggregation" % "amazon-kinesis-aggregator" % "2.0.3-deagg"
     }
 
-    val kpl = "com.amazonaws" % "amazon-kinesis-producer" % "0.15.11"
-    val kcl = "software.amazon.kinesis" % "amazon-kinesis-client" % "2.6.0"
+    val kpl = "software.amazon.kinesis" % "amazon-kinesis-producer" % "1.0.0"
+    val kcl = "software.amazon.kinesis" % "amazon-kinesis-client" % "3.0.1"
   }
 
   object Cats {
     val catsVersion = "2.11.0"
-    val catsEffectVersion = "3.5.5"
+    val catsEffectVersion = "3.5.7"
     val core = Def.setting("org.typelevel" %%% "cats-core" % catsVersion)
     val effect =
       Def.setting("org.typelevel" %%% "cats-effect" % catsEffectVersion)
@@ -84,7 +84,7 @@ object LibraryDependencies {
   }
 
   object Ciris {
-    val cirisVersion = "3.6.0"
+    val cirisVersion = "3.7.0"
     val core = Def.setting("is.cir" %%% "ciris" % cirisVersion)
   }
 
@@ -94,13 +94,13 @@ object LibraryDependencies {
   }
 
   object Http4s {
-    val http4sVersion = "0.23.28"
+    val http4sVersion = "0.23.30"
     val emberServer =
       Def.setting("org.http4s" %%% "http4s-ember-server" % http4sVersion)
     val emberClient =
       Def.setting("org.http4s" %%% "http4s-ember-client" % http4sVersion)
     val blazeClient =
-      Def.setting("org.http4s" %%% "http4s-blaze-client" % "0.23.16")
+      Def.setting("org.http4s" %%% "http4s-blaze-client" % "0.23.17")
     val circe = Def.setting("org.http4s" %%% "http4s-circe" % http4sVersion)
   }
 

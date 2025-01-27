@@ -14,7 +14,7 @@ libraryDependencies += "io.github.etspaceman" %% "kinesis4cats-kpl" % "@VERSION@
 import java.nio.ByteBuffer
 
 import cats.effect._
-import com.amazonaws.services.kinesis.producer._
+import software.amazon.kinesis.producer._
 
 import kinesis4cats.kpl.KPLProducer
 

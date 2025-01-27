@@ -233,7 +233,7 @@ lazy val `kpl-localstack` = projectMatrix
     description := "A test-kit for working with Kinesis and Localstack, via the KPL"
   )
   .jvmPlatform(allScalaVersions)
-  .dependsOn(`aws-v1-localstack`, kpl)
+  .dependsOn(`aws-v2-localstack`, kpl)
 
 lazy val `kinesis-client` = projectMatrix
   .settings(

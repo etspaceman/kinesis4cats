@@ -23,14 +23,13 @@ import _root_.ciris._
 import cats.effect.Async
 import cats.effect.Resource
 import cats.syntax.all._
-import com.amazonaws.auth.AWSCredentialsProvider
-import com.amazonaws.regions.Regions
-import com.amazonaws.services.kinesis.producer.KinesisProducerConfiguration
-import com.amazonaws.services.kinesis.producer.KinesisProducerConfiguration.ThreadingModel
 import com.amazonaws.services.schemaregistry.common.configs.GlueSchemaRegistryConfiguration
 import com.amazonaws.services.schemaregistry.utils._
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
+import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.glue.model.Compatibility
+import software.amazon.kinesis.producer.KinesisProducerConfiguration
+import software.amazon.kinesis.producer.KinesisProducerConfiguration.ThreadingModel
 
 import kinesis4cats.ciris.CirisReader
 import kinesis4cats.instances.ciris._
@@ -38,7 +37,7 @@ import kinesis4cats.kpl.instances.ciris._
 import kinesis4cats.syntax.id._
 
 /** Standard configuration loader of env variables and system properties for
-  * [[https://github.com/awslabs/amazon-kinesis-producer/blob/master/java/amazon-kinesis-producer/src/main/java/com/amazonaws/services/kinesis/producer/KinesisProducerConfiguration.java KinesisProducerConfiguration]]
+  * [[https://github.com/awslabs/amazon-kinesis-producer/blob/master/java/amazon-kinesis-producer/src/main/java/software/amazon/kinesis/producer/KinesisProducerConfiguration.java KinesisProducerConfiguration]]
   * via [[https://cir.is/ Ciris]].
   */
 object KPLCiris {
@@ -59,7 +58,7 @@ object KPLCiris {
       prefix: Option[String] = None
   ): ConfigValue[Effect, GlueSchemaRegistryConfiguration] =
     for {
-      region <- CirisReader.read[Regions](List("kpl", "glue", "region"), prefix)
+      region <- CirisReader.read[Region](List("kpl", "glue", "region"), prefix)
       compressionType <- CirisReader
         .readOptional[AWSSchemaRegistryConstants.COMPRESSION](
           List("kpl", "glue", "compression", "type"),
@@ -113,7 +112,7 @@ object KPLCiris {
         List("kpl", "glue", "user", "agent", "app"),
         prefix
       )
-    } yield new GlueSchemaRegistryConfiguration(region.getName())
+    } yield new GlueSchemaRegistryConfiguration(region.id())
       .maybeRunUnsafe(compressionType)(_.setCompressionType(_))
       .maybeRunUnsafe(endpoint)(_.setEndPoint(_))
       .maybeRunUnsafe(ttl)(_.setTimeToLiveMillis(_))
@@ -132,16 +131,16 @@ object KPLCiris {
       .maybeRunUnsafe(userAgentApp)(_.setUserAgentApp(_))
 
   /** Reads environment variables and system properties to load
-    * [[https://github.com/awslabs/amazon-kinesis-producer/blob/master/java/amazon-kinesis-producer/src/main/java/com/amazonaws/services/kinesis/producer/KinesisProducerConfiguration.java KinesisProducerConfiguration]]
+    * [[https://github.com/awslabs/amazon-kinesis-producer/blob/master/java/amazon-kinesis-producer/src/main/java/software/amazon/kinesis/producer/KinesisProducerConfiguration.java KinesisProducerConfiguration]]
     *
     * @param credentialsProvider
     *   Optional
-    *   [[https://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/com/amazonaws/auth/AWSCredentialsProvider.html AWSCredentialsProvider (V1)]]
+    *   [[https://sdk.amazonaws.com/java/api/2.0.0/software/amazon/awssdk/auth/credentials/AwsCredentialsProvider.html AWSCredentialsProvider (V1)]]
     *   for Kinesis interactions. Defaults to
     *   [[https://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/com/amazonaws/auth/DefaultAWSCredentialsProviderChain.html DefaultAWSCredentialsProviderChain]]
     * @param metricsCredentialsProvider
     *   Optional
-    *   [[https://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/com/amazonaws/auth/AWSCredentialsProvider.html AWSCredentialsProvider (V1)]]
+    *   [[https://sdk.amazonaws.com/java/api/2.0.0/software/amazon/awssdk/auth/credentials/AwsCredentialsProvider.html AWSCredentialsProvider (V1)]]
     *   for Cloudwatch interactions. Default is the value of the
     *   credentialsProvider
     * @param glueSchemaRegistryCredentialsProvider
@@ -155,11 +154,11 @@ object KPLCiris {
     *   Optional prefix to apply to configuration loaders. Default None
     * @return
     *   [[https://cir.is/docs/configurations ConfigValue]] containing
-    *   [[https://github.com/awslabs/amazon-kinesis-producer/blob/master/java/amazon-kinesis-producer/src/main/java/com/amazonaws/services/kinesis/producer/KinesisProducerConfiguration.java KinesisProducerConfiguration]]
+    *   [[https://github.com/awslabs/amazon-kinesis-producer/blob/master/java/amazon-kinesis-producer/src/main/java/software/amazon/kinesis/producer/KinesisProducerConfiguration.java KinesisProducerConfiguration]]
     */
   private[kinesis4cats] def readKplConfig(
-      credentialsProvider: Option[AWSCredentialsProvider] = None,
-      metricsCredentialsProvider: Option[AWSCredentialsProvider] = None,
+      credentialsProvider: Option[AwsCredentialsProvider] = None,
+      metricsCredentialsProvider: Option[AwsCredentialsProvider] = None,
       glueSchemaRegistryCredentialsProvider: Option[AwsCredentialsProvider] =
         None,
       prefix: Option[String] = None
@@ -285,18 +284,18 @@ object KPLCiris {
       )
       .map(_.map(_.toMillis))
     region <- CirisReader
-      .readOptional[Regions](
+      .readOptional[Region](
         List("kpl", "aws", "region"),
         prefix
       )
       .or(
         CirisReader
-          .readOptional[Regions](
+          .readOptional[Region](
             List("aws", "region"),
             prefix
           )
       )
-      .map(_.map(_.getName()))
+      .map(_.map(_.id()))
     requestTimeout <- CirisReader
       .readOptional[Duration](
         List("kpl", "request", "timeout"),
@@ -417,17 +416,17 @@ object KPLCiris {
   )
 
   /** Reads environment variables and system properties to load
-    * [[https://github.com/awslabs/amazon-kinesis-producer/blob/master/java/amazon-kinesis-producer/src/main/java/com/amazonaws/services/kinesis/producer/KinesisProducerConfiguration.java KinesisProducerConfiguration]]
+    * [[https://github.com/awslabs/amazon-kinesis-producer/blob/master/java/amazon-kinesis-producer/src/main/java/software/amazon/kinesis/producer/KinesisProducerConfiguration.java KinesisProducerConfiguration]]
     * as an [[cats.effect.Async Async]]
     *
     * @param credentialsProvider
     *   Optional
-    *   [[https://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/com/amazonaws/auth/AWSCredentialsProvider.html AWSCredentialsProvider (V1)]]
+    *   [[https://sdk.amazonaws.com/java/api/2.0.0/software/amazon/awssdk/auth/credentials/AwsCredentialsProvider.html AWSCredentialsProvider (V1)]]
     *   for Kinesis interactions. Defaults to
     *   [[https://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/com/amazonaws/auth/DefaultAWSCredentialsProviderChain.html DefaultAWSCredentialsProviderChain]]
     * @param metricsCredentialsProvider
     *   Optional
-    *   [[https://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/com/amazonaws/auth/AWSCredentialsProvider.html AWSCredentialsProvider (V1)]]
+    *   [[https://sdk.amazonaws.com/java/api/2.0.0/software/amazon/awssdk/auth/credentials/AwsCredentialsProvider.html AWSCredentialsProvider (V1)]]
     *   for Cloudwatch interactions. Default is the value of the
     *   credentialsProvider
     * @param glueSchemaRegistryCredentialsProvider
@@ -443,11 +442,11 @@ object KPLCiris {
     *   [[cats.effect.Async Async]]
     * @return
     *   [[cats.effect.Async Async]] containing
-    *   [[https://github.com/awslabs/amazon-kinesis-producer/blob/master/java/amazon-kinesis-producer/src/main/java/com/amazonaws/services/kinesis/producer/KinesisProducerConfiguration.java KinesisProducerConfiguration]]
+    *   [[https://github.com/awslabs/amazon-kinesis-producer/blob/master/java/amazon-kinesis-producer/src/main/java/software/amazon/kinesis/producer/KinesisProducerConfiguration.java KinesisProducerConfiguration]]
     */
   private[kinesis4cats] def loadKplConfig[F[_]](
-      credentialsProvider: Option[AWSCredentialsProvider] = None,
-      metricsCredentialsProvider: Option[AWSCredentialsProvider] = None,
+      credentialsProvider: Option[AwsCredentialsProvider] = None,
+      metricsCredentialsProvider: Option[AwsCredentialsProvider] = None,
       glueSchemaRegistryCredentialsProvider: Option[AwsCredentialsProvider] =
         None,
       prefix: Option[String] = None
@@ -459,17 +458,17 @@ object KPLCiris {
   ).load[F]
 
   /** Reads environment variables and system properties to load
-    * [[https://github.com/awslabs/amazon-kinesis-producer/blob/master/java/amazon-kinesis-producer/src/main/java/com/amazonaws/services/kinesis/producer/KinesisProducerConfiguration.java KinesisProducerConfiguration]]
+    * [[https://github.com/awslabs/amazon-kinesis-producer/blob/master/java/amazon-kinesis-producer/src/main/java/software/amazon/kinesis/producer/KinesisProducerConfiguration.java KinesisProducerConfiguration]]
     * as a [[cats.effect.Resource Resource]]
     *
     * @param credentialsProvider
     *   Optional
-    *   [[https://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/com/amazonaws/auth/AWSCredentialsProvider.html AWSCredentialsProvider (V1)]]
+    *   [[https://sdk.amazonaws.com/java/api/2.0.0/software/amazon/awssdk/auth/credentials/AwsCredentialsProvider.html AWSCredentialsProvider (V1)]]
     *   for Kinesis interactions. Defaults to
     *   [[https://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/com/amazonaws/auth/DefaultAWSCredentialsProviderChain.html DefaultAWSCredentialsProviderChain]]
     * @param metricsCredentialsProvider
     *   Optional
-    *   [[https://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/com/amazonaws/auth/AWSCredentialsProvider.html AWSCredentialsProvider (V1)]]
+    *   [[https://sdk.amazonaws.com/java/api/2.0.0/software/amazon/awssdk/auth/credentials/AwsCredentialsProvider.html AWSCredentialsProvider (V1)]]
     *   for Cloudwatch interactions. Default is the value of the
     *   credentialsProvider
     * @param glueSchemaRegistryCredentialsProvider
@@ -485,11 +484,11 @@ object KPLCiris {
     *   [[cats.effect.Async Async]]
     * @return
     *   [[cats.effect.Resource Resource]] containing
-    *   [[https://github.com/awslabs/amazon-kinesis-producer/blob/master/java/amazon-kinesis-producer/src/main/java/com/amazonaws/services/kinesis/producer/KinesisProducerConfiguration.java KinesisProducerConfiguration]]
+    *   [[https://github.com/awslabs/amazon-kinesis-producer/blob/master/java/amazon-kinesis-producer/src/main/java/software/amazon/kinesis/producer/KinesisProducerConfiguration.java KinesisProducerConfiguration]]
     */
   def kplConfigResource[F[_]](
-      credentialsProvider: Option[AWSCredentialsProvider] = None,
-      metricsCredentialsProvider: Option[AWSCredentialsProvider] = None,
+      credentialsProvider: Option[AwsCredentialsProvider] = None,
+      metricsCredentialsProvider: Option[AwsCredentialsProvider] = None,
       glueSchemaRegistryCredentialsProvider: Option[AwsCredentialsProvider] =
         None,
       prefix: Option[String] = None
@@ -507,12 +506,12 @@ object KPLCiris {
     *
     * @param credentialsProvider
     *   Optional
-    *   [[https://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/com/amazonaws/auth/AWSCredentialsProvider.html AWSCredentialsProvider (V1)]]
+    *   [[https://sdk.amazonaws.com/java/api/2.0.0/software/amazon/awssdk/auth/credentials/AwsCredentialsProvider.html AWSCredentialsProvider (V1)]]
     *   for Kinesis interactions. Defaults to
     *   [[https://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/com/amazonaws/auth/DefaultAWSCredentialsProviderChain.html DefaultAWSCredentialsProviderChain]]
     * @param metricsCredentialsProvider
     *   Optional
-    *   [[https://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/com/amazonaws/auth/AWSCredentialsProvider.html AWSCredentialsProvider (V1)]]
+    *   [[https://sdk.amazonaws.com/java/api/2.0.0/software/amazon/awssdk/auth/credentials/AwsCredentialsProvider.html AWSCredentialsProvider (V1)]]
     *   for Cloudwatch interactions. Default is the value of the
     *   credentialsProvider
     * @param glueSchemaRegistryCredentialsProvider
@@ -530,11 +529,11 @@ object KPLCiris {
     *   [[kinesis4cats.kpl.KPLProducer.LogEncoders KPLProducer.LogEncoders]]
     * @return
     *   [[cats.effect.Resource Resource]] containing
-    *   [[https://github.com/awslabs/amazon-kinesis-producer/blob/master/java/amazon-kinesis-producer/src/main/java/com/amazonaws/services/kinesis/producer/KinesisProducerConfiguration.java KinesisProducerConfiguration]]
+    *   [[https://github.com/awslabs/amazon-kinesis-producer/blob/master/java/amazon-kinesis-producer/src/main/java/software/amazon/kinesis/producer/KinesisProducerConfiguration.java KinesisProducerConfiguration]]
     */
   def kpl[F[_]](
-      credentialsProvider: Option[AWSCredentialsProvider] = None,
-      metricsCredentialsProvider: Option[AWSCredentialsProvider] = None,
+      credentialsProvider: Option[AwsCredentialsProvider] = None,
+      metricsCredentialsProvider: Option[AwsCredentialsProvider] = None,
       glueSchemaRegistryCredentialsProvider: Option[AwsCredentialsProvider] =
         None,
       prefix: Option[String] = None,
