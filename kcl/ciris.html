@@ -456,6 +456,132 @@
               <td><code>false</code></td>
               <td>Whether to enable PITR (point in time recovery) on the DynamoDB lease table created by KCL. If true, this can update existing table&#39;s PITR.</td>
             </tr>
+            <tr>
+              <td><code>KCL_LEASE_IN_MEMORY_WORKER_METRICS_CAPTURE_FREQUENCY</code></td>
+              <td><code>kcl.lease.in.memory.worker.metrics.capture.frequency</code></td>
+              <td>No</td>
+              <td><code>1 second</code></td>
+              <td>This defines the frequency of capturing worker metric stats in memory.</td>
+            </tr>
+            <tr>
+              <td><code>KCL_LEASE_WORKER_METRICS_REPORTER_FREQ</code></td>
+              <td><code>kcl.lease.in.memory.worker.metrics.reporter.freq</code></td>
+              <td>No</td>
+              <td><code>30 seconds</code></td>
+              <td>This defines the frequency of reporting worker metric stats to storage.</td>
+            </tr>
+            <tr>
+              <td><code>KCL_LEASE_NO_OF_PERSISTED_METRICS_PER_WORKER_METRICS</code></td>
+              <td><code>kcl.lease.no.of.persisted.metrics.per.worker.metrics</code></td>
+              <td>No</td>
+              <td><code>10</code></td>
+              <td>These are the no. of metrics that are persisted in storage in WorkerMetricStats ddb table.</td>
+            </tr>
+            <tr>
+              <td><code>KCL_LEASE_DISABLE_WORKER_METRICS</code></td>
+              <td><code>kcl.lease.disable.worker.metrics</code></td>
+              <td>No</td>
+              <td><code>false</code></td>
+              <td>Option to disable workerMetrics to use in lease balancing.</td>
+            </tr>
+            <tr>
+              <td><code>KCL_LEASE_MAX_THROUGHPUT_PER_HOST_KBPS</code></td>
+              <td><code>kcl.lease.max.throughput.per.host.kbps</code></td>
+              <td>No</td>
+              <td><code>Double.MAX_VALUE</code></td>
+              <td>Max throughput per host KBps, default is unlimited.</td>
+            </tr>
+            <tr>
+              <td><code>KCL_LEASE_DAMPENING_PERCENTAGE</code></td>
+              <td><code>kcl.lease.dampening.percentage</code></td>
+              <td>No</td>
+              <td><code>60</code></td>
+              <td>Percentage of value to achieve critical dampening during this case</td>
+            </tr>
+            <tr>
+              <td><code>KCL_LEASE_REBALANCE_THRESHOLD_PERCENTAGE</code></td>
+              <td><code>kcl.lease.rebalance.threshold.percentage</code></td>
+              <td>No</td>
+              <td><code>10</code></td>
+              <td>Percentage value used to trigger reBalance. If fleet has workers which are have metrics value more or less than 10% of fleet level average then reBalance is triggered. Leases are taken from workers with metrics value more than fleet level average. The load to take from these workers is determined by evaluating how far they are with respect to fleet level average.</td>
+            </tr>
+            <tr>
+              <td><code>KCL_LEASE_ALLOW_THROUGHPUT_OVERSHOOT</code></td>
+              <td><code>kcl.lease.allow.throughput.overshoot</code></td>
+              <td>No</td>
+              <td><code>true</code></td>
+              <td>The allowThroughputOvershoot flag determines whether leases should still be taken even if it causes the total assigned throughput to exceed the desired throughput to take for re-balance. Enabling this flag provides more flexibility for the LeaseAssignmentManager to explore additional assignment possibilities, which can lead to faster throughput convergence.</td>
+            </tr>
+            <tr>
+              <td><code>KCL_LEASE_STABLE_WORKER_METRICS_ENTRY_CLEANUP_DURATION</code></td>
+              <td><code>kcl.lease.stable.worker.metrics.entry.cleanup.duration</code></td>
+              <td>No</td>
+              <td><code>1 day</code></td>
+              <td>Duration after which workerMetricStats entry from WorkerMetricStats table will be cleaned up. When an entry&#39;s lastUpdateTime is older than staleWorkerMetricsEntryCleanupDuration from current time, entry will be removed from the table.</td>
+            </tr>
+            <tr>
+              <td><code>KCL_LEASE_VARIANCE_BALANCING_FREQUENCY</code></td>
+              <td><code>kcl.lease.variance.balancing.frequency</code></td>
+              <td>No</td>
+              <td><code>3</code></td>
+              <td>Frequency to perform worker variance balancing. This value is used with respect to the LAM frequency, that is every third (as default) iteration of LAM the worker variance balancing will be performed. Setting it to 1 will make varianceBalancing run on every iteration of LAM and 2 on every 2nd iteration and so on.</td>
+            </tr>
+            <tr>
+              <td><code>KCL_LEASE_WORKER_METRICS_EMA_ALPHA</code></td>
+              <td><code>kcl.lease.worker.metrics.ema.alpha</code></td>
+              <td>No</td>
+              <td><code>0.5</code></td>
+              <td>Alpha value used for calculating exponential moving average of worker&#39;s metricStats. Selecting higher alpha value gives more weightage to recent value and thus low smoothing effect on computed average and selecting smaller alpha values gives more weightage to past value and high smoothing effect.</td>
+            </tr>
+            <tr>
+              <td><code>KCL_LEASE_WORKER_METRICS_TABLE_BILLING_MODE</code></td>
+              <td><code>kcl.lease.worker.metrics.table.billing.mode</code></td>
+              <td>No</td>
+              <td><code>PAY_PER_REQUEST</code></td>
+              <td>Billing mode used to create the DDB table for worker metrics</td>
+            </tr>
+            <tr>
+              <td><code>KCL_LEASE_WORKER_METRICS_TABLE_READ_CAPACITY</code></td>
+              <td><code>kcl.lease.worker.metrics.table.read.capacity</code></td>
+              <td>No</td>
+              <td></td>
+              <td>Read capacity to provision during DDB table creation for worker metrics, if billing mode is PROVISIONED.DDB</td>
+            </tr>
+            <tr>
+              <td><code>KCL_LEASE_WORKER_METRICS_TABLE_WRITE_CAPACITY</code></td>
+              <td><code>kcl.lease.worker.metrics.table.write.capacity</code></td>
+              <td>No</td>
+              <td></td>
+              <td>Write capacity to provision during DDB table creation for worker metrics, if billing mode is PROVISIONED.DDB</td>
+            </tr>
+            <tr>
+              <td><code>KCL_LEASE_WORKER_METRICS_TABLE_PITR_ENABLED</code></td>
+              <td><code>kcl.lease.worker.metrics.table.pitr.enabled</code></td>
+              <td>No</td>
+              <td>false</td>
+              <td>Flag to enable Point in Time Recovery on the DDB table for worker metrics.</td>
+            </tr>
+            <tr>
+              <td><code>KCL_LEASE_WORKER_METRICS_TABLE_DELETION_PROTECTION_ENABLED</code></td>
+              <td><code>kcl.lease.worker.metrics.table.deletion.protection.enabled</code></td>
+              <td>No</td>
+              <td>false</td>
+              <td>Flag to enable deletion protection on the DDB table for worker metrics.</td>
+            </tr>
+            <tr>
+              <td><code>KCL_LEASE_TABLE_TAGS</code></td>
+              <td><code>kcl.lease.table.tags</code></td>
+              <td>No</td>
+              <td></td>
+              <td>Tags to add to the DDB table. In the format of <code>key:value,key2:value2</code></td>
+            </tr>
+            <tr>
+              <td><code>KCL_LEASE_WORKER_METRICS_TABLE_TAGS</code></td>
+              <td><code>kcl.lease.worker.metrics.table.tags</code></td>
+              <td>No</td>
+              <td></td>
+              <td>Tags to add to the DDB table for worker metrics. In the format of <code>key:value,key2:value2</code></td>
+            </tr>
           </tbody>
         </table>
         
