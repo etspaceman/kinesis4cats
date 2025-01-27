@@ -354,10 +354,7 @@ object KCLCirisSpecVars {
             "worker",
             "metrics",
             "table",
-            "point",
-            "in",
-            "time",
-            "recovery",
+            "pitr",
             "enabled"
           ),
           "true"

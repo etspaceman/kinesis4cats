@@ -844,10 +844,7 @@ object KCLCiris {
             "worker",
             "metrics",
             "table",
-            "point",
-            "in",
-            "time",
-            "recovery",
+            "pitr",
             "enabled"
           ),
           prefix

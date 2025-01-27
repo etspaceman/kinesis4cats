@@ -200,7 +200,7 @@ class KCLCirisSpec extends munit.CatsEffectSuite {
           BillingMode.valueOf(BuildInfo.kclLeaseWorkerMetricsTableBillingMode),
           BuildInfo.kclLeaseWorkerMetricsTableReadCapacity.toLong,
           BuildInfo.kclLeaseWorkerMetricsTableWriteCapacity.toLong,
-          BuildInfo.kclLeaseWorkerMetricsTablePointInTimeRecoveryEnabled.toBoolean,
+          BuildInfo.kclLeaseWorkerMetricsTablePitrEnabled.toBoolean,
           BuildInfo.kclLeaseWorkerMetricsTableDeletionProtectionEnabled.toBoolean,
           BuildInfo.kclLeaseWorkerMetricsTableTags.asMapUnsafe.toList.map {
             case (k, v) => Tag.builder().key(k).value(v).build()
