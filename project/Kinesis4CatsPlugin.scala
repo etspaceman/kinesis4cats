@@ -73,7 +73,7 @@ object Kinesis4CatsPlugin extends AutoPlugin {
     developers := List(tlGitHubDev("etspaceman", "Eric Meisel")),
     crossScalaVersions := Seq(Scala213),
     scalaVersion := Scala213,
-    tlCiMimaBinaryIssueCheck := tlBaseVersion.value != "0.0",
+    tlCiMimaBinaryIssueCheck := tlBaseVersion.value.head.toString != "0",
     sonatypeCredentialHost := Sonatype.sonatypeLegacy,
     resolvers += "s01 snapshots" at "https://s01.oss.sonatype.org/content/repositories/snapshots/",
     resolvers += "jitpack" at "https://jitpack.io",
