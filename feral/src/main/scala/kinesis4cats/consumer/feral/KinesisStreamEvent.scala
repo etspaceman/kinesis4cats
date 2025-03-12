@@ -23,6 +23,7 @@ import java.time.Instant
 
 import _root_.feral.lambda.KernelSource
 import io.circe.Decoder
+import io.circe.Encoder
 import io.circe.scodec._
 import scodec.bits.ByteVector
 
@@ -71,6 +72,25 @@ object KinesisStreamRecordPayload {
       "encryptionType",
       "sequenceNumber"
     )(KinesisStreamRecordPayload.apply)
+
+  implicit val kinesisStreamRecordPayloadCirceEncoder
+      : Encoder[KinesisStreamRecordPayload] = Encoder.forProduct6(
+    "approximateArrivalTimestamp",
+    "data",
+    "kinesisSchemaVersion",
+    "partitionKey",
+    "encryptionType",
+    "sequenceNumber"
+  )(x =>
+    (
+      x.approximateArrivalTimestamp,
+      x.data,
+      x.kinesisSchemaVersion,
+      x.partitionKey,
+      x.encryptionType,
+      x.sequenceNumber
+    )
+  )
 }
 
 final case class KinesisStreamRecord(
