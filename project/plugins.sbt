@@ -23,7 +23,7 @@ addSbtPlugin("com.thesamet" % "sbt-protoc" % "1.0.7")
 addSbtPlugin("org.scalameta" % "sbt-mdoc" % "2.6.4")
 
 libraryDependencies ++= Seq(
-  "com.thesamet.scalapb" %% "compilerplugin" % "0.11.15",
+  "com.thesamet.scalapb" %% "compilerplugin" % "0.11.17",
   "org.slf4j" % "slf4j-nop" % "2.0.17"
 )
 libraryDependencySchemes += "org.scala-lang.modules" %% "scala-xml" % VersionScheme.Always
