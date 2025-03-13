@@ -23,6 +23,7 @@ import java.time.Instant
 
 import _root_.feral.lambda.KernelSource
 import io.circe.Decoder
+import io.circe.Encoder
 import io.circe.scodec._
 import scodec.bits.ByteVector
 
@@ -61,6 +62,13 @@ object KinesisStreamRecordPayload {
       }
     }
 
+  implicit private val instantCirceEncoder: Encoder[Instant] =
+    Encoder.encodeBigDecimal.contramap(ts =>
+      BigDecimal(
+        java.math.BigDecimal.valueOf(ts.toEpochMilli()).scaleByPowerOfTen(-3)
+      )
+    )
+
   implicit val kinesisStreamRecordPayloadCirceDecoder
       : Decoder[KinesisStreamRecordPayload] =
     Decoder.forProduct6(
@@ -71,6 +79,25 @@ object KinesisStreamRecordPayload {
       "encryptionType",
       "sequenceNumber"
     )(KinesisStreamRecordPayload.apply)
+
+  implicit val kinesisStreamRecordPayloadCirceEncoder
+      : Encoder[KinesisStreamRecordPayload] = Encoder.forProduct6(
+    "approximateArrivalTimestamp",
+    "data",
+    "kinesisSchemaVersion",
+    "partitionKey",
+    "encryptionType",
+    "sequenceNumber"
+  )(x =>
+    (
+      x.approximateArrivalTimestamp,
+      x.data,
+      x.kinesisSchemaVersion,
+      x.partitionKey,
+      x.encryptionType,
+      x.sequenceNumber
+    )
+  )
 }
 
 final case class KinesisStreamRecord(
@@ -96,6 +123,29 @@ object KinesisStreamRecord {
       "invokeIdentityArn",
       "kinesis"
     )(KinesisStreamRecord.apply)
+
+  implicit val kinesisStreamRecordCirceEncoder: Encoder[KinesisStreamRecord] =
+    Encoder.forProduct8(
+      "awsRegion",
+      "eventID",
+      "eventName",
+      "eventSource",
+      "eventSourceARN",
+      "eventVersion",
+      "invokeIdentityArn",
+      "kinesis"
+    )(x =>
+      (
+        x.awsRegion,
+        x.eventID,
+        x.eventName,
+        x.eventSource,
+        x.eventSourceArn,
+        x.eventVersion,
+        x.invokeIdentityArn,
+        x.kinesis
+      )
+    )
 }
 
 final case class KinesisStreamEvent(
@@ -108,6 +158,9 @@ final case class KinesisStreamEvent(
 object KinesisStreamEvent {
   implicit val kinesisStreamEventCirceDecoder: Decoder[KinesisStreamEvent] =
     Decoder.forProduct1("Records")(KinesisStreamEvent.apply)
+
+  implicit val kinesisStreamEventCirceEncoder: Encoder[KinesisStreamEvent] =
+    Encoder.forProduct1("Records")(x => x.records)
 
   implicit def kinesisStreamEventKernelSource
       : KernelSource[KinesisStreamEvent] = KernelSource.emptyKernelSource
