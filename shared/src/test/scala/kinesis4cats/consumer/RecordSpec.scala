@@ -62,4 +62,24 @@ final class RecordSpec extends munit.FunSuite {
     assert(res(1).data.toArray.sameElements(data2))
     assert(res(1).partitionKey === partitionKey2)
   }
+
+  test("Deaggregate should not fail for non-aggregated records") {
+    val data1 = "foo".getBytes()
+    val partitionKey1 = "foo"
+
+    val record = Record(
+      "foo",
+      Instant.now(),
+      ByteVector(data1),
+      partitionKey1,
+      None,
+      None,
+      None
+    )
+
+    val res = Record.deaggregate(List(record)).get
+
+    assert(res.head.data.toArray.sameElements(data1))
+    assert(res.head.partitionKey === partitionKey1)
+  }
 }

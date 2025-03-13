@@ -19,6 +19,7 @@ package kinesis4cats.consumer
 import java.time.Instant
 
 import io.circe.parser.decode
+import io.circe.syntax._
 import scodec.bits.ByteVector
 
 import kinesis4cats.consumer.feral.KinesisStreamRecord
@@ -67,7 +68,12 @@ class KinesisStreamRecordSpec extends munit.ScalaCheckSuite {
       )
     )
 
-    val parsedRecord = decode[KinesisStreamRecord](recordJson)
-    assertEquals(parsedRecord, Right(record))
+    val parsedRecord = decode[KinesisStreamRecord](recordJson).getOrElse(
+      fail("Decoding record failed")
+    )
+    val reEncoded = parsedRecord.asJson.noSpaces
+    val reDecoded = decode[KinesisStreamRecord](reEncoded)
+    assertEquals(parsedRecord, record)
+    assertEquals(reDecoded, Right(record))
   }
 }

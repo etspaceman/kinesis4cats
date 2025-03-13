@@ -18,8 +18,12 @@ package kinesis4cats.models
 package instances
 
 import io.circe.Decoder
+import io.circe.Encoder
 
 object circe {
+  implicit val encryptionTypeCirceEncoder: Encoder[EncryptionType] =
+    Encoder[String].contramap(_.value)
+
   implicit val encryptionTypeCirceDecoder: Decoder[EncryptionType] =
     Decoder[String].emap {
       case EncryptionType.None.value => Right(EncryptionType.None)
