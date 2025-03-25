@@ -13,7 +13,7 @@ object LibraryDependencies {
   }
 
   object FS2 {
-    val fs2Version = "3.11.0"
+    val fs2Version = "3.12.0"
     val core = Def.setting("co.fs2" %%% "fs2-core" % fs2Version)
     val reactiveStreams = "co.fs2" %% "fs2-reactive-streams" % fs2Version
   }
@@ -70,7 +70,7 @@ object LibraryDependencies {
 
   object Cats {
     val catsVersion = "2.11.0"
-    val catsEffectVersion = "3.5.7"
+    val catsEffectVersion = "3.6.0"
     val core = Def.setting("org.typelevel" %%% "cats-core" % catsVersion)
     val effect =
       Def.setting("org.typelevel" %%% "cats-effect" % catsEffectVersion)
