@@ -216,7 +216,7 @@ abstract class Producer[F[_], PutReq, PutRes] private[kinesis4cats] (
           )
       )(ref.get.flatMap(x => _put(x.inputRecords, x.retrying)))
       _ <-
-        if (finalRes.hasFailed) {
+        if (finalRes.hasErrors) {
           if (config.raiseOnFailures) {
             finalRes.error.traverse(F.raiseError[Unit]).void
           } else {
@@ -443,6 +443,9 @@ object Producer {
   }
 
   object Error {
+    implicit val producerErrorEq: Eq[Error] =
+      Eq.by(x => (x.invalid, x.failed))
+
     private def invalidRecordsMessage(
         records: List[InvalidRecord]
     ): String = {
