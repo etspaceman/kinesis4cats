@@ -5,7 +5,6 @@ object LibraryDependencies {
   val Logback = "ch.qos.logback" % "logback-classic" % "1.5.18"
   val JavaXMLBind = "javax.xml.bind" % "jaxb-api" % "2.3.1"
   val Scalacheck = Def.setting("org.scalacheck" %%% "scalacheck" % "1.17.1")
-  val Epollcat = Def.setting("com.armanbilge" %%% "epollcat" % "0.1.6")
 
   object ScalaJS {
     val javaTime =
@@ -15,6 +14,7 @@ object LibraryDependencies {
   object FS2 {
     val fs2Version = "3.12.0"
     val core = Def.setting("co.fs2" %%% "fs2-core" % fs2Version)
+    val io = Def.setting("co.fs2" %%% "fs2-io" % fs2Version)
     val reactiveStreams = "co.fs2" %% "fs2-reactive-streams" % fs2Version
   }
 
