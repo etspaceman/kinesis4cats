@@ -112,7 +112,7 @@ object LibraryDependencies {
   }
 
   object Smithy4s {
-    val smithySpecVersion = "2023.23.30"
+    val smithySpecVersion = "2025.04.08"
 
     val kinesis =
       "com.disneystreaming.smithy" % "aws-kinesis-spec" % smithySpecVersion
