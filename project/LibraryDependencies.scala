@@ -2,10 +2,9 @@ import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport._
 import sbt._
 
 object LibraryDependencies {
-  val Logback = "ch.qos.logback" % "logback-classic" % "1.5.16"
+  val Logback = "ch.qos.logback" % "logback-classic" % "1.5.18"
   val JavaXMLBind = "javax.xml.bind" % "jaxb-api" % "2.3.1"
   val Scalacheck = Def.setting("org.scalacheck" %%% "scalacheck" % "1.17.1")
-  val Epollcat = Def.setting("com.armanbilge" %%% "epollcat" % "0.1.6")
 
   object ScalaJS {
     val javaTime =
@@ -13,8 +12,9 @@ object LibraryDependencies {
   }
 
   object FS2 {
-    val fs2Version = "3.11.0"
+    val fs2Version = "3.12.0"
     val core = Def.setting("co.fs2" %%% "fs2-core" % fs2Version)
+    val io = Def.setting("co.fs2" %%% "fs2-io" % fs2Version)
     val reactiveStreams = "co.fs2" %% "fs2-reactive-streams" % fs2Version
   }
 
@@ -65,12 +65,12 @@ object LibraryDependencies {
     }
 
     val kpl = "software.amazon.kinesis" % "amazon-kinesis-producer" % "1.0.0"
-    val kcl = "software.amazon.kinesis" % "amazon-kinesis-client" % "3.0.1"
+    val kcl = "software.amazon.kinesis" % "amazon-kinesis-client" % "3.0.2"
   }
 
   object Cats {
     val catsVersion = "2.11.0"
-    val catsEffectVersion = "3.5.7"
+    val catsEffectVersion = "3.6.1"
     val core = Def.setting("org.typelevel" %%% "cats-core" % catsVersion)
     val effect =
       Def.setting("org.typelevel" %%% "cats-effect" % catsEffectVersion)
@@ -84,7 +84,7 @@ object LibraryDependencies {
   }
 
   object Ciris {
-    val cirisVersion = "3.7.0"
+    val cirisVersion = "3.8.0"
     val core = Def.setting("is.cir" %%% "ciris" % cirisVersion)
   }
 

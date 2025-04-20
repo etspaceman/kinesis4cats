@@ -429,7 +429,6 @@ lazy val `integration-tests-native` = `integration-tests`
   .native(Scala3)
   .enablePlugins(ScalaNativeBrewedConfigPlugin)
   .settings(
-    libraryDependencies ++= Seq(Epollcat.value % Test),
     nativeBrewFormulas ++= Set("s2n", "openssl"),
     Test / envVars ++= Map("S2N_DONT_MLOCK" -> "1")
   )
