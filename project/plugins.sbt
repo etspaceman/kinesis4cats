@@ -9,9 +9,9 @@ addSbtPlugin(
   "com.disneystreaming.smithy4s" % "smithy4s-sbt-codegen" % "0.18.31"
 )
 addSbtPlugin("com.eed3si9n" % "sbt-buildinfo" % "0.13.1")
-addSbtPlugin("com.eed3si9n" % "sbt-projectmatrix" % "0.10.1")
+addSbtPlugin("com.eed3si9n" % "sbt-projectmatrix" % "0.11.0")
 addSbtPlugin("org.scala-native" % "sbt-scala-native" % "0.4.17")
-addSbtPlugin("org.scala-js" % "sbt-scalajs" % "1.18.2")
+addSbtPlugin("org.scala-js" % "sbt-scalajs" % "1.19.0")
 addSbtPlugin("com.armanbilge" % "sbt-scala-native-config-brew" % "0.3.0")
 addSbtPlugin(
   "com.armanbilge" % "sbt-scala-native-config-brew-github-actions" % "0.3.0"
@@ -20,7 +20,7 @@ addSbtPlugin("com.thesamet" % "sbt-protoc" % "1.0.7")
 
 // Explicitly bumping until sbt-typelevel upgrades.
 // Older versions exit sbt on compilation failures.
-addSbtPlugin("org.scalameta" % "sbt-mdoc" % "2.6.5")
+addSbtPlugin("org.scalameta" % "sbt-mdoc" % "2.7.1")
 
 libraryDependencies ++= Seq(
   "com.thesamet.scalapb" %% "compilerplugin" % "0.11.15",

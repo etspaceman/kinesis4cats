@@ -33,7 +33,7 @@ object LibraryDependencies {
     val scalacheck =
       Def.setting("org.scalameta" %%% "munit-scalacheck" % munitVersion)
     val catsEffect =
-      Def.setting("org.typelevel" %%% "munit-cats-effect" % "2.0.0")
+      Def.setting("org.typelevel" %%% "munit-cats-effect" % "2.1.0")
     val scalacheckEffect =
       Def.setting("org.typelevel" %%% "scalacheck-effect-munit" % "2.0.0-M2")
 
@@ -112,7 +112,7 @@ object LibraryDependencies {
   }
 
   object Smithy4s {
-    val smithySpecVersion = "2023.23.30"
+    val smithySpecVersion = "2025.04.08"
 
     val kinesis =
       "com.disneystreaming.smithy" % "aws-kinesis-spec" % smithySpecVersion
