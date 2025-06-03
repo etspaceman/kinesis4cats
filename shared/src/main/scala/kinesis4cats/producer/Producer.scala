@@ -223,7 +223,7 @@ abstract class Producer[F[_], PutReq, PutRes] private[kinesis4cats] (
             logger
               .warn(ctx.context)(
                 "All retries have been exhausted, and the final retry detected errors. " +
-                  "If you would like an exception to be raised in this case, set raiseOnExhaustedRetries to true"
+                  "If you would like an exception to be raised in this case, set raiseOnFailures to true"
               )
           }
         } else F.unit
