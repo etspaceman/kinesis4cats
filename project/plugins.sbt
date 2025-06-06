@@ -12,9 +12,9 @@ addSbtPlugin("com.eed3si9n" % "sbt-buildinfo" % "0.13.1")
 addSbtPlugin("com.eed3si9n" % "sbt-projectmatrix" % "0.11.0")
 addSbtPlugin("org.scala-native" % "sbt-scala-native" % "0.4.17")
 addSbtPlugin("org.scala-js" % "sbt-scalajs" % "1.19.0")
-addSbtPlugin("com.armanbilge" % "sbt-scala-native-config-brew" % "0.3.0")
+addSbtPlugin("com.armanbilge" % "sbt-scala-native-config-brew" % "0.4.0")
 addSbtPlugin(
-  "com.armanbilge" % "sbt-scala-native-config-brew-github-actions" % "0.3.0"
+  "com.armanbilge" % "sbt-scala-native-config-brew-github-actions" % "0.4.0"
 )
 addSbtPlugin("com.thesamet" % "sbt-protoc" % "1.0.7")
 
