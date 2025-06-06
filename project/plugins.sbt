@@ -16,7 +16,7 @@ addSbtPlugin("com.armanbilge" % "sbt-scala-native-config-brew" % "0.3.0")
 addSbtPlugin(
   "com.armanbilge" % "sbt-scala-native-config-brew-github-actions" % "0.3.0"
 )
-addSbtPlugin("com.thesamet" % "sbt-protoc" % "1.0.7")
+addSbtPlugin("com.thesamet" % "sbt-protoc" % "1.0.8")
 
 // Explicitly bumping until sbt-typelevel upgrades.
 // Older versions exit sbt on compilation failures.
