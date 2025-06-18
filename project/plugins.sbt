@@ -14,7 +14,7 @@ addSbtPlugin("org.scala-native" % "sbt-scala-native" % "0.4.17")
 addSbtPlugin("org.scala-js" % "sbt-scalajs" % "1.19.0")
 addSbtPlugin("com.armanbilge" % "sbt-scala-native-config-brew" % "0.4.0")
 addSbtPlugin(
-  "com.armanbilge" % "sbt-scala-native-config-brew-github-actions" % "0.3.0"
+  "com.armanbilge" % "sbt-scala-native-config-brew-github-actions" % "0.4.0"
 )
 addSbtPlugin("com.thesamet" % "sbt-protoc" % "1.0.8")
 
