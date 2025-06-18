@@ -108,6 +108,7 @@ Currently the [CheckpointConfig](https://github.com/awslabs/amazon-kinesis-clien
 | `KCL_LEASE_WORKER_METRICS_TABLE_DELETION_PROTECTION_ENABLED` | `kcl.lease.worker.metrics.table.deletion.protection.enabled` | No | false | Flag to enable deletion protection on the DDB table for worker metrics. |
 | `KCL_LEASE_TABLE_TAGS` | `kcl.lease.table.tags` | No | | Tags to add to the DDB table. In the format of `key:value,key2:value2` |
 | `KCL_LEASE_WORKER_METRICS_TABLE_TAGS` | `kcl.lease.worker.metrics.table.tags` | No | | Tags to add to the DDB table for worker metrics. In the format of `key:value,key2:value2` |
+| `KCL_LEASE_ASSIGNMENT_INTERVAL` | `kcl.lease.assignment.interval` | No | `failoverTime * 2` | Lease assignment interval - e.g. wait for this long between Lease assignment run. |
 
 ### Lifecycle
 

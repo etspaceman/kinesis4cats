@@ -963,6 +963,17 @@ object KCLCiris {
           prefix
         )
         .map(_.map(_.toMillis))
+      leaseAssignmentIntervalMillis <- CirisReader
+        .readOptional[Duration](
+          List(
+            "kcl",
+            "lease",
+            "assignment",
+            "interval"
+          ),
+          prefix
+        )
+        .map(_.map(_.toMillis))
     } yield new LeaseManagementConfig(
       tableName,
       appName,
@@ -1027,6 +1038,9 @@ object KCLCiris {
       .maybeTransform(tags)(_.tags(_))
       .workerUtilizationAwareAssignmentConfig(
         workerUtilizationAwareAssignmentConfig
+      )
+      .maybeTransform(leaseAssignmentIntervalMillis)(
+        _.leaseAssignmentIntervalMillis(_)
       )
 
     /** Reads the
