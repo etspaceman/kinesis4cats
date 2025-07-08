@@ -82,7 +82,8 @@ private[kcl] object Shared {
         withTopLevel
           .workerUtilizationAwareAssignmentConfig()
           .disableWorkerMetrics(true),
-        withTopLevel.gracefulLeaseHandoffConfig()
+        withTopLevel.gracefulLeaseHandoffConfig(),
+        withTopLevel.leaseAssignmentIntervalMillis()
       )
     )
 

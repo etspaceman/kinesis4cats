@@ -64,8 +64,8 @@ object LibraryDependencies {
         "com.github.awslabs.kinesis-aggregation" % "amazon-kinesis-aggregator" % "2.0.3-deagg"
     }
 
-    val kpl = "software.amazon.kinesis" % "amazon-kinesis-producer" % "1.0.1"
-    val kcl = "software.amazon.kinesis" % "amazon-kinesis-client" % "3.0.2"
+    val kpl = "software.amazon.kinesis" % "amazon-kinesis-producer" % "1.0.3"
+    val kcl = "software.amazon.kinesis" % "amazon-kinesis-client" % "3.1.0"
   }
 
   object Cats {
