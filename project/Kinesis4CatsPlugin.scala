@@ -6,7 +6,6 @@ import org.typelevel.sbt.mergify._
 import sbt.Keys._
 import sbt._
 import sbt.internal.ProjectMatrix
-import xerial.sbt.Sonatype
 
 object Kinesis4CatsPlugin extends AutoPlugin {
   override def trigger = allRequirements
@@ -23,7 +22,6 @@ object Kinesis4CatsPlugin extends AutoPlugin {
   import DockerImagePlugin.autoImport._
   import GenerativePlugin.autoImport._
   import MergifyPlugin.autoImport._
-  import Sonatype.autoImport._
   import TypelevelCiPlugin.autoImport._
   import TypelevelGitHubPlugin.autoImport._
   import TypelevelKernelPlugin.autoImport._
@@ -74,7 +72,6 @@ object Kinesis4CatsPlugin extends AutoPlugin {
     crossScalaVersions := Seq(Scala213),
     scalaVersion := Scala213,
     tlCiMimaBinaryIssueCheck := tlBaseVersion.value.head.toString != "0",
-    sonatypeCredentialHost := Sonatype.sonatypeLegacy,
     resolvers += "s01 snapshots" at "https://s01.oss.sonatype.org/content/repositories/snapshots/",
     resolvers += "jitpack" at "https://jitpack.io",
     githubWorkflowBuildPreamble ++= nativeBrewInstallWorkflowSteps.value,
