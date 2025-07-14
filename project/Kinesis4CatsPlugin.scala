@@ -198,7 +198,7 @@ object Kinesis4CatsPlugin extends AutoPlugin {
 
       style ++ test ++ scalafix ++ mima ++ doc
     },
-    githubWorkflowJavaVersions := Seq(JavaSpec.temurin("17")),
+    githubWorkflowJavaVersions := Seq(JavaSpec.temurin("21")),
     githubWorkflowBuildSbtStepPreamble := Seq(
       s"project $${{ matrix.project }}"
     ),
@@ -248,7 +248,7 @@ object Kinesis4CatsPlugin extends AutoPlugin {
     },
     assembly / test := {},
     Test / parallelExecution := false,
-    tlJdkRelease := Some(8)
+    tlJdkRelease := Some(21)
   ) ++ Seq(
     addCommandAlias(
       "cpl",
