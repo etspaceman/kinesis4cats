@@ -310,12 +310,10 @@ object Kinesis4CatsPlugin extends AutoPlugin {
 }
 
 object Kinesis4CatsPluginKeys {
-  val Scala212 = "2.12.20"
   val Scala213 = "2.13.16"
   val Scala3 = "3.3.6"
 
-  val allScalaVersions = List(Scala213, Scala3, Scala212)
-  val last2ScalaVersions = List(Scala213, Scala3)
+  val allScalaVersions = List(Scala213, Scala3)
 
   import de.heikoseeberger.sbtheader.HeaderPlugin.autoImport._
   import scalafix.sbt.ScalafixPlugin.autoImport._
