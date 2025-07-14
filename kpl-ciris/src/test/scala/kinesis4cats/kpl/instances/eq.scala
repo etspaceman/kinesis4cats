@@ -18,8 +18,8 @@ package kinesis4cats.kpl.instances
 
 import cats.Eq
 import cats.syntax.all._
-import com.amazonaws.services.kinesis.producer.KinesisProducerConfiguration
 import com.amazonaws.services.schemaregistry.common.configs.GlueSchemaRegistryConfiguration
+import software.amazon.kinesis.producer.KinesisProducerConfiguration
 
 import kinesis4cats.kpl.KPLProducer
 

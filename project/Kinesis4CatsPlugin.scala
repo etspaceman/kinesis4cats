@@ -63,7 +63,7 @@ object Kinesis4CatsPlugin extends AutoPlugin {
   }
 
   override def buildSettings = Seq(
-    tlBaseVersion := "0.0",
+    tlBaseVersion := "0.1",
     organization := "io.github.etspaceman",
     organizationName := "etspaceman",
     startYear := Some(2023),
@@ -71,8 +71,7 @@ object Kinesis4CatsPlugin extends AutoPlugin {
     developers := List(tlGitHubDev("etspaceman", "Eric Meisel")),
     crossScalaVersions := Seq(Scala213),
     scalaVersion := Scala213,
-    tlCiMimaBinaryIssueCheck := tlBaseVersion.value != "0.0",
-    tlSonatypeUseLegacyHost := true,
+    tlCiMimaBinaryIssueCheck := tlBaseVersion.value.head.toString != "0",
     resolvers += "s01 snapshots" at "https://s01.oss.sonatype.org/content/repositories/snapshots/",
     resolvers += "jitpack" at "https://jitpack.io",
     githubWorkflowBuildPreamble ++= nativeBrewInstallWorkflowSteps.value,
@@ -214,9 +213,8 @@ object Kinesis4CatsPlugin extends AutoPlugin {
   )
 
   override def projectSettings = Seq(
-    Test / testOptions ++= {
-      List(Tests.Argument(TestFrameworks.MUnit, "+l"))
-    },
+    Test / testOptions ++=
+      List(Tests.Argument(TestFrameworks.MUnit, "+l")),
     // Workaround for https://github.com/typelevel/sbt-typelevel/issues/464
     scalacOptions ++= {
       if (tlIsScala3.value)
@@ -236,7 +234,8 @@ object Kinesis4CatsPlugin extends AutoPlugin {
       Cats.core.value,
       Cats.effect.value,
       Log4Cats.core.value,
-      FS2.core.value
+      FS2.core.value,
+      FS2.io.value
     ) ++ testDependencies.value.map(_ % Test),
     libraryDependencySchemes += "org.scala-lang.modules" %% "scala-xml" % VersionScheme.Always,
     moduleName := "kinesis4cats-" + name.value,
@@ -311,9 +310,9 @@ object Kinesis4CatsPlugin extends AutoPlugin {
 }
 
 object Kinesis4CatsPluginKeys {
-  val Scala212 = "2.12.19"
-  val Scala213 = "2.13.14"
-  val Scala3 = "3.3.3"
+  val Scala212 = "2.12.20"
+  val Scala213 = "2.13.16"
+  val Scala3 = "3.3.6"
 
   val allScalaVersions = List(Scala213, Scala3, Scala212)
   val last2ScalaVersions = List(Scala213, Scala3)

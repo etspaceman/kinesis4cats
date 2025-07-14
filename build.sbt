@@ -233,7 +233,7 @@ lazy val `kpl-localstack` = projectMatrix
     description := "A test-kit for working with Kinesis and Localstack, via the KPL"
   )
   .jvmPlatform(allScalaVersions)
-  .dependsOn(`aws-v1-localstack`, kpl)
+  .dependsOn(`aws-v2-localstack`, kpl)
 
 lazy val `kinesis-client` = projectMatrix
   .settings(
@@ -361,6 +361,10 @@ lazy val integrationTestsJvmSettings: Seq[Setting[_]] = Seq(
     case "META-INF/smithy/smithy4s.tracking.smithy" => MergeStrategy.discard
     case "META-INF/smithy/manifest"                 => MergeStrategy.first
     case "scala/jdk/CollectionConverters$.class"    => MergeStrategy.first
+    case "commonMain/default/linkdata/module"       => MergeStrategy.first
+    case "nativeMain/default/linkdata/module"       => MergeStrategy.first
+    case "commonMain/default/manifest"              => MergeStrategy.first
+    case "nativeMain/default/manifest"              => MergeStrategy.first
     case PathList("google", "protobuf", _ @_*)      => MergeStrategy.first
     case PathList("codegen-resources", _ @_*)       => MergeStrategy.first
     case PathList("META-INF", xs @ _*) =>
@@ -429,7 +433,6 @@ lazy val `integration-tests-native` = `integration-tests`
   .native(Scala3)
   .enablePlugins(ScalaNativeBrewedConfigPlugin)
   .settings(
-    libraryDependencies ++= Seq(Epollcat.value % Test),
     nativeBrewFormulas ++= Set("s2n", "openssl"),
     Test / envVars ++= Map("S2N_DONT_MLOCK" -> "1")
   )

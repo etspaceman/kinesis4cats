@@ -18,7 +18,9 @@ package kinesis4cats.kcl
 package ciris
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
+import scala.jdk.CollectionConverters._
 
+import java.util.Collection
 import java.util.concurrent.ExecutorService
 
 import _root_.ciris._
@@ -27,10 +29,12 @@ import com.amazonaws.services.schemaregistry.deserializers.GlueSchemaRegistryDes
 import software.amazon.awssdk.services.cloudwatch.CloudWatchAsyncClient
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient
 import software.amazon.awssdk.services.dynamodb.model.BillingMode
+import software.amazon.awssdk.services.dynamodb.model.Tag
 import software.amazon.awssdk.services.kinesis.KinesisAsyncClient
 import software.amazon.kinesis.checkpoint.CheckpointConfig
 import software.amazon.kinesis.common._
 import software.amazon.kinesis.coordinator._
+import software.amazon.kinesis.leases.LeaseManagementConfig.WorkerUtilizationAwareAssignmentConfig
 import software.amazon.kinesis.leases._
 import software.amazon.kinesis.leases.dynamodb.TableCreatorCallback
 import software.amazon.kinesis.lifecycle._
@@ -39,6 +43,7 @@ import software.amazon.kinesis.processor.SingleStreamTracker
 import software.amazon.kinesis.retrieval.fanout.FanOutConfig
 import software.amazon.kinesis.retrieval.polling.PollingConfig
 import software.amazon.kinesis.retrieval.{AggregatorUtil, RetrievalConfig}
+import software.amazon.kinesis.worker.metric.WorkerMetric
 
 import kinesis4cats.Utils
 import kinesis4cats.ciris.CirisReader
@@ -49,9 +54,9 @@ import kinesis4cats.kcl.instances.ciris._
 import kinesis4cats.models
 import kinesis4cats.syntax.id._
 
-/** Standard configuration loader of env variables and system properties for
-  * [[https://github.com/awslabs/amazon-kinesis-producer/blob/master/java/amazon-kinesis-producer/src/main/java/com/amazonaws/services/kinesis/producer/KinesisProducerConfiguration.java KinesisProducerConfiguration]]
-  * via [[https://cir.is/ Ciris]].
+/** Standard configuration loader of env variables and system properties for the
+  * [[https://github.com/awslabs/amazon-kinesis-client KCL]] via
+  * [[https://cir.is/ Ciris]].
   */
 object KCLCiris {
 
@@ -102,6 +107,10 @@ object KCLCiris {
     * @param LE
     *   [[kinesis4cats.kcl.RecordProcessor.LogEncoders RecordProcessor.LogEncoders]]
     *   for encoding structured logs
+    * @param workerMetrics
+    *   List of
+    *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/worker/metric/WorkerMetric.java WorkerMetrics]]
+    *   for the application
     * @return
     *   [[cats.effect.Resource Resource]] containing the
     *   [[kinesis4cats.kcl.KCLConsumer KCLConsumer]]
@@ -118,7 +127,6 @@ object KCLCiris {
       coordinatorFactory: Option[CoordinatorFactory] = None,
       customShardDetectorProvider: Option[StreamConfig => ShardDetector] = None,
       tableCreatorCallback: Option[TableCreatorCallback] = None,
-      hierarchicalShardSyncer: Option[HierarchicalShardSyncer] = None,
       leaseManagementFactory: Option[LeaseManagementFactory] = None,
       leaseExecutorService: Option[ExecutorService] = None,
       aggregatorUtil: Option[AggregatorUtil] = None,
@@ -127,7 +135,8 @@ object KCLCiris {
       glueSchemaRegistryDeserializer: Option[GlueSchemaRegistryDeserializer] =
         None,
       encoders: RecordProcessor.LogEncoders = RecordProcessor.LogEncoders.show,
-      managedClients: Boolean = true
+      managedClients: Boolean = true,
+      workerMetrics: Option[List[WorkerMetric]] = None
   )(cb: List[CommittableRecord[F]] => F[Unit])(implicit
       F: Async[F]
   ): Resource[F, KCLConsumer[F]] = for {
@@ -154,9 +163,9 @@ object KCLCiris {
       coordinatorFactory,
       customShardDetectorProvider,
       tableCreatorCallback,
-      hierarchicalShardSyncer,
       leaseManagementFactory,
       leaseExecutorService,
+      workerMetrics,
       aggregatorUtil,
       taskExecutionListener,
       metricsFactory,
@@ -195,6 +204,10 @@ object KCLCiris {
     * @param leaseExecutorService
     *   [[https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/ExecutorService.html ExecutorService]]
     *   for the lease management
+    * @param workerMetrics
+    *   List of
+    *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/worker/metric/WorkerMetric.java WorkerMetrics]]
+    *   for the application
     * @param aggregatorUtil
     *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/retrieval/AggregatorUtil.java AggregatorUtil]]
     * @param taskExecutionListener
@@ -226,9 +239,9 @@ object KCLCiris {
       coordinatorFactory: Option[CoordinatorFactory],
       customShardDetectorProvider: Option[StreamConfig => ShardDetector],
       tableCreatorCallback: Option[TableCreatorCallback],
-      hierarchicalShardSyncer: Option[HierarchicalShardSyncer],
       leaseManagementFactory: Option[LeaseManagementFactory],
       leaseExecutorService: Option[ExecutorService],
+      workerMetrics: Option[List[WorkerMetric]],
       aggregatorUtil: Option[AggregatorUtil],
       taskExecutionListener: Option[TaskExecutionListener],
       metricsFactory: Option[MetricsFactory],
@@ -250,9 +263,9 @@ object KCLCiris {
       prefix,
       customShardDetectorProvider,
       tableCreatorCallback,
-      hierarchicalShardSyncer,
       leaseManagementFactory,
-      leaseExecutorService
+      leaseExecutorService,
+      workerMetrics
     )
     lifecycleConfig <- Lifecycle
       .resource[F](prefix, aggregatorUtil, taskExecutionListener)
@@ -498,9 +511,13 @@ object KCLCiris {
       *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/leases/HierarchicalShardSyncer.java HierarchicalShardSyncer]]
       * @param leaseManagementFactory
       *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/leases/LeaseManagementFactory.java LeaseManagementFactory]]
-      * @param leaseExecutorService
+      * @param executorService
       *   [[https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/ExecutorService.html ExecutorService]]
       *   for the lease management
+      * @param workerMetrics
+      *   List of
+      *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/worker/metric/WorkerMetric.java WorkerMetrics]]
+      *   for the application
       * @return
       *   [[https://cir.is/api/ciris/ConfigDecoder.html ConfigDecoder]] of
       *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/leases/LeaseManagementConfig.java LeaseManagementConfig]]
@@ -511,13 +528,14 @@ object KCLCiris {
         prefix: Option[String],
         customShardDetectorProvider: Option[StreamConfig => ShardDetector],
         tableCreatorCallback: Option[TableCreatorCallback],
-        hierarchicalShardSyncer: Option[HierarchicalShardSyncer],
         leaseManagementFactory: Option[LeaseManagementFactory],
-        executorService: Option[ExecutorService]
+        executorService: Option[ExecutorService],
+        workerMetrics: Option[List[WorkerMetric]]
     ): ConfigValue[Effect, LeaseManagementConfig] = for {
+      appName <- Common.readAppName(prefix)
       tableName <- CirisReader
         .read[String](List("kcl", "lease", "table", "name"), prefix)
-        .or(Common.readAppName(prefix))
+        .default(appName)
       workerId <- CirisReader.readDefaulted(
         List("kcl", "lease", "worker", "id"),
         Utils.randomUUIDString,
@@ -652,8 +670,313 @@ object KCLCiris {
         List("kcl", "lease", "cache", "miss", "warning", "modulus"),
         prefix
       )
+      leaseTableDeletionProtectionEnabled <- CirisReader.readOptional[Boolean](
+        List("kcl", "lease", "table", "deletion", "protection", "enabled"),
+        prefix
+      )
+      leaseTablePitrEnabled <- CirisReader.readOptional[Boolean](
+        List("kcl", "lease", "table", "pitr", "enabled"),
+        prefix
+      )
+      inMemoryWorkerMetricsCaptureFrequencyMillis <- CirisReader
+        .readOptional[Duration](
+          List(
+            "kcl",
+            "lease",
+            "in",
+            "memory",
+            "worker",
+            "metrics",
+            "capture",
+            "frequency"
+          ),
+          prefix
+        )
+        .map(_.map(_.toMillis))
+      workerMetricsReporterFreqInMillis <- CirisReader
+        .readOptional[Duration](
+          List(
+            "kcl",
+            "lease",
+            "worker",
+            "metrics",
+            "reporter",
+            "freq"
+          ),
+          prefix
+        )
+        .map(_.map(_.toMillis))
+      noOfPersistedMetricsPerWorkerMetrics <- CirisReader
+        .readOptional[Int](
+          List(
+            "kcl",
+            "lease",
+            "no",
+            "of",
+            "persisted",
+            "metrics",
+            "per",
+            "worker",
+            "metrics"
+          ),
+          prefix
+        )
+      disableWorkerMetrics <- CirisReader
+        .readOptional[Boolean](
+          List(
+            "kcl",
+            "lease",
+            "disable",
+            "worker",
+            "metrics"
+          ),
+          prefix
+        )
+      maxThroughputPerHostKBps <- CirisReader
+        .readOptional[Double](
+          List(
+            "kcl",
+            "lease",
+            "max",
+            "throughput",
+            "per",
+            "host",
+            "kbps"
+          ),
+          prefix
+        )
+      dampeningPercentage <- CirisReader
+        .readOptional[Int](
+          List(
+            "kcl",
+            "lease",
+            "dampening",
+            "percentage"
+          ),
+          prefix
+        )
+      reBalanceThresholdPercentage <- CirisReader
+        .readOptional[Int](
+          List(
+            "kcl",
+            "lease",
+            "rebalance",
+            "threshold",
+            "percentage"
+          ),
+          prefix
+        )
+      allowThroughputOvershoot <- CirisReader
+        .readOptional[Boolean](
+          List(
+            "kcl",
+            "lease",
+            "allow",
+            "throughput",
+            "overshoot"
+          ),
+          prefix
+        )
+      staleWorkerMetricsEntryCleanupDuration <- CirisReader
+        .readOptional[Duration](
+          List(
+            "kcl",
+            "lease",
+            "stale",
+            "worker",
+            "metrics",
+            "entry",
+            "cleanup",
+            "duration"
+          ),
+          prefix
+        )
+        .map(_.map(d => java.time.Duration.ofMillis(d.toMillis)))
+      varianceBalancingFrequency <- CirisReader
+        .readOptional[Int](
+          List(
+            "kcl",
+            "lease",
+            "variance",
+            "balancing",
+            "frequency"
+          ),
+          prefix
+        )
+      workerMetricsEMAAlpha <- CirisReader
+        .readOptional[Double](
+          List(
+            "kcl",
+            "lease",
+            "worker",
+            "metrics",
+            "ema",
+            "alpha"
+          ),
+          prefix
+        )
+      workerMetricsTableBillingMode <- CirisReader
+        .readOptional[BillingMode](
+          List(
+            "kcl",
+            "lease",
+            "worker",
+            "metrics",
+            "table",
+            "billing",
+            "mode"
+          ),
+          prefix
+        )
+      workerMetricsTableReadCapacity <- CirisReader
+        .readOptional[Long](
+          List(
+            "kcl",
+            "lease",
+            "worker",
+            "metrics",
+            "table",
+            "read",
+            "capacity"
+          ),
+          prefix
+        )
+      workerMetricsTableWriteCapacity <- CirisReader
+        .readOptional[Long](
+          List(
+            "kcl",
+            "lease",
+            "worker",
+            "metrics",
+            "table",
+            "write",
+            "capacity"
+          ),
+          prefix
+        )
+      workerMetricsTablePointInTimeRecoveryEnabled <- CirisReader
+        .readOptional[Boolean](
+          List(
+            "kcl",
+            "lease",
+            "worker",
+            "metrics",
+            "table",
+            "pitr",
+            "enabled"
+          ),
+          prefix
+        )
+      workerMetricsTableDeletionProtectionEnabled <- CirisReader
+        .readOptional[Boolean](
+          List(
+            "kcl",
+            "lease",
+            "worker",
+            "metrics",
+            "table",
+            "deletion",
+            "protection",
+            "enabled"
+          ),
+          prefix
+        )
+      tags <- CirisReader
+        .readOptional[List[Tag]](
+          List("kcl", "lease", "table", "tags"),
+          prefix
+        )
+        .map(_.map(_.asJava))
+      workerMetricsTags <- CirisReader
+        .readOptional[List[Tag]](
+          List("kcl", "lease", "worker", "metrics", "table", "tags"),
+          prefix
+        )
+        .map(_.map(_.asJava))
+      workerMetricsTableConfig = WorkerMetricsTableConfig
+        .default(appName)
+        .maybeTransform(workerMetricsTableBillingMode)(
+          (x: WorkerMetricsTableConfig, y: BillingMode) =>
+            x.copy(billingMode = y)
+        )
+        .maybeTransform(workerMetricsTableReadCapacity)(
+          (x: WorkerMetricsTableConfig, y: Long) => x.copy(readCapacity = y)
+        )
+        .maybeTransform(workerMetricsTableWriteCapacity)(
+          (x: WorkerMetricsTableConfig, y: Long) => x.copy(writeCapacity = y)
+        )
+        .maybeTransform(workerMetricsTablePointInTimeRecoveryEnabled)(
+          (x: WorkerMetricsTableConfig, y: Boolean) =>
+            x.copy(pointInTimeRecoveryEnabled = y)
+        )
+        .maybeTransform(workerMetricsTableDeletionProtectionEnabled)(
+          (x: WorkerMetricsTableConfig, y: Boolean) =>
+            x.copy(deletionProtectionEnabled = y)
+        )
+        .maybeTransform(workerMetricsTags)(
+          (x: WorkerMetricsTableConfig, y: Collection[Tag]) => x.copy(tags = y)
+        )
+        .underlying
+      workerUtilizationAwareAssignmentConfig =
+        new WorkerUtilizationAwareAssignmentConfig()
+          .maybeTransform(inMemoryWorkerMetricsCaptureFrequencyMillis)(
+            _.inMemoryWorkerMetricsCaptureFrequencyMillis(_)
+          )
+          .maybeTransform(workerMetricsReporterFreqInMillis)(
+            _.workerMetricsReporterFreqInMillis(_)
+          )
+          .maybeTransform(noOfPersistedMetricsPerWorkerMetrics)(
+            _.noOfPersistedMetricsPerWorkerMetrics(_)
+          )
+          .maybeTransform(disableWorkerMetrics)(_.disableWorkerMetrics(_))
+          .maybeTransform(maxThroughputPerHostKBps)(
+            _.maxThroughputPerHostKBps(_)
+          )
+          .maybeTransform(dampeningPercentage)(_.dampeningPercentage(_))
+          .maybeTransform(reBalanceThresholdPercentage)(
+            _.reBalanceThresholdPercentage(_)
+          )
+          .maybeTransform(allowThroughputOvershoot)(
+            _.allowThroughputOvershoot(_)
+          )
+          .maybeTransform(staleWorkerMetricsEntryCleanupDuration)(
+            _.staleWorkerMetricsEntryCleanupDuration(_)
+          )
+          .maybeTransform(varianceBalancingFrequency)(
+            _.varianceBalancingFrequency(_)
+          )
+          .maybeTransform(workerMetricsEMAAlpha)(_.workerMetricsEMAAlpha(_))
+          .maybeTransform(workerMetrics) { (conf, workerMetricList) =>
+            conf.workerMetricList(workerMetricList.asJava)
+          }
+          .workerMetricsTableConfig(workerMetricsTableConfig)
+      leasesRecoveryAuditorExecutionFrequencyMillis <- CirisReader
+        .readOptional[Duration](
+          List(
+            "kcl",
+            "lease",
+            "recovery",
+            "auditor",
+            "execution",
+            "frequency"
+          ),
+          prefix
+        )
+        .map(_.map(_.toMillis))
+      leaseAssignmentIntervalMillis <- CirisReader
+        .readOptional[Duration](
+          List(
+            "kcl",
+            "lease",
+            "assignment",
+            "interval"
+          ),
+          prefix
+        )
+        .map(_.map(_.toMillis))
     } yield new LeaseManagementConfig(
       tableName,
+      appName,
       dynamoClient,
       kinesisClient,
       workerId
@@ -700,9 +1023,25 @@ object KCLCiris {
         conf.customShardDetectorProvider(x.asJava)
       }
       .maybeTransform(tableCreatorCallback)(_.tableCreatorCallback(_))
-      .maybeTransform(hierarchicalShardSyncer)(_.hierarchicalShardSyncer(_))
       .maybeTransform(executorService)(_.executorService(_))
       .maybeTransform(leaseManagementFactory)(_.leaseManagementFactory(_))
+      .maybeTransform(leaseTableDeletionProtectionEnabled)(
+        _.leaseTableDeletionProtectionEnabled(_)
+      )
+      .maybeTransform(leaseTablePitrEnabled)(_.leaseTablePitrEnabled(_))
+      .maybeTransform(leasesRecoveryAuditorExecutionFrequencyMillis)(
+        _.leasesRecoveryAuditorExecutionFrequencyMillis(_)
+      )
+      .maybeTransform(leasesRecoveryAuditorInconsistencyConfidenceThreshold)(
+        _.leasesRecoveryAuditorInconsistencyConfidenceThreshold(_)
+      )
+      .maybeTransform(tags)(_.tags(_))
+      .workerUtilizationAwareAssignmentConfig(
+        workerUtilizationAwareAssignmentConfig
+      )
+      .maybeTransform(leaseAssignmentIntervalMillis)(
+        _.leaseAssignmentIntervalMillis(_)
+      )
 
     /** Reads the
       * [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/leases/LeaseManagementConfig.java LeaseManagementConfig]]
@@ -724,9 +1063,13 @@ object KCLCiris {
       *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/leases/HierarchicalShardSyncer.java HierarchicalShardSyncer]]
       * @param leaseManagementFactory
       *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/leases/LeaseManagementFactory.java LeaseManagementFactory]]
-      * @param leaseExecutorService
+      * @param executorService
       *   [[https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/ExecutorService.html ExecutorService]]
       *   for the lease management
+      * @param workerMetrics
+      *   List of
+      *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/worker/metric/WorkerMetric.java WorkerMetrics]]
+      *   for the application
       * @param F
       *   [[cats.effect.Async Async]]
       * @return
@@ -739,18 +1082,18 @@ object KCLCiris {
         prefix: Option[String],
         customShardDetectorProvider: Option[StreamConfig => ShardDetector],
         tableCreatorCallback: Option[TableCreatorCallback],
-        hierarchicalShardSyncer: Option[HierarchicalShardSyncer],
         leaseManagementFactory: Option[LeaseManagementFactory],
-        executorService: Option[ExecutorService]
+        executorService: Option[ExecutorService],
+        workerMetrics: Option[List[WorkerMetric]]
     )(implicit F: Async[F]): Resource[F, LeaseManagementConfig] = read(
       dynamoClient,
       kinesisClient,
       prefix,
       customShardDetectorProvider,
       tableCreatorCallback,
-      hierarchicalShardSyncer,
       leaseManagementFactory,
-      executorService
+      executorService,
+      workerMetrics
     ).resource[F]
   }
 

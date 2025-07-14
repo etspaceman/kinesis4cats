@@ -27,7 +27,7 @@ import cats.syntax.all._
 import scodec.bits.ByteVector
 
 import kinesis4cats.models.EncryptionType
-import kinesis4cats.protobuf.messages
+import kinesis4cats.protobuf.kinesisMessages
 
 final case class Record(
     sequenceNumber: String,
@@ -43,12 +43,13 @@ final case class Record(
       data.startsWith(Aggregation.magicByteVector)
     } else false
 
-  private val dataSize = data.length.toInt - Aggregation.aggregatedByteSize
+  private def aggregatedDataArray = {
+    val dataSize = data.length.toInt - Aggregation.aggregatedByteSize
 
-  private val dataArray = {
     val arr = new Array[Byte](dataSize)
     data.copyToArray(arr, 0, Aggregation.magicBytes.length.toLong, dataSize)
     arr
+
   }
 }
 
@@ -57,8 +58,10 @@ object Record {
     records.flatTraverse {
       case record if !record.isAggregated => Success(List(record))
       case record =>
-        Try(messages.AggregatedRecord.parseFrom(record.dataArray)).flatMap {
-          ar =>
+        Try(
+          kinesisMessages.AggregatedRecord.parseFrom(record.aggregatedDataArray)
+        )
+          .flatMap { ar =>
             val pks = ar.partitionKeyTable.toList
             val ehks = ar.explicitHashKeyTable.toList
 
@@ -82,6 +85,6 @@ object Record {
                   }
               }
               .map(_.toList)
-        }
+          }
     }
 }

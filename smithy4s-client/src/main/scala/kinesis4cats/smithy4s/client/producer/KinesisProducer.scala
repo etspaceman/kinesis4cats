@@ -22,7 +22,6 @@ import java.time.Instant
 import _root_.fs2.compression.Compression
 import _root_.fs2.io.file.Files
 import cats.data.NonEmptyList
-import cats.effect.Resource
 import cats.effect._
 import cats.syntax.all._
 import com.amazonaws.kinesis._

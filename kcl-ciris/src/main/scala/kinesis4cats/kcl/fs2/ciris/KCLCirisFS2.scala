@@ -37,6 +37,7 @@ import software.amazon.kinesis.leases.dynamodb.TableCreatorCallback
 import software.amazon.kinesis.lifecycle._
 import software.amazon.kinesis.metrics._
 import software.amazon.kinesis.retrieval.AggregatorUtil
+import software.amazon.kinesis.worker.metric.WorkerMetric
 
 import kinesis4cats.ciris.CirisReader
 import kinesis4cats.instances.ciris._
@@ -45,9 +46,9 @@ import kinesis4cats.kcl.KCLConsumer
 import kinesis4cats.kcl.RecordProcessor
 import kinesis4cats.kcl.ciris.KCLCiris
 
-/** Standard configuration loader of env variables and system properties for
-  * [[https://github.com/awslabs/amazon-kinesis-producer/blob/master/java/amazon-kinesis-producer/src/main/java/com/amazonaws/services/kinesis/producer/KinesisProducerConfiguration.java KinesisProducerConfiguration]]
-  * via [[https://cir.is/ Ciris]] - FS2 offering.
+/** Standard configuration loader of env variables and system properties for the
+  * [[https://github.com/awslabs/amazon-kinesis-client KCL]] via
+  * [[https://cir.is/ Ciris]] - FS2 offering.
   */
 object KCLCirisFS2 {
 
@@ -100,6 +101,10 @@ object KCLCirisFS2 {
     * @param encoders
     *   [[kinesis4cats.kcl.RecordProcessor.LogEncoders RecordProcessor.LogEncoders]]
     *   for encoding structured logs
+    * @param workerMetrics
+    *   List of
+    *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/worker/metric/WorkerMetric.java WorkerMetrics]]
+    *   for the application
     * @return
     *   [[cats.effect.Resource Resource]] containing the
     *   [[kinesis4cats.kcl.fs2.KCLConsumerFS2 KCLConsumerFS2]]
@@ -116,7 +121,6 @@ object KCLCirisFS2 {
       coordinatorFactory: Option[CoordinatorFactory] = None,
       customShardDetectorProvider: Option[StreamConfig => ShardDetector] = None,
       tableCreatorCallback: Option[TableCreatorCallback] = None,
-      hierarchicalShardSyncer: Option[HierarchicalShardSyncer] = None,
       leaseManagementFactory: Option[LeaseManagementFactory] = None,
       leaseExecutorService: Option[ExecutorService] = None,
       aggregatorUtil: Option[AggregatorUtil] = None,
@@ -125,7 +129,8 @@ object KCLCirisFS2 {
       glueSchemaRegistryDeserializer: Option[GlueSchemaRegistryDeserializer] =
         None,
       encoders: RecordProcessor.LogEncoders = RecordProcessor.LogEncoders.show,
-      managedClients: Boolean = true
+      managedClients: Boolean = true,
+      workerMetrics: Option[List[WorkerMetric]] = None
   )(implicit
       F: Async[F],
       P: Parallel[F]
@@ -153,9 +158,9 @@ object KCLCirisFS2 {
       coordinatorFactory,
       customShardDetectorProvider,
       tableCreatorCallback,
-      hierarchicalShardSyncer,
       leaseManagementFactory,
       leaseExecutorService,
+      workerMetrics,
       aggregatorUtil,
       taskExecutionListener,
       metricsFactory,
@@ -194,6 +199,10 @@ object KCLCirisFS2 {
     * @param leaseExecutorService
     *   [[https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/ExecutorService.html ExecutorService]]
     *   for the lease management
+    * @param workerMetrics
+    *   List of
+    *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/worker/metric/WorkerMetric.java WorkerMetrics]]
+    *   for the application
     * @param aggregatorUtil
     *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/retrieval/AggregatorUtil.java AggregatorUtil]]
     * @param taskExecutionListener
@@ -225,9 +234,9 @@ object KCLCirisFS2 {
       coordinatorFactory: Option[CoordinatorFactory],
       customShardDetectorProvider: Option[StreamConfig => ShardDetector],
       tableCreatorCallback: Option[TableCreatorCallback],
-      hierarchicalShardSyncer: Option[HierarchicalShardSyncer],
       leaseManagementFactory: Option[LeaseManagementFactory],
       leaseExecutorService: Option[ExecutorService],
+      workerMetrics: Option[List[WorkerMetric]],
       aggregatorUtil: Option[AggregatorUtil],
       taskExecutionListener: Option[TaskExecutionListener],
       metricsFactory: Option[MetricsFactory],
@@ -257,9 +266,9 @@ object KCLCirisFS2 {
       prefix,
       customShardDetectorProvider,
       tableCreatorCallback,
-      hierarchicalShardSyncer,
       leaseManagementFactory,
-      leaseExecutorService
+      leaseExecutorService,
+      workerMetrics
     )
     lifecycleConfig <- KCLCiris.Lifecycle
       .resource[F](prefix, aggregatorUtil, taskExecutionListener)

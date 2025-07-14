@@ -244,9 +244,18 @@ object KCLConsumerFS2 {
     )(implicit
         F: Async[F],
         P: Parallel[F]
+    ): Builder[F] = default(streamTracker, appName, appName)
+
+    def default[F[_]](
+        streamTracker: StreamTracker,
+        dynamoTableName: String,
+        appName: String
+    )(implicit
+        F: Async[F],
+        P: Parallel[F]
     ): Builder[F] = Builder(
       config = KCLConsumer.BuilderConfig.Make
-        .default(appName, streamTracker)
+        .default(dynamoTableName, appName, streamTracker)
         .andThen(_.withProcessConfig(defaultProcessConfig)),
       mkKinesisClient = Resource.fromAutoCloseable(
         Sync[F].delay(KinesisAsyncClient.create())

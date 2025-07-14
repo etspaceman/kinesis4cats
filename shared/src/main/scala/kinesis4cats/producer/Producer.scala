@@ -182,8 +182,7 @@ abstract class Producer[F[_], PutReq, PutRes] private[kinesis4cats] (
       )
       finalRes <- retryingOnFailuresAndAllErrors(
         config.retryPolicy,
-        (x: Producer.Result[PutRes]) =>
-          F.pure(x.isSuccessful || (x.isPartiallySuccessful && !x.hasFailed)),
+        (x: Producer.Result[PutRes]) => F.pure(!x.hasFailed),
         (x: Producer.Result[PutRes], details: RetryDetails) =>
           for {
             failed <- F.fromOption(
@@ -217,14 +216,14 @@ abstract class Producer[F[_], PutReq, PutRes] private[kinesis4cats] (
           )
       )(ref.get.flatMap(x => _put(x.inputRecords, x.retrying)))
       _ <-
-        if (finalRes.hasFailed) {
+        if (finalRes.hasErrors) {
           if (config.raiseOnFailures) {
             finalRes.error.traverse(F.raiseError[Unit]).void
           } else {
             logger
               .warn(ctx.context)(
                 "All retries have been exhausted, and the final retry detected errors. " +
-                  "If you would like an exception to be raised in this case, set raiseOnExhaustedRetries to true"
+                  "If you would like an exception to be raised in this case, set raiseOnFailures to true"
               )
           }
         } else F.unit
@@ -444,6 +443,9 @@ object Producer {
   }
 
   object Error {
+    implicit val producerErrorEq: Eq[Error] =
+      Eq.by(x => (x.invalid, x.failed))
+
     private def invalidRecordsMessage(
         records: List[InvalidRecord]
     ): String = {
