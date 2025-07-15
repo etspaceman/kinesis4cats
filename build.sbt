@@ -12,11 +12,6 @@ lazy val compat = projectMatrix
   .settings(
     description := "Code to maintain compatability across major scala versions",
     scalacOptions --= Seq("-deprecation", "-Xlint:deprecation", "-Xsource:3"),
-    scalacOptions --= {
-      if (scalaVersion.value == Scala212)
-        scalacOptions.value.filter(opt => opt.startsWith("-Ywarn-unused"))
-      else Nil
-    },
     Compile / doc / sources := Seq.empty
   )
   .jvmPlatform(allScalaVersions)
@@ -56,12 +51,6 @@ lazy val shared = projectMatrix
   .dependsOn(compat)
 
 // Workaround for https://github.com/sbt/sbt-projectmatrix/pull/79
-lazy val `shared-native-212` = shared
-  .native(Scala212)
-  .enablePlugins(ScalaNativeBrewedConfigPlugin)
-  .settings(nativeBrewFormulas += "openssl")
-
-// Workaround for https://github.com/sbt/sbt-projectmatrix/pull/79
 lazy val `shared-native-213` = shared
   .native(Scala213)
   .enablePlugins(ScalaNativeBrewedConfigPlugin)
@@ -93,7 +82,7 @@ lazy val `shared-ciris` = projectMatrix
     libraryDependencies ++= Seq(Ciris.core.value)
   )
   .jvmPlatform(allScalaVersions)
-  .nativePlatform(last2ScalaVersions)
+  .nativePlatform(allScalaVersions)
   .jsPlatform(allScalaVersions)
   .dependsOn(shared)
 
@@ -102,7 +91,7 @@ lazy val `shared-localstack` = projectMatrix
     description := "Common utilities for the localstack test-kits"
   )
   .jvmPlatform(allScalaVersions)
-  .nativePlatform(last2ScalaVersions)
+  .nativePlatform(allScalaVersions)
   .jsPlatform(allScalaVersions)
   .dependsOn(shared, `shared-ciris`, `shared-circe`)
 
@@ -275,7 +264,7 @@ lazy val `smithy4s-client-transformers` = projectMatrix
     ),
     tlJdkRelease := Some(11)
   )
-  .jvmPlatform(List(Scala212))
+  .jvmPlatform(List(Scala213))
 
 // Workaround for https://github.com/disneystreaming/smithy4s/issues/963
 // as a solution for https://github.com/etspaceman/kinesis4cats/issues/123
@@ -315,16 +304,16 @@ lazy val `smithy4s-client` = projectMatrix
     Compile / smithy4sModelTransformers += "KinesisSpecTransformer",
     Compile / smithy4sAllDependenciesAsJars +=
       (`smithy4s-client-transformers`.jvm(
-        Scala212
+        Scala213
       ) / Compile / packageBin).value,
     Compile / smithy4sSmithyLibrary := false,
     scalacOptions -= "-deprecation",
     tlJdkRelease := Some(11),
     removeSmithy4sDependenciesFromManifest
   )
-  .jvmPlatform(last2ScalaVersions)
+  .jvmPlatform(allScalaVersions)
   .nativePlatform(Seq(Scala3))
-  .jsPlatform(last2ScalaVersions)
+  .jsPlatform(allScalaVersions)
   .dependsOn(shared)
 
 lazy val `smithy4s-client-logging-circe` = projectMatrix
@@ -333,9 +322,9 @@ lazy val `smithy4s-client-logging-circe` = projectMatrix
     libraryDependencies ++= Seq(Http4s.circe.value),
     tlJdkRelease := Some(11)
   )
-  .jvmPlatform(last2ScalaVersions)
+  .jvmPlatform(allScalaVersions)
   .nativePlatform(Seq(Scala3))
-  .jsPlatform(last2ScalaVersions)
+  .jsPlatform(allScalaVersions)
   .dependsOn(`shared-circe`, `smithy4s-client`)
 
 lazy val `smithy4s-client-localstack` = projectMatrix
@@ -343,9 +332,9 @@ lazy val `smithy4s-client-localstack` = projectMatrix
     description := "A test-kit for working with Kinesis and Localstack, via the Smithy4s Client project",
     tlJdkRelease := Some(11)
   )
-  .jvmPlatform(last2ScalaVersions)
+  .jvmPlatform(allScalaVersions)
   .nativePlatform(Seq(Scala3))
-  .jsPlatform(last2ScalaVersions)
+  .jsPlatform(allScalaVersions)
   .dependsOn(`shared-localstack`, `smithy4s-client`)
 
 lazy val integrationTestsJvmSettings: Seq[Setting[_]] = Seq(
@@ -388,8 +377,8 @@ lazy val feral = projectMatrix
       Feral.lambda.value
     )
   )
-  .jvmPlatform(last2ScalaVersions)
-  .jsPlatform(last2ScalaVersions)
+  .jvmPlatform(allScalaVersions)
+  .jsPlatform(allScalaVersions)
   .dependsOn(`shared-circe`)
 
 lazy val integrationTestsJvmDependencies = List(
@@ -414,10 +403,10 @@ lazy val `integration-tests` = projectMatrix
       Http4s.emberClient.value % Test
     )
   )
-  .jvmPlatform(last2ScalaVersions)
+  .jvmPlatform(allScalaVersions)
   .nativePlatform(Seq(Scala3))
   .jsPlatform(
-    last2ScalaVersions,
+    allScalaVersions,
     Nil,
     _.settings(
       scalaJSLinkerConfig ~= (_.withModuleKind(ModuleKind.CommonJSModule))
@@ -625,17 +614,6 @@ lazy val root = project
   .settings(commonRootSettings)
   .aggregate(allProjects.flatMap(_.projectRefs): _*)
 
-lazy val `root-jvm-212` = project
-  .enablePlugins(NoPublishPlugin)
-  .settings(commonRootSettings)
-  .aggregate(
-    allProjects.flatMap(
-      _.filterProjects(
-        Seq(VirtualAxis.jvm, VirtualAxis.ScalaVersionAxis(Scala212, "2.12"))
-      ).map(_.project)
-    ): _*
-  )
-
 lazy val `root-jvm-213` = project
   .enablePlugins(NoPublishPlugin)
   .settings(commonRootSettings)
@@ -658,17 +636,6 @@ lazy val `root-jvm-3` = project
     ): _*
   )
 
-lazy val `root-js-212` = project
-  .enablePlugins(NoPublishPlugin)
-  .settings(commonRootSettings)
-  .aggregate(
-    allProjects.flatMap(
-      _.filterProjects(
-        Seq(VirtualAxis.js, VirtualAxis.ScalaVersionAxis(Scala212, "2.12"))
-      ).map(_.project)
-    ): _*
-  )
-
 lazy val `root-js-213` = project
   .enablePlugins(NoPublishPlugin)
   .settings(commonRootSettings)
@@ -687,17 +654,6 @@ lazy val `root-js-3` = project
     allProjects.flatMap(
       _.filterProjects(
         Seq(VirtualAxis.js, VirtualAxis.ScalaVersionAxis(Scala3, "3.2"))
-      ).map(_.project)
-    ): _*
-  )
-
-lazy val `root-native-212` = project
-  .enablePlugins(NoPublishPlugin)
-  .settings(commonRootSettings)
-  .aggregate(
-    allProjects.flatMap(
-      _.filterProjects(
-        Seq(VirtualAxis.native, VirtualAxis.ScalaVersionAxis(Scala212, "2.12"))
       ).map(_.project)
     ): _*
   )
@@ -725,13 +681,10 @@ lazy val `root-native-3` = project
   )
 
 lazy val rootProjects = List(
-  `root-jvm-212`,
   `root-jvm-213`,
   `root-jvm-3`,
-  `root-js-212`,
   `root-js-213`,
   `root-js-3`,
-  `root-native-212`,
   `root-native-213`,
   `root-native-3`
 ).map(_.id)

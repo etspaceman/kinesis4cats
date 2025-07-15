@@ -10,13 +10,10 @@ pull_request_rules:
   conditions:
   - author=etspaceman-scala-steward-app[bot]
   - body~=labels:.*early-semver-patch
-  - status-success=Test (ubuntu-22.04, 2.13, temurin@17, root-jvm-212)
   - status-success=Test (ubuntu-22.04, 2.13, temurin@17, root-jvm-213)
   - status-success=Test (ubuntu-22.04, 2.13, temurin@17, root-jvm-3)
-  - status-success=Test (ubuntu-22.04, 2.13, temurin@17, root-js-212)
   - status-success=Test (ubuntu-22.04, 2.13, temurin@17, root-js-213)
   - status-success=Test (ubuntu-22.04, 2.13, temurin@17, root-js-3)
-  - status-success=Test (ubuntu-22.04, 2.13, temurin@17, root-native-212)
   - status-success=Test (ubuntu-22.04, 2.13, temurin@17, root-native-213)
   - status-success=Test (ubuntu-22.04, 2.13, temurin@17, root-native-3)
   actions:
@@ -29,14 +26,6 @@ pull_request_rules:
     label:
       add:
       - aws-v1-localstack
-      remove: []
-- name: Label aws-v1-localstack2_12 PRs
-  conditions:
-  - files~=^.sbt/matrix/aws-v1-localstack2_12/
-  actions:
-    label:
-      add:
-      - aws-v1-localstack2_12
       remove: []
 - name: Label aws-v1-localstack3 PRs
   conditions:
@@ -54,14 +43,6 @@ pull_request_rules:
       add:
       - aws-v2-localstack
       remove: []
-- name: Label aws-v2-localstack2_12 PRs
-  conditions:
-  - files~=^.sbt/matrix/aws-v2-localstack2_12/
-  actions:
-    label:
-      add:
-      - aws-v2-localstack2_12
-      remove: []
 - name: Label aws-v2-localstack3 PRs
   conditions:
   - files~=^.sbt/matrix/aws-v2-localstack3/
@@ -77,14 +58,6 @@ pull_request_rules:
     label:
       add:
       - compat
-      remove: []
-- name: Label compat2_12 PRs
-  conditions:
-  - files~=^.sbt/matrix/compat2_12/
-  actions:
-    label:
-      add:
-      - compat2_12
       remove: []
 - name: Label compat3 PRs
   conditions:
@@ -102,14 +75,6 @@ pull_request_rules:
       add:
       - compatJS
       remove: []
-- name: Label compatJS2_12 PRs
-  conditions:
-  - files~=^.sbt/matrix/compatJS2_12/
-  actions:
-    label:
-      add:
-      - compatJS2_12
-      remove: []
 - name: Label compatJS3 PRs
   conditions:
   - files~=^.sbt/matrix/compatJS3/
@@ -125,14 +90,6 @@ pull_request_rules:
     label:
       add:
       - compatNative
-      remove: []
-- name: Label compatNative2_12 PRs
-  conditions:
-  - files~=^.sbt/matrix/compatNative2_12/
-  actions:
-    label:
-      add:
-      - compatNative2_12
       remove: []
 - name: Label compatNative3 PRs
   conditions:
@@ -238,14 +195,6 @@ pull_request_rules:
       add:
       - kcl-ciris
       remove: []
-- name: Label kcl-ciris2_12 PRs
-  conditions:
-  - files~=^.sbt/matrix/kcl-ciris2_12/
-  actions:
-    label:
-      add:
-      - kcl-ciris2_12
-      remove: []
 - name: Label kcl-ciris3 PRs
   conditions:
   - files~=^.sbt/matrix/kcl-ciris3/
@@ -261,14 +210,6 @@ pull_request_rules:
     label:
       add:
       - kcl-http4s
-      remove: []
-- name: Label kcl-http4s2_12 PRs
-  conditions:
-  - files~=^.sbt/matrix/kcl-http4s2_12/
-  actions:
-    label:
-      add:
-      - kcl-http4s2_12
       remove: []
 - name: Label kcl-http4s3 PRs
   conditions:
@@ -286,14 +227,6 @@ pull_request_rules:
       add:
       - kcl-localstack
       remove: []
-- name: Label kcl-localstack2_12 PRs
-  conditions:
-  - files~=^.sbt/matrix/kcl-localstack2_12/
-  actions:
-    label:
-      add:
-      - kcl-localstack2_12
-      remove: []
 - name: Label kcl-localstack3 PRs
   conditions:
   - files~=^.sbt/matrix/kcl-localstack3/
@@ -310,14 +243,6 @@ pull_request_rules:
       add:
       - kcl-logging-circe
       remove: []
-- name: Label kcl-logging-circe2_12 PRs
-  conditions:
-  - files~=^.sbt/matrix/kcl-logging-circe2_12/
-  actions:
-    label:
-      add:
-      - kcl-logging-circe2_12
-      remove: []
 - name: Label kcl-logging-circe3 PRs
   conditions:
   - files~=^.sbt/matrix/kcl-logging-circe3/
@@ -325,14 +250,6 @@ pull_request_rules:
     label:
       add:
       - kcl-logging-circe3
-      remove: []
-- name: Label kcl2_12 PRs
-  conditions:
-  - files~=^.sbt/matrix/kcl2_12/
-  actions:
-    label:
-      add:
-      - kcl2_12
       remove: []
 - name: Label kcl3 PRs
   conditions:
@@ -358,14 +275,6 @@ pull_request_rules:
       add:
       - kinesis-client-localstack
       remove: []
-- name: Label kinesis-client-localstack2_12 PRs
-  conditions:
-  - files~=^.sbt/matrix/kinesis-client-localstack2_12/
-  actions:
-    label:
-      add:
-      - kinesis-client-localstack2_12
-      remove: []
 - name: Label kinesis-client-localstack3 PRs
   conditions:
   - files~=^.sbt/matrix/kinesis-client-localstack3/
@@ -382,14 +291,6 @@ pull_request_rules:
       add:
       - kinesis-client-logging-circe
       remove: []
-- name: Label kinesis-client-logging-circe2_12 PRs
-  conditions:
-  - files~=^.sbt/matrix/kinesis-client-logging-circe2_12/
-  actions:
-    label:
-      add:
-      - kinesis-client-logging-circe2_12
-      remove: []
 - name: Label kinesis-client-logging-circe3 PRs
   conditions:
   - files~=^.sbt/matrix/kinesis-client-logging-circe3/
@@ -397,14 +298,6 @@ pull_request_rules:
     label:
       add:
       - kinesis-client-logging-circe3
-      remove: []
-- name: Label kinesis-client2_12 PRs
-  conditions:
-  - files~=^.sbt/matrix/kinesis-client2_12/
-  actions:
-    label:
-      add:
-      - kinesis-client2_12
       remove: []
 - name: Label kinesis-client3 PRs
   conditions:
@@ -430,14 +323,6 @@ pull_request_rules:
       add:
       - kpl-ciris
       remove: []
-- name: Label kpl-ciris2_12 PRs
-  conditions:
-  - files~=^.sbt/matrix/kpl-ciris2_12/
-  actions:
-    label:
-      add:
-      - kpl-ciris2_12
-      remove: []
 - name: Label kpl-ciris3 PRs
   conditions:
   - files~=^.sbt/matrix/kpl-ciris3/
@@ -453,14 +338,6 @@ pull_request_rules:
     label:
       add:
       - kpl-localstack
-      remove: []
-- name: Label kpl-localstack2_12 PRs
-  conditions:
-  - files~=^.sbt/matrix/kpl-localstack2_12/
-  actions:
-    label:
-      add:
-      - kpl-localstack2_12
       remove: []
 - name: Label kpl-localstack3 PRs
   conditions:
@@ -478,14 +355,6 @@ pull_request_rules:
       add:
       - kpl-logging-circe
       remove: []
-- name: Label kpl-logging-circe2_12 PRs
-  conditions:
-  - files~=^.sbt/matrix/kpl-logging-circe2_12/
-  actions:
-    label:
-      add:
-      - kpl-logging-circe2_12
-      remove: []
 - name: Label kpl-logging-circe3 PRs
   conditions:
   - files~=^.sbt/matrix/kpl-logging-circe3/
@@ -494,14 +363,6 @@ pull_request_rules:
       add:
       - kpl-logging-circe3
       remove: []
-- name: Label kpl2_12 PRs
-  conditions:
-  - files~=^.sbt/matrix/kpl2_12/
-  actions:
-    label:
-      add:
-      - kpl2_12
-      remove: []
 - name: Label kpl3 PRs
   conditions:
   - files~=^.sbt/matrix/kpl3/
@@ -509,14 +370,6 @@ pull_request_rules:
     label:
       add:
       - kpl3
-      remove: []
-- name: Label root-js-212 PRs
-  conditions:
-  - files~=^root-js-212/
-  actions:
-    label:
-      add:
-      - root-js-212
       remove: []
 - name: Label root-js-213 PRs
   conditions:
@@ -534,14 +387,6 @@ pull_request_rules:
       add:
       - root-js-3
       remove: []
-- name: Label root-jvm-212 PRs
-  conditions:
-  - files~=^root-jvm-212/
-  actions:
-    label:
-      add:
-      - root-jvm-212
-      remove: []
 - name: Label root-jvm-213 PRs
   conditions:
   - files~=^root-jvm-213/
@@ -557,14 +402,6 @@ pull_request_rules:
     label:
       add:
       - root-jvm-3
-      remove: []
-- name: Label root-native-212 PRs
-  conditions:
-  - files~=^root-native-212/
-  actions:
-    label:
-      add:
-      - root-native-212
       remove: []
 - name: Label root-native-213 PRs
   conditions:
@@ -598,14 +435,6 @@ pull_request_rules:
       add:
       - shared-circe
       remove: []
-- name: Label shared-circe2_12 PRs
-  conditions:
-  - files~=^.sbt/matrix/shared-circe2_12/
-  actions:
-    label:
-      add:
-      - shared-circe2_12
-      remove: []
 - name: Label shared-circe3 PRs
   conditions:
   - files~=^.sbt/matrix/shared-circe3/
@@ -621,14 +450,6 @@ pull_request_rules:
     label:
       add:
       - shared-circeJS
-      remove: []
-- name: Label shared-circeJS2_12 PRs
-  conditions:
-  - files~=^.sbt/matrix/shared-circeJS2_12/
-  actions:
-    label:
-      add:
-      - shared-circeJS2_12
       remove: []
 - name: Label shared-circeJS3 PRs
   conditions:
@@ -646,14 +467,6 @@ pull_request_rules:
       add:
       - shared-circeNative
       remove: []
-- name: Label shared-circeNative2_12 PRs
-  conditions:
-  - files~=^.sbt/matrix/shared-circeNative2_12/
-  actions:
-    label:
-      add:
-      - shared-circeNative2_12
-      remove: []
 - name: Label shared-circeNative3 PRs
   conditions:
   - files~=^.sbt/matrix/shared-circeNative3/
@@ -670,14 +483,6 @@ pull_request_rules:
       add:
       - shared-ciris
       remove: []
-- name: Label shared-ciris2_12 PRs
-  conditions:
-  - files~=^.sbt/matrix/shared-ciris2_12/
-  actions:
-    label:
-      add:
-      - shared-ciris2_12
-      remove: []
 - name: Label shared-ciris3 PRs
   conditions:
   - files~=^.sbt/matrix/shared-ciris3/
@@ -693,14 +498,6 @@ pull_request_rules:
     label:
       add:
       - shared-cirisJS
-      remove: []
-- name: Label shared-cirisJS2_12 PRs
-  conditions:
-  - files~=^.sbt/matrix/shared-cirisJS2_12/
-  actions:
-    label:
-      add:
-      - shared-cirisJS2_12
       remove: []
 - name: Label shared-cirisJS3 PRs
   conditions:
@@ -734,14 +531,6 @@ pull_request_rules:
       add:
       - shared-localstack
       remove: []
-- name: Label shared-localstack2_12 PRs
-  conditions:
-  - files~=^.sbt/matrix/shared-localstack2_12/
-  actions:
-    label:
-      add:
-      - shared-localstack2_12
-      remove: []
 - name: Label shared-localstack3 PRs
   conditions:
   - files~=^.sbt/matrix/shared-localstack3/
@@ -757,14 +546,6 @@ pull_request_rules:
     label:
       add:
       - shared-localstackJS
-      remove: []
-- name: Label shared-localstackJS2_12 PRs
-  conditions:
-  - files~=^.sbt/matrix/shared-localstackJS2_12/
-  actions:
-    label:
-      add:
-      - shared-localstackJS2_12
       remove: []
 - name: Label shared-localstackJS3 PRs
   conditions:
@@ -790,14 +571,6 @@ pull_request_rules:
       add:
       - shared-localstackNative3
       remove: []
-- name: Label shared2_12 PRs
-  conditions:
-  - files~=^.sbt/matrix/shared2_12/
-  actions:
-    label:
-      add:
-      - shared2_12
-      remove: []
 - name: Label shared3 PRs
   conditions:
   - files~=^.sbt/matrix/shared3/
@@ -814,14 +587,6 @@ pull_request_rules:
       add:
       - sharedJS
       remove: []
-- name: Label sharedJS2_12 PRs
-  conditions:
-  - files~=^.sbt/matrix/sharedJS2_12/
-  actions:
-    label:
-      add:
-      - sharedJS2_12
-      remove: []
 - name: Label sharedJS3 PRs
   conditions:
   - files~=^.sbt/matrix/sharedJS3/
@@ -837,14 +602,6 @@ pull_request_rules:
     label:
       add:
       - sharedNative
-      remove: []
-- name: Label sharedNative2_12 PRs
-  conditions:
-  - files~=^.sbt/matrix/sharedNative2_12/
-  actions:
-    label:
-      add:
-      - sharedNative2_12
       remove: []
 - name: Label sharedNative3 PRs
   conditions:
@@ -949,14 +706,6 @@ pull_request_rules:
     label:
       add:
       - smithy4s-client-transformers
-      remove: []
-- name: Label smithy4s-client-transformers2_12 PRs
-  conditions:
-  - files~=^.sbt/matrix/smithy4s-client-transformers2_12/
-  actions:
-    label:
-      add:
-      - smithy4s-client-transformers2_12
       remove: []
 - name: Label smithy4s-client3 PRs
   conditions:
