@@ -262,7 +262,7 @@ lazy val `smithy4s-client-transformers` = projectMatrix
     libraryDependencies ++= Seq(
       Smithy.build(smithy4s.codegen.BuildInfo.smithyVersion)
     ),
-    tlJdkRelease := Some(21)
+    tlJdkRelease := Some(11)
   )
   .jvmPlatform(List(Scala213))
 
@@ -308,7 +308,7 @@ lazy val `smithy4s-client` = projectMatrix
       ) / Compile / packageBin).value,
     Compile / smithy4sSmithyLibrary := false,
     scalacOptions -= "-deprecation",
-    tlJdkRelease := Some(21),
+    tlJdkRelease := Some(11),
     removeSmithy4sDependenciesFromManifest
   )
   .jvmPlatform(allScalaVersions)
@@ -320,7 +320,7 @@ lazy val `smithy4s-client-logging-circe` = projectMatrix
   .settings(
     description := "JSON structured logging instances for the Smithy4s Kinesis Client, via Circe",
     libraryDependencies ++= Seq(Http4s.circe.value),
-    tlJdkRelease := Some(21)
+    tlJdkRelease := Some(11)
   )
   .jvmPlatform(allScalaVersions)
   .nativePlatform(Seq(Scala3))
@@ -330,7 +330,7 @@ lazy val `smithy4s-client-logging-circe` = projectMatrix
 lazy val `smithy4s-client-localstack` = projectMatrix
   .settings(
     description := "A test-kit for working with Kinesis and Localstack, via the Smithy4s Client project",
-    tlJdkRelease := Some(21)
+    tlJdkRelease := Some(11)
   )
   .jvmPlatform(allScalaVersions)
   .nativePlatform(Seq(Scala3))
@@ -365,7 +365,7 @@ lazy val integrationTestsJvmSettings: Seq[Setting[_]] = Seq(
     case x => MergeStrategy.defaultMergeStrategy(x)
   },
   assembly / mainClass := Some("kinesis4cats.kcl.http4s.TestKCLService"),
-  tlJdkRelease := Some(21)
+  tlJdkRelease := Some(11)
 )
 
 lazy val feral = projectMatrix

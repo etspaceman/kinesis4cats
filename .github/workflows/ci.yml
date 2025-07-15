@@ -30,7 +30,7 @@ jobs:
       matrix:
         os: [ubuntu-22.04]
         scala: [2.13]
-        java: [temurin@21]
+        java: [temurin@17]
         project: [root-jvm-213, root-jvm-3, root-js-213, root-js-3, root-native-213, root-native-3]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
@@ -43,17 +43,17 @@ jobs:
       - name: Setup sbt
         uses: sbt/setup-sbt@v1
 
-      - name: Setup Java (temurin@21)
-        id: setup-java-temurin-21
-        if: matrix.java == 'temurin@21'
+      - name: Setup Java (temurin@17)
+        id: setup-java-temurin-17
+        if: matrix.java == 'temurin@17'
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 21
+          java-version: 17
           cache: sbt
 
       - name: sbt update
-        if: matrix.java == 'temurin@21' && steps.setup-java-temurin-21.outputs.cache-hit == 'false'
+        if: matrix.java == 'temurin@17' && steps.setup-java-temurin-17.outputs.cache-hit == 'false'
         run: sbt +update
 
       - name: Install brew formulae (ubuntu)
@@ -64,11 +64,11 @@ jobs:
         run: sbt githubWorkflowCheck
 
       - name: Check headers and formatting
-        if: matrix.java == 'temurin@21' && matrix.os == 'ubuntu-22.04'
+        if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-22.04'
         run: sbt 'project ${{ matrix.project }}' headerCheckAll fmtCheck
 
       - name: Docker Compose Up
-        if: matrix.java == 'temurin@21' && matrix.os == 'ubuntu-22.04'
+        if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-22.04'
         env:
           GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         uses: nick-fields/retry@v2
@@ -80,11 +80,11 @@ jobs:
           max_attempts: 3
 
       - name: Link JS
-        if: matrix.java == 'temurin@21' && matrix.os == 'ubuntu-22.04' && startsWith(matrix.project, 'root-js')
+        if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-22.04' && startsWith(matrix.project, 'root-js')
         run: sbt 'project ${{ matrix.project }}' Test/fastLinkJS
 
       - name: Link Native
-        if: matrix.java == 'temurin@21' && matrix.os == 'ubuntu-22.04' && startsWith(matrix.project, 'root-native')
+        if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-22.04' && startsWith(matrix.project, 'root-native')
         env:
           GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         uses: nick-fields/retry@v2
@@ -95,7 +95,7 @@ jobs:
           retry_on: error
 
       - name: Test
-        if: matrix.java == 'temurin@21' && matrix.os == 'ubuntu-22.04'
+        if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-22.04'
         run: sbt 'project ${{ matrix.project }}' test
 
       - name: Print docker logs and container listing
@@ -103,15 +103,15 @@ jobs:
         run: sbt 'project ${{ matrix.project }}' dockerComposePs dockerComposeLogs
 
       - name: Remove docker containers
-        if: matrix.java == 'temurin@21' && matrix.os == 'ubuntu-22.04'
+        if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-22.04'
         run: sbt 'project ${{ matrix.project }}' dockerComposeDown
 
       - name: Check scalafix lints
-        if: matrix.java == 'temurin@21' && matrix.os == 'ubuntu-22.04' && matrix.scala != '3.3.6'
+        if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-22.04' && matrix.scala != '3.3.6'
         run: sbt 'project ${{ matrix.project }}' fixCheck
 
       - name: Generate API documentation
-        if: matrix.java == 'temurin@21' && matrix.os == 'ubuntu-22.04'
+        if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-22.04'
         run: sbt 'project ${{ matrix.project }}' doc
 
       - name: Make target directories
@@ -136,7 +136,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-22.04]
-        java: [temurin@21]
+        java: [temurin@17]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout current branch (full)
@@ -147,17 +147,17 @@ jobs:
       - name: Setup sbt
         uses: sbt/setup-sbt@v1
 
-      - name: Setup Java (temurin@21)
-        id: setup-java-temurin-21
-        if: matrix.java == 'temurin@21'
+      - name: Setup Java (temurin@17)
+        id: setup-java-temurin-17
+        if: matrix.java == 'temurin@17'
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 21
+          java-version: 17
           cache: sbt
 
       - name: sbt update
-        if: matrix.java == 'temurin@21' && steps.setup-java-temurin-21.outputs.cache-hit == 'false'
+        if: matrix.java == 'temurin@17' && steps.setup-java-temurin-17.outputs.cache-hit == 'false'
         run: sbt +update
 
       - name: Download target directories (2.13, root-jvm-213)
@@ -250,7 +250,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-22.04]
-        java: [temurin@21]
+        java: [temurin@17]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout current branch (full)
@@ -261,17 +261,17 @@ jobs:
       - name: Setup sbt
         uses: sbt/setup-sbt@v1
 
-      - name: Setup Java (temurin@21)
-        id: setup-java-temurin-21
-        if: matrix.java == 'temurin@21'
+      - name: Setup Java (temurin@17)
+        id: setup-java-temurin-17
+        if: matrix.java == 'temurin@17'
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 21
+          java-version: 17
           cache: sbt
 
       - name: sbt update
-        if: matrix.java == 'temurin@21' && steps.setup-java-temurin-21.outputs.cache-hit == 'false'
+        if: matrix.java == 'temurin@17' && steps.setup-java-temurin-17.outputs.cache-hit == 'false'
         run: sbt +update
 
       - name: Submit Dependencies
@@ -310,7 +310,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-22.04]
-        java: [temurin@21]
+        java: [temurin@17]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout current branch (full)
@@ -321,17 +321,17 @@ jobs:
       - name: Setup sbt
         uses: sbt/setup-sbt@v1
 
-      - name: Setup Java (temurin@21)
-        id: setup-java-temurin-21
-        if: matrix.java == 'temurin@21'
+      - name: Setup Java (temurin@17)
+        id: setup-java-temurin-17
+        if: matrix.java == 'temurin@17'
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 21
+          java-version: 17
           cache: sbt
 
       - name: sbt update
-        if: matrix.java == 'temurin@21' && steps.setup-java-temurin-21.outputs.cache-hit == 'false'
+        if: matrix.java == 'temurin@17' && steps.setup-java-temurin-17.outputs.cache-hit == 'false'
         run: sbt +update
 
       - name: Generate site
