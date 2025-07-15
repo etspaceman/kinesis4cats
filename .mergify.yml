@@ -19,22 +19,6 @@ pull_request_rules:
   actions:
     merge:
       method: squash
-- name: Label aws-v1-localstack PRs
-  conditions:
-  - files~=^aws-v1-localstack/
-  actions:
-    label:
-      add:
-      - aws-v1-localstack
-      remove: []
-- name: Label aws-v1-localstack3 PRs
-  conditions:
-  - files~=^.sbt/matrix/aws-v1-localstack3/
-  actions:
-    label:
-      add:
-      - aws-v1-localstack3
-      remove: []
 - name: Label aws-v2-localstack PRs
   conditions:
   - files~=^aws-v2-localstack/

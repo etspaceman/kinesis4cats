@@ -16,7 +16,7 @@
 
 package kinesis4cats.models
 
-/** AWS Region enum. Can be used for both the v1 and v2 test kits
+/** AWS Region enum.
   *
   * @param name
   *   Name of region
