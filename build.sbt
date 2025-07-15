@@ -107,18 +107,6 @@ lazy val `aws-v2-localstack` = projectMatrix
   .jvmPlatform(allScalaVersions)
   .dependsOn(`shared-localstack`)
 
-lazy val `aws-v1-localstack` = projectMatrix
-  .settings(
-    description := "A test-kit for working with Kinesis and Localstack, via the V1 AWS SDK",
-    libraryDependencies ++= Seq(
-      Aws.V1.kinesis,
-      Aws.V1.dynamo,
-      Aws.V1.cloudwatch
-    )
-  )
-  .jvmPlatform(allScalaVersions)
-  .dependsOn(`shared-localstack`)
-
 lazy val kcl = projectMatrix
   .settings(
     description := "Cats tooling for the Kinesis Client Library (KCL)",
@@ -473,10 +461,6 @@ lazy val docs = projectMatrix
               "kpl"
             ),
             TextLink.external(
-              "https://docs.aws.amazon.com/sdk-for-java/v1/developer-guide/welcome.html",
-              "aws-java-sdk-v1"
-            ),
-            TextLink.external(
               "https://docs.aws.amazon.com/sdk-for-java/latest/developer-guide/home.html",
               "aws-java-sdk-v2"
             ),
@@ -515,7 +499,6 @@ lazy val docs = projectMatrix
     `shared-circe`,
     `shared-ciris`,
     `shared-localstack`,
-    `aws-v1-localstack`,
     `aws-v2-localstack`,
     kcl,
     `kcl-http4s`,
@@ -547,7 +530,6 @@ lazy val unidocs = projectMatrix
         `shared-circe`,
         `shared-ciris`,
         `shared-localstack`,
-        `aws-v1-localstack`,
         `aws-v2-localstack`,
         kcl,
         `kcl-http4s`,
@@ -575,7 +557,6 @@ lazy val allProjects = Seq(
   `shared-circe`,
   `shared-ciris`,
   `shared-localstack`,
-  `aws-v1-localstack`,
   `aws-v2-localstack`,
   kcl,
   `kcl-http4s`,
