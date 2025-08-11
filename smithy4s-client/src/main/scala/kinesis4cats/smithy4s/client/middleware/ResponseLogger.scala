@@ -59,8 +59,6 @@ object ResponseLogger {
 
     def logResponse(response: Response[F]): Resource[F, Response[F]] =
       Resource.suspend {
-        val ctx = LogContext().addEncoded("response", response)
-
         Ref[F].of(Vector.empty[Chunk[Byte]]).map { vec =>
           val dumpChunksToVec: Pipe[F, Byte, Nothing] =
             _.chunks.flatMap(s => Stream.exec(vec.update(_ :+ s)))
@@ -76,6 +74,9 @@ object ResponseLogger {
             val newResponseBody: Response[F] = response.withBodyStream(newBody)
 
             for {
+              ctx <- LogContext
+                .safe[F]
+                .map(x => x.addEncoded("response", response))
               _ <- logger.debug(ctx.context)("Successfully completed request")
               body <- newResponseBody.as[String]
               _ <- logger

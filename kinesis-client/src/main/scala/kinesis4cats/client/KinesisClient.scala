@@ -87,52 +87,48 @@ class KinesisClient[F[_]] private[kinesis4cats] (
   private def runRequest[A: LogEncoder, B: LogEncoder](
       method: String,
       request: A
-  )(fn: (KinesisAsyncClient, A) => CompletableFuture[B]): F[B] = {
-    val ctx = LogContext()
+  )(fn: (KinesisAsyncClient, A) => CompletableFuture[B]): F[B] =
     for {
+      ctx <- LogContext.safe[F]
       _ <- requestLogs(method, request, ctx)
       response <- F.fromCompletableFuture(
         F.delay(fn(client, request))
       )
       _ <- responseLogs(method, response, ctx)
     } yield response
-  }
 
   private def runRequest[A: LogEncoder](
       method: String
-  )(fn: KinesisAsyncClient => CompletableFuture[A]): F[A] = {
-    val ctx = LogContext()
+  )(fn: KinesisAsyncClient => CompletableFuture[A]): F[A] =
     for {
+      ctx <- LogContext.safe[F]
       _ <- requestLogs(method, "no request", ctx)
       response <- F.fromCompletableFuture(
         F.delay(fn(client))
       )
       _ <- responseLogs(method, response, ctx)
     } yield response
-  }
 
   private def runPaginatedRequest[A: LogEncoder, B](
       method: String,
       request: A
-  )(fn: (KinesisAsyncClient, A) => SdkPublisher[B]): Stream[F, B] = {
-    val ctx = LogContext()
+  )(fn: (KinesisAsyncClient, A) => SdkPublisher[B]): Stream[F, B] =
     for {
+      ctx <- Stream.eval(LogContext.safe[F])
       _ <- Stream.eval(requestLogs(method, request, ctx))
       response <- fn(client, request).toStreamBuffered(1)
       _ <- Stream.eval(responseLogs(method, "paginated response object", ctx))
     } yield response
-  }
 
   private def runPaginatedRequest[A](
       method: String
-  )(fn: KinesisAsyncClient => SdkPublisher[A]): Stream[F, A] = {
-    val ctx = LogContext()
+  )(fn: KinesisAsyncClient => SdkPublisher[A]): Stream[F, A] =
     for {
+      ctx <- Stream.eval(LogContext.safe[F])
       _ <- Stream.eval(requestLogs(method, "no request", ctx))
       response <- fn(client).toStreamBuffered(1)
       _ <- Stream.eval(responseLogs(method, "paginated response object", ctx))
     } yield response
-  }
 
   import encoders._
 
@@ -285,9 +281,9 @@ class KinesisClient[F[_]] private[kinesis4cats] (
 
   def subscribeToShard(
       request: SubscribeToShardRequest
-  ): Stream[F, SubscribeToShardEvent] = {
-    val ctx = LogContext()
+  ): Stream[F, SubscribeToShardEvent] =
     for {
+      ctx <- Stream.eval(LogContext.safe[F])
       _ <- Stream.eval(requestLogs("subscribeToShard", request, ctx))
       handler <- Stream.eval(SubscribeToShardHandler[F](dispatcher))
       _ <- Stream.resource(
@@ -330,7 +326,6 @@ class KinesisClient[F[_]] private[kinesis4cats] (
           } yield ()
         )
     } yield stream
-  }
 
   def updateShardCount(
       request: UpdateShardCountRequest

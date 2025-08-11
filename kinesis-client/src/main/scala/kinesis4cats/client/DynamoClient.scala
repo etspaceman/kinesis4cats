@@ -86,16 +86,15 @@ class DynamoClient[F[_]] private[kinesis4cats] (
   private def runRequest[A: LogEncoder, B: LogEncoder](
       method: String,
       request: A
-  )(fn: (DynamoDbAsyncClient, A) => CompletableFuture[B]): F[B] = {
-    val ctx = LogContext()
+  )(fn: (DynamoDbAsyncClient, A) => CompletableFuture[B]): F[B] =
     for {
+      ctx <- LogContext.safe[F]
       _ <- requestLogs(method, request, ctx)
       response <- F.fromCompletableFuture(
         F.delay(fn(client, request))
       )
       _ <- responseLogs(method, response, ctx)
     } yield response
-  }
 
   import encoders._
 

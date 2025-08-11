@@ -73,9 +73,9 @@ private[kinesis4cats] class ShardMapCache[F[_]] private (
 
   /** Refresh the shard cache by running shardMapF
     */
-  def refresh(): F[Either[ShardMapCache.Error, Unit]] = {
-    val ctx = LogContext()
+  def refresh(): F[Either[ShardMapCache.Error, Unit]] =
     for {
+      ctx <- LogContext.safe[F]
       newMap <- shardMapF
       res <- newMap.bitraverse(
         e =>
@@ -94,7 +94,6 @@ private[kinesis4cats] class ShardMapCache[F[_]] private (
           } yield ()
       )
     } yield res
-  }
 
   /** Start the cache
     */

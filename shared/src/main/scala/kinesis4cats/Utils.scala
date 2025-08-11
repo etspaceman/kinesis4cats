@@ -18,9 +18,11 @@ package kinesis4cats
 
 import java.util.UUID
 
+import cats.effect.Sync
 import cats.effect.SyncIO
 import cats.effect.std.SecureRandom
 import cats.effect.std.UUIDGen
+import cats.syntax.all._
 
 private[kinesis4cats] object Utils {
   private def getUUIDGen: SyncIO[UUIDGen[SyncIO]] = SecureRandom
@@ -29,6 +31,11 @@ private[kinesis4cats] object Utils {
 
   private def randomUUIDSyncIO: SyncIO[UUID] =
     getUUIDGen.flatMap(x => x.randomUUID)
+
+  private[kinesis4cats] def uuidGen[F[_]](implicit F: Sync[F]): F[UUIDGen[F]] =
+    SecureRandom
+      .javaSecuritySecureRandom[F]
+      .map(x => UUIDGen.fromSecureRandom[F](implicitly, x))
 
   def randomUUID =
     randomUUIDSyncIO.unsafeRunSync()

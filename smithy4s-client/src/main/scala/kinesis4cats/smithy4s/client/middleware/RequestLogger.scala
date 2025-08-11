@@ -58,9 +58,11 @@ object RequestLogger {
   ): Client[F] = Client { req =>
     import encoders._
 
-    val ctx = LogContext().addEncoded("request", req)
-
     for {
+      ctx <- LogContext
+        .safe[F]
+        .map(x => x.addEncoded("request", req))
+        .toResource
       _ <- logger.debug(ctx.context)("Received request").toResource
 
       result <- Resource.suspend {
