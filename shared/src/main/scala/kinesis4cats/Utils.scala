@@ -25,12 +25,12 @@ import cats.effect.std.UUIDGen
 import cats.syntax.all._
 
 private[kinesis4cats] object Utils {
-  private def getUUIDGen: SyncIO[UUIDGen[SyncIO]] = SecureRandom
+  private def getUUIDGenSync: SyncIO[UUIDGen[SyncIO]] = SecureRandom
     .javaSecuritySecureRandom[SyncIO]
     .map(x => UUIDGen.fromSecureRandom[SyncIO](implicitly, x))
 
   private def randomUUIDSyncIO: SyncIO[UUID] =
-    getUUIDGen.flatMap(x => x.randomUUID)
+    getUUIDGenSync.flatMap(x => x.randomUUID)
 
   private[kinesis4cats] def uuidGen[F[_]](implicit F: Sync[F]): F[UUIDGen[F]] =
     SecureRandom
@@ -41,6 +41,9 @@ private[kinesis4cats] object Utils {
     randomUUIDSyncIO.unsafeRunSync()
 
   def randomUUIDString = randomUUIDSyncIO.map(_.toString).unsafeRunSync()
+
+  def randomUUIDStringSafe[F[_]](implicit F: Sync[F]): F[String] =
+    uuidGen.flatMap(gen => gen.randomUUID).map(_.toString())
 
   def md5(bytes: Array[Byte]): Array[Byte] = MD5.compute(bytes)
 }
