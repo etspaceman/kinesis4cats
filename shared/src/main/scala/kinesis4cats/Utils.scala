@@ -32,7 +32,7 @@ private[kinesis4cats] object Utils {
   private def randomUUIDSyncIO: SyncIO[UUID] =
     getUUIDGenSync.flatMap(x => x.randomUUID)
 
-  private[kinesis4cats] def uuidGen[F[_]](implicit F: Sync[F]): F[UUIDGen[F]] =
+  private def uuidGen[F[_]](implicit F: Sync[F]): F[UUIDGen[F]] =
     SecureRandom
       .javaSecuritySecureRandom[F]
       .map(x => UUIDGen.fromSecureRandom[F](implicitly, x))
@@ -42,7 +42,9 @@ private[kinesis4cats] object Utils {
 
   def randomUUIDString = randomUUIDSyncIO.map(_.toString).unsafeRunSync()
 
-  def randomUUIDStringSafe[F[_]](implicit F: Sync[F]): F[String] =
+  private[kinesis4cats] def randomUUIDStringSafe[F[_]](implicit
+      F: Sync[F]
+  ): F[String] =
     uuidGen.flatMap(gen => gen.randomUUID).map(_.toString())
 
   def md5(bytes: Array[Byte]): Array[Byte] = MD5.compute(bytes)

@@ -69,10 +69,13 @@ object LogContext {
     Map("contextId" -> Utils.randomUUIDString)
   )
 
-  def safe[F[_]](implicit F: Sync[F]): F[LogContext] = for {
-    uuidGen <- Utils.uuidGen
-    uuid <- uuidGen.randomUUID
-  } yield new LogContext(
-    Map("contextId" -> uuid.toString())
-  )
+  /** Constructor for [[kinesis4cats.logging.LogContext LogContext]]. Constructs
+    * within an effect for the UUID generation
+    * @return
+    *   [[kinesis4cats.logging.LogContext LogContext]]
+    */
+  def safe[F[_]](implicit F: Sync[F]): F[LogContext] =
+    Utils
+      .randomUUIDStringSafe[F]
+      .map(ctxId => new LogContext(Map("contextId" -> ctxId)))
 }
