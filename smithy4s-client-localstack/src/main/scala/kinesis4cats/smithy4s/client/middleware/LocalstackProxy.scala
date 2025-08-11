@@ -80,12 +80,15 @@ object LocalstackProxy {
         )
       )
       .putHeaders(Header.Raw(ci"host", config.kinesisHost))
-    val ctx = LogContext()
-      .addEncoded("localstackConfig", config)
-      .addEncoded("originalRequest", req)
-      .addEncoded("newRequest", newReq)
-
-    logger.debug(ctx.context)("Proxying request").as(newReq)
+    LogContext
+      .safe[F]
+      .map(x =>
+        x
+          .addEncoded("localstackConfig", config)
+          .addEncoded("originalRequest", req)
+          .addEncoded("newRequest", newReq)
+      )
+      .flatMap(ctx => logger.debug(ctx.context)("Proxying request").as(newReq))
   }
 
   /** Applies middleware to a

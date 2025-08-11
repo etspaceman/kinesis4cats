@@ -64,9 +64,9 @@ class KPLProducer[F[_]] private (
     *   F of
     *   [[https://github.com/awslabs/amazon-kinesis-producer/blob/master/java/amazon-kinesis-producer/src/main/java/software/amazon/kinesis/producer/UserRecordResult.java UserRecordResult]]
     */
-  def put(userRecord: UserRecord): F[UserRecordResult] = {
-    val ctx = LogContext()
+  def put(userRecord: UserRecord): F[UserRecordResult] =
     for {
+      ctx <- LogContext.safe[F]
       s <- state.get
       _ <-
         if (s === KPLProducer.State.ShuttingDown)
@@ -84,7 +84,6 @@ class KPLProducer[F[_]] private (
         "Logging put result"
       )
     } yield result
-  }
 
   /** Put data onto a Kinesis stream
     *
@@ -108,9 +107,9 @@ class KPLProducer[F[_]] private (
       partitionKey: String,
       explicitHashKey: Option[String],
       data: ByteBuffer
-  ): F[UserRecordResult] = {
-    val ctx = LogContext()
+  ): F[UserRecordResult] =
     for {
+      ctx <- LogContext.safe[F]
       s <- state.get
       _ <-
         if (s === KPLProducer.State.ShuttingDown)
@@ -142,7 +141,6 @@ class KPLProducer[F[_]] private (
         "Logging put result"
       )
     } yield result
-  }
 
   /** Put data onto a Kinesis stream
     *
@@ -170,9 +168,9 @@ class KPLProducer[F[_]] private (
       explicitHashKey: Option[String],
       data: ByteBuffer,
       schema: Schema
-  ): F[UserRecordResult] = {
-    val ctx = LogContext()
+  ): F[UserRecordResult] =
     for {
+      ctx <- LogContext.safe[F]
       s <- state.get
       _ <-
         if (s === KPLProducer.State.ShuttingDown)
@@ -206,16 +204,15 @@ class KPLProducer[F[_]] private (
         "Logging put result"
       )
     } yield result
-  }
 
   /** Get the number or records pending production.
     *
     * @return
     *   F of pending record count
     */
-  def getOutstandingRecordsCount(): F[Int] = {
-    val ctx = LogContext()
+  def getOutstandingRecordsCount(): F[Int] =
     for {
+      ctx <- LogContext.safe[F]
       _ <- logger.debug(ctx.context)(
         "Received getOutstandingRecordsCount request"
       )
@@ -224,16 +221,15 @@ class KPLProducer[F[_]] private (
         "Successfully processed getOutstandingRecordsCount request"
       )
     } yield result
-  }
 
   /** Get the time in millis for the oldest record currently pending production.
     *
     * @return
     *   F of millis
     */
-  def getOldestRecordTimeInMillis(): F[Long] = {
-    val ctx = LogContext()
+  def getOldestRecordTimeInMillis(): F[Long] =
     for {
+      ctx <- LogContext.safe[F]
       _ <- logger.debug(ctx.context)(
         "Received getOldestRecordTimeInMillis request"
       )
@@ -242,7 +238,6 @@ class KPLProducer[F[_]] private (
         "Successfully processed getOldestRecordTimeInMillis request"
       )
     } yield result
-  }
 
   /** Get the time in millis for the oldest record currently pending production.
     * This is a blocking operation.
@@ -255,12 +250,14 @@ class KPLProducer[F[_]] private (
     *   F of
     *   [[https://github.com/awslabs/amazon-kinesis-producer/blob/master/java/amazon-kinesis-producer/src/main/java/software/amazon/kinesis/producer/Metric.java Metric]]
     */
-  def getMetrics(metricName: String, windowSeconds: Int): F[List[Metric]] = {
-    val ctx = LogContext()
-      .addEncoded("metricName", metricName)
-      .addEncoded("windowSeconds", windowSeconds)
-
+  def getMetrics(metricName: String, windowSeconds: Int): F[List[Metric]] =
     for {
+      ctx <- LogContext
+        .safe[F]
+        .map(x =>
+          x.addEncoded("metricName", metricName)
+            .addEncoded("windowSeconds", windowSeconds)
+        )
       _ <- logger.debug(ctx.context)(
         "Received getMetrics request"
       )
@@ -271,7 +268,6 @@ class KPLProducer[F[_]] private (
         "Successfully processed getMetrics request"
       )
     } yield result
-  }
 
   /** Get the time in millis for the oldest record currently pending production.
     * This is a blocking operation.
@@ -282,11 +278,11 @@ class KPLProducer[F[_]] private (
     *   F of a List of
     *   [[https://github.com/awslabs/amazon-kinesis-producer/blob/master/java/amazon-kinesis-producer/src/main/java/software/amazon/kinesis/producer/Metric.java Metric]]
     */
-  def getMetrics(metricName: String): F[List[Metric]] = {
-    val ctx = LogContext()
-      .addEncoded("metricName", metricName)
-
+  def getMetrics(metricName: String): F[List[Metric]] =
     for {
+      ctx <- LogContext
+        .safe[F]
+        .map(x => x.addEncoded("metricName", metricName))
       _ <- logger.debug(ctx.context)(
         "Received getMetrics request"
       )
@@ -297,7 +293,6 @@ class KPLProducer[F[_]] private (
         "Successfully processed getMetrics request"
       )
     } yield result
-  }
 
   /** Get the time in millis for the oldest record currently pending production.
     * This is a blocking operation.
@@ -308,11 +303,11 @@ class KPLProducer[F[_]] private (
     *   F of a List of
     *   [[https://github.com/awslabs/amazon-kinesis-producer/blob/master/java/amazon-kinesis-producer/src/main/java/software/amazon/kinesis/producer/Metric.java Metric]]
     */
-  def getMetrics(windowSeconds: Int): F[List[Metric]] = {
-    val ctx = LogContext()
-      .addEncoded("windowSeconds", windowSeconds)
-
+  def getMetrics(windowSeconds: Int): F[List[Metric]] =
     for {
+      ctx <- LogContext
+        .safe[F]
+        .map(x => x.addEncoded("windowSeconds", windowSeconds))
       _ <- logger.debug(ctx.context)(
         "Received getMetrics request"
       )
@@ -323,7 +318,6 @@ class KPLProducer[F[_]] private (
         "Successfully processed getMetrics request"
       )
     } yield result
-  }
 
   /** Get the time in millis for the oldest record currently pending production.
     * This is a blocking operation.
@@ -332,10 +326,9 @@ class KPLProducer[F[_]] private (
     *   F of a List of
     *   [[https://github.com/awslabs/amazon-kinesis-producer/blob/master/java/amazon-kinesis-producer/src/main/java/software/amazon/kinesis/producer/Metric.java Metric]]
     */
-  def getMetrics(): F[List[Metric]] = {
-    val ctx = LogContext()
-
+  def getMetrics(): F[List[Metric]] =
     for {
+      ctx <- LogContext.safe[F]
       _ <- logger.debug(ctx.context)(
         "Received getMetrics request"
       )
@@ -346,7 +339,6 @@ class KPLProducer[F[_]] private (
         "Successfully processed getMetrics request"
       )
     } yield result
-  }
 
   /** Instruct the producer to send pending records. Returns immediately without
     * blocking.
@@ -356,10 +348,9 @@ class KPLProducer[F[_]] private (
     * @return
     *   Unit
     */
-  def flush(stream: String): F[Unit] = {
-    val ctx = LogContext().addEncoded("stream", stream)
-
+  def flush(stream: String): F[Unit] =
     for {
+      ctx <- LogContext.safe[F].map(x => x.addEncoded("stream", stream))
       _ <- logger.debug(ctx.context)(
         "Received flush request"
       )
@@ -368,7 +359,6 @@ class KPLProducer[F[_]] private (
         "Successfully processed flush request"
       )
     } yield result
-  }
 
   /** Instruct the producer to send pending records. Returns immediately without
     * blocking.
@@ -376,10 +366,9 @@ class KPLProducer[F[_]] private (
     * @return
     *   Unit
     */
-  def flush(): F[Unit] = {
-    val ctx = LogContext()
-
+  def flush(): F[Unit] =
     for {
+      ctx <- LogContext.safe[F]
       _ <- logger.debug(ctx.context)(
         "Received flush request"
       )
@@ -388,7 +377,6 @@ class KPLProducer[F[_]] private (
         "Successfully processed flush request"
       )
     } yield result
-  }
 
   /** Instruct the producer to send pending records. Blocks until all pending
     * data is flushed. Interruptible.
@@ -396,10 +384,9 @@ class KPLProducer[F[_]] private (
     * @return
     *   Unit
     */
-  def flushSync(): F[Unit] = {
-    val ctx = LogContext()
-
+  def flushSync(): F[Unit] =
     for {
+      ctx <- LogContext.safe[F]
       _ <- logger.debug(ctx.context)(
         "Received flushSync request"
       )
@@ -408,17 +395,15 @@ class KPLProducer[F[_]] private (
         "Successfully processed flushSync request"
       )
     } yield result
-  }
 
   /** Destroys the producer. Blocking and uncancellable.
     *
     * @return
     *   Unit
     */
-  private[kinesis4cats] def destroy(): F[Unit] = {
-    val ctx = LogContext()
-
+  private[kinesis4cats] def destroy(): F[Unit] =
     for {
+      ctx <- LogContext.safe[F]
       _ <- logger.debug(ctx.context)(
         "Received destroy request"
       )
@@ -427,15 +412,14 @@ class KPLProducer[F[_]] private (
         "Successfully processed destroy request"
       )
     } yield result
-  }
 
   private[kinesis4cats] def gracefulShutdown(
       flushAttempts: Int,
       flushInterval: FiniteDuration
   ): F[Unit] = {
     val policy = constantDelay(flushInterval).join(limitRetries(flushAttempts))
-    val ctx = LogContext()
     for {
+      ctx <- LogContext.safe[F]
       _ <- logger.info(ctx.context)("Starting graceful KPL shutdown")
       _ <- retryingOnFailures(
         policy,

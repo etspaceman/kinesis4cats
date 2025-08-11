@@ -44,44 +44,60 @@ private[kinesis4cats] class SubscribeToShardHandler[F[_]](
 
   override def responseReceived(response: SubscribeToShardResponse): Unit =
     dispatcher.unsafeRunSync(
-      logger.debug(LogContext().context)(s"Received response") >>
-        deferredResponse.complete(response).void
+      LogContext
+        .safe[F]
+        .flatMap(ctx =>
+          logger.debug(ctx.context)(s"Received response") >>
+            deferredResponse.complete(response).void
+        )
     )
 
   override def onEventStream(
       publisher: SdkPublisher[SubscribeToShardEventStream]
   ): Unit =
     dispatcher.unsafeRunSync(
-      logger.debug(LogContext().context)(s"Received event stream") >>
-        deferredPublisher.complete(publisher).void
+      LogContext
+        .safe[F]
+        .flatMap(ctx =>
+          logger.debug(ctx.context)(s"Received event stream") >>
+            deferredPublisher.complete(publisher).void
+        )
     )
 
   override def exceptionOccurred(throwable: Throwable): Unit =
     dispatcher.unsafeRunSync(
-      (Option(throwable.getCause()) match {
-        // These are safe to simply debug, they will be raised if needed in the client
-        case Some(x: SdkCancellationException) =>
-          logger.debug(LogContext().context)(x.getMessage())
-        // Non-deterministically this can get a 2nd exception with a nested cancellation exception
-        case Some(x: SdkClientException) =>
-          Option(x.getCause()) match {
+      LogContext
+        .safe[F]
+        .flatMap(ctx =>
+          (Option(throwable.getCause()) match {
+            // These are safe to simply debug, they will be raised if needed in the client
             case Some(x: SdkCancellationException) =>
-              logger.debug(LogContext().context)(x.getMessage())
+              logger.debug(ctx.context)(x.getMessage())
+            // Non-deterministically this can get a 2nd exception with a nested cancellation exception
+            case Some(x: SdkClientException) =>
+              Option(x.getCause()) match {
+                case Some(x: SdkCancellationException) =>
+                  logger.debug(ctx.context)(x.getMessage())
+                case _ =>
+                  logger.debug(ctx.context, throwable)(
+                    s"Exception occurred"
+                  )
+              }
             case _ =>
-              logger.debug(LogContext().context, throwable)(
-                s"Exception occurred"
-              )
-          }
-        case _ =>
-          logger.debug(LogContext().context, throwable)(s"Exception occurred")
-      }) >>
-        deferredComplete.complete(Left(throwable)).void
+              logger.debug(ctx.context, throwable)(s"Exception occurred")
+          }) >>
+            deferredComplete.complete(Left(throwable)).void
+        )
     )
 
   override def complete(): Unit =
     dispatcher.unsafeRunSync(
-      logger.debug(LogContext().context)(s"Complete received") >>
-        deferredComplete.complete(Right(())).void
+      LogContext
+        .safe[F]
+        .flatMap(ctx =>
+          logger.debug(ctx.context)(s"Complete received") >>
+            deferredComplete.complete(Right(())).void
+        )
     )
 }
 

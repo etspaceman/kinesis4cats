@@ -111,10 +111,9 @@ abstract class Producer[F[_], PutReq, PutRes] private[kinesis4cats] (
   private def _put(
       records: NonEmptyList[Record],
       retrying: Boolean
-  ): F[Producer.Result[PutRes]] = {
-    val ctx = LogContext()
-
+  ): F[Producer.Result[PutRes]] =
     for {
+      ctx <- LogContext.safe[F]
       withShards <- records.traverse(rec =>
         for {
           shardRes <- shardMapCache
@@ -159,7 +158,6 @@ abstract class Producer[F[_], PutReq, PutRes] private[kinesis4cats] (
             ) { case (x, y) => x |+| y }
           )
     } yield res
-  }
 
   /** This function is responsible for:
     *   - Predicting the shard that a record will land on
@@ -173,10 +171,9 @@ abstract class Producer[F[_], PutReq, PutRes] private[kinesis4cats] (
     * @return
     *   Producer.Result
     */
-  def put(records: NonEmptyList[Record]): F[Producer.Result[PutRes]] = {
-    val ctx = LogContext()
-
+  def put(records: NonEmptyList[Record]): F[Producer.Result[PutRes]] =
     for {
+      ctx <- LogContext.safe[F]
       ref <- Ref.of(
         Producer.RetryState[PutRes](records, None, retrying = false)
       )
@@ -246,7 +243,6 @@ abstract class Producer[F[_], PutReq, PutRes] private[kinesis4cats] (
         )
       }
     } yield res
-  }
 }
 
 object Producer {

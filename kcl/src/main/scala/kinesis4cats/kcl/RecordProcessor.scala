@@ -94,13 +94,17 @@ class RecordProcessor[F[_]] private[kinesis4cats] (
   def getShardId: String = shardId
   def getExtendedSequenceNumber: ExtendedSequenceNumber = extendedSequenceNumber
 
-  override def initialize(initializationInput: InitializationInput): Unit = {
-    val ctx = LogContext().addEncoded(
-      "initializationInput",
-      initializationInput
-    )
+  override def initialize(initializationInput: InitializationInput): Unit =
     dispatcher.unsafeRunSync(
       for {
+        ctx <- LogContext
+          .safe[F]
+          .map(x =>
+            x.addEncoded(
+              "initializationInput",
+              initializationInput
+            )
+          )
         _ <- logger.info(ctx.context)("Initializing RecordProcessor")
         _ <- F.delay(this.shardId = initializationInput.shardId())
         _ <- F.delay(this.extendedSequenceNumber =
@@ -110,11 +114,19 @@ class RecordProcessor[F[_]] private[kinesis4cats] (
         _ <- logger.info(ctx.context)("Initialization complete")
       } yield ()
     )
-  }
 
   override def processRecords(
       processRecordsInput: ProcessRecordsInput
   ): Unit = {
+
+    def logContext = LogContext
+      .safe[F]
+      .map(x =>
+        x.addEncoded(
+          "processRecordsInput",
+          processRecordsInput
+        ).addEncoded("shardId", shardId)
+      )
 
     def logCommitError(
         error: Throwable,
@@ -124,15 +136,10 @@ class RecordProcessor[F[_]] private[kinesis4cats] (
       logger.error(ctx.addEncoded("retryDetails", details).context, error)(
         "Error checkpointing, retrying."
       )
-
-    val ctx = LogContext().addEncoded(
-      "processRecordsInput",
-      processRecordsInput
-    ) + ("shardId" -> shardId)
-
     dispatcher.unsafeRunSync(
       F.attempt(
         for {
+          ctx <- logContext
           _ <- logger.debug(ctx.context)("Received records to process")
           _ <- logger.trace(
             ctx
@@ -176,37 +183,42 @@ class RecordProcessor[F[_]] private[kinesis4cats] (
                 (err, details) => logCommitError(err, details, ctx)
               )(records.max.checkpoint)
             else F.unit
-        } yield ()
+        } yield ctx
       ).flatMap {
         case Left(error) if raiseOnError =>
-          logger.error(ctx.context, error)(
-            "Exception raised in processRecords. Error will be raised and the consumer will be shutdown."
+          logContext.flatMap(ctx =>
+            logger.error(ctx.context, error)(
+              "Exception raised in processRecords. Error will be raised and the consumer will be shutdown."
+            )
           ) >>
             deferredException.complete(error).void
         case Left(error) =>
-          logger.error(ctx.context, error)(
-            "Exception raised in processRecords and raiseOnError is set to false. " +
-              "The behavior of the KCL in these instances is to continue processing records. This may result in data loss. If this " +
-              "is not desired, set raiseOnError to true"
+          logContext.flatMap(ctx =>
+            logger.error(ctx.context, error)(
+              "Exception raised in processRecords and raiseOnError is set to false. " +
+                "The behavior of the KCL in these instances is to continue processing records. This may result in data loss. If this " +
+                "is not desired, set raiseOnError to true"
+            )
           )
-        case Right(_) =>
+        case Right(ctx) =>
           logger.debug(ctx.context)("Records were successfully processed")
       }
     )
   }
 
-  override def leaseLost(leaseLostInput: LeaseLostInput): Unit = {
-    val ctx = LogContext() + ("shardId" -> shardId)
+  override def leaseLost(leaseLostInput: LeaseLostInput): Unit =
     dispatcher.unsafeRunSync(
       for {
+        ctx <- LogContext
+          .safe[F]
+          .map(x => x.addEncoded("shardId", shardId))
         _ <- logger.warn(ctx.context)("Received lease-lost event")
         _ <- state.set(RecordProcessor.State.LeaseLost)
       } yield ()
     )
-  }
 
   override def shardEnded(shardEndedInput: ShardEndedInput): Unit = {
-    val ctx = LogContext() + ("shardId" -> shardId)
+
     def logCommitError(
         error: Throwable,
         details: RetryDetails,
@@ -218,6 +230,9 @@ class RecordProcessor[F[_]] private[kinesis4cats] (
 
     dispatcher.unsafeRunSync(
       for {
+        ctx <- LogContext
+          .safe[F]
+          .map(x => x.addEncoded("shardId", shardId))
         _ <- logger.info(ctx.context)(
           "Received shard-ended event. Waiting for all data in the shard to be processed and committed."
         )
@@ -250,15 +265,16 @@ class RecordProcessor[F[_]] private[kinesis4cats] (
 
   override def shutdownRequested(
       shutdownRequestedInput: ShutdownRequestedInput
-  ): Unit = {
-    val ctx = LogContext() + ("shardId" -> shardId)
+  ): Unit =
     dispatcher.unsafeRunSync(
       for {
+        ctx <- LogContext
+          .safe[F]
+          .map(x => x.addEncoded("shardId", shardId))
         _ <- logger.warn(ctx.context)("Received shutdown request")
         _ <- state.set(RecordProcessor.State.Shutdown)
       } yield ()
     )
-  }
 }
 
 object RecordProcessor {

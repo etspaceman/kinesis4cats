@@ -66,10 +66,9 @@ abstract class FS2Producer[F[_], PutReq, PutRes](implicit
     *   F of F of Producer.Result. Inner F represents a `deferred.get` call,
     *   which will complete when the record has been published.
     */
-  def put(record: Record): F[F[Producer.Result[PutRes]]] = {
-    val ctx = LogContext()
-
+  def put(record: Record): F[F[Producer.Result[PutRes]]] =
     for {
+      ctx <- LogContext.safe[F]
       _ <- logger.debug(ctx.context)("Received record to put")
       deferred <- Deferred[F, F[Producer.Result[PutRes]]]
       res <- channel.send(record -> deferred).race(channel.closed)
@@ -86,7 +85,6 @@ abstract class FS2Producer[F[_], PutReq, PutRes](implicit
             )
         )
     } yield deferred.get.flatten
-  }
 
   /** Attempts to put a record into the producer's buffer, to be batched and
     * produced at a defined interval.
@@ -98,10 +96,9 @@ abstract class FS2Producer[F[_], PutReq, PutRes](implicit
     *   call, which will complete when the record has been published. F[None]
     *   means the producer queue is full or has been shut down.
     */
-  def tryPut(record: Record): F[Option[F[Producer.Result[PutRes]]]] = {
-    val ctx = LogContext()
-
+  def tryPut(record: Record): F[Option[F[Producer.Result[PutRes]]]] =
     for {
+      ctx <- LogContext.safe[F]
       _ <- logger.debug(ctx.context)("Received record to put")
       deferred <- Deferred[F, F[Producer.Result[PutRes]]]
       sendRes <- channel.trySend(record -> deferred)
@@ -127,25 +124,22 @@ abstract class FS2Producer[F[_], PutReq, PutRes](implicit
               .as(none[F[Producer.Result[PutRes]]])
       )
     } yield res
-  }
 
   /** Stop the processing of records
     */
-  private[kinesis4cats] def stop(f: Fiber[F, Throwable, Unit]): F[Unit] = {
-    val ctx = LogContext()
+  private[kinesis4cats] def stop(f: Fiber[F, Throwable, Unit]): F[Unit] =
     for {
+      ctx <- LogContext.safe[F]
       _ <- logger.debug(ctx.context)("Stopping the FS2KinesisProducer")
       _ <- channel.close
       _ <- f.join.void.timeoutTo(config.gracefulShutdownWait, f.cancel)
     } yield ()
-  }
 
   /** Start the processing of records
     */
-  private[kinesis4cats] def start(): F[Unit] = {
-    val ctx = LogContext()
-
+  private[kinesis4cats] def start(): F[Unit] =
     for {
+      ctx <- LogContext.safe[F]
       _ <- logger
         .debug(ctx.context)("Starting the FS2KinesisProducer")
       _ <- channel.stream
@@ -185,7 +179,6 @@ abstract class FS2Producer[F[_], PutReq, PutRes](implicit
           logger.error(ctx.context, e)("FS2Producer loop failed")
         }
     } yield ()
-  }
 
   private[kinesis4cats] def resource: Resource[F, Unit] =
     Resource.make(start().start)(stop).void

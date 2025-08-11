@@ -17,6 +17,9 @@
 package kinesis4cats
 package logging
 
+import cats.effect.Sync
+import cats.syntax.all._
+
 /** Class that represents a structured logging context.
   *
   * @param context
@@ -54,12 +57,25 @@ final class LogContext private (val context: Map[String, String]) {
 
 object LogContext {
 
-  /** Constructor for [[kinesis4cats.logging.LogContext LogContext]].
-    *
+  /** Constructor for [[kinesis4cats.logging.LogContext LogContext]].  
     * @return
     *   [[kinesis4cats.logging.LogContext LogContext]]
     */
+  @deprecated(
+    "LogContext.apply uses unsafeRunSync and is deprecated. Use LogContext.safe instead",
+    "0.2.1"
+  )
   def apply(): LogContext = new LogContext(
     Map("contextId" -> Utils.randomUUIDString)
   )
+
+  /** Constructor for [[kinesis4cats.logging.LogContext LogContext]]. Constructs
+    * within an effect for the UUID generation
+    * @return
+    *   [[kinesis4cats.logging.LogContext LogContext]]
+    */
+  def safe[F[_]](implicit F: Sync[F]): F[LogContext] =
+    Utils
+      .randomUUIDStringSafe[F]
+      .map(ctxId => new LogContext(Map("contextId" -> ctxId)))
 }

@@ -311,7 +311,7 @@ object KCLConsumer {
         mkCloudWatchClient = Resource.fromAutoCloseable(
           Sync[F].delay(CloudWatchAsyncClient.create())
         ),
-        mkWorkerId = F.delay(Utils.randomUUIDString)
+        mkWorkerId = Utils.randomUUIDStringSafe[F]
       )
 
     @annotation.unused

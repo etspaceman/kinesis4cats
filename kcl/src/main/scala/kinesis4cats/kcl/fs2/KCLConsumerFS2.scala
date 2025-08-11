@@ -266,7 +266,7 @@ object KCLConsumerFS2 {
       mkCloudWatchClient = Resource.fromAutoCloseable(
         Sync[F].delay(CloudWatchAsyncClient.create())
       ),
-      mkWorkerId = Sync[F].delay(Utils.randomUUIDString),
+      mkWorkerId = Utils.randomUUIDStringSafe[F],
       FS2Config.default
     )
 
