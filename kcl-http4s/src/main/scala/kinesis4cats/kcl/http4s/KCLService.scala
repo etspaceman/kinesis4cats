@@ -55,7 +55,7 @@ class KCLService[F[_]] private[kinesis4cats] (state: Ref[F, WorkerState])(
 ) extends generated.KCLService[F] {
   override def initialized(): F[Response] = state.get.flatMap {
     case WorkerState.STARTED => F.pure(Response("Ok"))
-    case _ =>
+    case _                   =>
       F.raiseError(
         ServiceNotReadyError(
           Some("The kinesis consumer is not yet initialized")

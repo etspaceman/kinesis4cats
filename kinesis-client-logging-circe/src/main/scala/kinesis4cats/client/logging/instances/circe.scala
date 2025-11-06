@@ -1249,7 +1249,7 @@ object circe {
         x: List[(String, ddb.AttributeValue)],
         res: Json = Json.obj()
     ): Eval[Json] = Eval.defer(x match {
-      case Nil => Eval.now(res.asJson)
+      case Nil         => Eval.now(res.asJson)
       case (k, v) :: t =>
         attributeValueJsonImpl(v).flatMap(x =>
           attributeValueMapJsonImpl(t, res.withObject(_.add(k, x).asJson))
@@ -1260,7 +1260,7 @@ object circe {
         x: List[ddb.AttributeValue],
         res: List[Json] = Nil
     ): Eval[Json] = Eval.defer(x match {
-      case Nil => Eval.now(x.reverse.asJson)
+      case Nil    => Eval.now(x.reverse.asJson)
       case v :: t =>
         attributeValueJsonImpl(v).flatMap(x =>
           attributeValueListJsonImpl(t, res :+ x)
