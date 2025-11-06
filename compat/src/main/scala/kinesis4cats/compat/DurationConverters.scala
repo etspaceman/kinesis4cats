@@ -76,7 +76,7 @@ private[kinesis4cats] object DurationConverters {
     if (duration.length == 0) JavaDuration.ZERO
     else
       duration.unit match {
-        case TimeUnit.NANOSECONDS => JavaDuration.ofNanos(duration.length)
+        case TimeUnit.NANOSECONDS  => JavaDuration.ofNanos(duration.length)
         case TimeUnit.MICROSECONDS =>
           JavaDuration.of(duration.length, ChronoUnit.MICROS)
         case TimeUnit.MILLISECONDS => JavaDuration.ofMillis(duration.length)

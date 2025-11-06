@@ -57,7 +57,7 @@ object Record {
   def deaggregate(records: List[Record]): Try[List[Record]] =
     records.flatTraverse {
       case record if !record.isAggregated => Success(List(record))
-      case record =>
+      case record                         =>
         Try(
           kinesisMessages.AggregatedRecord.parseFrom(record.aggregatedDataArray)
         )
