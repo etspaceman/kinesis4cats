@@ -37,6 +37,7 @@ import software.amazon.kinesis.leases.dynamodb.TableCreatorCallback
 import software.amazon.kinesis.lifecycle._
 import software.amazon.kinesis.metrics._
 import software.amazon.kinesis.retrieval.AggregatorUtil
+import software.amazon.kinesis.retrieval.polling.SleepTimeController
 import software.amazon.kinesis.worker.metric.WorkerMetric
 
 import kinesis4cats.ciris.CirisReader
@@ -105,6 +106,9 @@ object KCLCirisFS2 {
     *   List of
     *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/worker/metric/WorkerMetric.java WorkerMetrics]]
     *   for the application
+    * @param sleepTimeController
+    *   Optional
+    *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/retrieval/polling/SleepTimeController.java SleepTimeController]]
     * @return
     *   [[cats.effect.Resource Resource]] containing the
     *   [[kinesis4cats.kcl.fs2.KCLConsumerFS2 KCLConsumerFS2]]
@@ -130,7 +134,8 @@ object KCLCirisFS2 {
         None,
       encoders: RecordProcessor.LogEncoders = RecordProcessor.LogEncoders.show,
       managedClients: Boolean = true,
-      workerMetrics: Option[List[WorkerMetric]] = None
+      workerMetrics: Option[List[WorkerMetric]] = None,
+      sleepTimeController: Option[SleepTimeController] = None
   )(implicit
       F: Async[F],
       P: Parallel[F]
@@ -165,6 +170,7 @@ object KCLCirisFS2 {
       taskExecutionListener,
       metricsFactory,
       glueSchemaRegistryDeserializer,
+      sleepTimeController,
       encoders
     )
   } yield new KCLConsumerFS2[F](config)
@@ -215,6 +221,9 @@ object KCLCirisFS2 {
     *   Function to process
     *   [[kinesis4cats.kcl.CommittableRecord CommittableRecords]] received from
     *   Kinesis
+    * @param sleepTimeController
+    *   Optional
+    *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/retrieval/polling/SleepTimeController.java SleepTimeController]]
     * @param F
     *   [[cats.effect.Async Async]] instance
     * @param encoders
@@ -241,6 +250,7 @@ object KCLCirisFS2 {
       taskExecutionListener: Option[TaskExecutionListener],
       metricsFactory: Option[MetricsFactory],
       glueSchemaRegistryDeserializer: Option[GlueSchemaRegistryDeserializer],
+      sleepTimeController: Option[SleepTimeController],
       encoders: RecordProcessor.LogEncoders
   )(implicit
       F: Async[F]
@@ -275,7 +285,12 @@ object KCLCirisFS2 {
     metricsConfig <- KCLCiris.Metrics
       .resource[F](cloudwatchClient, prefix, metricsFactory)
     retrievalConfig <- KCLCiris.Retrieval
-      .resource[F](kinesisClient, prefix, glueSchemaRegistryDeserializer)
+      .resource[F](
+        kinesisClient,
+        prefix,
+        glueSchemaRegistryDeserializer,
+        sleepTimeController
+      )
     processConfig <- KCLCiris.Processor.resource[F](prefix)
     queue <- Queue
       .bounded[F, CommittableRecord[F]](fs2Config.queueSize)

@@ -344,7 +344,9 @@ lazy val integrationTestsJvmSettings: Seq[Setting[_]] = Seq(
     case "nativeMain/default/manifest"              => MergeStrategy.first
     case PathList("google", "protobuf", _ @_*)      => MergeStrategy.first
     case PathList("codegen-resources", _ @_*)       => MergeStrategy.first
-    case PathList("META-INF", xs @ _*)              =>
+    case PathList("io", "netty", "handler", "codec", _ @_*) =>
+      MergeStrategy.first
+    case PathList("META-INF", xs @ _*) =>
       (xs map { _.toLowerCase }) match {
         case "services" :: xs               => MergeStrategy.filterDistinctLines
         case "resources" :: "webjars" :: xs => MergeStrategy.first
