@@ -107,7 +107,7 @@ jobs:
         run: sbt 'project ${{ matrix.project }}' dockerComposeDown
 
       - name: Check scalafix lints
-        if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-22.04' && matrix.scala != '3.3.6'
+        if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-22.04' && matrix.scala != '3.3.7'
         run: sbt 'project ${{ matrix.project }}' fixCheck
 
       - name: Generate API documentation

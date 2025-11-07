@@ -431,7 +431,7 @@ object Producer {
         s"Error captured but no invalid or failed records found. This is unexpected"
       case (i, Nil) => Error.invalidRecordsMessage(i)
       case (Nil, f) => Error.putFailuresMessage(f)
-      case (i, f) =>
+      case (i, f)   =>
         Error.invalidRecordsMessage(i) +
           "\n\nAND\n\n" +
           Error.putFailuresMessage(f)

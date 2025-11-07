@@ -2,7 +2,7 @@ import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport._
 import sbt._
 
 object LibraryDependencies {
-  val Logback = "ch.qos.logback" % "logback-classic" % "1.5.19"
+  val Logback = "ch.qos.logback" % "logback-classic" % "1.5.20"
   val JavaXMLBind = "javax.xml.bind" % "jaxb-api" % "2.3.1"
   val Scalacheck = Def.setting("org.scalacheck" %%% "scalacheck" % "1.17.1")
 
@@ -76,7 +76,7 @@ object LibraryDependencies {
   }
 
   object Ciris {
-    val cirisVersion = "3.11.0"
+    val cirisVersion = "3.11.1"
     val core = Def.setting("is.cir" %%% "ciris" % cirisVersion)
   }
 
@@ -86,7 +86,7 @@ object LibraryDependencies {
   }
 
   object Http4s {
-    val http4sVersion = "0.23.32"
+    val http4sVersion = "0.23.33"
     val emberServer =
       Def.setting("org.http4s" %%% "http4s-ember-server" % http4sVersion)
     val emberClient =

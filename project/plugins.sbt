@@ -1,7 +1,7 @@
 addSbtPlugin("org.typelevel" % "sbt-typelevel" % "0.8.2")
 addSbtPlugin("org.typelevel" % "sbt-typelevel-site" % "0.8.2")
 addSbtPlugin("org.typelevel" % "sbt-typelevel-mergify" % "0.8.2")
-addSbtPlugin("org.scalameta" % "sbt-scalafmt" % "2.5.5")
+addSbtPlugin("org.scalameta" % "sbt-scalafmt" % "2.5.6")
 addSbtPlugin("ch.epfl.scala" % "sbt-scalafix" % "0.14.4")
 addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "2.3.1")
 addSbtPlugin("org.portable-scala" % "sbt-crossproject" % "1.3.2")
@@ -20,7 +20,7 @@ addSbtPlugin("com.thesamet" % "sbt-protoc" % "1.0.8")
 
 // Explicitly bumping until sbt-typelevel upgrades.
 // Older versions exit sbt on compilation failures.
-addSbtPlugin("org.scalameta" % "sbt-mdoc" % "2.7.2")
+addSbtPlugin("org.scalameta" % "sbt-mdoc" % "2.8.0")
 
 libraryDependencies ++= Seq(
   "com.thesamet.scalapb" %% "compilerplugin" % "0.11.15",

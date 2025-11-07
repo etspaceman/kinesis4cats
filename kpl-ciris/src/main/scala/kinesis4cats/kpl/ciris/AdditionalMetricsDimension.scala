@@ -57,7 +57,7 @@ object AdditionalMetricsDimension {
           case "global" => Right(Global)
           case "stream" => Right(Stream)
           case "shard"  => Right(Shard)
-          case _ =>
+          case _        =>
             Left(
               ConfigError(
                 s"Unrecognized Metrics Granularity value $value. Acceptable values are global, stream and shard"
