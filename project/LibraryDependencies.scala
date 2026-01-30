@@ -2,7 +2,7 @@ import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport._
 import sbt._
 
 object LibraryDependencies {
-  val Logback = "ch.qos.logback" % "logback-classic" % "1.5.26"
+  val Logback = "ch.qos.logback" % "logback-classic" % "1.5.27"
   val JavaXMLBind = "javax.xml.bind" % "jaxb-api" % "2.3.1"
   val Scalacheck = Def.setting("org.scalacheck" %%% "scalacheck" % "1.17.1")
 
