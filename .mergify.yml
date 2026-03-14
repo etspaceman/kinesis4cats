@@ -10,12 +10,12 @@ pull_request_rules:
   conditions:
   - author=etspaceman-scala-steward-app[bot]
   - body~=labels:.*early-semver-patch
-  - status-success=Test (ubuntu-22.04, 2.13, temurin@17, root-jvm-213)
-  - status-success=Test (ubuntu-22.04, 2.13, temurin@17, root-jvm-3)
-  - status-success=Test (ubuntu-22.04, 2.13, temurin@17, root-js-213)
-  - status-success=Test (ubuntu-22.04, 2.13, temurin@17, root-js-3)
-  - status-success=Test (ubuntu-22.04, 2.13, temurin@17, root-native-213)
-  - status-success=Test (ubuntu-22.04, 2.13, temurin@17, root-native-3)
+  - status-success=Test (ubuntu-22.04, 3, temurin@17, root-jvm-213)
+  - status-success=Test (ubuntu-22.04, 3, temurin@17, root-jvm-3)
+  - status-success=Test (ubuntu-22.04, 3, temurin@17, root-js-213)
+  - status-success=Test (ubuntu-22.04, 3, temurin@17, root-js-3)
+  - status-success=Test (ubuntu-22.04, 3, temurin@17, root-native-213)
+  - status-success=Test (ubuntu-22.04, 3, temurin@17, root-native-3)
   actions:
     merge:
       method: squash
@@ -51,14 +51,6 @@ pull_request_rules:
       add:
       - compat3
       remove: []
-- name: Label compatJS PRs
-  conditions:
-  - files~=^.sbt/matrix/compatJS/
-  actions:
-    label:
-      add:
-      - compatJS
-      remove: []
 - name: Label compatJS3 PRs
   conditions:
   - files~=^.sbt/matrix/compatJS3/
@@ -66,14 +58,6 @@ pull_request_rules:
     label:
       add:
       - compatJS3
-      remove: []
-- name: Label compatNative PRs
-  conditions:
-  - files~=^.sbt/matrix/compatNative/
-  actions:
-    label:
-      add:
-      - compatNative
       remove: []
 - name: Label compatNative3 PRs
   conditions:
@@ -83,13 +67,13 @@ pull_request_rules:
       add:
       - compatNative3
       remove: []
-- name: Label docs PRs
+- name: Label docs3 PRs
   conditions:
-  - files~=^.sbt/matrix/docs/
+  - files~=^.sbt/matrix/docs3/
   actions:
     label:
       add:
-      - docs
+      - docs3
       remove: []
 - name: Label feral PRs
   conditions:
@@ -106,14 +90,6 @@ pull_request_rules:
     label:
       add:
       - feral3
-      remove: []
-- name: Label feralJS PRs
-  conditions:
-  - files~=^.sbt/matrix/feralJS/
-  actions:
-    label:
-      add:
-      - feralJS
       remove: []
 - name: Label feralJS3 PRs
   conditions:
@@ -138,14 +114,6 @@ pull_request_rules:
     label:
       add:
       - integration-tests3
-      remove: []
-- name: Label integration-testsJS PRs
-  conditions:
-  - files~=^.sbt/matrix/integration-testsJS/
-  actions:
-    label:
-      add:
-      - integration-testsJS
       remove: []
 - name: Label integration-testsJS3 PRs
   conditions:
@@ -427,14 +395,6 @@ pull_request_rules:
       add:
       - shared-circe3
       remove: []
-- name: Label shared-circeJS PRs
-  conditions:
-  - files~=^.sbt/matrix/shared-circeJS/
-  actions:
-    label:
-      add:
-      - shared-circeJS
-      remove: []
 - name: Label shared-circeJS3 PRs
   conditions:
   - files~=^.sbt/matrix/shared-circeJS3/
@@ -442,14 +402,6 @@ pull_request_rules:
     label:
       add:
       - shared-circeJS3
-      remove: []
-- name: Label shared-circeNative PRs
-  conditions:
-  - files~=^.sbt/matrix/shared-circeNative/
-  actions:
-    label:
-      add:
-      - shared-circeNative
       remove: []
 - name: Label shared-circeNative3 PRs
   conditions:
@@ -475,14 +427,6 @@ pull_request_rules:
       add:
       - shared-ciris3
       remove: []
-- name: Label shared-cirisJS PRs
-  conditions:
-  - files~=^.sbt/matrix/shared-cirisJS/
-  actions:
-    label:
-      add:
-      - shared-cirisJS
-      remove: []
 - name: Label shared-cirisJS3 PRs
   conditions:
   - files~=^.sbt/matrix/shared-cirisJS3/
@@ -490,14 +434,6 @@ pull_request_rules:
     label:
       add:
       - shared-cirisJS3
-      remove: []
-- name: Label shared-cirisNative PRs
-  conditions:
-  - files~=^.sbt/matrix/shared-cirisNative/
-  actions:
-    label:
-      add:
-      - shared-cirisNative
       remove: []
 - name: Label shared-cirisNative3 PRs
   conditions:
@@ -523,14 +459,6 @@ pull_request_rules:
       add:
       - shared-localstack3
       remove: []
-- name: Label shared-localstackJS PRs
-  conditions:
-  - files~=^.sbt/matrix/shared-localstackJS/
-  actions:
-    label:
-      add:
-      - shared-localstackJS
-      remove: []
 - name: Label shared-localstackJS3 PRs
   conditions:
   - files~=^.sbt/matrix/shared-localstackJS3/
@@ -538,14 +466,6 @@ pull_request_rules:
     label:
       add:
       - shared-localstackJS3
-      remove: []
-- name: Label shared-localstackNative PRs
-  conditions:
-  - files~=^.sbt/matrix/shared-localstackNative/
-  actions:
-    label:
-      add:
-      - shared-localstackNative
       remove: []
 - name: Label shared-localstackNative3 PRs
   conditions:
@@ -563,14 +483,6 @@ pull_request_rules:
       add:
       - shared3
       remove: []
-- name: Label sharedJS PRs
-  conditions:
-  - files~=^.sbt/matrix/sharedJS/
-  actions:
-    label:
-      add:
-      - sharedJS
-      remove: []
 - name: Label sharedJS3 PRs
   conditions:
   - files~=^.sbt/matrix/sharedJS3/
@@ -578,14 +490,6 @@ pull_request_rules:
     label:
       add:
       - sharedJS3
-      remove: []
-- name: Label sharedNative PRs
-  conditions:
-  - files~=^.sbt/matrix/sharedNative/
-  actions:
-    label:
-      add:
-      - sharedNative
       remove: []
 - name: Label sharedNative3 PRs
   conditions:
@@ -619,14 +523,6 @@ pull_request_rules:
       add:
       - smithy4s-client-localstack3
       remove: []
-- name: Label smithy4s-client-localstackJS PRs
-  conditions:
-  - files~=^.sbt/matrix/smithy4s-client-localstackJS/
-  actions:
-    label:
-      add:
-      - smithy4s-client-localstackJS
-      remove: []
 - name: Label smithy4s-client-localstackJS3 PRs
   conditions:
   - files~=^.sbt/matrix/smithy4s-client-localstackJS3/
@@ -659,14 +555,6 @@ pull_request_rules:
       add:
       - smithy4s-client-logging-circe3
       remove: []
-- name: Label smithy4s-client-logging-circeJS PRs
-  conditions:
-  - files~=^.sbt/matrix/smithy4s-client-logging-circeJS/
-  actions:
-    label:
-      add:
-      - smithy4s-client-logging-circeJS
-      remove: []
 - name: Label smithy4s-client-logging-circeJS3 PRs
   conditions:
   - files~=^.sbt/matrix/smithy4s-client-logging-circeJS3/
@@ -691,6 +579,14 @@ pull_request_rules:
       add:
       - smithy4s-client-transformers
       remove: []
+- name: Label smithy4s-client-transformers3 PRs
+  conditions:
+  - files~=^.sbt/matrix/smithy4s-client-transformers3/
+  actions:
+    label:
+      add:
+      - smithy4s-client-transformers3
+      remove: []
 - name: Label smithy4s-client3 PRs
   conditions:
   - files~=^.sbt/matrix/smithy4s-client3/
@@ -698,14 +594,6 @@ pull_request_rules:
     label:
       add:
       - smithy4s-client3
-      remove: []
-- name: Label smithy4s-clientJS PRs
-  conditions:
-  - files~=^.sbt/matrix/smithy4s-clientJS/
-  actions:
-    label:
-      add:
-      - smithy4s-clientJS
       remove: []
 - name: Label smithy4s-clientJS3 PRs
   conditions:
@@ -730,4 +618,12 @@ pull_request_rules:
     label:
       add:
       - unidocs
+      remove: []
+- name: Label unidocs3 PRs
+  conditions:
+  - files~=^.sbt/matrix/unidocs3/
+  actions:
+    label:
+      add:
+      - unidocs3
       remove: []
