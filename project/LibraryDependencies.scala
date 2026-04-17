@@ -4,22 +4,22 @@ import sbt._
 object LibraryDependencies {
   val Logback = "ch.qos.logback" % "logback-classic" % "1.5.27"
   val JavaXMLBind = "javax.xml.bind" % "jaxb-api" % "2.3.1"
-  val Scalacheck = Def.setting("org.scalacheck" %%% "scalacheck" % "1.17.1")
+  val Scalacheck = Def.setting("org.scalacheck" %%% "scalacheck" % "1.19.0")
 
   object ScalaJS {
     val javaTime =
-      Def.setting("io.github.cquiroz" %%% "scala-java-time" % "2.5.0")
+      Def.setting("io.github.cquiroz" %%% "scala-java-time" % "2.6.0")
   }
 
   object FS2 {
-    val fs2Version = "3.12.2"
+    val fs2Version = "3.13.0"
     val core = Def.setting("co.fs2" %%% "fs2-core" % fs2Version)
     val io = Def.setting("co.fs2" %%% "fs2-io" % fs2Version)
     val reactiveStreams = "co.fs2" %% "fs2-reactive-streams" % fs2Version
   }
 
   object Log4Cats {
-    val log4CatsVersion = "2.7.1"
+    val log4CatsVersion = "2.8.0"
     val core =
       Def.setting("org.typelevel" %%% "log4cats-core" % log4CatsVersion)
     val slf4j = "org.typelevel" %% "log4cats-slf4j" % log4CatsVersion
@@ -28,14 +28,14 @@ object LibraryDependencies {
   }
 
   object Munit {
-    val munitVersion = "1.0.0-M11"
+    val munitVersion = "1.3.0"
     val core = Def.setting("org.scalameta" %%% "munit" % munitVersion)
     val scalacheck =
       Def.setting("org.scalameta" %%% "munit-scalacheck" % munitVersion)
     val catsEffect =
-      Def.setting("org.typelevel" %%% "munit-cats-effect" % "2.1.0")
+      Def.setting("org.typelevel" %%% "munit-cats-effect" % "2.2.0")
     val scalacheckEffect =
-      Def.setting("org.typelevel" %%% "scalacheck-effect-munit" % "2.0.0-M2")
+      Def.setting("org.typelevel" %%% "scalacheck-effect-munit" % "2.1.0")
 
   }
 
@@ -61,22 +61,22 @@ object LibraryDependencies {
   }
 
   object Cats {
-    val catsVersion = "2.11.0"
-    val catsEffectVersion = "3.6.3"
+    val catsVersion = "2.13.0"
+    val catsEffectVersion = "3.7.0"
     val core = Def.setting("org.typelevel" %%% "cats-core" % catsVersion)
     val effect =
       Def.setting("org.typelevel" %%% "cats-effect" % catsEffectVersion)
   }
 
   object Circe {
-    val circeVersion = "0.14.8"
+    val circeVersion = "0.14.14"
     val core = Def.setting("io.circe" %%% "circe-core" % circeVersion)
     val parser = Def.setting("io.circe" %%% "circe-parser" % circeVersion)
     val scodec = Def.setting("io.circe" %%% "circe-scodec" % circeVersion)
   }
 
   object Ciris {
-    val cirisVersion = "3.12.0"
+    val cirisVersion = "3.14.1"
     val core = Def.setting("is.cir" %%% "ciris" % cirisVersion)
   }
 
@@ -86,7 +86,7 @@ object LibraryDependencies {
   }
 
   object Http4s {
-    val http4sVersion = "0.23.33"
+    val http4sVersion = "0.23.34"
     val emberServer =
       Def.setting("org.http4s" %%% "http4s-ember-server" % http4sVersion)
     val emberClient =
