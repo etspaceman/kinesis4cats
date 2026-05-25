@@ -109,6 +109,8 @@ Currently the [CheckpointConfig](https://github.com/awslabs/amazon-kinesis-clien
 | `KCL_LEASE_TABLE_TAGS` | `kcl.lease.table.tags` | No | | Tags to add to the DDB table. In the format of `key:value,key2:value2` |
 | `KCL_LEASE_WORKER_METRICS_TABLE_TAGS` | `kcl.lease.worker.metrics.table.tags` | No | | Tags to add to the DDB table for worker metrics. In the format of `key:value,key2:value2` |
 | `KCL_LEASE_ASSIGNMENT_INTERVAL` | `kcl.lease.assignment.interval` | No | `failoverTime * 2` | Lease assignment interval - e.g. wait for this long between Lease assignment run. |
+| `KCL_LEASE_DYNAMODB_LOCK_BASED_LEADER_LEASE_DURATION` | `kcl.lease.dynamodb.lock.based.leader.lease.duration` | No | `2 minutes` | The length of time that the lease for the leader will be granted for. |
+| `KCL_LEASE_DYNAMODB_LOCK_BASED_LEADER_HEARTBEAT_PERIOD` | `kcl.lease.dynamodb.lock.based.leader.heartbeat.period` | No | `30 seconds` | How often the leader should send an update to DynamoDB to note that the worker is still running. |
 
 ### Lifecycle
 
@@ -166,6 +168,7 @@ Configuration values if `KCL_RETRIEVAL_TYPE`/`kcl.retrieval.type` is `polling`. 
 | `KCL_RETRIEVAL_POLLING_IDLE_TIME_BETWEEN_READS` | `kcl.retrieval.polling.idle.time.between.reads` | No | `1 second` | The value for how long the ShardConsumer should sleep in between calls to GetRecords |
 | `KCL_RETRIEVAL_POLLING_RETRY_GET_RECORDS_INTERVAL` | `kcl.retrieval.polling.retry.get.records.interval` | No | `None` | Time to wait in seconds before the worker retries to get a record. If None, retries immediately |
 | `KCL_RETRIEVAL_POLLING_MAX_GET_RECORDS_THREAD_POOL` | `kcl.retrieval.polling.max.get.records.thread.pool` | No | `None` | The max number of threads in the records thread pool. If None, there is no limit. |
+| `KCL_RETRIEVAL_POLLING_DURATION_BEHIND_LATEST_THRESHOLD_FOR_REDUCED_TPS` | `kcl.retrieval.polling.duration.behind.latest.threshold.for.reduced.tps` | No | `0 ms` | Duration threshold for millisBehindLatest that will trigger reduced throughput when close to tip. |
 
 ### Processor
 

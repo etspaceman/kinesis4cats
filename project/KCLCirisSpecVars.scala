@@ -390,6 +390,32 @@ object KCLCirisSpecVars {
             "frequency"
           ),
           "1 hour"
+        ),
+        CirisUtil.propAndEnv(
+          List(
+            "kcl",
+            "lease",
+            "dynamodb",
+            "lock",
+            "based",
+            "leader",
+            "lease",
+            "duration"
+          ),
+          "3 minutes"
+        ),
+        CirisUtil.propAndEnv(
+          List(
+            "kcl",
+            "lease",
+            "dynamodb",
+            "lock",
+            "based",
+            "leader",
+            "heartbeat",
+            "period"
+          ),
+          "15 seconds"
         )
       )
     )
@@ -565,6 +591,23 @@ object KCLCirisSpecVars {
             "polling.prop.",
             "POLLING_ENV_",
             Some("polling")
+          ),
+          CirisUtil.propAndEnv(
+            List(
+              "kcl",
+              "retrieval",
+              "polling",
+              "duration",
+              "behind",
+              "latest",
+              "threshold",
+              "for",
+              "reduced",
+              "tps"
+            ),
+            "2 ms",
+            "polling.prop.",
+            "POLLING_ENV_"
           )
         )
       )

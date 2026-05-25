@@ -37,7 +37,7 @@ private[kinesis4cats] object RetrievalType {
       value match {
         case "polling" => Right(Polling)
         case "fanout"  => Right(FanOut)
-        case x =>
+        case x         =>
           Left(
             ConfigError(
               s"Unrecognized Retrieval Type $x. Valid values are polling and fanout"

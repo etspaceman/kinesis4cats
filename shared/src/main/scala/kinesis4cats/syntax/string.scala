@@ -41,7 +41,7 @@ object StringSyntax {
       .traverse { kv =>
         kv.split(":").toList match {
           case key :: value :: Nil => Right(key -> value)
-          case _ =>
+          case _                   =>
             Left(
               s"Could not parse map $str. Must be in the format key1:value1,key2:value2"
             )

@@ -220,7 +220,7 @@ class MockProducer(
       resp: MockPutResponse
   ): Option[NonEmptyList[Producer.FailedRecord]] = resp.failedRecords match {
     case Nil => None
-    case x =>
+    case x   =>
       Some(
         NonEmptyList
           .fromListUnsafe(x)

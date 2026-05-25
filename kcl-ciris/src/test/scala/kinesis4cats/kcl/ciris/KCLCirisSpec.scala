@@ -186,92 +186,99 @@ class KCLCirisSpec extends munit.CatsEffectSuite {
       ).safeTransform(BuildInfo.kclLeaseTablePitrEnabled.toBoolean)(
         _.leaseTablePitrEnabled(_)
       ).safeTransform(
-        (
-          BuildInfo.kclAppName,
-          BuildInfo.kclLeaseInMemoryWorkerMetricsCaptureFrequency.asMillisUnsafe,
-          BuildInfo.kclLeaseWorkerMetricsReporterFreq.asMillisUnsafe,
-          BuildInfo.kclLeaseNoOfPersistedMetricsPerWorkerMetrics.toInt,
-          BuildInfo.kclLeaseDisableWorkerMetrics.toBoolean,
-          BuildInfo.kclLeaseMaxThroughputPerHostKbps.toDouble,
-          BuildInfo.kclLeaseDampeningPercentage.toInt,
-          BuildInfo.kclLeaseRebalanceThresholdPercentage.toInt,
-          BuildInfo.kclLeaseAllowThroughputOvershoot.toBoolean,
-          BuildInfo.kclLeaseStaleWorkerMetricsEntryCleanupDuration.asJavaDurationUnsafe,
-          BuildInfo.kclLeaseVarianceBalancingFrequency.toInt,
-          BuildInfo.kclLeaseWorkerMetricsEmaAlpha.toDouble,
-          BillingMode.valueOf(BuildInfo.kclLeaseWorkerMetricsTableBillingMode),
-          BuildInfo.kclLeaseWorkerMetricsTableReadCapacity.toLong,
-          BuildInfo.kclLeaseWorkerMetricsTableWriteCapacity.toLong,
-          BuildInfo.kclLeaseWorkerMetricsTablePitrEnabled.toBoolean,
-          BuildInfo.kclLeaseWorkerMetricsTableDeletionProtectionEnabled.toBoolean,
-          BuildInfo.kclLeaseWorkerMetricsTableTags.asMapUnsafe.toList.map {
-            case (k, v) => Tag.builder().key(k).value(v).build()
-          }.asJavaCollection
-        )
-      ) {
-        case (
-              config,
-              (
-                kclAppName,
-                kclLeaseInMemoryWorkerMetricsCaptureFrequency,
-                kclLeaseWorkerMetricsReporterFreq,
-                kclLeaseNoOfPersistedMetricsPerWorkerMetrics,
-                kclLeaseDisableWorkerMetrics,
-                kclLeaseMaxThroughputPerHostKbps,
-                kclLeaseDampeningPercentage,
-                kclLeaseRebalanceThresholdPercentage,
-                kclLeaseAllowThroughputOvershoot,
-                kclLeaseStaleWorkerMetricsEntryCleanupDuration,
-                kclLeaseVarianceBalancingFrequency,
-                kclLeaseWorkerMetricsEmaAlpha,
-                kclLeaseWorkerMetricsTableBillingMode,
-                kclLeaseWorkerMetricsTableReadCapacity,
-                kclLeaseWorkerMetricsTableWriteCapacity,
-                kclLeaseWorkerMetricsTablePointInTimeRecoveryEnabled,
-                kclLeaseWorkerMetricsTableDeletionProtectionEnabled,
-                kclLeaseWorkerMetricsTableTags
-              )
-            ) =>
-          val workerMetricsTableConfig = WorkerMetricsTableConfig
-            .default(kclAppName)
-            .copy(
-              billingMode = kclLeaseWorkerMetricsTableBillingMode,
-              readCapacity = kclLeaseWorkerMetricsTableReadCapacity,
-              writeCapacity = kclLeaseWorkerMetricsTableWriteCapacity,
-              pointInTimeRecoveryEnabled =
-                kclLeaseWorkerMetricsTablePointInTimeRecoveryEnabled,
-              deletionProtectionEnabled =
-                kclLeaseWorkerMetricsTableDeletionProtectionEnabled,
-              tags = kclLeaseWorkerMetricsTableTags
-            )
-
-          config.workerUtilizationAwareAssignmentConfig(
-            config
-              .workerUtilizationAwareAssignmentConfig()
-              .inMemoryWorkerMetricsCaptureFrequencyMillis(
-                kclLeaseInMemoryWorkerMetricsCaptureFrequency
-              )
-              .workerMetricsReporterFreqInMillis(
-                kclLeaseWorkerMetricsReporterFreq
-              )
-              .noOfPersistedMetricsPerWorkerMetrics(
-                kclLeaseNoOfPersistedMetricsPerWorkerMetrics
-              )
-              .disableWorkerMetrics(kclLeaseDisableWorkerMetrics)
-              .maxThroughputPerHostKBps(kclLeaseMaxThroughputPerHostKbps)
-              .dampeningPercentage(kclLeaseDampeningPercentage)
-              .reBalanceThresholdPercentage(
-                kclLeaseRebalanceThresholdPercentage
-              )
-              .allowThroughputOvershoot(kclLeaseAllowThroughputOvershoot)
-              .staleWorkerMetricsEntryCleanupDuration(
-                kclLeaseStaleWorkerMetricsEntryCleanupDuration
-              )
-              .varianceBalancingFrequency(kclLeaseVarianceBalancingFrequency)
-              .workerMetricsEMAAlpha(kclLeaseWorkerMetricsEmaAlpha)
-              .workerMetricsTableConfig(workerMetricsTableConfig)
+        BuildInfo.kclLeaseDynamodbLockBasedLeaderLeaseDuration.asFiniteDurationUnsafe.toMillis
+      )(_.dynamoDbLockBasedLeaderLeaseDurationInMillis(_))
+        .safeTransform(
+          BuildInfo.kclLeaseDynamodbLockBasedLeaderHeartbeatPeriod.asFiniteDurationUnsafe.toMillis
+        )(_.dynamoDbLockBasedLeaderHeartbeatPeriodInMillis(_))
+        .safeTransform(
+          (
+            BuildInfo.kclAppName,
+            BuildInfo.kclLeaseInMemoryWorkerMetricsCaptureFrequency.asMillisUnsafe,
+            BuildInfo.kclLeaseWorkerMetricsReporterFreq.asMillisUnsafe,
+            BuildInfo.kclLeaseNoOfPersistedMetricsPerWorkerMetrics.toInt,
+            BuildInfo.kclLeaseDisableWorkerMetrics.toBoolean,
+            BuildInfo.kclLeaseMaxThroughputPerHostKbps.toDouble,
+            BuildInfo.kclLeaseDampeningPercentage.toInt,
+            BuildInfo.kclLeaseRebalanceThresholdPercentage.toInt,
+            BuildInfo.kclLeaseAllowThroughputOvershoot.toBoolean,
+            BuildInfo.kclLeaseStaleWorkerMetricsEntryCleanupDuration.asJavaDurationUnsafe,
+            BuildInfo.kclLeaseVarianceBalancingFrequency.toInt,
+            BuildInfo.kclLeaseWorkerMetricsEmaAlpha.toDouble,
+            BillingMode
+              .valueOf(BuildInfo.kclLeaseWorkerMetricsTableBillingMode),
+            BuildInfo.kclLeaseWorkerMetricsTableReadCapacity.toLong,
+            BuildInfo.kclLeaseWorkerMetricsTableWriteCapacity.toLong,
+            BuildInfo.kclLeaseWorkerMetricsTablePitrEnabled.toBoolean,
+            BuildInfo.kclLeaseWorkerMetricsTableDeletionProtectionEnabled.toBoolean,
+            BuildInfo.kclLeaseWorkerMetricsTableTags.asMapUnsafe.toList.map {
+              case (k, v) => Tag.builder().key(k).value(v).build()
+            }.asJavaCollection
           )
-      }
+        ) {
+          case (
+                config,
+                (
+                  kclAppName,
+                  kclLeaseInMemoryWorkerMetricsCaptureFrequency,
+                  kclLeaseWorkerMetricsReporterFreq,
+                  kclLeaseNoOfPersistedMetricsPerWorkerMetrics,
+                  kclLeaseDisableWorkerMetrics,
+                  kclLeaseMaxThroughputPerHostKbps,
+                  kclLeaseDampeningPercentage,
+                  kclLeaseRebalanceThresholdPercentage,
+                  kclLeaseAllowThroughputOvershoot,
+                  kclLeaseStaleWorkerMetricsEntryCleanupDuration,
+                  kclLeaseVarianceBalancingFrequency,
+                  kclLeaseWorkerMetricsEmaAlpha,
+                  kclLeaseWorkerMetricsTableBillingMode,
+                  kclLeaseWorkerMetricsTableReadCapacity,
+                  kclLeaseWorkerMetricsTableWriteCapacity,
+                  kclLeaseWorkerMetricsTablePointInTimeRecoveryEnabled,
+                  kclLeaseWorkerMetricsTableDeletionProtectionEnabled,
+                  kclLeaseWorkerMetricsTableTags
+                )
+              ) =>
+            val workerMetricsTableConfig = WorkerMetricsTableConfig
+              .default(kclAppName)
+              .copy(
+                billingMode = kclLeaseWorkerMetricsTableBillingMode,
+                readCapacity = kclLeaseWorkerMetricsTableReadCapacity,
+                writeCapacity = kclLeaseWorkerMetricsTableWriteCapacity,
+                pointInTimeRecoveryEnabled =
+                  kclLeaseWorkerMetricsTablePointInTimeRecoveryEnabled,
+                deletionProtectionEnabled =
+                  kclLeaseWorkerMetricsTableDeletionProtectionEnabled,
+                tags = kclLeaseWorkerMetricsTableTags
+              )
+
+            config.workerUtilizationAwareAssignmentConfig(
+              config
+                .workerUtilizationAwareAssignmentConfig()
+                .inMemoryWorkerMetricsCaptureFrequencyMillis(
+                  kclLeaseInMemoryWorkerMetricsCaptureFrequency
+                )
+                .workerMetricsReporterFreqInMillis(
+                  kclLeaseWorkerMetricsReporterFreq
+                )
+                .noOfPersistedMetricsPerWorkerMetrics(
+                  kclLeaseNoOfPersistedMetricsPerWorkerMetrics
+                )
+                .disableWorkerMetrics(kclLeaseDisableWorkerMetrics)
+                .maxThroughputPerHostKBps(kclLeaseMaxThroughputPerHostKbps)
+                .dampeningPercentage(kclLeaseDampeningPercentage)
+                .reBalanceThresholdPercentage(
+                  kclLeaseRebalanceThresholdPercentage
+                )
+                .allowThroughputOvershoot(kclLeaseAllowThroughputOvershoot)
+                .staleWorkerMetricsEntryCleanupDuration(
+                  kclLeaseStaleWorkerMetricsEntryCleanupDuration
+                )
+                .varianceBalancingFrequency(kclLeaseVarianceBalancingFrequency)
+                .workerMetricsEMAAlpha(kclLeaseWorkerMetricsEmaAlpha)
+                .workerMetricsTableConfig(workerMetricsTableConfig)
+            )
+        }
     } yield {
       assert(
         configEnv === configProp,
@@ -369,16 +376,16 @@ class KCLCirisSpec extends munit.CatsEffectSuite {
     for {
       kinesisClient <- AwsClients.kinesisClient[IO]()
       fanoutConfigEnv <- KCLCiris.Retrieval
-        .read(kinesisClient, Some("FANOUT_ENV"), None)
+        .read(kinesisClient, Some("FANOUT_ENV"), None, None)
         .load[IO]
       fanoutConfigProp <- KCLCiris.Retrieval
-        .read(kinesisClient, Some("fanout.prop"), None)
+        .read(kinesisClient, Some("fanout.prop"), None, None)
         .load[IO]
       pollingConfigEnv <- KCLCiris.Retrieval
-        .read(kinesisClient, Some("POLLING_ENV"), None)
+        .read(kinesisClient, Some("POLLING_ENV"), None, None)
         .load[IO]
       pollingConfigProp <- KCLCiris.Retrieval
-        .read(kinesisClient, Some("polling.prop"), None)
+        .read(kinesisClient, Some("polling.prop"), None, None)
         .load[IO]
       pollingExpected = new RetrievalConfig(
         kinesisClient,
@@ -423,6 +430,11 @@ class KCLCirisSpec extends munit.CatsEffectSuite {
                 )
                 .some
                 .asJava
+            )
+            .safeTransform(
+              BuildInfo.kclRetrievalPollingDurationBehindLatestThresholdForReducedTps.asFiniteDurationUnsafe.toMillis
+            )(
+              _.millisBehindLatestThresholdForReducedTps(_)
             )
         )
         .safeTransform(

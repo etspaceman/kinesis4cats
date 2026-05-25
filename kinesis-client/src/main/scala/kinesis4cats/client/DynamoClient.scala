@@ -411,7 +411,7 @@ object DynamoClient {
           res: String = "Map(",
           empty: Boolean = true
       ): Eval[String] = Eval.defer(x match {
-        case Nil => Eval.now(s"$res)")
+        case Nil         => Eval.now(s"$res)")
         case (k, v) :: t =>
           val vStr = attributeValueShowImpl(v)
           val newRes = if (empty) s"$res$k=$vStr" else s"$res,$k=$vStr"
@@ -423,7 +423,7 @@ object DynamoClient {
           res: String = "List(",
           empty: Boolean = true
       ): Eval[String] = Eval.defer(x match {
-        case Nil => Eval.now(s"$res)")
+        case Nil    => Eval.now(s"$res)")
         case v :: t =>
           val vStr = attributeValueShowImpl(v)
           val newRes = if (empty) s"$res$vStr" else s"$res,$vStr"
@@ -441,10 +441,10 @@ object DynamoClient {
               Eval.now(s"b=${sdkBytesShow.show(x.b())}")
             case Some(AttributeValue.Type.BS) =>
               Eval.now(s"bs=${Show[java.util.List[SdkBytes]].show(x.bs())}")
-            case Some(AttributeValue.Type.S) => Eval.now(s"s=${x.s()}")
+            case Some(AttributeValue.Type.S)  => Eval.now(s"s=${x.s()}")
             case Some(AttributeValue.Type.SS) =>
               Eval.now(s"ss=${Show[java.util.List[String]].show(x.ss())}")
-            case Some(AttributeValue.Type.N) => Eval.now(s"n=${x.n()}")
+            case Some(AttributeValue.Type.N)  => Eval.now(s"n=${x.n()}")
             case Some(AttributeValue.Type.NS) =>
               Eval.now(s"ns=${Show[java.util.List[String]].show(x.ns())}")
             case Some(AttributeValue.Type.NUL) =>

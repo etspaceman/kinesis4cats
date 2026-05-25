@@ -42,6 +42,7 @@ import software.amazon.kinesis.metrics._
 import software.amazon.kinesis.processor.SingleStreamTracker
 import software.amazon.kinesis.retrieval.fanout.FanOutConfig
 import software.amazon.kinesis.retrieval.polling.PollingConfig
+import software.amazon.kinesis.retrieval.polling.SleepTimeController
 import software.amazon.kinesis.retrieval.{AggregatorUtil, RetrievalConfig}
 import software.amazon.kinesis.worker.metric.WorkerMetric
 
@@ -111,6 +112,9 @@ object KCLCiris {
     *   List of
     *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/worker/metric/WorkerMetric.java WorkerMetrics]]
     *   for the application
+    * @param sleepTimeController
+    *   Optional
+    *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/retrieval/polling/SleepTimeController.java SleepTimeController]]
     * @return
     *   [[cats.effect.Resource Resource]] containing the
     *   [[kinesis4cats.kcl.KCLConsumer KCLConsumer]]
@@ -136,7 +140,8 @@ object KCLCiris {
         None,
       encoders: RecordProcessor.LogEncoders = RecordProcessor.LogEncoders.show,
       managedClients: Boolean = true,
-      workerMetrics: Option[List[WorkerMetric]] = None
+      workerMetrics: Option[List[WorkerMetric]] = None,
+      sleepTimeController: Option[SleepTimeController] = None
   )(cb: List[CommittableRecord[F]] => F[Unit])(implicit
       F: Async[F]
   ): Resource[F, KCLConsumer[F]] = for {
@@ -170,6 +175,7 @@ object KCLCiris {
       taskExecutionListener,
       metricsFactory,
       glueSchemaRegistryDeserializer,
+      sleepTimeController,
       encoders
     )(cb).map(new KCLConsumer[F](_))
   } yield consumer
@@ -246,6 +252,7 @@ object KCLCiris {
       taskExecutionListener: Option[TaskExecutionListener],
       metricsFactory: Option[MetricsFactory],
       glueSchemaRegistryDeserializer: Option[GlueSchemaRegistryDeserializer],
+      sleepTimeController: Option[SleepTimeController],
       encoders: RecordProcessor.LogEncoders
   )(cb: List[CommittableRecord[F]] => F[Unit])(implicit
       F: Async[F]
@@ -272,7 +279,12 @@ object KCLCiris {
     metricsConfig <- Metrics
       .resource[F](cloudwatchClient, prefix, metricsFactory)
     retrievalConfig <- Retrieval
-      .resource[F](kinesisClient, prefix, glueSchemaRegistryDeserializer)
+      .resource[F](
+        kinesisClient,
+        prefix,
+        glueSchemaRegistryDeserializer,
+        sleepTimeController
+      )
     processConfig <- Processor.resource[F](prefix)
     config <- KCLConsumer.Config.create[F](
       checkpointConfig,
@@ -974,6 +986,36 @@ object KCLCiris {
           prefix
         )
         .map(_.map(_.toMillis))
+      dynamoDbLockBasedLeaderLeaseDurationInMillis <- CirisReader
+        .readOptional[Duration](
+          List(
+            "kcl",
+            "lease",
+            "dynamodb",
+            "lock",
+            "based",
+            "leader",
+            "lease",
+            "duration"
+          ),
+          prefix
+        )
+        .map(_.map(_.toMillis))
+      dynamoDbLockBasedLeaderHeartbeatPeriodInMillis <- CirisReader
+        .readOptional[Duration](
+          List(
+            "kcl",
+            "lease",
+            "dynamodb",
+            "lock",
+            "based",
+            "leader",
+            "heartbeat",
+            "period"
+          ),
+          prefix
+        )
+        .map(_.map(_.toMillis))
     } yield new LeaseManagementConfig(
       tableName,
       appName,
@@ -1041,6 +1083,12 @@ object KCLCiris {
       )
       .maybeTransform(leaseAssignmentIntervalMillis)(
         _.leaseAssignmentIntervalMillis(_)
+      )
+      .maybeTransform(dynamoDbLockBasedLeaderLeaseDurationInMillis)(
+        _.dynamoDbLockBasedLeaderLeaseDurationInMillis(_)
+      )
+      .maybeTransform(dynamoDbLockBasedLeaderHeartbeatPeriodInMillis)(
+        _.dynamoDbLockBasedLeaderHeartbeatPeriodInMillis(_)
       )
 
     /** Reads the
@@ -1270,13 +1318,17 @@ object KCLCiris {
       *   [[https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/kinesis/KinesisAsyncClient.html KinesisAsyncClient]]
       * @param prefix
       *   Optional prefix to apply to configuration loaders. Default None
+      * @param sleepTimeController
+      *   Optional
+      *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/retrieval/polling/SleepTimeController.java SleepTimeController]]
       * @return
       *   [[https://cir.is/api/ciris/ConfigDecoder.html ConfigDecoder]] of
       *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/retrieval/polling/PollingConfig.java PollingConfig]]
       */
     private[kinesis4cats] def readPollingConfig(
         kinesisClient: KinesisAsyncClient,
-        prefix: Option[String]
+        prefix: Option[String],
+        sleepTimeController: Option[SleepTimeController]
     ): ConfigValue[Effect, PollingConfig] = for {
       streamName <- Common.readStreamName(prefix)
       maxRecords <- CirisReader.readOptional[Int](
@@ -1340,6 +1392,23 @@ object KCLCiris {
         ),
         prefix
       )
+      millisBehindLatestThresholdForReducedTps <- CirisReader
+        .readOptional[Duration](
+          List(
+            "kcl",
+            "retrieval",
+            "polling",
+            "duration",
+            "behind",
+            "latest",
+            "threshold",
+            "for",
+            "reduced",
+            "tps"
+          ),
+          prefix
+        )
+        .map(_.map(_.toMillis))
     } yield new PollingConfig(streamName, kinesisClient)
       .maybeTransform(maxRecords) { case (pollingConfig, mr) =>
         pollingConfig.maxRecords(mr)
@@ -1351,6 +1420,10 @@ object KCLCiris {
       )
       .retryGetRecordsInSeconds(retryGetRecords)
       .maxGetRecordsThreadPool(maxGetRecordsThreadPool)
+      .maybeTransform(sleepTimeController)(_.sleepTimeController(_))
+      .maybeTransform(millisBehindLatestThresholdForReducedTps)(
+        _.millisBehindLatestThresholdForReducedTps(_)
+      )
 
     /** Reads the
       * [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/retrieval/fanout/FanOutConfig.java FanOutConfig]]
@@ -1448,6 +1521,9 @@ object KCLCiris {
       *   Optional prefix to apply to configuration loaders. Default None
       * @param glueSchemaRegistryDeserializer
       *   [[https://github.com/awslabs/aws-glue-schema-registry/blob/master/serializer-deserializer/src/main/java/com/amazonaws/services/schemaregistry/deserializers/GlueSchemaRegistryDeserializer.java GlueSchemaRegistryDeserializer]]
+      * @param sleepTimeController
+      *   Optional
+      *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/retrieval/polling/SleepTimeController.java SleepTimeController]]
       * @return
       *   [[https://cir.is/api/ciris/ConfigDecoder.html ConfigDecoder]] of
       *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/retrieval/RetrievalConfig.java RetrievalConfig]]
@@ -1455,7 +1531,8 @@ object KCLCiris {
     private[kinesis4cats] def read(
         kinesisClient: KinesisAsyncClient,
         prefix: Option[String],
-        glueSchemaRegistryDeserializer: Option[GlueSchemaRegistryDeserializer]
+        glueSchemaRegistryDeserializer: Option[GlueSchemaRegistryDeserializer],
+        sleepTimeController: Option[SleepTimeController]
     ): ConfigValue[Effect, RetrievalConfig] = for {
       appName <- Common.readAppName(prefix)
       streamName <- Common.readStreamName(prefix)
@@ -1467,7 +1544,7 @@ object KCLCiris {
       )
       retrievalConfig <- retrievalType match {
         case RetrievalType.Polling =>
-          readPollingConfig(kinesisClient, prefix)
+          readPollingConfig(kinesisClient, prefix, sleepTimeController)
         case RetrievalType.FanOut =>
           readFanOutConfig(kinesisClient, prefix)
       }
@@ -1511,6 +1588,9 @@ object KCLCiris {
       *   Optional prefix to apply to configuration loaders. Default None
       * @param glueSchemaRegistryDeserializer
       *   [[https://github.com/awslabs/aws-glue-schema-registry/blob/master/serializer-deserializer/src/main/java/com/amazonaws/services/schemaregistry/deserializers/GlueSchemaRegistryDeserializer.java GlueSchemaRegistryDeserializer]]
+      * @param sleepTimeController
+      *   Optional
+      *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/retrieval/polling/SleepTimeController.java SleepTimeController]]
       * @param F
       *   [[cats.effect.Async Async]]
       * @return
@@ -1520,9 +1600,15 @@ object KCLCiris {
     private[kinesis4cats] def resource[F[_]](
         kinesisClient: KinesisAsyncClient,
         prefix: Option[String],
-        glueSchemaRegistryDeserializer: Option[GlueSchemaRegistryDeserializer]
+        glueSchemaRegistryDeserializer: Option[GlueSchemaRegistryDeserializer],
+        sleepTimeController: Option[SleepTimeController]
     )(implicit F: Async[F]): Resource[F, RetrievalConfig] =
-      read(kinesisClient, prefix, glueSchemaRegistryDeserializer).resource[F]
+      read(
+        kinesisClient,
+        prefix,
+        glueSchemaRegistryDeserializer,
+        sleepTimeController
+      ).resource[F]
   }
 
   object Processor {

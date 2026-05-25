@@ -28,7 +28,7 @@ object circe {
     Decoder[String].emap {
       case EncryptionType.None.value => Right(EncryptionType.None)
       case EncryptionType.Kms.value  => Right(EncryptionType.Kms)
-      case x =>
+      case x                         =>
         Left(
           s"Unexpected Encryption Type value '$x' received. Expected values are [${EncryptionType.None.value}, ${EncryptionType.Kms.value}]"
         )
