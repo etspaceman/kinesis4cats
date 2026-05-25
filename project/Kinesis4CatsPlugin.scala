@@ -63,7 +63,7 @@ object Kinesis4CatsPlugin extends AutoPlugin {
   }
 
   override def buildSettings = Seq(
-    tlBaseVersion := "0.2",
+    tlBaseVersion := "0.3",
     organization := "io.github.etspaceman",
     organizationName := "etspaceman",
     startYear := Some(2023),
