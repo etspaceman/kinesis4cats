@@ -24,6 +24,6 @@ addSbtPlugin("org.scalameta" % "sbt-mdoc" % "2.8.2")
 
 libraryDependencies ++= Seq(
   "com.thesamet.scalapb" %% "compilerplugin" % "0.11.20",
-  "org.slf4j" % "slf4j-nop" % "2.0.17"
+  "org.slf4j" % "slf4j-nop" % "2.0.18"
 )
 libraryDependencySchemes += "org.scala-lang.modules" %% "scala-xml" % VersionScheme.Always
