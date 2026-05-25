@@ -57,7 +57,7 @@ object LibraryDependencies {
     }
 
     val kpl = "software.amazon.kinesis" % "amazon-kinesis-producer" % "1.0.7"
-    val kcl = "software.amazon.kinesis" % "amazon-kinesis-client" % "3.3.0"
+    val kcl = "software.amazon.kinesis" % "amazon-kinesis-client" % "3.4.3"
   }
 
   object Cats {
