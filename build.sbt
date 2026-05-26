@@ -419,7 +419,10 @@ lazy val `smithy4s-client-localstack` = projectMatrix
     allScalaVersions,
     Seq(
       Test / unmanagedSourceDirectories +=
-        (ThisBuild / baseDirectory).value / "smithy4s-client-localstack" / "src" / "test" / "scalajs"
+        (ThisBuild / baseDirectory).value / "smithy4s-client-localstack" / "src" / "test" / "scalajs",
+      Test / scalaJSLinkerConfig ~= (_.withModuleKind(
+        ModuleKind.CommonJSModule
+      ))
     )
   )
   .dependsOn(
@@ -427,6 +430,15 @@ lazy val `smithy4s-client-localstack` = projectMatrix
     `smithy4s-client`,
     `shared-testkit` % Test,
     `smithy4s-client-logging-circe` % Test
+  )
+
+// Workaround for https://github.com/sbt/sbt-projectmatrix/pull/79
+lazy val `smithy4s-client-localstack-native-3` = `smithy4s-client-localstack`
+  .native(Scala3)
+  .enablePlugins(ScalaNativeBrewedConfigPlugin)
+  .settings(
+    nativeBrewFormulas ++= Set("s2n", "openssl"),
+    Test / envVars ++= Map("S2N_DONT_MLOCK" -> "1")
   )
 
 lazy val `smithy4s-client-localstack-jvm-213` = `smithy4s-client-localstack`
