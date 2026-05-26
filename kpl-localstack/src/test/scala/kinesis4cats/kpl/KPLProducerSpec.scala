@@ -31,7 +31,7 @@ import kinesis4cats.localstack.TestStreamConfig
 import kinesis4cats.syntax.scalacheck._
 
 abstract class KPLProducerSpec
-    extends munit.CatsEffectSuite
+    extends kinesis4cats.testkit.IntegrationSuite
     with munit.CatsEffectFunFixtures {
 
   override def munitIOTimeout: Duration = 45.seconds
