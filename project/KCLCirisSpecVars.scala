@@ -60,6 +60,10 @@ object KCLCirisSpecVars {
             "time"
           ),
           "2 seconds"
+        ),
+        CirisUtil.propAndEnv(
+          List("kcl", "coordinator", "client", "version", "config"),
+          "CLIENT_VERSION_CONFIG_COMPATIBLE_WITH_2X"
         )
       )
     )
@@ -416,6 +420,30 @@ object KCLCirisSpecVars {
             "period"
           ),
           "15 seconds"
+        ),
+        CirisUtil.propAndEnv(
+          List("kcl", "lease", "assignment", "strategy"),
+          "LEASE_COUNT_BASED"
+        ),
+        CirisUtil.propAndEnv(
+          List("kcl", "lease", "stream", "info", "mode"),
+          "TRACK_ONLY"
+        ),
+        CirisUtil.propAndEnv(
+          List("kcl", "lease", "stream", "id", "onboarding", "state"),
+          "ONBOARDED"
+        ),
+        CirisUtil.propAndEnv(
+          List("kcl", "lease", "enable", "priority", "lease", "assignment"),
+          "false"
+        ),
+        CirisUtil.propAndEnv(
+          List("kcl", "lease", "graceful", "lease", "handoff", "enabled"),
+          "false"
+        ),
+        CirisUtil.propAndEnv(
+          List("kcl", "lease", "graceful", "lease", "handoff", "timeout"),
+          "1 minute"
         )
       )
     )
@@ -606,6 +634,34 @@ object KCLCirisSpecVars {
               "tps"
             ),
             "2 ms",
+            "polling.prop.",
+            "POLLING_ENV_"
+          ),
+          CirisUtil.propAndEnv(
+            List(
+              "kcl",
+              "retrieval",
+              "polling",
+              "max",
+              "pending",
+              "process",
+              "records",
+              "input"
+            ),
+            "3",
+            "polling.prop.",
+            "POLLING_ENV_"
+          ),
+          CirisUtil.propAndEnv(
+            List(
+              "kcl",
+              "retrieval",
+              "polling",
+              "kinesis",
+              "request",
+              "timeout"
+            ),
+            "45 seconds",
             "polling.prop.",
             "POLLING_ENV_"
           )

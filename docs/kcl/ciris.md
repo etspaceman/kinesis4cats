@@ -59,6 +59,7 @@ Currently the [CheckpointConfig](https://github.com/awslabs/amazon-kinesis-clien
 | `KCL_COORDINATOR_SKIP_SHARD_SYNC_AT_INITIALIZATION_IF_LEASES_EXIST` | `kcl.coordinator.skip.shard.sync.at.initialization.if.leases.exist` | No | false | If true, the Scheduler will skip shard sync during initialization if there are one or more leases in the lease table. |
 | `KCL_COORDINATOR_SHARD_CONSUMER_DISPATCH_POLL_INTERVAL` | `kcl.coordinator.shard.consumer.dispatch.poll.interval` | No | 1 second | The duration between polling of the shard consumer for triggering state changes, and health checks. |
 | `KCL_COORDINATOR_SCHEDULER_INITIALIZATION_BACKOFF_TIME` | `kcl.coordinator.scheduler.initialization.backoff.time` | No | 1 second | Interval between retrying the scheduler initialization. |
+| `KCL_COORDINATOR_CLIENT_VERSION_CONFIG` | `kcl.coordinator.client.version.config` | No | `CLIENT_VERSION_CONFIG_3X` | KCL client version mode. Valid values are `CLIENT_VERSION_CONFIG_3X`, `CLIENT_VERSION_CONFIG_COMPATIBLE_WITH_2X`, and `CLIENT_VERSION_CONFIG_2X`. Used to support migrations between KCL v2 and v3. |
 
 ### Lease
 
@@ -111,6 +112,12 @@ Currently the [CheckpointConfig](https://github.com/awslabs/amazon-kinesis-clien
 | `KCL_LEASE_ASSIGNMENT_INTERVAL` | `kcl.lease.assignment.interval` | No | `failoverTime * 2` | Lease assignment interval - e.g. wait for this long between Lease assignment run. |
 | `KCL_LEASE_DYNAMODB_LOCK_BASED_LEADER_LEASE_DURATION` | `kcl.lease.dynamodb.lock.based.leader.lease.duration` | No | `2 minutes` | The length of time that the lease for the leader will be granted for. |
 | `KCL_LEASE_DYNAMODB_LOCK_BASED_LEADER_HEARTBEAT_PERIOD` | `kcl.lease.dynamodb.lock.based.leader.heartbeat.period` | No | `30 seconds` | How often the leader should send an update to DynamoDB to note that the worker is still running. |
+| `KCL_LEASE_ASSIGNMENT_STRATEGY` | `kcl.lease.assignment.strategy` | No | `WORKER_UTILIZATION_AWARE` | Strategy for lease assignment between workers. Valid values are `WORKER_UTILIZATION_AWARE` (KCL v3 default, considers worker CPU/memory/throughput metrics) and `LEASE_COUNT_BASED` (distributes leases evenly by count, ignoring utilization metrics). |
+| `KCL_LEASE_STREAM_INFO_MODE` | `kcl.lease.stream.info.mode` | No | `DISABLED` | Controls whether KCL writes stream metadata to the Coordinator table. Valid values are `DISABLED` (no metadata tracking) and `TRACK_ONLY` (back-fills metadata for all streams into the Coordinator table, no lifecycle control). |
+| `KCL_LEASE_STREAM_ID_ONBOARDING_STATE` | `kcl.lease.stream.id.onboarding.state` | No | `NOT_ONBOARDED` | StreamId onboarding state for the application. Valid values are `NOT_ONBOARDED`, `IN_TRANSITION`, and `ONBOARDED`. |
+| `KCL_LEASE_ENABLE_PRIORITY_LEASE_ASSIGNMENT` | `kcl.lease.enable.priority.lease.assignment` | No | `true` | Whether to enable priority-based lease assignment. |
+| `KCL_LEASE_GRACEFUL_LEASE_HANDOFF_ENABLED` | `kcl.lease.graceful.lease.handoff.enabled` | No | `true` | Flag to enable or disable the graceful lease handoff mechanism. When `true`, KCL will allow the shard's RecordProcessor sufficient time to complete processing before handing off the lease to another worker. Checkpointing must be implemented inside `shutdownRequested` for this to work end-to-end. |
+| `KCL_LEASE_GRACEFUL_LEASE_HANDOFF_TIMEOUT` | `kcl.lease.graceful.lease.handoff.timeout` | No | `30 seconds` | Minimum time to wait for the current shard's RecordProcessor to gracefully shut down before forcefully transferring the lease to the next owner. |
 
 ### Lifecycle
 
@@ -169,6 +176,8 @@ Configuration values if `KCL_RETRIEVAL_TYPE`/`kcl.retrieval.type` is `polling`. 
 | `KCL_RETRIEVAL_POLLING_RETRY_GET_RECORDS_INTERVAL` | `kcl.retrieval.polling.retry.get.records.interval` | No | `None` | Time to wait in seconds before the worker retries to get a record. If None, retries immediately |
 | `KCL_RETRIEVAL_POLLING_MAX_GET_RECORDS_THREAD_POOL` | `kcl.retrieval.polling.max.get.records.thread.pool` | No | `None` | The max number of threads in the records thread pool. If None, there is no limit. |
 | `KCL_RETRIEVAL_POLLING_DURATION_BEHIND_LATEST_THRESHOLD_FOR_REDUCED_TPS` | `kcl.retrieval.polling.duration.behind.latest.threshold.for.reduced.tps` | No | `0 ms` | Duration threshold for millisBehindLatest that will trigger reduced throughput when close to tip. |
+| `KCL_RETRIEVAL_POLLING_MAX_PENDING_PROCESS_RECORDS_INPUT` | `kcl.retrieval.polling.max.pending.process.records.input` | No | `4` | Maximum number of pending `ProcessRecordsInput` entries that can be queued. Must be `<= 5`. |
+| `KCL_RETRIEVAL_POLLING_KINESIS_REQUEST_TIMEOUT` | `kcl.retrieval.polling.kinesis.request.timeout` | No | `30 seconds` | Request timeout applied to Kinesis `GetRecords` calls used by the polling retriever. |
 
 ### Processor
 

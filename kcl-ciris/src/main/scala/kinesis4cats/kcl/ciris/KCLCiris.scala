@@ -32,14 +32,21 @@ import software.amazon.awssdk.services.dynamodb.model.BillingMode
 import software.amazon.awssdk.services.dynamodb.model.Tag
 import software.amazon.awssdk.services.kinesis.KinesisAsyncClient
 import software.amazon.kinesis.checkpoint.CheckpointConfig
+import software.amazon.kinesis.checkpoint.CheckpointFactory
 import software.amazon.kinesis.common._
+import software.amazon.kinesis.coordinator.CoordinatorConfig.ClientVersionConfig
 import software.amazon.kinesis.coordinator._
+import software.amazon.kinesis.coordinator.streamInfo.StreamIdOnboardingState
+import software.amazon.kinesis.coordinator.streamInfo.StreamInfoMode
+import software.amazon.kinesis.leases.LeaseAssignmentStrategy
+import software.amazon.kinesis.leases.LeaseManagementConfig.GracefulLeaseHandoffConfig
 import software.amazon.kinesis.leases.LeaseManagementConfig.WorkerUtilizationAwareAssignmentConfig
 import software.amazon.kinesis.leases._
 import software.amazon.kinesis.leases.dynamodb.TableCreatorCallback
 import software.amazon.kinesis.lifecycle._
 import software.amazon.kinesis.metrics._
 import software.amazon.kinesis.processor.SingleStreamTracker
+import software.amazon.kinesis.retrieval.RecordsFetcherFactory
 import software.amazon.kinesis.retrieval.fanout.FanOutConfig
 import software.amazon.kinesis.retrieval.polling.PollingConfig
 import software.amazon.kinesis.retrieval.polling.SleepTimeController
@@ -141,7 +148,11 @@ object KCLCiris {
       encoders: RecordProcessor.LogEncoders = RecordProcessor.LogEncoders.show,
       managedClients: Boolean = true,
       workerMetrics: Option[List[WorkerMetric]] = None,
-      sleepTimeController: Option[SleepTimeController] = None
+      sleepTimeController: Option[SleepTimeController] = None,
+      streamArnConstructor: Option[StreamArnConstructor] = None,
+      checkpointFactory: Option[CheckpointFactory] = None,
+      consumerTaskFactory: Option[ConsumerTaskFactory] = None,
+      recordsFetcherFactory: Option[RecordsFetcherFactory] = None
   )(cb: List[CommittableRecord[F]] => F[Unit])(implicit
       F: Async[F]
   ): Resource[F, KCLConsumer[F]] = for {
@@ -176,6 +187,10 @@ object KCLCiris {
       metricsFactory,
       glueSchemaRegistryDeserializer,
       sleepTimeController,
+      streamArnConstructor,
+      checkpointFactory,
+      consumerTaskFactory,
+      recordsFetcherFactory,
       encoders
     )(cb).map(new KCLConsumer[F](_))
   } yield consumer
@@ -253,11 +268,15 @@ object KCLCiris {
       metricsFactory: Option[MetricsFactory],
       glueSchemaRegistryDeserializer: Option[GlueSchemaRegistryDeserializer],
       sleepTimeController: Option[SleepTimeController],
+      streamArnConstructor: Option[StreamArnConstructor],
+      checkpointFactory: Option[CheckpointFactory],
+      consumerTaskFactory: Option[ConsumerTaskFactory],
+      recordsFetcherFactory: Option[RecordsFetcherFactory],
       encoders: RecordProcessor.LogEncoders
   )(cb: List[CommittableRecord[F]] => F[Unit])(implicit
       F: Async[F]
   ): Resource[F, KCLConsumer.Config[F]] = for {
-    checkpointConfig <- Checkpoint.resource[F]
+    checkpointConfig <- Checkpoint.resource[F](checkpointFactory)
     coordinatorConfig <- Coordinator.resource[F](
       prefix,
       shardPrioritization,
@@ -272,7 +291,8 @@ object KCLCiris {
       tableCreatorCallback,
       leaseManagementFactory,
       leaseExecutorService,
-      workerMetrics
+      workerMetrics,
+      consumerTaskFactory
     )
     lifecycleConfig <- Lifecycle
       .resource[F](prefix, aggregatorUtil, taskExecutionListener)
@@ -283,7 +303,9 @@ object KCLCiris {
         kinesisClient,
         prefix,
         glueSchemaRegistryDeserializer,
-        sleepTimeController
+        sleepTimeController,
+        streamArnConstructor,
+        recordsFetcherFactory
       )
     processConfig <- Processor.resource[F](prefix)
     config <- KCLConsumer.Config.create[F](
@@ -350,25 +372,39 @@ object KCLCiris {
     /** Reads the
       * [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/checkpoint/CheckpointConfig.java CheckpointConfig]]
       *
+      * @param checkpointFactory
+      *   Optional
+      *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/checkpoint/CheckpointFactory.java CheckpointFactory]]
       * @return
       *   [[https://cir.is/api/ciris/ConfigDecoder.html ConfigDecoder]] of
       *   [[[[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/checkpoint/CheckpointConfig.java CheckpointConfig]]
       */
-    private[kinesis4cats] def read: ConfigValue[Effect, CheckpointConfig] =
-      ConfigValue.default(new CheckpointConfig())
+    private[kinesis4cats] def read(
+        checkpointFactory: Option[CheckpointFactory]
+    ): ConfigValue[Effect, CheckpointConfig] =
+      ConfigValue.default(
+        new CheckpointConfig().maybeTransform(checkpointFactory)(
+          _.checkpointFactory(_)
+        )
+      )
 
     /** Reads the
       * [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/checkpoint/CheckpointConfig.java CheckpointConfig]]
       * into a [[cats.effect.Resource Resource]]
       *
+      * @param checkpointFactory
+      *   Optional
+      *   [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/checkpoint/CheckpointFactory.java CheckpointFactory]]
       * @param F
       *   [[cats.effect.Async Async]]
       * @return
       *   [[cats.effect.Resource Resource]] of
       *   [[[[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/checkpoint/CheckpointConfig.java CheckpointConfig]]
       */
-    private[kinesis4cats] def resource[F[_]](implicit F: Async[F]) =
-      read.resource[F]
+    private[kinesis4cats] def resource[F[_]](
+        checkpointFactory: Option[CheckpointFactory]
+    )(implicit F: Async[F]) =
+      read(checkpointFactory).resource[F]
   }
 
   object Coordinator {
@@ -396,6 +432,10 @@ object KCLCiris {
     ): ConfigValue[Effect, CoordinatorConfig] =
       for {
         appName <- Common.readAppName(prefix)
+        clientVersionConfig <- CirisReader.readOptional[ClientVersionConfig](
+          List("kcl", "coordinator", "client", "version", "config"),
+          prefix
+        )
         maxInitializationAttempts <- CirisReader.readOptional[Int](
           List("kcl", "coordinator", "max", "initialization", "attempts"),
           prefix
@@ -465,6 +505,7 @@ object KCLCiris {
         .maybeTransform(schedulerInitializationBackoffTime)(
           _.schedulerInitializationBackoffTimeMillis(_)
         )
+        .maybeTransform(clientVersionConfig)(_.clientVersionConfig(_))
         .maybeTransform(shardPrioritization)(_.shardPrioritization(_))
         .maybeTransform(workerStateChangeListener)(
           _.workerStateChangeListener(_)
@@ -542,7 +583,8 @@ object KCLCiris {
         tableCreatorCallback: Option[TableCreatorCallback],
         leaseManagementFactory: Option[LeaseManagementFactory],
         executorService: Option[ExecutorService],
-        workerMetrics: Option[List[WorkerMetric]]
+        workerMetrics: Option[List[WorkerMetric]],
+        consumerTaskFactory: Option[ConsumerTaskFactory]
     ): ConfigValue[Effect, LeaseManagementConfig] = for {
       appName <- Common.readAppName(prefix)
       tableName <- CirisReader
@@ -1016,6 +1058,44 @@ object KCLCiris {
           prefix
         )
         .map(_.map(_.toMillis))
+      leaseAssignmentStrategy <- CirisReader
+        .readOptional[LeaseAssignmentStrategy](
+          List("kcl", "lease", "assignment", "strategy"),
+          prefix
+        )
+      streamInfoMode <- CirisReader.readOptional[StreamInfoMode](
+        List("kcl", "lease", "stream", "info", "mode"),
+        prefix
+      )
+      streamIdOnboardingState <- CirisReader
+        .readOptional[StreamIdOnboardingState](
+          List("kcl", "lease", "stream", "id", "onboarding", "state"),
+          prefix
+        )
+      enablePriorityLeaseAssignment <- CirisReader.readOptional[Boolean](
+        List("kcl", "lease", "enable", "priority", "lease", "assignment"),
+        prefix
+      )
+      gracefulLeaseHandoffEnabled <- CirisReader.readOptional[Boolean](
+        List("kcl", "lease", "graceful", "lease", "handoff", "enabled"),
+        prefix
+      )
+      gracefulLeaseHandoffTimeout <- CirisReader
+        .readOptional[Duration](
+          List("kcl", "lease", "graceful", "lease", "handoff", "timeout"),
+          prefix
+        )
+        .map(_.map(_.toMillis))
+      gracefulLeaseHandoffConfig = {
+        val builder = GracefulLeaseHandoffConfig.builder()
+        gracefulLeaseHandoffEnabled.foreach(
+          builder.isGracefulLeaseHandoffEnabled
+        )
+        gracefulLeaseHandoffTimeout.foreach(
+          builder.gracefulLeaseHandoffTimeoutMillis
+        )
+        builder.build()
+      }
     } yield new LeaseManagementConfig(
       tableName,
       appName,
@@ -1090,6 +1170,14 @@ object KCLCiris {
       .maybeTransform(dynamoDbLockBasedLeaderHeartbeatPeriodInMillis)(
         _.dynamoDbLockBasedLeaderHeartbeatPeriodInMillis(_)
       )
+      .maybeTransform(leaseAssignmentStrategy)(_.leaseAssignmentStrategy(_))
+      .maybeTransform(streamInfoMode)(_.streamInfoMode(_))
+      .maybeTransform(streamIdOnboardingState)(_.streamIdOnboardingState(_))
+      .maybeTransform(enablePriorityLeaseAssignment)(
+        _.enablePriorityLeaseAssignment(_)
+      )
+      .gracefulLeaseHandoffConfig(gracefulLeaseHandoffConfig)
+      .maybeTransform(consumerTaskFactory)(_.consumerTaskFactory(_))
 
     /** Reads the
       * [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/leases/LeaseManagementConfig.java LeaseManagementConfig]]
@@ -1132,7 +1220,8 @@ object KCLCiris {
         tableCreatorCallback: Option[TableCreatorCallback],
         leaseManagementFactory: Option[LeaseManagementFactory],
         executorService: Option[ExecutorService],
-        workerMetrics: Option[List[WorkerMetric]]
+        workerMetrics: Option[List[WorkerMetric]],
+        consumerTaskFactory: Option[ConsumerTaskFactory]
     )(implicit F: Async[F]): Resource[F, LeaseManagementConfig] = read(
       dynamoClient,
       kinesisClient,
@@ -1141,7 +1230,8 @@ object KCLCiris {
       tableCreatorCallback,
       leaseManagementFactory,
       executorService,
-      workerMetrics
+      workerMetrics,
+      consumerTaskFactory
     ).resource[F]
   }
 
@@ -1328,7 +1418,8 @@ object KCLCiris {
     private[kinesis4cats] def readPollingConfig(
         kinesisClient: KinesisAsyncClient,
         prefix: Option[String],
-        sleepTimeController: Option[SleepTimeController]
+        sleepTimeController: Option[SleepTimeController],
+        recordsFetcherFactory: Option[RecordsFetcherFactory]
     ): ConfigValue[Effect, PollingConfig] = for {
       streamName <- Common.readStreamName(prefix)
       maxRecords <- CirisReader.readOptional[Int](
@@ -1409,6 +1500,23 @@ object KCLCiris {
           prefix
         )
         .map(_.map(_.toMillis))
+      maxPendingProcessRecordsInput <- CirisReader.readOptional[Int](
+        List(
+          "kcl",
+          "retrieval",
+          "polling",
+          "max",
+          "pending",
+          "process",
+          "records",
+          "input"
+        ),
+        prefix
+      )
+      kinesisRequestTimeout <- CirisReader.readOptional[java.time.Duration](
+        List("kcl", "retrieval", "polling", "kinesis", "request", "timeout"),
+        prefix
+      )
     } yield new PollingConfig(streamName, kinesisClient)
       .maybeTransform(maxRecords) { case (pollingConfig, mr) =>
         pollingConfig.maxRecords(mr)
@@ -1424,6 +1532,11 @@ object KCLCiris {
       .maybeTransform(millisBehindLatestThresholdForReducedTps)(
         _.millisBehindLatestThresholdForReducedTps(_)
       )
+      .maybeTransform(maxPendingProcessRecordsInput)(
+        _.maxPendingProcessRecordsInput(_)
+      )
+      .maybeTransform(kinesisRequestTimeout)(_.kinesisRequestTimeout(_))
+      .maybeTransform(recordsFetcherFactory)(_.recordsFetcherFactory(_))
 
     /** Reads the
       * [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/retrieval/fanout/FanOutConfig.java FanOutConfig]]
@@ -1532,7 +1645,9 @@ object KCLCiris {
         kinesisClient: KinesisAsyncClient,
         prefix: Option[String],
         glueSchemaRegistryDeserializer: Option[GlueSchemaRegistryDeserializer],
-        sleepTimeController: Option[SleepTimeController]
+        sleepTimeController: Option[SleepTimeController],
+        streamArnConstructor: Option[StreamArnConstructor],
+        recordsFetcherFactory: Option[RecordsFetcherFactory]
     ): ConfigValue[Effect, RetrievalConfig] = for {
       appName <- Common.readAppName(prefix)
       streamName <- Common.readStreamName(prefix)
@@ -1544,7 +1659,12 @@ object KCLCiris {
       )
       retrievalConfig <- retrievalType match {
         case RetrievalType.Polling =>
-          readPollingConfig(kinesisClient, prefix, sleepTimeController)
+          readPollingConfig(
+            kinesisClient,
+            prefix,
+            sleepTimeController,
+            recordsFetcherFactory
+          )
         case RetrievalType.FanOut =>
           readFanOutConfig(kinesisClient, prefix)
       }
@@ -1577,6 +1697,7 @@ object KCLCiris {
       .maybeTransform(glueSchemaRegistryDeserializer)(
         _.glueSchemaRegistryDeserializer(_)
       )
+      .maybeTransform(streamArnConstructor)(_.streamArnConstructor(_))
 
     /** Reads the
       * [[https://github.com/awslabs/amazon-kinesis-client/blob/master/amazon-kinesis-client/src/main/java/software/amazon/kinesis/retrieval/RetrievalConfig.java RetrievalConfig]]
@@ -1601,13 +1722,17 @@ object KCLCiris {
         kinesisClient: KinesisAsyncClient,
         prefix: Option[String],
         glueSchemaRegistryDeserializer: Option[GlueSchemaRegistryDeserializer],
-        sleepTimeController: Option[SleepTimeController]
+        sleepTimeController: Option[SleepTimeController],
+        streamArnConstructor: Option[StreamArnConstructor],
+        recordsFetcherFactory: Option[RecordsFetcherFactory]
     )(implicit F: Async[F]): Resource[F, RetrievalConfig] =
       read(
         kinesisClient,
         prefix,
         glueSchemaRegistryDeserializer,
-        sleepTimeController
+        sleepTimeController,
+        streamArnConstructor,
+        recordsFetcherFactory
       ).resource[F]
   }
 
