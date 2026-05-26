@@ -71,6 +71,7 @@ object Kinesis4CatsPlugin extends AutoPlugin {
     developers := List(tlGitHubDev("etspaceman", "Eric Meisel")),
     crossScalaVersions := Seq(Scala213),
     scalaVersion := Scala213,
+    runIntegrationTests := false,
     tlCiMimaBinaryIssueCheck := tlBaseVersion.value.head.toString != "0",
     resolvers += "s01 snapshots" at "https://s01.oss.sonatype.org/content/repositories/snapshots/",
     resolvers += "jitpack" at "https://jitpack.io",
@@ -216,8 +217,14 @@ object Kinesis4CatsPlugin extends AutoPlugin {
   )
 
   override def projectSettings = Seq(
-    Test / testOptions ++=
-      List(Tests.Argument(TestFrameworks.MUnit, "+l")),
+    Test / testOptions := Seq(
+      Tests.Argument(TestFrameworks.MUnit, "+l"),
+      Tests.Argument(
+        TestFrameworks.MUnit,
+        if ((ThisBuild / runIntegrationTests).value) "--include-tags=integration"
+        else "--exclude-tags=integration"
+      )
+    ),
     // Workaround for https://github.com/typelevel/sbt-typelevel/issues/464
     scalacOptions ++= {
       if (tlIsScala3.value)
@@ -284,6 +291,10 @@ object Kinesis4CatsPlugin extends AutoPlugin {
     addCommandAlias(
       "cov",
       ";clean;coverage;test;coverageReport;coverageOff"
+    ),
+    addCommandAlias(
+      "itTest",
+      ";set ThisBuild/runIntegrationTests := true;test;set ThisBuild/runIntegrationTests := false"
     )
   ).flatten
 
@@ -317,6 +328,10 @@ object Kinesis4CatsPluginKeys {
   val Scala3 = "3.3.7"
 
   val allScalaVersions = List(Scala213, Scala3)
+
+  val runIntegrationTests = settingKey[Boolean](
+    "When true, test tasks include integration-tagged tests; when false (default), they exclude them."
+  )
 
   import de.heikoseeberger.sbtheader.HeaderPlugin.autoImport._
   import scalafix.sbt.ScalafixPlugin.autoImport._
