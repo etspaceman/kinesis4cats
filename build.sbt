@@ -437,39 +437,6 @@ lazy val `smithy4s-client-localstack-jvm-3` = `smithy4s-client-localstack`
   .jvm(Scala3)
   .dependsOn(`kcl-localstack`.jvm(Scala3) % Test)
 
-lazy val integrationTestsJvmSettings: Seq[Setting[_]] = Seq(
-  Test / fork := true,
-  libraryDependencies ++= Seq(
-    Http4s.blazeClient.value % Test,
-    FS2.reactiveStreams % Test,
-    Logback
-  ),
-  assembly / assemblyMergeStrategy := {
-    case "module-info.class"                        => MergeStrategy.discard
-    case "AUTHORS"                                  => MergeStrategy.discard
-    case "META-INF/smithy/smithy4s.tracking.smithy" => MergeStrategy.discard
-    case "META-INF/smithy/manifest"                 => MergeStrategy.first
-    case "scala/jdk/CollectionConverters$.class"    => MergeStrategy.first
-    case "commonMain/default/linkdata/module"       => MergeStrategy.first
-    case "nativeMain/default/linkdata/module"       => MergeStrategy.first
-    case "commonMain/default/manifest"              => MergeStrategy.first
-    case "nativeMain/default/manifest"              => MergeStrategy.first
-    case PathList("google", "protobuf", _ @_*)      => MergeStrategy.first
-    case PathList("codegen-resources", _ @_*)       => MergeStrategy.first
-    case PathList("io", "netty", "handler", "codec", _ @_*) =>
-      MergeStrategy.first
-    case PathList("META-INF", xs @ _*) =>
-      (xs map { _.toLowerCase }) match {
-        case "services" :: xs               => MergeStrategy.filterDistinctLines
-        case "resources" :: "webjars" :: xs => MergeStrategy.first
-        case _                              => MergeStrategy.discard
-      }
-    case x => MergeStrategy.defaultMergeStrategy(x)
-  },
-  assembly / mainClass := Some("kinesis4cats.kcl.http4s.TestKCLService"),
-  tlJdkRelease := Some(11)
-)
-
 lazy val feral = projectMatrix
   .settings(
     description := "Interfaces for constructing AWS Lambda functions via Feral",
@@ -482,73 +449,6 @@ lazy val feral = projectMatrix
   .jvmPlatform(allScalaVersions)
   .jsPlatform(allScalaVersions)
   .dependsOn(`shared-circe`)
-
-lazy val integrationTestsJvmDependencies = List(
-  `kcl-http4s`,
-  `kcl-localstack`
-)
-
-lazy val integrationTestsJvmTestDependencies = List(
-  `kcl-logging-circe`,
-  `kinesis-client-localstack`,
-  `kinesis-client-logging-circe`,
-  `kpl-localstack`,
-  `kpl-logging-circe`
-)
-
-lazy val `integration-tests` = projectMatrix
-  .enablePlugins(NoPublishPlugin, DockerImagePlugin)
-  .settings(DockerImagePlugin.settings)
-  .settings(
-    description := "Integration Tests for Kinesis4Cats",
-    libraryDependencies ++= Seq(
-      Http4s.emberClient.value % Test
-    )
-  )
-  .jvmPlatform(allScalaVersions)
-  .nativePlatform(Seq(Scala3))
-  .jsPlatform(
-    allScalaVersions,
-    Nil,
-    _.settings(
-      scalaJSLinkerConfig ~= (_.withModuleKind(ModuleKind.CommonJSModule))
-    )
-  )
-  .dependsOn(
-    `smithy4s-client-localstack` % Test,
-    `smithy4s-client-logging-circe` % Test
-  )
-
-// Workaround for https://github.com/sbt/sbt-projectmatrix/pull/79
-lazy val `integration-tests-native` = `integration-tests`
-  .native(Scala3)
-  .enablePlugins(ScalaNativeBrewedConfigPlugin)
-  .settings(
-    nativeBrewFormulas ++= Set("s2n", "openssl"),
-    Test / envVars ++= Map("S2N_DONT_MLOCK" -> "1")
-  )
-
-lazy val `integration-tests-jvm-213` = `integration-tests`
-  .jvm(Scala213)
-  .settings(integrationTestsJvmSettings)
-  .dependsOn(
-    (integrationTestsJvmDependencies.map(x =>
-      ClasspathDependency(x.jvm(Scala213).project, None)
-    ) ++ integrationTestsJvmTestDependencies.map(x =>
-      ClasspathDependency(x.jvm(Scala213).project, Some(Test.name))
-    )): _*
-  )
-
-lazy val `integration-tests-jvm-3` = `integration-tests`
-  .jvm(Scala3)
-  .settings(integrationTestsJvmSettings)
-  .dependsOn(
-    (integrationTestsJvmDependencies.map(x =>
-      ClasspathDependency(x.jvm(Scala3).project, None)
-    ) ++ integrationTestsJvmTestDependencies.map(x =>
-      ClasspathDependency(x.jvm(Scala3).project, Some(Test.name))
-    )): _*
-  )
 
 lazy val docs = projectMatrix
   .in(file("site"))
@@ -691,7 +591,6 @@ lazy val allProjects = Seq(
   `smithy4s-client-logging-circe`,
   `smithy4s-client-localstack`,
   feral,
-  `integration-tests`,
   unidocs
 )
 
