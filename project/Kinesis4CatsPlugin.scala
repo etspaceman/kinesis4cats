@@ -228,7 +228,8 @@ object Kinesis4CatsPlugin extends AutoPlugin {
       Tests.Argument(TestFrameworks.MUnit, "+l"),
       Tests.Argument(
         TestFrameworks.MUnit,
-        if ((ThisBuild / runIntegrationTests).value) "--include-tags=integration"
+        if ((ThisBuild / runIntegrationTests).value)
+          "--include-tags=integration"
         else "--exclude-tags=integration"
       )
     ),

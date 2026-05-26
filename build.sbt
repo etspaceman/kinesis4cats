@@ -227,7 +227,7 @@ lazy val `kcl-http4s-test-server` = projectMatrix
         MergeStrategy.first
       case PathList("META-INF", xs @ _*) =>
         (xs map { _.toLowerCase }) match {
-          case "services" :: _               => MergeStrategy.filterDistinctLines
+          case "services" :: _ => MergeStrategy.filterDistinctLines
           case "resources" :: "webjars" :: _ => MergeStrategy.first
           case _                             => MergeStrategy.discard
         }
@@ -606,7 +606,8 @@ lazy val allProjects = Seq(
   unidocs
 )
 
-lazy val functionalTestProjects = List(`kcl-http4s-test-server`).map(_.jvm(Scala3))
+lazy val functionalTestProjects =
+  List(`kcl-http4s-test-server`).map(_.jvm(Scala3))
 
 def commonRootSettings: Seq[Setting[_]] =
   DockerComposePlugin.settings(true, functionalTestProjects) ++ Seq(
