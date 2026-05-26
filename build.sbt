@@ -192,6 +192,45 @@ lazy val `kcl-localstack` = projectMatrix
   .jvmPlatform(allScalaVersions)
   .dependsOn(`aws-v2-localstack`, kcl)
 
+lazy val `kcl-http4s-test-server` = projectMatrix
+  .enablePlugins(NoPublishPlugin, DockerImagePlugin)
+  .settings(DockerImagePlugin.settings)
+  .settings(
+    description := "Test server hosting the kcl-http4s service for integration tests",
+    libraryDependencies ++= Seq(
+      Http4s.blazeClient.value,
+      FS2.reactiveStreams,
+      Logback
+    ),
+    assembly / test := {},
+    assembly / mainClass := Some("kinesis4cats.kcl.http4s.TestKCLService"),
+    assembly / assemblyMergeStrategy := {
+      case "module-info.class"                        => MergeStrategy.discard
+      case "AUTHORS"                                  => MergeStrategy.discard
+      case "META-INF/smithy/smithy4s.tracking.smithy" => MergeStrategy.discard
+      case "META-INF/smithy/manifest"                 => MergeStrategy.first
+      case "scala/jdk/CollectionConverters$.class"    => MergeStrategy.first
+      case "commonMain/default/linkdata/module"       => MergeStrategy.first
+      case "nativeMain/default/linkdata/module"       => MergeStrategy.first
+      case "commonMain/default/manifest"              => MergeStrategy.first
+      case "nativeMain/default/manifest"              => MergeStrategy.first
+      case PathList("google", "protobuf", _ @_*)      => MergeStrategy.first
+      case PathList("codegen-resources", _ @_*)       => MergeStrategy.first
+      case PathList("io", "netty", "handler", "codec", _ @_*) =>
+        MergeStrategy.first
+      case PathList("META-INF", xs @ _*) =>
+        (xs map { _.toLowerCase }) match {
+          case "services" :: _               => MergeStrategy.filterDistinctLines
+          case "resources" :: "webjars" :: _ => MergeStrategy.first
+          case _                             => MergeStrategy.discard
+        }
+      case x => MergeStrategy.defaultMergeStrategy(x)
+    },
+    tlJdkRelease := Some(11)
+  )
+  .jvmPlatform(Seq(Scala3))
+  .dependsOn(`kcl-http4s`, `kcl-localstack`)
+
 lazy val kpl = projectMatrix
   .settings(
     description := "Cats tooling for the Kinesis Producer Library (KPL)",
@@ -585,6 +624,7 @@ lazy val allProjects = Seq(
   `aws-v2-localstack`,
   kcl,
   `kcl-http4s`,
+  `kcl-http4s-test-server`,
   `kcl-ciris`,
   `kcl-logging-circe`,
   `kcl-localstack`,
