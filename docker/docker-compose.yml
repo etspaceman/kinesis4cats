@@ -1,11 +1,11 @@
 version: '3.8'
 services:
   localstack:
-    image: "localstack/localstack:2.3.0"
+    image: "localstack/localstack:latest"
     environment:
       - "SERVICES=cloudwatch,kinesis,dynamodb,sts"
       - "KINESIS_LATENCY=0"
-      - "KINESIS_INITIALIZE_STREAMS=test-kcl-service-stream:1"
+      - "LOCALSTACK_AUTH_TOKEN=${LOCALSTACK_AUTH_TOKEN:-}"
     healthcheck:
       test: "awslocal cloudwatch list-metrics && awslocal sts get-caller-identity"
       interval: 5s
@@ -13,6 +13,24 @@ services:
       start_period: 10s
     ports:
       - "4566:4566"
+  localstack-init:
+    image: "amazon/aws-cli:latest"
+    depends_on:
+      localstack:
+        condition: service_healthy
+    environment:
+      - "AWS_ACCESS_KEY_ID=test"
+      - "AWS_SECRET_ACCESS_KEY=test"
+      - "AWS_DEFAULT_REGION=us-east-1"
+    entrypoint:
+      - "aws"
+      - "--endpoint-url=http://localstack:4566"
+      - "kinesis"
+      - "create-stream"
+      - "--stream-name"
+      - "test-kcl-service-stream"
+      - "--shard-count"
+      - "1"
   testKclService:
     image: "ghcr.io/etspaceman/integration-tests:${DOCKER_TAG_VERSION}"
     environment:
@@ -31,6 +49,8 @@ services:
     depends_on:
       localstack:
         condition: service_healthy
+      localstack-init:
+        condition: service_completed_successfully
   ready:
     image: "library/hello-world"
     depends_on:
