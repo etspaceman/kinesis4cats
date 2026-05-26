@@ -21,7 +21,7 @@ import cats.syntax.all._
 import org.http4s.client.Client
 import org.http4s.ember.client.EmberClientBuilder
 
-class TestKCLServiceSpec extends munit.CatsEffectSuite {
+class TestKCLServiceSpec extends kinesis4cats.testkit.IntegrationSuite {
 
   val fixture: SyncIO[FunFixture[TestKCLServiceSpec.Resources[IO]]] =
     ResourceFunFixture(TestKCLServiceSpec.resource)

@@ -152,10 +152,17 @@ lazy val `kcl-http4s` = projectMatrix
       Http4s.emberServer.value
     ),
     Compile / smithy4sSmithyLibrary := false,
+    Compile / smithy4sAllowedNamespaces := List(
+      "kinesis4cats.kcl.http4s.generated"
+    ),
     removeSmithy4sDependenciesFromManifest
   )
   .jvmPlatform(allScalaVersions)
-  .dependsOn(kcl)
+  .dependsOn(
+    kcl,
+    `shared-testkit` % Test,
+    `kcl-localstack` % Test
+  )
 
 lazy val `kcl-ciris` = projectMatrix
   .settings(BuildInfoPlugin.buildInfoDefaultSettings)
@@ -190,7 +197,12 @@ lazy val `kcl-localstack` = projectMatrix
     description := "A test-kit for working with Kinesis and Localstack, via the KCL"
   )
   .jvmPlatform(allScalaVersions)
-  .dependsOn(`aws-v2-localstack`, kcl)
+  .dependsOn(
+    `aws-v2-localstack`,
+    kcl,
+    `shared-testkit` % Test,
+    `kinesis-client-localstack` % Test
+  )
 
 lazy val `kcl-http4s-test-server` = projectMatrix
   .enablePlugins(NoPublishPlugin, DockerImagePlugin)

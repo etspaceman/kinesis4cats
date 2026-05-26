@@ -15,12 +15,13 @@
  */
 
 package kinesis4cats
-package kcl.fs2.multistream
+package kcl
+package multistream
 
 import scala.concurrent.duration._
 
-import _root_.fs2.Stream
 import cats.effect.Deferred
+import cats.effect.std.Queue
 import cats.effect.{IO, Resource, SyncIO}
 import cats.syntax.all._
 import io.circe.parser._
@@ -32,29 +33,23 @@ import software.amazon.kinesis.common._
 
 import kinesis4cats.client.KinesisClient
 import kinesis4cats.client.localstack.LocalstackKinesisClient
-import kinesis4cats.kcl.CommittableRecord
-import kinesis4cats.kcl.fs2.KCLConsumerFS2
-import kinesis4cats.kcl.fs2.localstack.LocalstackKCLConsumerFS2
-import kinesis4cats.kcl.multistream.MultiStreamTracker
+import kinesis4cats.compat.retry.RetryPolicies._
+import kinesis4cats.compat.retry._
+import kinesis4cats.kcl.localstack.LocalstackKCLConsumer
 import kinesis4cats.localstack.TestStreamConfig
 import kinesis4cats.models.{AwsRegion, StreamArn}
 import kinesis4cats.syntax.bytebuffer._
 import kinesis4cats.syntax.scalacheck._
 
-class KCLConsumerFS2MultiSpec extends munit.CatsEffectSuite {
+class KCLConsumerMultiSpec extends kinesis4cats.testkit.IntegrationSuite {
   def fixture(
       streamArn1: StreamArn,
       streamArn2: StreamArn,
       shardCount: Int,
       appName: String
-  ): SyncIO[FunFixture[KCLConsumerFS2MultiSpec.Resources[IO]]] =
+  ): SyncIO[FunFixture[KCLConsumerMultiSpec.Resources[IO]]] =
     ResourceFunFixture(
-      KCLConsumerFS2MultiSpec.resource(
-        streamArn1,
-        streamArn2,
-        shardCount,
-        appName
-      )
+      KCLConsumerMultiSpec.resource(streamArn1, streamArn2, shardCount, appName)
     )
 
   override def munitIOTimeout: Duration = 5.minutes
@@ -62,15 +57,15 @@ class KCLConsumerFS2MultiSpec extends munit.CatsEffectSuite {
   val accountId = "000000000000"
   val streamArn1 = StreamArn(
     AwsRegion.US_EAST_1,
-    s"kcl-multi-consumer-fs2-spec-1-${Utils.randomUUIDString}",
+    s"kcl-multi-consumer-spec-1-${Utils.randomUUIDString}",
     accountId
   )
   val streamArn2 = StreamArn(
     AwsRegion.US_EAST_1,
-    s"kcl-multi-consumer-fs2-spec-2-${Utils.randomUUIDString}",
+    s"kcl-multi-consumer-spec-2-${Utils.randomUUIDString}",
     accountId
   )
-  val appName = s"kcl-multi-consumer-fs2-spec-${Utils.randomUUIDString}"
+  val appName = s"kcl-multi-consumer-spec-${Utils.randomUUIDString}"
 
   fixture(streamArn1, streamArn2, 1, appName).test(
     "It should receive produced records"
@@ -94,18 +89,20 @@ class KCLConsumerFS2MultiSpec extends munit.CatsEffectSuite {
           PutRecordRequest
             .builder()
             .data(SdkBytes.fromUtf8String(record.asJson.noSpacesSortKeys))
-            .streamName(streamArn1.streamName)
+            .streamName(streamArn2.streamName)
             .partitionKey("foo")
             .build()
         )
       )
       records = records1 ++ records2
-      results <- resources.stream
-        .through(resources.consumer.commitRecords)
-        .take(10)
-        .timeout(30.seconds)
-        .compile
-        .toList
+      retryPolicy = limitRetries[IO](30).join(constantDelay(1.second))
+      size <- retryingOnFailures(
+        retryPolicy,
+        (x: Int) => IO(x === 10),
+        noop[IO, Int]
+      )(resources.resultsQueue.size)
+      _ <- IO(assert(size === 10))
+      results <- resources.resultsQueue.tryTakeN(None)
       resultRecords <- results.traverse { x =>
         IO.fromEither(decode[TestData](new String(x.data.asArray)))
       }
@@ -113,14 +110,13 @@ class KCLConsumerFS2MultiSpec extends munit.CatsEffectSuite {
   }
 }
 
-object KCLConsumerFS2MultiSpec {
+object KCLConsumerMultiSpec {
   def resource(
       streamArn1: StreamArn,
       streamArn2: StreamArn,
       shardCount: Int,
       appName: String
   ): Resource[IO, Resources[IO]] = for {
-
     client <- LocalstackKinesisClient.Builder
       .default[IO]()
       .toResource
@@ -141,23 +137,17 @@ object KCLConsumerFS2MultiSpec {
         Map(streamArn1 -> position, streamArn2 -> position)
       )
       .toResource
-    builder <- LocalstackKCLConsumerFS2.Builder.default[IO](
-      tracker,
-      appName
-    )
-    consumer <- builder.build
-    streamAndDeferred <- consumer.streamWithDeferredListener()
+    builder <- LocalstackKCLConsumer.Builder.default[IO](tracker, appName)
+    deferredWithResults <- builder.runWithResults()
   } yield Resources(
     client,
-    consumer,
-    streamAndDeferred.stream,
-    streamAndDeferred.deferred
+    deferredWithResults.deferred,
+    deferredWithResults.resultsQueue
   )
 
   final case class Resources[F[_]](
       client: KinesisClient[F],
-      consumer: KCLConsumerFS2[F],
-      stream: Stream[F, CommittableRecord[F]],
-      deferredStarted: Deferred[F, Unit]
+      deferredStarted: Deferred[F, Unit],
+      resultsQueue: Queue[F, CommittableRecord[F]]
   )
 }

@@ -30,7 +30,7 @@ import kinesis4cats.kpl.localstack.LocalstackKPLProducer
 import kinesis4cats.localstack.TestStreamConfig
 import kinesis4cats.syntax.scalacheck._
 
-abstract class KPLProducerSpec
+class KPLProducerSpec
     extends kinesis4cats.testkit.IntegrationSuite
     with munit.CatsEffectFunFixtures {
 

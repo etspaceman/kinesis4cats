@@ -39,7 +39,7 @@ import kinesis4cats.localstack.TestStreamConfig
 import kinesis4cats.syntax.bytebuffer._
 import kinesis4cats.syntax.scalacheck._
 
-class KCLConsumerFS2Spec extends munit.CatsEffectSuite {
+class KCLConsumerFS2Spec extends kinesis4cats.testkit.IntegrationSuite {
   def fixture(
       streamName: String,
       shardCount: Int,
