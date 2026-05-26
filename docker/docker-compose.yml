@@ -32,7 +32,7 @@ services:
       - "--shard-count"
       - "1"
   testKclService:
-    image: "ghcr.io/etspaceman/integration-tests:${DOCKER_TAG_VERSION}"
+    image: "ghcr.io/etspaceman/kcl-http4s-test-server:${DOCKER_TAG_VERSION}"
     environment:
       - "LOG_LEVEL=TRACE"
       - "TEST_STREAM=test-kcl-service-stream"

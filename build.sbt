@@ -644,7 +644,7 @@ lazy val allProjects = Seq(
   unidocs
 )
 
-lazy val functionalTestProjects = List(`integration-tests`).map(_.jvm(Scala213))
+lazy val functionalTestProjects = List(`kcl-http4s-test-server`).map(_.jvm(Scala3))
 
 def commonRootSettings: Seq[Setting[_]] =
   DockerComposePlugin.settings(true, functionalTestProjects) ++ Seq(
