@@ -123,46 +123,6 @@ pull_request_rules:
       add:
       - feralJS3
       remove: []
-- name: Label integration-tests PRs
-  conditions:
-  - files~=^integration-tests/
-  actions:
-    label:
-      add:
-      - integration-tests
-      remove: []
-- name: Label integration-tests3 PRs
-  conditions:
-  - files~=^.sbt/matrix/integration-tests3/
-  actions:
-    label:
-      add:
-      - integration-tests3
-      remove: []
-- name: Label integration-testsJS PRs
-  conditions:
-  - files~=^.sbt/matrix/integration-testsJS/
-  actions:
-    label:
-      add:
-      - integration-testsJS
-      remove: []
-- name: Label integration-testsJS3 PRs
-  conditions:
-  - files~=^.sbt/matrix/integration-testsJS3/
-  actions:
-    label:
-      add:
-      - integration-testsJS3
-      remove: []
-- name: Label integration-testsNative3 PRs
-  conditions:
-  - files~=^.sbt/matrix/integration-testsNative3/
-  actions:
-    label:
-      add:
-      - integration-testsNative3
-      remove: []
 - name: Label kcl PRs
   conditions:
   - files~=^kcl/
@@ -194,6 +154,22 @@ pull_request_rules:
     label:
       add:
       - kcl-http4s
+      remove: []
+- name: Label kcl-http4s-test-server PRs
+  conditions:
+  - files~=^kcl-http4s-test-server/
+  actions:
+    label:
+      add:
+      - kcl-http4s-test-server
+      remove: []
+- name: Label kcl-http4s-test-server3 PRs
+  conditions:
+  - files~=^.sbt/matrix/kcl-http4s-test-server3/
+  actions:
+    label:
+      add:
+      - kcl-http4s-test-server3
       remove: []
 - name: Label kcl-http4s3 PRs
   conditions:
@@ -554,6 +530,46 @@ pull_request_rules:
     label:
       add:
       - shared-localstackNative3
+      remove: []
+- name: Label shared-testkit PRs
+  conditions:
+  - files~=^shared-testkit/
+  actions:
+    label:
+      add:
+      - shared-testkit
+      remove: []
+- name: Label shared-testkit3 PRs
+  conditions:
+  - files~=^.sbt/matrix/shared-testkit3/
+  actions:
+    label:
+      add:
+      - shared-testkit3
+      remove: []
+- name: Label shared-testkitJS PRs
+  conditions:
+  - files~=^.sbt/matrix/shared-testkitJS/
+  actions:
+    label:
+      add:
+      - shared-testkitJS
+      remove: []
+- name: Label shared-testkitJS3 PRs
+  conditions:
+  - files~=^.sbt/matrix/shared-testkitJS3/
+  actions:
+    label:
+      add:
+      - shared-testkitJS3
+      remove: []
+- name: Label shared-testkitNative3 PRs
+  conditions:
+  - files~=^.sbt/matrix/shared-testkitNative3/
+  actions:
+    label:
+      add:
+      - shared-testkitNative3
       remove: []
 - name: Label shared3 PRs
   conditions:

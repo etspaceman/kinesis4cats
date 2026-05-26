@@ -58,7 +58,7 @@ jobs:
 
       - name: Install brew formulae (ubuntu)
         if: startsWith(matrix.os, 'ubuntu')
-        run: /home/linuxbrew/.linuxbrew/bin/brew install openssl s2n
+        run: /home/linuxbrew/.linuxbrew/bin/brew install openssl
 
       - name: Check that workflows are up to date
         run: sbt githubWorkflowCheck
@@ -98,6 +98,10 @@ jobs:
       - name: Test
         if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-22.04'
         run: sbt 'project ${{ matrix.project }}' test
+
+      - name: Integration Tests
+        if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-22.04' && startsWith(matrix.project, 'root-jvm')
+        run: sbt 'project ${{ matrix.project }}' itTest
 
       - name: Print docker logs and container listing
         if: ${{ failure() }}
@@ -278,7 +282,7 @@ jobs:
       - name: Submit Dependencies
         uses: scalacenter/sbt-dependency-submission@v2
         with:
-          modules-ignore: kinesis4cats-kinesis4cats_2.13 kinesis4cats-kinesis4cats_2.13 kinesis4cats-kinesis4cats_2.13 kinesis4cats-kinesis4cats_2.13 kinesis4cats-docs_2.13 kinesis4cats-kinesis4cats_2.13 kinesis4cats-kinesis4cats_2.13 kinesis4cats-kinesis4cats_2.13 kinesis4cats-integration-tests_sjs1_3 kinesis4cats-integration-tests_3 kinesis4cats-integration-tests_2.13 kinesis4cats-integration-tests_sjs1_2.13 kinesis4cats-integration-tests_native0.5_3
+          modules-ignore: kinesis4cats-kinesis4cats_2.13 kinesis4cats-kinesis4cats_2.13 kinesis4cats-shared-testkit_sjs1_3 kinesis4cats-shared-testkit_sjs1_2.13 kinesis4cats-kinesis4cats_2.13 kinesis4cats-kinesis4cats_2.13 kinesis4cats-shared-testkit_3 kinesis4cats-docs_2.13 kinesis4cats-kinesis4cats_2.13 kinesis4cats-kcl-http4s-test-server_3 kinesis4cats-kinesis4cats_2.13 kinesis4cats-kinesis4cats_2.13 kinesis4cats-shared-testkit_2.13 kinesis4cats-shared-testkit_native0.5_3
           configs-ignore: test scala-tool scala-doc-tool test-internal
 
   validate-steward:

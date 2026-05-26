@@ -151,6 +151,13 @@ object Kinesis4CatsPlugin extends AutoPlugin {
           cond = Some(primaryJavaOSCond.value)
         ),
         WorkflowStep.Sbt(
+          List("itTest"),
+          name = Some("Integration Tests"),
+          cond = Some(
+            primaryJavaOSCond.value + " && startsWith(matrix.project, 'root-jvm')"
+          )
+        ),
+        WorkflowStep.Sbt(
           List(
             "dockerComposePs",
             "dockerComposeLogs"
