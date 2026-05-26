@@ -95,6 +95,23 @@ lazy val `shared-localstack` = projectMatrix
   .jsPlatform(allScalaVersions)
   .dependsOn(shared, `shared-ciris`, `shared-circe`)
 
+lazy val `shared-testkit` = projectMatrix
+  .enablePlugins(NoPublishPlugin)
+  .settings(
+    description := "Shared scaffolding for integration tests (NoPublish)",
+    libraryDependencies ++= testDependencies.value,
+    libraryDependencies ++= Seq(
+      Circe.core.value,
+      Circe.parser.value,
+      Http4s.emberClient.value
+    ),
+    evictionErrorLevel := Level.Warn
+  )
+  .jvmPlatform(allScalaVersions)
+  .jsPlatform(allScalaVersions)
+  .nativePlatform(Seq(Scala3))
+  .dependsOn(shared, `shared-circe`, `shared-localstack`)
+
 lazy val `aws-v2-localstack` = projectMatrix
   .settings(
     description := "A test-kit for working with Kinesis and Localstack, via the V2 AWS SDK",
@@ -559,6 +576,7 @@ lazy val allProjects = Seq(
   `shared-circe`,
   `shared-ciris`,
   `shared-localstack`,
+  `shared-testkit`,
   `aws-v2-localstack`,
   kcl,
   `kcl-http4s`,
