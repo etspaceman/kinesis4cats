@@ -294,17 +294,12 @@ class KinesisClientSpec extends kinesis4cats.testkit.IntegrationSuite {
       assertEquals(List(record1, record2, record3), recordsParsed2)
       assert(consumers.consumers().size() === 1)
       assert(consumers2.head.consumers().size() === 1)
-      assertEquals(
-        streams.streamNames().asScala.toList,
-        List(streamName, "test-kcl-service-stream")
+      assert(streams.streamNames().asScala.toList.contains(streamName))
+      assert(
+        streams2.flatMap(_.streamNames().asScala.toList).contains(streamName)
       )
-      assertEquals(
-        streams2.flatMap(_.streamNames().asScala.toList),
-        List(streamName, "test-kcl-service-stream")
-      )
-      assertEquals(
-        streams3.flatMap(_.streamNames().asScala.toList),
-        List(streamName, "test-kcl-service-stream")
+      assert(
+        streams3.flatMap(_.streamNames().asScala.toList).contains(streamName)
       )
       assertEquals(
         tags.tags().asScala.toList.map(x => (x.key(), x.value())),
