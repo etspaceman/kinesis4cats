@@ -320,7 +320,11 @@ lazy val `kinesis-client-localstack` = projectMatrix
     description := "A test-kit for working with Kinesis and Localstack, via the Kinesis Client project"
   )
   .jvmPlatform(allScalaVersions)
-  .dependsOn(`aws-v2-localstack`, `kinesis-client`)
+  .dependsOn(
+    `aws-v2-localstack`,
+    `kinesis-client`,
+    `shared-testkit` % Test
+  )
 
 lazy val `smithy4s-client-transformers` = projectMatrix
   .settings(

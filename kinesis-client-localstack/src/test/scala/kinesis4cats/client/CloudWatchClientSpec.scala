@@ -23,7 +23,7 @@ import software.amazon.awssdk.services.cloudwatch.model._
 
 import kinesis4cats.client.localstack.LocalstackCloudWatchClient
 
-class CloudWatchClientSpec extends munit.CatsEffectSuite {
+class CloudWatchClientSpec extends kinesis4cats.testkit.IntegrationSuite {
   def fixture: SyncIO[FunFixture[CloudWatchClient[IO]]] =
     ResourceFunFixture(
       LocalstackCloudWatchClient.Builder

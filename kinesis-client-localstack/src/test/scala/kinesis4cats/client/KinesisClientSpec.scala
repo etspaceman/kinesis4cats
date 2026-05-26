@@ -31,7 +31,7 @@ import kinesis4cats.client.localstack.LocalstackKinesisClient
 import kinesis4cats.models.{AwsRegion, StreamArn}
 import kinesis4cats.syntax.scalacheck._
 
-class KinesisClientSpec extends munit.CatsEffectSuite {
+class KinesisClientSpec extends kinesis4cats.testkit.IntegrationSuite {
   def fixture: SyncIO[FunFixture[KinesisClient[IO]]] =
     ResourceFunFixture(
       LocalstackKinesisClient.Builder.default[IO]().toResource.flatMap(_.build)

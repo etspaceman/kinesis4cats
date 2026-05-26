@@ -24,7 +24,7 @@ import software.amazon.awssdk.services.dynamodb.model._
 
 import kinesis4cats.client.localstack.LocalstackDynamoClient
 
-class DynamoClientSpec extends munit.CatsEffectSuite {
+class DynamoClientSpec extends kinesis4cats.testkit.IntegrationSuite {
   def fixture: SyncIO[FunFixture[DynamoClient[IO]]] =
     ResourceFunFixture(
       LocalstackDynamoClient.Builder.default[IO]().toResource.flatMap(_.build)
