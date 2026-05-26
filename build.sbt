@@ -110,12 +110,7 @@ lazy val `shared-testkit` = projectMatrix
   .jvmPlatform(allScalaVersions)
   .jsPlatform(allScalaVersions)
   .nativePlatform(Seq(Scala3))
-  .dependsOn(
-    shared,
-    `shared-circe`,
-    `shared-localstack`,
-    `smithy4s-client-localstack`
-  )
+  .dependsOn(shared, `shared-circe`, `shared-localstack`)
 
 lazy val `aws-v2-localstack` = projectMatrix
   .settings(
@@ -402,10 +397,45 @@ lazy val `smithy4s-client-localstack` = projectMatrix
     description := "A test-kit for working with Kinesis and Localstack, via the Smithy4s Client project",
     tlJdkRelease := Some(11)
   )
-  .jvmPlatform(allScalaVersions)
-  .nativePlatform(Seq(Scala3))
-  .jsPlatform(allScalaVersions)
-  .dependsOn(`shared-localstack`, `smithy4s-client`)
+  .jvmPlatform(
+    allScalaVersions,
+    Seq(
+      Test / unmanagedSourceDirectories +=
+        (ThisBuild / baseDirectory).value / "smithy4s-client-localstack" / "src" / "test" / "scalajvm",
+      libraryDependencies ++= Seq(
+        Http4s.blazeClient.value % Test,
+        FS2.reactiveStreams % Test
+      )
+    )
+  )
+  .nativePlatform(
+    Seq(Scala3),
+    Seq(
+      Test / unmanagedSourceDirectories +=
+        (ThisBuild / baseDirectory).value / "smithy4s-client-localstack" / "src" / "test" / "scalanative"
+    )
+  )
+  .jsPlatform(
+    allScalaVersions,
+    Seq(
+      Test / unmanagedSourceDirectories +=
+        (ThisBuild / baseDirectory).value / "smithy4s-client-localstack" / "src" / "test" / "scalajs"
+    )
+  )
+  .dependsOn(
+    `shared-localstack`,
+    `smithy4s-client`,
+    `shared-testkit` % Test,
+    `smithy4s-client-logging-circe` % Test
+  )
+
+lazy val `smithy4s-client-localstack-jvm-213` = `smithy4s-client-localstack`
+  .jvm(Scala213)
+  .dependsOn(`kcl-localstack`.jvm(Scala213) % Test)
+
+lazy val `smithy4s-client-localstack-jvm-3` = `smithy4s-client-localstack`
+  .jvm(Scala3)
+  .dependsOn(`kcl-localstack`.jvm(Scala3) % Test)
 
 lazy val integrationTestsJvmSettings: Seq[Setting[_]] = Seq(
   Test / fork := true,
