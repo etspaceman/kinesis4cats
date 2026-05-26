@@ -110,7 +110,12 @@ lazy val `shared-testkit` = projectMatrix
   .jvmPlatform(allScalaVersions)
   .jsPlatform(allScalaVersions)
   .nativePlatform(Seq(Scala3))
-  .dependsOn(shared, `shared-circe`, `shared-localstack`)
+  .dependsOn(
+    shared,
+    `shared-circe`,
+    `shared-localstack`,
+    `smithy4s-client-localstack`
+  )
 
 lazy val `aws-v2-localstack` = projectMatrix
   .settings(

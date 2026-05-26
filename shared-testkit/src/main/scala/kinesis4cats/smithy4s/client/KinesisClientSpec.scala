@@ -26,7 +26,7 @@ import cats.syntax.all._
 import com.amazonaws.kinesis._
 import fs2.io.compression._
 import fs2.io.net.tls.TLSContext
-import io.circe.jawn._
+import io.circe.parser._
 import io.circe.syntax._
 import org.http4s.ember.client.EmberClientBuilder
 import org.scalacheck.Arbitrary
@@ -36,7 +36,7 @@ import kinesis4cats.models.StreamArn
 import kinesis4cats.smithy4s.client.localstack.LocalstackKinesisClient
 import kinesis4cats.syntax.scalacheck._
 
-abstract class KinesisClientSpec extends munit.CatsEffectSuite {
+abstract class KinesisClientSpec extends kinesis4cats.testkit.IntegrationSuite {
 
   // allow flaky tests on ci
   override def munitFlakyOK: Boolean = sys.env.contains("CI")

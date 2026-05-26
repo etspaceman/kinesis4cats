@@ -16,6 +16,7 @@
 
 package kinesis4cats
 package producer
+package fs2
 
 import scala.concurrent.duration._
 
@@ -31,16 +32,16 @@ import kinesis4cats.compat.retry.RetryPolicies._
 import kinesis4cats.compat.retry._
 import kinesis4cats.syntax.scalacheck._
 
-private[kinesis4cats] abstract class ProducerSpec[PutReq, PutRes, A]
-    extends munit.CatsEffectSuite {
+private[kinesis4cats] abstract class FS2ProducerSpec[PutReq, PutRes, A]
+    extends kinesis4cats.testkit.IntegrationSuite {
 
-  def producerResource: Resource[IO, Producer[IO, PutReq, PutRes]]
+  def producerResource: Resource[IO, FS2Producer[IO, PutReq, PutRes]]
   def streamName: String
   def aAsBytes(a: A): Array[Byte]
 
   def fixture(
       appName: String
-  ): SyncIO[FunFixture[ProducerSpec.Resources[IO, PutReq, PutRes, A]]]
+  ): SyncIO[FunFixture[FS2ProducerSpec.Resources[IO, PutReq, PutRes, A]]]
 
   override def munitIOTimeout: Duration = 5.minutes
 
@@ -59,7 +60,8 @@ private[kinesis4cats] abstract class ProducerSpec[PutReq, PutRes, A]
           )
         )
       )
-      _ <- resources.producer.put(records)
+      x <- records.traverse(resources.producer.put)
+      _ <- x.sequence_
       retryPolicy = limitRetries[IO](30).join(constantDelay(1.second))
       size <- retryingOnFailures(
         retryPolicy,
@@ -78,11 +80,11 @@ private[kinesis4cats] abstract class ProducerSpec[PutReq, PutRes, A]
   }
 }
 
-object ProducerSpec {
+object FS2ProducerSpec {
 
   final case class Resources[F[_], PutReq, PutRes, A](
       resultsQueue: Queue[F, A],
-      producer: Producer[F, PutReq, PutRes]
+      producer: FS2Producer[F, PutReq, PutRes]
   )
 
 }
