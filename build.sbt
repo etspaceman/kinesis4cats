@@ -18,7 +18,11 @@ lazy val compat = crossProject(JVMPlatform, JSPlatform, NativePlatform)
     scalacOptions --= Seq("-deprecation", "-Xlint:deprecation", "-Xsource:3"),
     Compile / doc / sources := Seq.empty
   )
-  .nativeSettings(scalaVersion := Scala3, crossScalaVersions := Seq(Scala3))
+  .nativeSettings(
+    scalaVersion := Scala3,
+    crossScalaVersions := Seq(Scala3),
+    scalacOptions += "-language:implicitConversions"
+  )
 
 lazy val shared = crossProject(JVMPlatform, JSPlatform, NativePlatform)
   .crossType(CrossType.Pure)
