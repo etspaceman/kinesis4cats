@@ -131,8 +131,7 @@ object Kinesis4CatsPlugin extends AutoPlugin {
       )
     ),
     scalacOptions ++= {
-      if (tlIsScala3.value)
-        Seq("-language:implicitConversions", "-Ykind-projector")
+      if (tlIsScala3.value) Seq("-language:implicitConversions")
       else Seq("-Wconf:src=src_managed/.*:silent")
     },
     ThisBuild / semanticdbEnabled := true,
@@ -144,7 +143,11 @@ object Kinesis4CatsPlugin extends AutoPlugin {
       FS2.core.value,
       FS2.io.value
     ) ++ testDependencies.value.map(_ % Test),
-    libraryDependencySchemes += "org.scala-lang.modules" %% "scala-xml" % VersionScheme.Always,
+    libraryDependencySchemes ++= Seq(
+      "org.scala-lang.modules" %% "scala-xml" % VersionScheme.Always,
+      "org.scala-native" % "test-interface_native0.5_3" % VersionScheme.Always,
+      "org.scala-native" % "test-interface_native0.5_2.13" % VersionScheme.Always
+    ),
     moduleName := "kinesis4cats-" + name.value,
     headerLicense := Some(
       HeaderLicense.ALv2(s"${startYear.value.get}-2023", organizationName.value)
