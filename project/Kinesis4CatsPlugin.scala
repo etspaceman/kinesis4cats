@@ -40,31 +40,23 @@ object Kinesis4CatsPlugin extends AutoPlugin {
   private val onlyJvm = Def.setting {
     val java = githubWorkflowJavaVersions.value.head
     val os = githubWorkflowOSes.value.head
-    s"matrix.java == '${java.render}' && matrix.os == '${os}' && matrix.platform == 'jvm'"
-  }
-
-  private val onlyJvmScala213 = Def.setting {
-    onlyJvm.value + s" && matrix.scala == '$Scala213'"
-  }
-
-  private val onlyJvmScala3 = Def.setting {
-    onlyJvm.value + s" && matrix.scala == '$Scala3'"
+    s"matrix.java == '${java.render}' && matrix.os == '${os}' && endsWith(matrix.project, 'JVM')"
   }
 
   private val onlyJs = Def.setting {
     val java = githubWorkflowJavaVersions.value.head
     val os = githubWorkflowOSes.value.head
-    s"matrix.java == '${java.render}' && matrix.os == '${os}' && matrix.platform == 'js'"
+    s"matrix.java == '${java.render}' && matrix.os == '${os}' && endsWith(matrix.project, 'JS')"
   }
 
   private val onlyNative = Def.setting {
     val java = githubWorkflowJavaVersions.value.head
     val os = githubWorkflowOSes.value.head
-    s"matrix.java == '${java.render}' && matrix.os == '${os}' && matrix.platform == 'native'"
+    s"matrix.java == '${java.render}' && matrix.os == '${os}' && endsWith(matrix.project, 'Native')"
   }
 
-  private val onlyNativeScala3 = Def.setting {
-    onlyNative.value + s" && matrix.scala == '$Scala3'"
+  private val onlyJvmScala3 = Def.setting {
+    onlyJvm.value + s" && matrix.scala == '$Scala3'"
   }
 
   override def buildSettings = Seq(
@@ -85,48 +77,14 @@ object Kinesis4CatsPlugin extends AutoPlugin {
     githubWorkflowJavaVersions := Seq(JavaSpec.temurin("17")),
     githubWorkflowBuildPreamble ++= nativeBrewInstallWorkflowSteps.value,
     githubWorkflowBuildMatrixFailFast := Some(false),
-    githubWorkflowBuildMatrixAdditions += "platform" -> List(
-      "jvm",
-      "js",
-      "native"
-    ),
-    githubWorkflowBuildSbtStepPreamble := Seq.empty,
-    githubWorkflowBuild := {
+    githubWorkflowBuild ++= {
       val jvm = onlyJvm.value
-      val js = onlyJs.value
-      val jvmScala213 = onlyJvmScala213.value
       val jvmScala3 = onlyJvmScala3.value
-      val nativeScala3 = onlyNativeScala3.value
       List(
         WorkflowStep.Sbt(
-          List("headerCheckAll", "fmtCheck"),
-          name = Some("Check headers and formatting"),
-          cond = Some(jvm)
-        ),
-        WorkflowStep.Sbt(
-          List("fixCheck"),
-          name = Some("Check scalafix lints"),
-          cond = Some(jvmScala213)
-        ),
-        WorkflowStep.Sbt(
-          List("rootJVM/Test/compile"),
-          name = Some("Compile (JVM)"),
-          cond = Some(jvm)
-        ),
-        WorkflowStep.Sbt(
           List("rootJVMPlain3/Test/compile"),
-          name = Some("Compile (JVM plain, Scala 3)"),
+          name = Some("Compile (JVM plain projects)"),
           cond = Some(jvmScala3)
-        ),
-        WorkflowStep.Sbt(
-          List("rootJS/Test/compile"),
-          name = Some("Compile (JS)"),
-          cond = Some(js)
-        ),
-        WorkflowStep.Sbt(
-          List("rootNative/Test/compile"),
-          name = Some("Compile (Native)"),
-          cond = Some(nativeScala3)
         ),
         WorkflowStep.Sbt(
           List("dockerComposeUp"),
@@ -138,32 +96,7 @@ object Kinesis4CatsPlugin extends AutoPlugin {
           )
         ),
         WorkflowStep.Sbt(
-          List("Test/fastLinkJS"),
-          name = Some("Link JS"),
-          cond = Some(js)
-        ),
-        WorkflowStep.Sbt(
-          List("Test/nativeLink"),
-          name = Some("Link Native"),
-          cond = Some(nativeScala3)
-        ),
-        WorkflowStep.Sbt(
-          List("rootJVM/test"),
-          name = Some("Test (JVM)"),
-          cond = Some(jvm)
-        ),
-        WorkflowStep.Sbt(
-          List("rootJS/test"),
-          name = Some("Test (JS)"),
-          cond = Some(js)
-        ),
-        WorkflowStep.Sbt(
-          List("rootNative/test"),
-          name = Some("Test (Native)"),
-          cond = Some(nativeScala3)
-        ),
-        WorkflowStep.Sbt(
-          List("rootJVM/itTest"),
+          List("itTest"),
           name = Some("Integration Tests"),
           cond = Some(jvm)
         ),
@@ -175,11 +108,6 @@ object Kinesis4CatsPlugin extends AutoPlugin {
         WorkflowStep.Sbt(
           List("dockerComposeDown"),
           name = Some("Remove docker containers"),
-          cond = Some(jvm)
-        ),
-        WorkflowStep.Sbt(
-          List("doc"),
-          name = Some("Generate API documentation"),
           cond = Some(jvm)
         )
       )

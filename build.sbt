@@ -653,36 +653,16 @@ def commonRootSettings: Seq[Setting[_]] =
     }
   )
 
-lazy val rootJVM = project
-  .in(file(".jvm"))
-  .enablePlugins(NoPublishPlugin)
+lazy val root = tlCrossRootProject
+  .aggregate(allCrossProjects: _*)
   .settings(commonRootSettings)
-  .aggregate(allCrossProjects.map(cp => cp.jvm: ProjectReference): _*)
+  .configureRoot(_.aggregate(rootJVMPlain3))
 
-lazy val rootJS = project
-  .in(file(".js"))
-  .enablePlugins(NoPublishPlugin)
-  .settings(commonRootSettings)
-  .aggregate(
-    allCrossProjects
-      .flatMap(cp => cp.componentProjects.find(_.id.endsWith("JS")))
-      .map(p => p: ProjectReference): _*
-  )
-
-lazy val rootNative = project
-  .in(file(".native"))
-  .enablePlugins(NoPublishPlugin)
-  .settings(commonRootSettings)
-  .aggregate(
-    allCrossProjects
-      .flatMap(cp => cp.componentProjects.find(_.id.endsWith("Native")))
-      .map(p => p: ProjectReference): _*
-  )
-
-// Plain JVM projects pinned to a single Scala version. Aggregated via scala-
-// pinned sub-roots so `++` cleanly skips them when cross-building the other
-// version. Putting them in `rootJVM` directly would force their Scala-pinned
-// deps into the wrong cross-version pass.
+// Plain JVM projects pinned to a single Scala version. Aggregated via a
+// scala-pinned sub-root (outside tlCrossRootProject) so `++` cleanly skips
+// them when cross-building the other version. Putting them in the main JVM
+// aggregate would force their Scala-pinned deps into the wrong cross-version
+// pass.
 lazy val rootJVMPlain3 = project
   .in(file(".jvm-plain-3"))
   .enablePlugins(NoPublishPlugin)
@@ -692,15 +672,4 @@ lazy val rootJVMPlain3 = project
     docs,
     unidocs,
     `kcl-http4s-test-server`
-  )
-
-lazy val root = project
-  .in(file("."))
-  .enablePlugins(NoPublishPlugin)
-  .settings(commonRootSettings)
-  .aggregate(
-    rootJVM,
-    rootJS,
-    rootNative,
-    rootJVMPlain3
   )

@@ -31,7 +31,7 @@ jobs:
         os: [ubuntu-22.04]
         scala: [2.13, 3]
         java: [temurin@17]
-        platform: [jvm, js, native]
+        project: [rootJS, rootJVM, rootNative]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     steps:
@@ -64,71 +64,54 @@ jobs:
         run: sbt githubWorkflowCheck
 
       - name: Check headers and formatting
-        if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-22.04' && matrix.platform == 'jvm'
-        run: sbt headerCheckAll fmtCheck
+        if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-22.04'
+        run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' headerCheckAll scalafmtCheckAll 'project /' scalafmtSbtCheck
 
       - name: Check scalafix lints
-        if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-22.04' && matrix.platform == 'jvm' && matrix.scala == '2.13.18'
-        run: sbt fixCheck
+        if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-22.04'
+        run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' 'scalafixAll --check'
 
-      - name: Compile (JVM)
-        if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-22.04' && matrix.platform == 'jvm'
-        run: sbt rootJVM/Test/compile
+      - name: scalaJSLink
+        if: matrix.project == 'rootJS'
+        run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' Test/scalaJSLinkerResult
 
-      - name: Compile (JVM plain, Scala 3)
-        if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-22.04' && matrix.platform == 'jvm' && matrix.scala == '3.3.7'
-        run: sbt rootJVMPlain3/Test/compile
+      - name: nativeLink
+        if: matrix.project == 'rootNative'
+        run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' Test/nativeLink
 
-      - name: Compile (JS)
-        if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-22.04' && matrix.platform == 'js'
-        run: sbt rootJS/Test/compile
+      - name: Test
+        run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' test
 
-      - name: Compile (Native)
-        if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-22.04' && matrix.platform == 'native' && matrix.scala == '3.3.7'
-        run: sbt rootNative/Test/compile
+      - name: Check binary compatibility
+        if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-22.04'
+        run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' mimaReportBinaryIssues
+
+      - name: Generate API documentation
+        if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-22.04'
+        run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' doc
+
+      - name: Compile (JVM plain projects)
+        if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-22.04' && endsWith(matrix.project, 'JVM') && matrix.scala == '3.3.7'
+        run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' rootJVMPlain3/Test/compile
 
       - name: Docker Compose Up
-        if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-22.04' && matrix.platform == 'jvm'
+        if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-22.04' && endsWith(matrix.project, 'JVM')
         env:
           GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           LOCALSTACK_AUTH_TOKEN: ${{ secrets.LOCALSTACK_AUTH_TOKEN }}
-        run: sbt dockerComposeUp
-
-      - name: Link JS
-        if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-22.04' && matrix.platform == 'js'
-        run: sbt Test/fastLinkJS
-
-      - name: Link Native
-        if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-22.04' && matrix.platform == 'native' && matrix.scala == '3.3.7'
-        run: sbt Test/nativeLink
-
-      - name: Test (JVM)
-        if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-22.04' && matrix.platform == 'jvm'
-        run: sbt rootJVM/test
-
-      - name: Test (JS)
-        if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-22.04' && matrix.platform == 'js'
-        run: sbt rootJS/test
-
-      - name: Test (Native)
-        if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-22.04' && matrix.platform == 'native' && matrix.scala == '3.3.7'
-        run: sbt rootNative/test
+        run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' dockerComposeUp
 
       - name: Integration Tests
-        if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-22.04' && matrix.platform == 'jvm'
-        run: sbt rootJVM/itTest
+        if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-22.04' && endsWith(matrix.project, 'JVM')
+        run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' itTest
 
       - name: Print docker logs and container listing
         if: ${{ failure() }}
-        run: sbt dockerComposePs dockerComposeLogs
+        run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' dockerComposePs dockerComposeLogs
 
       - name: Remove docker containers
-        if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-22.04' && matrix.platform == 'jvm'
-        run: sbt dockerComposeDown
-
-      - name: Generate API documentation
-        if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-22.04' && matrix.platform == 'jvm'
-        run: sbt doc
+        if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-22.04' && endsWith(matrix.project, 'JVM')
+        run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' dockerComposeDown
 
       - name: Make target directories
         if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main')
@@ -142,7 +125,7 @@ jobs:
         if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main')
         uses: actions/upload-artifact@v5
         with:
-          name: target-${{ matrix.os }}-${{ matrix.java }}-${{ matrix.scala }}-${{ matrix.platform }}
+          name: target-${{ matrix.os }}-${{ matrix.java }}-${{ matrix.scala }}-${{ matrix.project }}
           path: targets.tar
 
   publish:
@@ -176,22 +159,62 @@ jobs:
         if: matrix.java == 'temurin@17' && steps.setup-java-temurin-17.outputs.cache-hit == 'false'
         run: sbt +update
 
-      - name: Download target directories (2.13, jvm)
+      - name: Download target directories (2.13, rootJS)
         uses: actions/download-artifact@v6
         with:
-          name: target-${{ matrix.os }}-${{ matrix.java }}-2.13-jvm
+          name: target-${{ matrix.os }}-${{ matrix.java }}-2.13-rootJS
 
-      - name: Inflate target directories (2.13, jvm)
+      - name: Inflate target directories (2.13, rootJS)
         run: |
           tar xf targets.tar
           rm targets.tar
 
-      - name: Download target directories (3, jvm)
+      - name: Download target directories (2.13, rootJVM)
         uses: actions/download-artifact@v6
         with:
-          name: target-${{ matrix.os }}-${{ matrix.java }}-3-jvm
+          name: target-${{ matrix.os }}-${{ matrix.java }}-2.13-rootJVM
 
-      - name: Inflate target directories (3, jvm)
+      - name: Inflate target directories (2.13, rootJVM)
+        run: |
+          tar xf targets.tar
+          rm targets.tar
+
+      - name: Download target directories (2.13, rootNative)
+        uses: actions/download-artifact@v6
+        with:
+          name: target-${{ matrix.os }}-${{ matrix.java }}-2.13-rootNative
+
+      - name: Inflate target directories (2.13, rootNative)
+        run: |
+          tar xf targets.tar
+          rm targets.tar
+
+      - name: Download target directories (3, rootJS)
+        uses: actions/download-artifact@v6
+        with:
+          name: target-${{ matrix.os }}-${{ matrix.java }}-3-rootJS
+
+      - name: Inflate target directories (3, rootJS)
+        run: |
+          tar xf targets.tar
+          rm targets.tar
+
+      - name: Download target directories (3, rootJVM)
+        uses: actions/download-artifact@v6
+        with:
+          name: target-${{ matrix.os }}-${{ matrix.java }}-3-rootJVM
+
+      - name: Inflate target directories (3, rootJVM)
+        run: |
+          tar xf targets.tar
+          rm targets.tar
+
+      - name: Download target directories (3, rootNative)
+        uses: actions/download-artifact@v6
+        with:
+          name: target-${{ matrix.os }}-${{ matrix.java }}-3-rootNative
+
+      - name: Inflate target directories (3, rootNative)
         run: |
           tar xf targets.tar
           rm targets.tar
@@ -253,7 +276,7 @@ jobs:
       - name: Submit Dependencies
         uses: scalacenter/sbt-dependency-submission@v2
         with:
-          modules-ignore: kinesis4cats-shared-testkit_sjs1_2.13 kinesis4cats-shared-testkit_sjs1_3 kinesis4cats-kinesis4cats_2.13 kinesis4cats-kinesis4cats_3 kinesis4cats-kinesis4cats_2.13 kinesis4cats-kinesis4cats_3 kinesis4cats-docs_3 kinesis4cats-kinesis4cats_2.13 kinesis4cats-kinesis4cats_3 kinesis4cats-shared-testkit_2.13 kinesis4cats-shared-testkit_3 kinesis4cats-kinesis4cats_2.13 kinesis4cats-kinesis4cats_3 kinesis4cats-kinesis4cats_2.13 kinesis4cats-kinesis4cats_3 kinesis4cats-kcl-http4s-test-server_3 kinesis4cats-shared-testkit_native0.5_3
+          modules-ignore: kinesis4cats-shared-testkit_sjs1_2.13 kinesis4cats-shared-testkit_sjs1_3 kinesis4cats-kinesis4cats_2.13 kinesis4cats-kinesis4cats_3 kinesis4cats-docs_3 kinesis4cats-kinesis4cats_2.13 kinesis4cats-kinesis4cats_3 kinesis4cats-shared-testkit_2.13 kinesis4cats-shared-testkit_3 kinesis4cats-kinesis4cats_2.13 kinesis4cats-kinesis4cats_3 kinesis4cats-kinesis4cats_2.13 kinesis4cats-kinesis4cats_3 kinesis4cats-kcl-http4s-test-server_3 kinesis4cats-shared-testkit_native0.5_3
           configs-ignore: test scala-tool scala-doc-tool test-internal
 
   validate-steward:
