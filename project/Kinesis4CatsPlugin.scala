@@ -5,7 +5,8 @@ import org.typelevel.sbt.gha._
 import org.typelevel.sbt.mergify._
 import sbt.Keys._
 import sbt._
-import sbt.internal.ProjectMatrix
+import sbtcrossproject.CrossPlugin.autoImport._
+import sbtcrossproject.CrossProject
 
 object Kinesis4CatsPlugin extends AutoPlugin {
   override def trigger = allRequirements
@@ -36,30 +37,34 @@ object Kinesis4CatsPlugin extends AutoPlugin {
   import sbtassembly.AssemblyPlugin.autoImport._
   import scalafix.sbt.ScalafixPlugin.autoImport._
 
-  private val primaryJavaOSCond = Def.setting {
+  private val onlyJvm = Def.setting {
     val java = githubWorkflowJavaVersions.value.head
     val os = githubWorkflowOSes.value.head
-    s"matrix.java == '${java.render}' && matrix.os == '${os}'"
+    s"matrix.java == '${java.render}' && matrix.os == '${os}' && matrix.platform == 'jvm'"
   }
 
-  private val noScala3Cond = Def.setting {
-    primaryJavaOSCond.value + s" && matrix.scala != '$Scala3'"
+  private val onlyJvmScala213 = Def.setting {
+    onlyJvm.value + s" && matrix.scala == '$Scala213'"
   }
 
-  private val onlyScala3Cond = Def.setting {
-    primaryJavaOSCond.value + s" && matrix.scala == '$Scala3'"
+  private val onlyJvmScala3 = Def.setting {
+    onlyJvm.value + s" && matrix.scala == '$Scala3'"
   }
 
-  private val onlyScalaJsCond = Def.setting {
-    primaryJavaOSCond.value + s" && startsWith(matrix.project, 'root-js')"
+  private val onlyJs = Def.setting {
+    val java = githubWorkflowJavaVersions.value.head
+    val os = githubWorkflowOSes.value.head
+    s"matrix.java == '${java.render}' && matrix.os == '${os}' && matrix.platform == 'js'"
   }
 
-  private val onlyNativeCond = Def.setting {
-    primaryJavaOSCond.value + s" && startsWith(matrix.project, 'root-native')"
+  private val onlyNative = Def.setting {
+    val java = githubWorkflowJavaVersions.value.head
+    val os = githubWorkflowOSes.value.head
+    s"matrix.java == '${java.render}' && matrix.os == '${os}' && matrix.platform == 'native'"
   }
 
-  private val onlyFailures = Def.setting {
-    "${{ failure() }}"
+  private val onlyNativeScala3 = Def.setting {
+    onlyNative.value + s" && matrix.scala == '$Scala3'"
   }
 
   override def buildSettings = Seq(
@@ -69,58 +74,64 @@ object Kinesis4CatsPlugin extends AutoPlugin {
     startYear := Some(2023),
     licenses := Seq(License.Apache2),
     developers := List(tlGitHubDev("etspaceman", "Eric Meisel")),
-    crossScalaVersions := Seq(Scala213),
-    scalaVersion := Scala213,
+    crossScalaVersions := allScalaVersions,
+    scalaVersion := Scala3,
     runIntegrationTests := false,
-    tlCiMimaBinaryIssueCheck := tlBaseVersion.value.head.toString != "0",
+    tlCiHeaderCheck := true,
+    tlCiScalafmtCheck := true,
+    tlCiScalafixCheck := true,
     resolvers += "s01 snapshots" at "https://s01.oss.sonatype.org/content/repositories/snapshots/",
     resolvers += "jitpack" at "https://jitpack.io",
+    githubWorkflowJavaVersions := Seq(JavaSpec.temurin("17")),
     githubWorkflowBuildPreamble ++= nativeBrewInstallWorkflowSteps.value,
     githubWorkflowBuildMatrixFailFast := Some(false),
+    githubWorkflowBuildMatrixAdditions += "platform" -> List(
+      "jvm",
+      "js",
+      "native"
+    ),
+    githubWorkflowBuildSbtStepPreamble := Seq.empty,
     githubWorkflowBuild := {
-      val style = (tlCiHeaderCheck.value, tlCiScalafmtCheck.value) match {
-        case (true, true) => // headers + formatting
-          List(
-            WorkflowStep.Sbt(
-              List(
-                "headerCheckAll",
-                "fmtCheck"
-              ),
-              name = Some("Check headers and formatting"),
-              cond = Some(primaryJavaOSCond.value)
-            )
-          )
-        case (true, false) => // headers
-          List(
-            WorkflowStep.Sbt(
-              List("headerCheckAll"),
-              name = Some("Check headers"),
-              cond = Some(primaryJavaOSCond.value)
-            )
-          )
-        case (false, true) => // formatting
-          List(
-            WorkflowStep.Sbt(
-              List("fmtCheck"),
-              name = Some("Check formatting"),
-              cond = Some(primaryJavaOSCond.value)
-            )
-          )
-        case (false, false) => Nil // nada
-      }
-
-      val test = List(
-        WorkflowStep.Use(
-          UseRef.Public("nick-fields", "retry", "v2"),
+      val jvm = onlyJvm.value
+      val js = onlyJs.value
+      val jvmScala213 = onlyJvmScala213.value
+      val jvmScala3 = onlyJvmScala3.value
+      val nativeScala3 = onlyNativeScala3.value
+      List(
+        WorkflowStep.Sbt(
+          List("headerCheckAll", "fmtCheck"),
+          name = Some("Check headers and formatting"),
+          cond = Some(jvm)
+        ),
+        WorkflowStep.Sbt(
+          List("fixCheck"),
+          name = Some("Check scalafix lints"),
+          cond = Some(jvmScala213)
+        ),
+        WorkflowStep.Sbt(
+          List("rootJVM/Test/compile"),
+          name = Some("Compile (JVM)"),
+          cond = Some(jvm)
+        ),
+        WorkflowStep.Sbt(
+          List("rootJVMPlain3/Test/compile"),
+          name = Some("Compile (JVM plain, Scala 3)"),
+          cond = Some(jvmScala3)
+        ),
+        WorkflowStep.Sbt(
+          List("rootJS/Test/compile"),
+          name = Some("Compile (JS)"),
+          cond = Some(js)
+        ),
+        WorkflowStep.Sbt(
+          List("rootNative/Test/compile"),
+          name = Some("Compile (Native)"),
+          cond = Some(nativeScala3)
+        ),
+        WorkflowStep.Sbt(
+          List("dockerComposeUp"),
           name = Some("Docker Compose Up"),
-          cond = Some(primaryJavaOSCond.value),
-          params = Map(
-            "timeout_minutes" -> "15",
-            "max_attempts" -> "3",
-            "command" -> "sbt 'project ${{ matrix.project }}' dockerComposeUp",
-            "retry_on" -> "error",
-            "on_retry_command" -> "sbt 'project ${{ matrix.project }}' dockerComposeDown"
-          ),
+          cond = Some(jvm),
           env = Map(
             "GITHUB_API_TOKEN" -> "${{ secrets.GITHUB_TOKEN }}",
             "LOCALSTACK_AUTH_TOKEN" -> "${{ secrets.LOCALSTACK_AUTH_TOKEN }}"
@@ -129,92 +140,50 @@ object Kinesis4CatsPlugin extends AutoPlugin {
         WorkflowStep.Sbt(
           List("Test/fastLinkJS"),
           name = Some("Link JS"),
-          cond = Some(onlyScalaJsCond.value)
+          cond = Some(js)
         ),
-        WorkflowStep.Use(
-          UseRef.Public("nick-fields", "retry", "v2"),
+        WorkflowStep.Sbt(
+          List("Test/nativeLink"),
           name = Some("Link Native"),
-          cond = Some(onlyNativeCond.value),
-          params = Map(
-            "timeout_minutes" -> "25",
-            "max_attempts" -> "3",
-            "command" -> "sbt 'project ${{ matrix.project }}' Test/nativeLink",
-            "retry_on" -> "error"
-          ),
-          env = Map("GITHUB_API_TOKEN" -> "${{ secrets.GITHUB_TOKEN }}")
+          cond = Some(nativeScala3)
         ),
         WorkflowStep.Sbt(
-          List(
-            "test"
-          ),
-          name = Some("Test"),
-          cond = Some(primaryJavaOSCond.value)
+          List("rootJVM/test"),
+          name = Some("Test (JVM)"),
+          cond = Some(jvm)
         ),
         WorkflowStep.Sbt(
-          List("itTest"),
+          List("rootJS/test"),
+          name = Some("Test (JS)"),
+          cond = Some(js)
+        ),
+        WorkflowStep.Sbt(
+          List("rootNative/test"),
+          name = Some("Test (Native)"),
+          cond = Some(nativeScala3)
+        ),
+        WorkflowStep.Sbt(
+          List("rootJVM/itTest"),
           name = Some("Integration Tests"),
-          cond = Some(
-            primaryJavaOSCond.value + " && startsWith(matrix.project, 'root-jvm')"
-          )
+          cond = Some(jvm)
         ),
         WorkflowStep.Sbt(
-          List(
-            "dockerComposePs",
-            "dockerComposeLogs"
-          ),
+          List("dockerComposePs", "dockerComposeLogs"),
           name = Some("Print docker logs and container listing"),
-          cond = Some(onlyFailures.value)
+          cond = Some("${{ failure() }}")
         ),
         WorkflowStep.Sbt(
-          List(
-            "dockerComposeDown"
-          ),
+          List("dockerComposeDown"),
           name = Some("Remove docker containers"),
-          cond = Some(primaryJavaOSCond.value)
+          cond = Some(jvm)
+        ),
+        WorkflowStep.Sbt(
+          List("doc"),
+          name = Some("Generate API documentation"),
+          cond = Some(jvm)
         )
       )
-
-      val scalafix =
-        if (tlCiScalafixCheck.value)
-          List(
-            WorkflowStep.Sbt(
-              List("fixCheck"),
-              name = Some("Check scalafix lints"),
-              cond = Some(noScala3Cond.value)
-            )
-          )
-        else Nil
-
-      val mima =
-        if (tlCiMimaBinaryIssueCheck.value)
-          List(
-            WorkflowStep.Sbt(
-              List("mimaReportBinaryIssues"),
-              name = Some("Check binary compatibility"),
-              cond = Some(primaryJavaOSCond.value)
-            )
-          )
-        else Nil
-
-      val doc =
-        if (tlCiDocCheck.value)
-          List(
-            WorkflowStep.Sbt(
-              List("doc"),
-              name = Some("Generate API documentation"),
-              cond = Some(primaryJavaOSCond.value)
-            )
-          )
-        else Nil
-
-      style ++ test ++ scalafix ++ mima ++ doc
     },
-    githubWorkflowJavaVersions := Seq(JavaSpec.temurin("17")),
-    githubWorkflowBuildSbtStepPreamble := Seq(
-      s"project $${{ matrix.project }}"
-    ),
-    githubWorkflowArtifactDownloadExtraKeys += "project",
-    tlCiScalafixCheck := true,
     mergifyStewardConfig := Some(
       MergifyStewardConfig(
         action = MergifyAction.Merge(method = Some("squash")),
@@ -233,19 +202,10 @@ object Kinesis4CatsPlugin extends AutoPlugin {
         else "--exclude-tags=integration"
       )
     ),
-    // Workaround for https://github.com/typelevel/sbt-typelevel/issues/464
     scalacOptions ++= {
-      if (tlIsScala3.value)
-        Seq(
-          "-language:implicitConversions",
-          "-Ykind-projector"
-        )
-      else
-        Seq(
-          "-Wconf:src=src_managed/.*:silent"
-        )
+      if (tlIsScala3.value) Nil
+      else Seq("-Wconf:src=src_managed/.*:silent")
     },
-    scalacOptions -= "-Ykind-projector:underscores",
     ThisBuild / semanticdbEnabled := true,
     semanticdbVersion := scalafixSemanticdb.revision,
     libraryDependencies ++= Seq(
@@ -353,8 +313,8 @@ object Kinesis4CatsPluginKeys {
     )
   )
 
-  final implicit class Kinesi4CatsProjectMatrixOps(private val p: ProjectMatrix)
+  final implicit class Kinesis4CatsCrossProjectOps(private val p: CrossProject)
       extends AnyVal {
-    def forkTests = p.settings(Test / fork := true)
+    def forkTests = p.jvmSettings(Test / fork := true)
   }
 }
