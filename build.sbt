@@ -168,9 +168,6 @@ lazy val `kcl-http4s` = crossProject(JVMPlatform)
       baseDirectory.value.getParentFile / "src" / "main" / "smithy"
     ),
     Compile / smithy4sSmithyLibrary := false,
-    Compile / smithy4sAllowedNamespaces := List(
-      "kinesis4cats.kcl.http4s.generated"
-    ),
     removeSmithy4sDependenciesFromManifest
   )
   .dependsOn(
@@ -365,8 +362,9 @@ lazy val `kinesis-client-localstack` = crossProject(JVMPlatform)
 
 lazy val `smithy4s-client-transformers` = project
   .in(file("smithy4s-client-transformers"))
+  .enablePlugins(NoPublishPlugin)
   .settings(
-    description := "Transformers for the smithy4s-client project",
+    description := "Transformers for the smithy4s-client project (build-time only; not published)",
     scalaVersion := Scala3,
     crossScalaVersions := Seq(Scala3),
     libraryDependencies ++= Seq(
@@ -408,9 +406,8 @@ lazy val `smithy4s-client` =
         Smithy.rulesEngine(smithy4s.codegen.BuildInfo.smithyVersion) % Smithy4s,
         S4S.kinesis % Smithy4s
       ),
-      Compile / smithy4sAllowedNamespaces := List(
-        "smithy.rules",
-        "com.amazonaws.kinesis"
+      Compile / smithy4sInputDirs := Seq(
+        baseDirectory.value.getParentFile / "src" / "main" / "smithy"
       ),
       Compile / smithy4sModelTransformers += "KinesisSpecTransformer",
       Compile / smithy4sAllDependenciesAsJars +=
@@ -656,13 +653,12 @@ def commonRootSettings: Seq[Setting[_]] =
 lazy val root = tlCrossRootProject
   .aggregate(allCrossProjects: _*)
   .settings(commonRootSettings)
-  .configureRoot(_.aggregate(rootJVMPlain3))
 
-// Plain JVM projects pinned to a single Scala version. Aggregated via a
-// scala-pinned sub-root (outside tlCrossRootProject) so `++` cleanly skips
-// them when cross-building the other version. Putting them in the main JVM
-// aggregate would force their Scala-pinned deps into the wrong cross-version
-// pass.
+// Plain JVM projects pinned to Scala 3. Kept outside the top-level root
+// aggregate so cross-version tasks (`+update`, `+publishLocal`) don't walk
+// into them under Scala 2.13, which would mix the plain projects' own _3
+// libraryDependencies with the _2.13 variants of their cross-built
+// dependsOn targets. CI reaches them directly via rootJVMPlain3/Test/compile.
 lazy val rootJVMPlain3 = project
   .in(file(".jvm-plain-3"))
   .enablePlugins(NoPublishPlugin)
