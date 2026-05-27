@@ -195,27 +195,7 @@ object Kinesis4CatsPlugin extends AutoPlugin {
   ).flatten
 
   override def globalSettings: Seq[Setting[_]] = Seq(
-    concurrentRestrictions += Tags.limit(NativeTags.Link, 1),
-    tlCommandAliases ++= Map(
-      "prePR" -> List(
-        "reload",
-        "project /",
-        "clean",
-        "cpl",
-        "pretty",
-        "set ThisBuild / tlFatalWarnings := tlFatalWarningsInCi.value",
-        "doc",
-        "session clear"
-      ),
-      "tlRelease" -> List(
-        "reload",
-        "project /",
-        // Uncomment this when 0.1.x
-        // "+mimaReportBinaryIssues",
-        "+publish",
-        "tlSonatypeBundleReleaseIfRelevant"
-      )
-    )
+    concurrentRestrictions += Tags.limit(NativeTags.Link, 1)
   )
 }
 
