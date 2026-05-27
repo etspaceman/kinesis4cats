@@ -60,7 +60,7 @@ object Kinesis4CatsPlugin extends AutoPlugin {
   }
 
   override def buildSettings = Seq(
-    tlBaseVersion := "0.3",
+    tlBaseVersion := "0.4",
     organization := "io.github.etspaceman",
     organizationName := "etspaceman",
     startYear := Some(2023),
@@ -131,7 +131,8 @@ object Kinesis4CatsPlugin extends AutoPlugin {
       )
     ),
     scalacOptions ++= {
-      if (tlIsScala3.value) Nil
+      if (tlIsScala3.value)
+        Seq("-language:implicitConversions", "-Ykind-projector")
       else Seq("-Wconf:src=src_managed/.*:silent")
     },
     ThisBuild / semanticdbEnabled := true,
