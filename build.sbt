@@ -67,7 +67,7 @@ lazy val shared = crossProject(JVMPlatform, JSPlatform, NativePlatform)
       "-Xkind-projector:underscores",
       "-Ykind-projector:underscores"
     ),
-    scalacOptions ++= Seq("-Xkind-projector", "-language:implicitConversions")
+    scalacOptions ++= Seq("-Ykind-projector", "-language:implicitConversions")
   )
   .dependsOn(compat)
 
@@ -642,7 +642,7 @@ lazy val functionalTestProjects =
   List(`kcl-http4s-test-server`)
 
 def commonRootSettings: Seq[Setting[_]] =
-  DockerComposePlugin.settings(true, functionalTestProjects) ++ Seq(
+  DockerComposePlugin.settings(true, functionalTestProjects, Scala3) ++ Seq(
     name := "kinesis4cats",
     ThisBuild / mergifyLabelPaths ++= {
       val crossLabels = allCrossProjects.flatMap { cp =>
