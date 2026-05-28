@@ -57,7 +57,7 @@ object LibraryDependencies {
     }
 
     val kpl = "software.amazon.kinesis" % "amazon-kinesis-producer" % "1.0.7"
-    val kcl = "software.amazon.kinesis" % "amazon-kinesis-client" % "3.3.0"
+    val kcl = "software.amazon.kinesis" % "amazon-kinesis-client" % "3.4.3"
   }
 
   object Cats {
@@ -69,7 +69,7 @@ object LibraryDependencies {
   }
 
   object Circe {
-    val circeVersion = "0.14.14"
+    val circeVersion = "0.14.15"
     val core = Def.setting("io.circe" %%% "circe-core" % circeVersion)
     val parser = Def.setting("io.circe" %%% "circe-parser" % circeVersion)
     val scodec = Def.setting("io.circe" %%% "circe-scodec" % circeVersion)

@@ -38,7 +38,7 @@ object MyApp extends IOApp {
             .build
     } yield client).use(client =>
         for {
-            _ <- client.createStream(StreamName("my-stream"), Some(1))
+            _ <- client.createStream(StreamName("my-stream"), Some(PositiveIntegerObject(1)))
             _ <- client.putRecord(
                 Data(Blob("my-data".getBytes())),
                 PartitionKey("some-partitionk-key"),

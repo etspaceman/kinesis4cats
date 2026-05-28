@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2023 etspaceman
+ * Copyright 2023-2026 etspaceman
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,10 @@ import cats.syntax.all._
 import software.amazon.awssdk.services.dynamodb.model.BillingMode
 import software.amazon.awssdk.services.dynamodb.model.Tag
 import software.amazon.kinesis.common._
+import software.amazon.kinesis.coordinator.CoordinatorConfig.ClientVersionConfig
+import software.amazon.kinesis.coordinator.streamInfo.StreamIdOnboardingState
+import software.amazon.kinesis.coordinator.streamInfo.StreamInfoMode
+import software.amazon.kinesis.leases.LeaseAssignmentStrategy
 import software.amazon.kinesis.metrics.MetricsLevel
 
 import kinesis4cats.instances.ciris._
@@ -83,6 +87,46 @@ object ciris {
       Try(MetricsLevel.valueOf(value)).toEither.leftMap(e =>
         ConfigError(
           s"Could not decode metrics level $value: ${e.getMessage}"
+        )
+      )
+    }
+
+  implicit val leaseAssignmentStrategyConfigDecoder
+      : ConfigDecoder[String, LeaseAssignmentStrategy] =
+    ConfigDecoder[String].mapEither { case (_, value) =>
+      Try(LeaseAssignmentStrategy.valueOf(value)).toEither.leftMap(e =>
+        ConfigError(
+          s"Could not decode lease assignment strategy $value: ${e.getMessage}"
+        )
+      )
+    }
+
+  implicit val streamInfoModeConfigDecoder
+      : ConfigDecoder[String, StreamInfoMode] =
+    ConfigDecoder[String].mapEither { case (_, value) =>
+      Try(StreamInfoMode.valueOf(value)).toEither.leftMap(e =>
+        ConfigError(
+          s"Could not decode stream info mode $value: ${e.getMessage}"
+        )
+      )
+    }
+
+  implicit val clientVersionConfigDecoder
+      : ConfigDecoder[String, ClientVersionConfig] =
+    ConfigDecoder[String].mapEither { case (_, value) =>
+      Try(ClientVersionConfig.valueOf(value)).toEither.leftMap(e =>
+        ConfigError(
+          s"Could not decode client version config $value: ${e.getMessage}"
+        )
+      )
+    }
+
+  implicit val streamIdOnboardingStateConfigDecoder
+      : ConfigDecoder[String, StreamIdOnboardingState] =
+    ConfigDecoder[String].mapEither { case (_, value) =>
+      Try(StreamIdOnboardingState.valueOf(value)).toEither.leftMap(e =>
+        ConfigError(
+          s"Could not decode stream id onboarding state $value: ${e.getMessage}"
         )
       )
     }

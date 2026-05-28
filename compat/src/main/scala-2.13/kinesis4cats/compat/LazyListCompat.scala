@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2023 etspaceman
+ * Copyright 2023-2026 etspaceman
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.

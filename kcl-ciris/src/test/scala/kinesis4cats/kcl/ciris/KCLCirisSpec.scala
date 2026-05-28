@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2023 etspaceman
+ * Copyright 2023-2026 etspaceman
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,12 @@ import software.amazon.awssdk.services.dynamodb.model.BillingMode
 import software.amazon.awssdk.services.dynamodb.model.Tag
 import software.amazon.kinesis.common._
 import software.amazon.kinesis.coordinator.CoordinatorConfig
+import software.amazon.kinesis.coordinator.CoordinatorConfig.ClientVersionConfig
+import software.amazon.kinesis.coordinator.streamInfo.StreamIdOnboardingState
+import software.amazon.kinesis.coordinator.streamInfo.StreamInfoMode
+import software.amazon.kinesis.leases.LeaseAssignmentStrategy
 import software.amazon.kinesis.leases.LeaseManagementConfig
+import software.amazon.kinesis.leases.LeaseManagementConfig.GracefulLeaseHandoffConfig
 import software.amazon.kinesis.lifecycle.LifecycleConfig
 import software.amazon.kinesis.metrics.{MetricsConfig, MetricsLevel}
 import software.amazon.kinesis.processor.SingleStreamTracker
@@ -76,6 +81,10 @@ class KCLCirisSpec extends munit.CatsEffectSuite {
         )(
           _.schedulerInitializationBackoffTimeMillis(_)
         )
+        .safeTransform(
+          ClientVersionConfig
+            .valueOf(BuildInfo.kclCoordinatorClientVersionConfig)
+        )(_.clientVersionConfig(_))
 
     } yield {
       assert(
@@ -104,6 +113,7 @@ class KCLCirisSpec extends munit.CatsEffectSuite {
           None,
           None,
           None,
+          None,
           None
         )
         .load[IO]
@@ -112,6 +122,7 @@ class KCLCirisSpec extends munit.CatsEffectSuite {
           dynamoClient,
           kinesisClient,
           Some("prop"),
+          None,
           None,
           None,
           None,
@@ -191,6 +202,31 @@ class KCLCirisSpec extends munit.CatsEffectSuite {
         .safeTransform(
           BuildInfo.kclLeaseDynamodbLockBasedLeaderHeartbeatPeriod.asFiniteDurationUnsafe.toMillis
         )(_.dynamoDbLockBasedLeaderHeartbeatPeriodInMillis(_))
+        .safeTransform(
+          LeaseAssignmentStrategy
+            .valueOf(BuildInfo.kclLeaseAssignmentStrategy)
+        )(_.leaseAssignmentStrategy(_))
+        .safeTransform(
+          StreamInfoMode.valueOf(BuildInfo.kclLeaseStreamInfoMode)
+        )(_.streamInfoMode(_))
+        .safeTransform(
+          StreamIdOnboardingState
+            .valueOf(BuildInfo.kclLeaseStreamIdOnboardingState)
+        )(_.streamIdOnboardingState(_))
+        .safeTransform(
+          BuildInfo.kclLeaseEnablePriorityLeaseAssignment.toBoolean
+        )(_.enablePriorityLeaseAssignment(_))
+        .safeTransform(
+          GracefulLeaseHandoffConfig
+            .builder()
+            .isGracefulLeaseHandoffEnabled(
+              BuildInfo.kclLeaseGracefulLeaseHandoffEnabled.toBoolean
+            )
+            .gracefulLeaseHandoffTimeoutMillis(
+              BuildInfo.kclLeaseGracefulLeaseHandoffTimeout.asMillisUnsafe
+            )
+            .build()
+        )(_.gracefulLeaseHandoffConfig(_))
         .safeTransform(
           (
             BuildInfo.kclAppName,
@@ -376,16 +412,16 @@ class KCLCirisSpec extends munit.CatsEffectSuite {
     for {
       kinesisClient <- AwsClients.kinesisClient[IO]()
       fanoutConfigEnv <- KCLCiris.Retrieval
-        .read(kinesisClient, Some("FANOUT_ENV"), None, None)
+        .read(kinesisClient, Some("FANOUT_ENV"), None, None, None, None)
         .load[IO]
       fanoutConfigProp <- KCLCiris.Retrieval
-        .read(kinesisClient, Some("fanout.prop"), None, None)
+        .read(kinesisClient, Some("fanout.prop"), None, None, None, None)
         .load[IO]
       pollingConfigEnv <- KCLCiris.Retrieval
-        .read(kinesisClient, Some("POLLING_ENV"), None, None)
+        .read(kinesisClient, Some("POLLING_ENV"), None, None, None, None)
         .load[IO]
       pollingConfigProp <- KCLCiris.Retrieval
-        .read(kinesisClient, Some("polling.prop"), None, None)
+        .read(kinesisClient, Some("polling.prop"), None, None, None, None)
         .load[IO]
       pollingExpected = new RetrievalConfig(
         kinesisClient,
@@ -436,6 +472,12 @@ class KCLCirisSpec extends munit.CatsEffectSuite {
             )(
               _.millisBehindLatestThresholdForReducedTps(_)
             )
+            .safeTransform(
+              BuildInfo.kclRetrievalPollingMaxPendingProcessRecordsInput.toInt
+            )(_.maxPendingProcessRecordsInput(_))
+            .safeTransform(
+              BuildInfo.kclRetrievalPollingKinesisRequestTimeout.asJavaDurationUnsafe
+            )(_.kinesisRequestTimeout(_))
         )
         .safeTransform(
           BuildInfo.pollingKclRetrievalListShardsBackoffTime.asMillisUnsafe

@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2023 etspaceman
+ * Copyright 2023-2026 etspaceman
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import com.amazonaws.services.schemaregistry.deserializers.GlueSchemaRegistryDes
 import software.amazon.awssdk.services.cloudwatch.CloudWatchAsyncClient
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient
 import software.amazon.awssdk.services.kinesis.KinesisAsyncClient
+import software.amazon.kinesis.checkpoint.CheckpointFactory
 import software.amazon.kinesis.common._
 import software.amazon.kinesis.coordinator._
 import software.amazon.kinesis.leases._
@@ -37,6 +38,7 @@ import software.amazon.kinesis.leases.dynamodb.TableCreatorCallback
 import software.amazon.kinesis.lifecycle._
 import software.amazon.kinesis.metrics._
 import software.amazon.kinesis.retrieval.AggregatorUtil
+import software.amazon.kinesis.retrieval.RecordsFetcherFactory
 import software.amazon.kinesis.retrieval.polling.SleepTimeController
 import software.amazon.kinesis.worker.metric.WorkerMetric
 
@@ -135,7 +137,11 @@ object KCLCirisFS2 {
       encoders: RecordProcessor.LogEncoders = RecordProcessor.LogEncoders.show,
       managedClients: Boolean = true,
       workerMetrics: Option[List[WorkerMetric]] = None,
-      sleepTimeController: Option[SleepTimeController] = None
+      sleepTimeController: Option[SleepTimeController] = None,
+      streamArnConstructor: Option[StreamArnConstructor] = None,
+      checkpointFactory: Option[CheckpointFactory] = None,
+      consumerTaskFactory: Option[ConsumerTaskFactory] = None,
+      recordsFetcherFactory: Option[RecordsFetcherFactory] = None
   )(implicit
       F: Async[F],
       P: Parallel[F]
@@ -171,6 +177,10 @@ object KCLCirisFS2 {
       metricsFactory,
       glueSchemaRegistryDeserializer,
       sleepTimeController,
+      streamArnConstructor,
+      checkpointFactory,
+      consumerTaskFactory,
+      recordsFetcherFactory,
       encoders
     )
   } yield new KCLConsumerFS2[F](config)
@@ -251,6 +261,10 @@ object KCLCirisFS2 {
       metricsFactory: Option[MetricsFactory],
       glueSchemaRegistryDeserializer: Option[GlueSchemaRegistryDeserializer],
       sleepTimeController: Option[SleepTimeController],
+      streamArnConstructor: Option[StreamArnConstructor],
+      checkpointFactory: Option[CheckpointFactory],
+      consumerTaskFactory: Option[ConsumerTaskFactory],
+      recordsFetcherFactory: Option[RecordsFetcherFactory],
       encoders: RecordProcessor.LogEncoders
   )(implicit
       F: Async[F]
@@ -263,7 +277,7 @@ object KCLCirisFS2 {
       )
       .resource[F]
     fs2Config <- readFS2Config(prefix).resource[F]
-    checkpointConfig <- KCLCiris.Checkpoint.resource[F]
+    checkpointConfig <- KCLCiris.Checkpoint.resource[F](checkpointFactory)
     coordinatorConfig <- KCLCiris.Coordinator.resource[F](
       prefix,
       shardPrioritization,
@@ -278,7 +292,8 @@ object KCLCirisFS2 {
       tableCreatorCallback,
       leaseManagementFactory,
       leaseExecutorService,
-      workerMetrics
+      workerMetrics,
+      consumerTaskFactory
     )
     lifecycleConfig <- KCLCiris.Lifecycle
       .resource[F](prefix, aggregatorUtil, taskExecutionListener)
@@ -289,7 +304,9 @@ object KCLCirisFS2 {
         kinesisClient,
         prefix,
         glueSchemaRegistryDeserializer,
-        sleepTimeController
+        sleepTimeController,
+        streamArnConstructor,
+        recordsFetcherFactory
       )
     processConfig <- KCLCiris.Processor.resource[F](prefix)
     queue <- Queue
