@@ -77,6 +77,7 @@ object Kinesis4CatsPlugin extends AutoPlugin {
     resolvers += "s01 snapshots" at "https://s01.oss.sonatype.org/content/repositories/snapshots/",
     resolvers += "jitpack" at "https://jitpack.io",
     githubWorkflowJavaVersions := Seq(JavaSpec.temurin("17")),
+    githubWorkflowOSes := Seq("ubuntu-24.04"),
     githubWorkflowBuildPreamble ++= nativeBrewInstallWorkflowSteps.value,
     githubWorkflowBuildMatrixFailFast := Some(false),
     githubWorkflowBuild ++= {

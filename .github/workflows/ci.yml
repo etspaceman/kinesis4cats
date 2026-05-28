@@ -28,7 +28,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
         scala: [2.13, 3]
         java: [temurin@17]
         project: [rootJS, rootJVM, rootNative]
@@ -64,11 +64,11 @@ jobs:
         run: sbt githubWorkflowCheck
 
       - name: Check headers and formatting
-        if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-22.04'
+        if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-24.04'
         run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' headerCheckAll scalafmtCheckAll 'project /' scalafmtSbtCheck
 
       - name: Check scalafix lints
-        if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-22.04'
+        if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-24.04'
         run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' 'scalafixAll --check'
 
       - name: scalaJSLink
@@ -83,26 +83,26 @@ jobs:
         run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' test
 
       - name: Check binary compatibility
-        if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-22.04'
+        if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-24.04'
         run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' mimaReportBinaryIssues
 
       - name: Generate API documentation
-        if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-22.04'
+        if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-24.04'
         run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' doc
 
       - name: Compile (JVM plain projects)
-        if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-22.04' && endsWith(matrix.project, 'JVM') && matrix.scala == '3.3.7'
+        if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-24.04' && endsWith(matrix.project, 'JVM') && matrix.scala == '3.3.7'
         run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' rootJVMPlain3/Test/compile
 
       - name: Docker Compose Up
-        if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-22.04' && endsWith(matrix.project, 'JVM')
+        if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-24.04' && endsWith(matrix.project, 'JVM')
         env:
           GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           LOCALSTACK_AUTH_TOKEN: ${{ secrets.LOCALSTACK_AUTH_TOKEN }}
         run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' dockerComposeUp
 
       - name: Integration Tests
-        if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-22.04' && endsWith(matrix.project, 'JVM')
+        if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-24.04' && endsWith(matrix.project, 'JVM')
         run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' itTest
 
       - name: Print docker logs and container listing
@@ -110,7 +110,7 @@ jobs:
         run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' dockerComposePs dockerComposeLogs
 
       - name: Remove docker containers
-        if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-22.04' && endsWith(matrix.project, 'JVM')
+        if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-24.04' && endsWith(matrix.project, 'JVM')
         run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' dockerComposeDown
 
       - name: Make target directories
@@ -134,7 +134,7 @@ jobs:
     if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main')
     strategy:
       matrix:
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
         java: [temurin@17]
     runs-on: ${{ matrix.os }}
     steps:
