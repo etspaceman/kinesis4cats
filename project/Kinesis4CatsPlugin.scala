@@ -131,7 +131,7 @@ object Kinesis4CatsPlugin extends AutoPlugin {
       )
     ),
     scalacOptions ++= {
-      if (tlIsScala3.value) Nil
+      if (tlIsScala3.value) Seq("-language:implicitConversions")
       else Seq("-Wconf:src=src_managed/.*:silent")
     },
     ThisBuild / semanticdbEnabled := true,

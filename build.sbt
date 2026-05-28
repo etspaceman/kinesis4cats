@@ -20,8 +20,7 @@ lazy val compat = crossProject(JVMPlatform, JSPlatform, NativePlatform)
   )
   .nativeSettings(
     scalaVersion := Scala3,
-    crossScalaVersions := Seq(Scala3),
-    scalacOptions += "-language:implicitConversions"
+    crossScalaVersions := Seq(Scala3)
   )
 
 lazy val shared = crossProject(JVMPlatform, JSPlatform, NativePlatform)
@@ -67,7 +66,7 @@ lazy val shared = crossProject(JVMPlatform, JSPlatform, NativePlatform)
       "-Xkind-projector:underscores",
       "-Ykind-projector:underscores"
     ),
-    scalacOptions ++= Seq("-Ykind-projector", "-language:implicitConversions")
+    scalacOptions += "-Ykind-projector"
   )
   .dependsOn(compat)
 
