@@ -1,3 +1,5 @@
+import java.time.Year
+
 import LibraryDependencies._
 import org.scalafmt.sbt.ScalafmtPlugin
 import org.typelevel.sbt._
@@ -131,9 +133,11 @@ object Kinesis4CatsPlugin extends AutoPlugin {
       )
     ),
     scalacOptions ++= {
-      if (tlIsScala3.value) Seq("-language:implicitConversions")
-      else Seq("-Wconf:src=src_managed/.*:silent")
+      val base = Seq("-language:implicitConversions")
+      if (tlIsScala3.value) base
+      else base :+ "-Wconf:src=src_managed/.*:silent"
     },
+    scalacOptions := scalacOptions.value.distinct,
     ThisBuild / semanticdbEnabled := true,
     semanticdbVersion := scalafixSemanticdb.revision,
     libraryDependencies ++= Seq(
@@ -150,7 +154,10 @@ object Kinesis4CatsPlugin extends AutoPlugin {
     ),
     moduleName := "kinesis4cats-" + name.value,
     headerLicense := Some(
-      HeaderLicense.ALv2(s"${startYear.value.get}-2023", organizationName.value)
+      HeaderLicense.ALv2(
+        s"${startYear.value.get}-${Year.now.getValue}",
+        organizationName.value
+      )
     ),
     Compile / doc / sources := {
       if (scalaVersion.value.startsWith("3.")) Nil
