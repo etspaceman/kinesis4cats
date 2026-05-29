@@ -110,7 +110,9 @@ object LibraryDependencies {
       "software.amazon.smithy" % "smithy-waiters" % version
     def smokeTestTraits(version: String) = // smithy.test
       "software.amazon.smithy" % "smithy-smoke-test-traits" % version
-    def awsSmokeTestModel(version: String) = // aws.test (vendorParamsShape refs)
+    def awsSmokeTestModel(
+        version: String
+    ) = // aws.test (vendorParamsShape refs)
       "software.amazon.smithy" % "smithy-aws-smoke-test-model" % version
     def awsEndpoints(version: String) = // aws.partition / aws.parseArn rule fns
       "software.amazon.smithy" % "smithy-aws-endpoints" % version
