@@ -101,20 +101,7 @@ object LibraryDependencies {
       "software.amazon.smithy" % "smithy-rules-engine" % version
     def build(version: String) =
       "software.amazon.smithy" % "smithy-build" % version
-    // Trait definitions needed to parse the vendored AWS Smithy models (see
-    // smithy4s-client/src/main/smithy). None of these namespaces are in the
-    // codegen allowlist, so they are used for parsing only and generate no code.
-    def awsTraits(version: String) = // aws.api / aws.auth / aws.protocols
-      "software.amazon.smithy" % "smithy-aws-traits" % version
-    def waiters(version: String) = // smithy.waiters
-      "software.amazon.smithy" % "smithy-waiters" % version
-    def smokeTestTraits(version: String) = // smithy.test
-      "software.amazon.smithy" % "smithy-smoke-test-traits" % version
-    def awsSmokeTestModel(
-        version: String
-    ) = // aws.test (vendorParamsShape refs)
-      "software.amazon.smithy" % "smithy-aws-smoke-test-model" % version
-    def awsEndpoints(version: String) = // aws.partition / aws.parseArn rule fns
-      "software.amazon.smithy" % "smithy-aws-endpoints" % version
+    // https://github.com/aws/api-models-aws
+    val kinesis = "software.amazon.api.models" % "kinesis" % "1.0.7"
   }
 }

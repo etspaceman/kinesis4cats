@@ -407,15 +407,7 @@ lazy val `smithy4s-client` =
         "com.disneystreaming.smithy4s" %%% "smithy4s-aws-http4s" % smithy4sVersion.value,
         Log4Cats.noop.value,
         Smithy.rulesEngine(smithy4s.codegen.BuildInfo.smithyVersion) % Smithy4s,
-        Smithy.awsTraits(smithy4s.codegen.BuildInfo.smithyVersion) % Smithy4s,
-        Smithy.waiters(smithy4s.codegen.BuildInfo.smithyVersion) % Smithy4s,
-        Smithy
-          .smokeTestTraits(smithy4s.codegen.BuildInfo.smithyVersion) % Smithy4s,
-        Smithy
-          .awsSmokeTestModel(
-            smithy4s.codegen.BuildInfo.smithyVersion
-          ) % Smithy4s,
-        Smithy.awsEndpoints(smithy4s.codegen.BuildInfo.smithyVersion) % Smithy4s
+        Smithy.kinesis % Smithy4s
       ),
       Compile / smithy4sInputDirs := Seq(
         baseDirectory.value.getParentFile / "src" / "main" / "smithy"
