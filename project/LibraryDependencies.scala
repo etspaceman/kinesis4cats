@@ -101,16 +101,18 @@ object LibraryDependencies {
       "software.amazon.smithy" % "smithy-rules-engine" % version
     def build(version: String) =
       "software.amazon.smithy" % "smithy-build" % version
-  }
-
-  object Smithy4s {
-    val smithySpecVersion = "2025.04.08"
-
-    val kinesis =
-      "com.disneystreaming.smithy" % "aws-kinesis-spec" % smithySpecVersion
-    val dynamo =
-      "com.disneystreaming.smithy" % "aws-dynamodb-spec" % smithySpecVersion
-    val cloudwatch =
-      "com.disneystreaming.smithy" % "aws-cloudwatch-spec" % smithySpecVersion
+    // Trait definitions needed to parse the vendored AWS Smithy models (see
+    // smithy4s-client/src/main/smithy). None of these namespaces are in the
+    // codegen allowlist, so they are used for parsing only and generate no code.
+    def awsTraits(version: String) = // aws.api / aws.auth / aws.protocols
+      "software.amazon.smithy" % "smithy-aws-traits" % version
+    def waiters(version: String) = // smithy.waiters
+      "software.amazon.smithy" % "smithy-waiters" % version
+    def smokeTestTraits(version: String) = // smithy.test
+      "software.amazon.smithy" % "smithy-smoke-test-traits" % version
+    def awsSmokeTestModel(version: String) = // aws.test (vendorParamsShape refs)
+      "software.amazon.smithy" % "smithy-aws-smoke-test-model" % version
+    def awsEndpoints(version: String) = // aws.partition / aws.parseArn rule fns
+      "software.amazon.smithy" % "smithy-aws-endpoints" % version
   }
 }

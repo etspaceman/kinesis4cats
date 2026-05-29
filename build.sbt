@@ -1,4 +1,4 @@
-import LibraryDependencies.{Smithy4s => S4S, _}
+import LibraryDependencies._
 import laika.config._
 import laika.helium.Helium
 import laika.helium.config.TextLink
@@ -407,7 +407,15 @@ lazy val `smithy4s-client` =
         "com.disneystreaming.smithy4s" %%% "smithy4s-aws-http4s" % smithy4sVersion.value,
         Log4Cats.noop.value,
         Smithy.rulesEngine(smithy4s.codegen.BuildInfo.smithyVersion) % Smithy4s,
-        S4S.kinesis % Smithy4s
+        Smithy.awsTraits(smithy4s.codegen.BuildInfo.smithyVersion) % Smithy4s,
+        Smithy.waiters(smithy4s.codegen.BuildInfo.smithyVersion) % Smithy4s,
+        Smithy
+          .smokeTestTraits(smithy4s.codegen.BuildInfo.smithyVersion) % Smithy4s,
+        Smithy
+          .awsSmokeTestModel(
+            smithy4s.codegen.BuildInfo.smithyVersion
+          ) % Smithy4s,
+        Smithy.awsEndpoints(smithy4s.codegen.BuildInfo.smithyVersion) % Smithy4s
       ),
       Compile / smithy4sInputDirs := Seq(
         baseDirectory.value.getParentFile / "src" / "main" / "smithy"
