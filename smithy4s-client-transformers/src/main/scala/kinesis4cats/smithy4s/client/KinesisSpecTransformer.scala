@@ -20,6 +20,7 @@ import java.util.ArrayList
 import java.util.Collections
 import java.util.function
 import java.util.function.BiFunction
+import java.util.function.BiPredicate
 import java.util.stream.Collectors
 
 import software.amazon.smithy.build._
@@ -117,6 +118,26 @@ final class KinesisSpecTransformer extends ProjectionTransformer {
         .build()
     } else shape
 
+  // Traits present in the upstream AWS model that smithy4s would render as
+  // Hints referencing namespaces we do not generate code for (they are not in
+  // the codegen allowlist). Stripping their applications keeps the generated
+  // client clean, matching the curated spec we previously consumed.
+  //
+  // NB: only Java APIs are used in field initializers here. This class is
+  // compiled for Scala 3 but loaded into smithy4s' Scala 2.12 codegen
+  // classloader, so touching the Scala collections library at construction
+  // time would fail to instantiate the transformer.
+  val smokeTestsTraitId =
+    ShapeId.fromParts("smithy.test", "smokeTests")
+  val waitableTraitId =
+    ShapeId.fromParts("smithy.waiters", "waitable")
+
+  val removableTraits: BiPredicate[Shape, Trait] =
+    (_: Shape, `trait`: Trait) => {
+      val id = `trait`.toShapeId()
+      (id == smokeTestsTraitId) || (id == waitableTraitId)
+    }
+
   def transform(context: TransformContext): Model = {
     val transformer = context.getTransformer()
 
@@ -129,10 +150,12 @@ final class KinesisSpecTransformer extends ProjectionTransformer {
 
     val newShapes = Collections.unmodifiableList(newShapesAl)
 
-    transformer.mapShapes(
+    val withMappedShapes = transformer.mapShapes(
       transformer.replaceShapes(withMappedTraits, newShapes),
       shapeTransform
     )
+
+    transformer.removeTraitsIf(withMappedShapes, removableTraits)
   }
 
 }

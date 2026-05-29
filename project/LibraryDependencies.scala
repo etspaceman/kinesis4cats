@@ -101,16 +101,7 @@ object LibraryDependencies {
       "software.amazon.smithy" % "smithy-rules-engine" % version
     def build(version: String) =
       "software.amazon.smithy" % "smithy-build" % version
-  }
-
-  object Smithy4s {
-    val smithySpecVersion = "2025.04.08"
-
-    val kinesis =
-      "com.disneystreaming.smithy" % "aws-kinesis-spec" % smithySpecVersion
-    val dynamo =
-      "com.disneystreaming.smithy" % "aws-dynamodb-spec" % smithySpecVersion
-    val cloudwatch =
-      "com.disneystreaming.smithy" % "aws-cloudwatch-spec" % smithySpecVersion
+    // https://github.com/aws/api-models-aws
+    val kinesis = "software.amazon.api.models" % "kinesis" % "1.0.7"
   }
 }
