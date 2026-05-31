@@ -32,7 +32,9 @@ lazy val shared = crossProject(JVMPlatform, JSPlatform, NativePlatform)
     libraryDependencies ++= testDependencies.value.map(_ % Test) ++ Seq(
       "com.thesamet.scalapb" %%% "scalapb-runtime" % scalapb.compiler.Version.scalapbVersion,
       ScalaJS.javaTime.value,
-      Log4Cats.noop.value % Test
+      Otel4s.coreMetrics.value,
+      Log4Cats.noop.value % Test,
+      Otel4s.sdkMetricsTestkit.value % Test
     ),
     Compile / PB.protoSources := Seq(
       baseDirectory.value.getParentFile / "src" / "main" / "protobuf"

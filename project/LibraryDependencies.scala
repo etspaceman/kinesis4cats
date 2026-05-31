@@ -104,4 +104,17 @@ object LibraryDependencies {
     // https://github.com/aws/api-models-aws
     val kinesis = "software.amazon.api.models" % "kinesis" % "1.0.7"
   }
+
+  object Otel4s {
+    // Core API (stable 1.x). Scala-Steward will bump hereafter.
+    val otel4sVersion = "1.0.0"
+    // SDK is versioned separately (0.x). Used test-only for the in-memory testkit.
+    val sdkVersion = "0.19.0"
+    val coreMetrics =
+      Def.setting("org.typelevel" %%% "otel4s-core-metrics" % otel4sVersion)
+    val sdkMetricsTestkit =
+      Def.setting(
+        "org.typelevel" %%% "otel4s-sdk-metrics-testkit" % sdkVersion
+      )
+  }
 }
