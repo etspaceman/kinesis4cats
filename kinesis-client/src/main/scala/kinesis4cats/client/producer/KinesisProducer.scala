@@ -26,15 +26,15 @@ import cats.effect._
 import cats.syntax.all._
 import org.typelevel.log4cats.StructuredLogger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
+import org.typelevel.otel4s.metrics.MeterProvider
 import software.amazon.awssdk.core.SdkBytes
 import software.amazon.awssdk.services.kinesis.KinesisAsyncClient
 import software.amazon.awssdk.services.kinesis.model._
 
 import kinesis4cats.models
-import kinesis4cats.producer.{Record => Rec, _}
 import kinesis4cats.producer.metrics.ProducerInstruments
+import kinesis4cats.producer.{Record => Rec, _}
 import kinesis4cats.syntax.id._
-import org.typelevel.otel4s.metrics.MeterProvider
 
 /** A [[kinesis4cats.producer.Producer Producer]] implementation that leverages
   * the [[kinesis4cats.client.KinesisClient KinesisClient]]

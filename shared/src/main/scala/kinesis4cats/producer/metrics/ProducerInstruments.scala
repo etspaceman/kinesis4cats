@@ -53,7 +53,10 @@ private[kinesis4cats] final class ProducerInstruments[F[_]] private (
       stream: StreamNameOrArn
   ): F[Unit] = {
     val attrs = streamAttrs(stream)
-    userRecordsReceived.add(records, attrs) *> userRecordsBytes.add(bytes, attrs)
+    userRecordsReceived.add(records, attrs) *> userRecordsBytes.add(
+      bytes,
+      attrs
+    )
   }
 
   /** Records one shard-batch put: record count, byte size, and latency. */
