@@ -86,8 +86,7 @@ private[kinesis4cats] final class ProducerInstruments[F[_]] private (
 }
 
 private[kinesis4cats] object ProducerInstruments {
-
-  private val namespace = "kinesis4cats.producer"
+  private[kinesis4cats] val defaultNamespace = "kinesis4cats.producer"
 
   private def streamValue(stream: StreamNameOrArn): String =
     stream.streamName
@@ -118,7 +117,10 @@ private[kinesis4cats] object ProducerInstruments {
   /** Builds the instruments from a
     * [[org.typelevel.otel4s.metrics.Meter Meter]].
     */
-  def fromMeter[F[_]: Monad](meter: Meter[F]): F[ProducerInstruments[F]] =
+  def fromMeter[F[_]: Monad](
+      meter: Meter[F],
+      namespace: String
+  ): F[ProducerInstruments[F]] =
     for {
       userRecordsReceived <- meter
         .counter[Long](s"$namespace.user_records.received")

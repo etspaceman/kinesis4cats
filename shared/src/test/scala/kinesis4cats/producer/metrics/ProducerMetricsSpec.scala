@@ -26,10 +26,11 @@ import org.typelevel.otel4s.sdk.testkit.metrics.MetricsTestkit
 
 class ProducerMetricsSpec extends munit.CatsEffectSuite {
   test("put records producer metrics; received counted once across retries") {
+    val namespace = "test"
     MetricsTestkit.inMemory[IO]().use { tk =>
       for {
-        meter <- tk.meterProvider.get("test")
-        instruments <- ProducerInstruments.fromMeter[IO](meter)
+        meter <- tk.meterProvider.get(namespace)
+        instruments <- ProducerInstruments.fromMeter[IO](meter, namespace)
         _ <- MockProducer(
           aggregate = false,
           raiseOnFailures = true,
@@ -51,22 +52,22 @@ class ProducerMetricsSpec extends munit.CatsEffectSuite {
       } yield {
         val names = metrics.map(_.name).toSet
         assert(
-          names.contains("kinesis4cats.producer.user_records.received"),
+          names.contains(s"$namespace.user_records.received"),
           names.toString
         )
         assert(
-          names.contains("kinesis4cats.producer.kinesis_records.put"),
+          names.contains(s"$namespace.kinesis_records.put"),
           names.toString
         )
         assert(
-          names.contains("kinesis4cats.producer.errors"),
+          names.contains(s"$namespace.errors"),
           names.toString
         )
         // received is recorded once (value 5), not once-per-retry (would be >5)
         val checked = MetricExpectations.checkAll(
           metrics,
           MetricExpectation
-            .sum[Long]("kinesis4cats.producer.user_records.received")
+            .sum[Long](s"$namespace.user_records.received")
             .value(5L, Attribute("stream.name", "foo"))
         )
         assert(checked.isRight, checked.toString)

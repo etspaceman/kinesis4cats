@@ -106,15 +106,13 @@ object LibraryDependencies {
   }
 
   object Otel4s {
-    // Core API (stable 1.x). Scala-Steward will bump hereafter.
     val otel4sVersion = "1.0.0"
-    // SDK is versioned separately (0.x). Used test-only for the in-memory testkit.
-    val sdkVersion = "0.19.0"
+    val otel4sSdkMetricsTestkitVersion = "0.19.0"
     val coreMetrics =
       Def.setting("org.typelevel" %%% "otel4s-core-metrics" % otel4sVersion)
     val sdkMetricsTestkit =
       Def.setting(
-        "org.typelevel" %%% "otel4s-sdk-metrics-testkit" % sdkVersion
+        "org.typelevel" %%% "otel4s-sdk-metrics-testkit" % otel4sSdkMetricsTestkitVersion
       )
   }
 }

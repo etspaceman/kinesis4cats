@@ -136,12 +136,15 @@ object KinesisProducer {
       copy(logger = logger)
 
     /** Emit OpenTelemetry producer metrics via the given `MeterProvider`. */
-    def withMeterProvider(meterProvider: MeterProvider[F]): Builder[F] =
+    def withMeterProvider(
+        meterProvider: MeterProvider[F],
+        namespace: String = ProducerInstruments.defaultNamespace
+    ): Builder[F] =
       copy(instrumentsResource =
         Resource.eval(
           meterProvider
-            .get("kinesis4cats.producer")
-            .flatMap(ProducerInstruments.fromMeter[F])
+            .get(namespace)
+            .flatMap(ProducerInstruments.fromMeter[F](_, namespace))
         )
       )
 

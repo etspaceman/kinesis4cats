@@ -32,10 +32,12 @@ class ProducerInstrumentsSpec extends munit.CatsEffectSuite {
   val stream = StreamNameOrArn.Name("foo")
 
   test("fromMeter records the expected instruments, values and attributes") {
+    val namespace = "test"
+
     MetricsTestkit.inMemory[IO]().use { tk =>
       for {
-        meter <- tk.meterProvider.get("test")
-        instr <- ProducerInstruments.fromMeter[IO](meter)
+        meter <- tk.meterProvider.get(namespace)
+        instr <- ProducerInstruments.fromMeter[IO](meter, namespace)
         _ <- instr.recordReceived(5L, 250L, stream)
         _ <- instr.recordShardPut(
           3L,
@@ -55,29 +57,29 @@ class ProducerInstrumentsSpec extends munit.CatsEffectSuite {
         assertEquals(
           names,
           Set(
-            "kinesis4cats.producer.user_records.received",
-            "kinesis4cats.producer.user_records.bytes",
-            "kinesis4cats.producer.kinesis_records.put",
-            "kinesis4cats.producer.kinesis_records.bytes",
-            "kinesis4cats.producer.request.duration",
-            "kinesis4cats.producer.retries",
-            "kinesis4cats.producer.errors"
+            s"$namespace.user_records.received",
+            s"$namespace.user_records.bytes",
+            s"$namespace.kinesis_records.put",
+            s"$namespace.kinesis_records.bytes",
+            s"$namespace.request.duration",
+            s"$namespace.retries",
+            s"$namespace.errors"
           )
         )
         val checked = MetricExpectations.checkAll(
           metrics,
           MetricExpectation
-            .sum[Long]("kinesis4cats.producer.user_records.received")
+            .sum[Long](s"$namespace.user_records.received")
             .value(5L, Attribute("stream.name", "foo")),
           MetricExpectation
-            .sum[Long]("kinesis4cats.producer.kinesis_records.put")
+            .sum[Long](s"$namespace.kinesis_records.put")
             .value(
               3L,
               Attribute("stream.name", "foo"),
               Attribute("shard.id", "shard-1")
             ),
           MetricExpectation
-            .sum[Long]("kinesis4cats.producer.errors")
+            .sum[Long](s"$namespace.errors")
             .value(
               1L,
               Attribute("stream.name", "foo"),
