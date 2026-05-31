@@ -161,7 +161,7 @@ abstract class Producer[F[_], PutReq, PutRes] private[kinesis4cats] (
                       .recordShardPut(
                         shardBatch.count.toLong,
                         shardBatch.batchSize.toLong,
-                        elapsed.toNanos.toDouble / 1.0e9,
+                        elapsed,
                         config.streamNameOrArn,
                         shardBatch.shardId
                       )

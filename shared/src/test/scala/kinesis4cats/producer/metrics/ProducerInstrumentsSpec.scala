@@ -17,6 +17,8 @@
 package kinesis4cats.producer
 package metrics
 
+import scala.concurrent.duration._
+
 import cats.effect.IO
 import org.typelevel.otel4s.Attribute
 import org.typelevel.otel4s.sdk.testkit.metrics.MetricExpectation
@@ -35,7 +37,13 @@ class ProducerInstrumentsSpec extends munit.CatsEffectSuite {
         meter <- tk.meterProvider.get("test")
         instr <- ProducerInstruments.fromMeter[IO](meter)
         _ <- instr.recordReceived(5L, 250L, stream)
-        _ <- instr.recordShardPut(3L, 150L, 0.012, stream, ShardId("shard-1"))
+        _ <- instr.recordShardPut(
+          3L,
+          150L,
+          12.millis,
+          stream,
+          ShardId("shard-1")
+        )
         _ <- instr.recordRetries(2L, stream)
         _ <- instr.recordErrors(
           Map("ProvisionedThroughputExceededException" -> 1L),
@@ -86,7 +94,13 @@ class ProducerInstrumentsSpec extends munit.CatsEffectSuite {
       val instr = ProducerInstruments.noop[IO]
       for {
         _ <- instr.recordReceived(5L, 250L, stream)
-        _ <- instr.recordShardPut(3L, 150L, 0.012, stream, ShardId("shard-1"))
+        _ <- instr.recordShardPut(
+          3L,
+          150L,
+          12.millis,
+          stream,
+          ShardId("shard-1")
+        )
         metrics <- tk.collectMetrics
       } yield assertEquals(metrics, Nil)
     }

@@ -17,6 +17,8 @@
 package kinesis4cats.producer
 package metrics
 
+import scala.concurrent.duration._
+
 import cats.Applicative
 import cats.Monad
 import cats.syntax.all._
@@ -28,12 +30,8 @@ import org.typelevel.otel4s.metrics.Meter
 import kinesis4cats.models.ShardId
 import kinesis4cats.models.StreamNameOrArn
 
-/** The bundle of OpenTelemetry instruments a
-  * [[kinesis4cats.producer.Producer Producer]] records on the produce path.
-  * Built once from a [[org.typelevel.otel4s.metrics.Meter Meter]] via
-  * [[ProducerInstruments.fromMeter]]; the default is
-  * [[ProducerInstruments.noop]], which records nothing. Record helpers own
-  * attribute construction so callers pass domain values only.
+/** Instruments a [[kinesis4cats.producer.Producer Producer]] with metrics via
+  * [[https://opentelemetry.io/ OpenTelemetry]].
   */
 private[kinesis4cats] final class ProducerInstruments[F[_]] private (
     userRecordsReceived: Counter[F, Long],
@@ -63,14 +61,14 @@ private[kinesis4cats] final class ProducerInstruments[F[_]] private (
   def recordShardPut(
       count: Long,
       bytes: Long,
-      durationSeconds: Double,
+      duration: FiniteDuration,
       stream: StreamNameOrArn,
       shard: ShardId
   ): F[Unit] = {
     val attrs = shardAttrs(stream, shard)
     kinesisRecordsPut.add(count, attrs) *>
       kinesisRecordsBytes.add(bytes, attrs) *>
-      requestDuration.record(durationSeconds, attrs)
+      requestDuration.record(duration.toUnit(SECONDS), attrs)
   }
 
   /** Records the retries-so-far at a retry step. */
