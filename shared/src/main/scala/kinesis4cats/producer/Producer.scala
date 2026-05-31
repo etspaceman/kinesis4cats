@@ -34,6 +34,7 @@ import kinesis4cats.compat.retry._
 import kinesis4cats.logging.{LogContext, LogEncoder}
 import kinesis4cats.models.StreamNameOrArn
 import kinesis4cats.producer.batching.Batcher
+import kinesis4cats.producer.metrics.ProducerInstruments
 
 /** An interface that gives users the ability to efficiently batch and produce
   * records. A producer has a ShardMapCache, and uses it to predict the shard
@@ -114,6 +115,14 @@ abstract class Producer[F[_], PutReq, PutRes] private[kinesis4cats] (
   ): F[Producer.Result[PutRes]] =
     for {
       ctx <- LogContext.safe[F]
+      _ <-
+        if (retrying) F.unit
+        else
+          config.instruments.recordReceived(
+            records.length.toLong,
+            records.toList.map(_.payloadSize.toLong).sum,
+            config.streamNameOrArn
+          )
       withShards <- records.traverse(rec =>
         for {
           shardRes <- shardMapCache
@@ -140,16 +149,24 @@ abstract class Producer[F[_], PutReq, PutRes] private[kinesis4cats] (
         batched.batches
           .flatTraverse(batch =>
             batch.shardBatches.toList
-              .map(_.records)
               .parTraverseN(config.shardParallelism) { shardBatch =>
-                putImpl(asPutRequest(shardBatch))
-                  .map(resp =>
-                    failedRecords(shardBatch, resp)
+                putImpl(asPutRequest(shardBatch.records)).timed
+                  .flatMap { case (elapsed, resp) =>
+                    val result = failedRecords(shardBatch.records, resp)
                       .map(Producer.Result.putFailures[PutRes])
                       .fold(
                         Producer.Result.success(resp)
                       )(e => Producer.Result.success(resp) |+| e)
-                  )
+                    config.instruments
+                      .recordShardPut(
+                        shardBatch.count.toLong,
+                        shardBatch.batchSize.toLong,
+                        elapsed.toNanos.toDouble / 1.0e9,
+                        config.streamNameOrArn,
+                        shardBatch.shardId
+                      )
+                      .as(result)
+                  }
               }
           )
           .map(x =>
@@ -157,6 +174,10 @@ abstract class Producer[F[_], PutReq, PutRes] private[kinesis4cats] (
               Producer.Result.invalidRecords[PutRes](batched.invalid)
             ) { case (x, y) => x |+| y }
           )
+      _ <- config.instruments.recordErrors(
+        Producer.errorCounts(res),
+        config.streamNameOrArn
+      )
     } yield res
 
   /** This function is responsible for:
@@ -187,6 +208,10 @@ abstract class Producer[F[_], PutReq, PutRes] private[kinesis4cats] (
               new RuntimeException(
                 "Failed records empty, this should never happen"
               )
+            )
+            _ <- config.instruments.recordRetries(
+              details.retriesSoFar.toLong,
+              config.streamNameOrArn
             )
             _ <- logger.warn(ctx.addEncoded("retryDetails", details).context)(
               s"Failures with ${failed.length} records detected, retrying failed records"
@@ -252,6 +277,21 @@ object Producer {
       res: Option[Result[A]],
       retrying: Boolean
   )
+
+  /** Error counts for a result, keyed by `error.code`. Failed records use their
+    * Kinesis error code; invalid (client-side) records use the sentinel
+    * `"InvalidRecord"`. Empty when there are no errors.
+    */
+  private[kinesis4cats] def errorCounts(
+      result: Result[_]
+  ): Map[String, Long] = {
+    val byCode: Map[String, Long] =
+      result.failed.groupBy(_.errorCode).map { case (code, rs) =>
+        code -> rs.size.toLong
+      }
+    if (result.invalid.isEmpty) byCode
+    else byCode.updated("InvalidRecord", result.invalid.size.toLong)
+  }
 
   private[kinesis4cats] final case class Result[A](
       val successful: List[A],
@@ -383,7 +423,8 @@ object Producer {
       shardMapCacheConfig: ShardMapCache.Config,
       batcherConfig: Batcher.Config,
       streamNameOrArn: StreamNameOrArn,
-      retryPolicy: RetryPolicy[F]
+      retryPolicy: RetryPolicy[F],
+      instruments: ProducerInstruments[F]
   )
 
   object Config {
@@ -406,7 +447,8 @@ object Producer {
       shardMapCacheConfig = ShardMapCache.Config.default,
       batcherConfig = Batcher.Config.default,
       streamNameOrArn = streamNameOrArn,
-      retryPolicy = RetryPolicies.alwaysGiveUp[F]
+      retryPolicy = RetryPolicies.alwaysGiveUp[F],
+      instruments = ProducerInstruments.noop[F]
     )
   }
 
