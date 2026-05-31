@@ -32,7 +32,9 @@ import software.amazon.awssdk.services.kinesis.model._
 
 import kinesis4cats.models
 import kinesis4cats.producer.{Record => Rec, _}
+import kinesis4cats.producer.metrics.ProducerInstruments
 import kinesis4cats.syntax.id._
+import org.typelevel.otel4s.metrics.MeterProvider
 
 /** A [[kinesis4cats.producer.Producer Producer]] implementation that leverages
   * the [[kinesis4cats.client.KinesisClient KinesisClient]]
@@ -109,7 +111,8 @@ object KinesisProducer {
       config: Producer.Config[F],
       clientResource: Resource[F, KinesisClient[F]],
       encoders: LogEncoders,
-      logger: StructuredLogger[F]
+      logger: StructuredLogger[F],
+      instrumentsResource: Resource[F, ProducerInstruments[F]]
   )(implicit F: Async[F]) {
     def withConfig(config: Producer.Config[F]): Builder[F] = copy(
       config = config
@@ -132,16 +135,28 @@ object KinesisProducer {
     def withLogger(logger: StructuredLogger[F]): Builder[F] =
       copy(logger = logger)
 
+    /** Emit OpenTelemetry producer metrics via the given `MeterProvider`. */
+    def withMeterProvider(meterProvider: MeterProvider[F]): Builder[F] =
+      copy(instrumentsResource =
+        Resource.eval(
+          meterProvider
+            .get("kinesis4cats.producer")
+            .flatMap(ProducerInstruments.fromMeter[F])
+        )
+      )
+
     def build: Resource[F, KinesisProducer[F]] = for {
       client <- clientResource
+      instruments <- instrumentsResource
+      finalConfig = config.copy(instruments = instruments)
       shardMapCache <- ShardMapCache.Builder
-        .default(getShardMap(client, config.streamNameOrArn), logger)
+        .default(getShardMap(client, finalConfig.streamNameOrArn), logger)
         .withLogEncoders(encoders.producerLogEncoders.shardMapLogEncoders)
         .build
     } yield new KinesisProducer[F](
       logger,
       shardMapCache,
-      config,
+      finalConfig,
       client,
       encoders.producerLogEncoders
     )
@@ -154,7 +169,8 @@ object KinesisProducer {
       Producer.Config.default(streamNameOrArn),
       KinesisClient.Builder.default.build,
       LogEncoders.show,
-      Slf4jLogger.getLogger
+      Slf4jLogger.getLogger,
+      Resource.pure(ProducerInstruments.noop[F])
     )
 
     @annotation.unused
