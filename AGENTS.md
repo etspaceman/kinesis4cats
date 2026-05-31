@@ -78,6 +78,20 @@ Java Kinesis client (AWS SDK v2, JVM only): `kinesis-client`, `kinesis-client-lo
 
 smithy4s client (pure-Scala client; JVM/JS/Native): `smithy4s-client`, `smithy4s-client-logging-circe`, `smithy4s-client-localstack`, plus `smithy4s-client-transformers` (Scala-3-only build-time model transformer, NoPublish).
 
+> **Two distinct producer families — don't conflate them.** (1) `kpl` wraps the *real* AWS KPL
+> daemon (`software.amazon.kinesis.producer.KinesisProducer`), inheriting its CloudWatch metrics /
+> rate limiting / Glue support natively. (2) `shared`'s `kinesis4cats.producer.Producer` is a
+> separate, pure-Scala, cross-platform *reimplementation* (shard prediction via `ShardMapCache`,
+> batching + protobuf aggregation in `producer.batching`, retries, `fs2.FS2Producer` for buffered
+> async puts). It is the abstract base implemented by **both** `kinesis-client` (AWS SDK v2) and
+> `smithy4s-client` (`producer/KinesisProducer.scala` in each). Producer changes usually mean the
+> native family (`shared` + the two impls), not the `kpl` wrapper.
+>
+> The smithy4s client is codegen'd from an AWS API model (`software.amazon.api.models:kinesis` in
+> `project/LibraryDependencies.scala`) via `Smithy4sCodegenPlugin`, restricted to a namespace in
+> `smithy4s-client/src/main/smithy/metadata.smithy`, with shape fixups in `smithy4s-client-transformers`
+> (`KinesisSpecTransformer`). Adding another AWS service client (e.g. CloudWatch) follows this same recipe.
+
 Other:
 - `feral` — AWS Lambda interfaces via Typelevel Feral (JVM/JS).
 - `docs` (in `site/`) + `unidocs` — microsite (laika/tlSite) and unified API docs (Scala 3 only).
