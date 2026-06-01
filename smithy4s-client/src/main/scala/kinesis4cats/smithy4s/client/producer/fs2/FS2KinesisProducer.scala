@@ -140,7 +140,12 @@ object FS2KinesisProducer {
           finalConfig.queueSize
         )
         .toResource
-      producer = new FS2KinesisProducer[F](logger, finalConfig, channel, underlying)
+      producer = new FS2KinesisProducer[F](
+        logger,
+        finalConfig,
+        channel,
+        underlying
+      )
       _ <- producer.resource
     } yield producer
   }
