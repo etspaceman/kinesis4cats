@@ -91,6 +91,30 @@ class ProducerInstrumentsSpec extends munit.CatsEffectSuite {
     }
   }
 
+  test("defaultNamespace prefixes instruments with kinesis4cats.producer") {
+    MetricsTestkit.inMemory[IO]().use { tk =>
+      for {
+        meter <- tk.meterProvider.get(ProducerInstruments.instrumentationScope)
+        instr <- ProducerInstruments
+          .fromMeter[IO](meter, ProducerInstruments.defaultNamespace)
+        _ <- instr.recordReceived(1L, 1L, stream)
+        metrics <- tk.collectMetrics
+      } yield {
+        assertEquals(ProducerInstruments.instrumentationScope, "kinesis4cats")
+        assertEquals(
+          ProducerInstruments.defaultNamespace,
+          "kinesis4cats.producer"
+        )
+        assert(
+          metrics
+            .map(_.name)
+            .contains("kinesis4cats.producer.user_records.received"),
+          metrics.map(_.name).toString
+        )
+      }
+    }
+  }
+
   test("noop records nothing") {
     MetricsTestkit.inMemory[IO]().use { tk =>
       val instr = ProducerInstruments.noop[IO]
