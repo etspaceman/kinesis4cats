@@ -32,8 +32,8 @@ import software.amazon.awssdk.services.kinesis.model.PutRecordsResponse
 
 import kinesis4cats.producer._
 import kinesis4cats.producer.fs2.FS2Producer
-import kinesis4cats.producer.metrics.FS2ProducerInstruments
-import kinesis4cats.producer.metrics.ProducerInstruments
+import kinesis4cats.producer.metrics.FS2ProducerMetrics
+import kinesis4cats.producer.metrics.ProducerMetrics
 
 /** A buffered Kinesis producer which will produce batches of data at a
   * configurable rate.
@@ -103,23 +103,23 @@ object FS2KinesisProducer {
       */
     def withMeterProvider(
         meterProvider: MeterProvider[F],
-        namespace: String = ProducerInstruments.defaultNamespace
+        namespace: String = ProducerMetrics.defaultNamespace
     ): Builder[F] =
       copy(meterProvider = Some(meterProvider), namespace = namespace)
 
     def build: Resource[F, FS2KinesisProducer[F]] = for {
       client <- clientResource
-      fs2Instruments <- meterProvider.fold(
-        Resource.pure[F, FS2ProducerInstruments[F]](
-          FS2ProducerInstruments.noop[F]
+      fs2Metrics <- meterProvider.fold(
+        Resource.pure[F, FS2ProducerMetrics[F]](
+          FS2ProducerMetrics.noop[F]
         )
       )(mp =>
         Resource.eval(
-          mp.get(ProducerInstruments.instrumentationScope)
-            .flatMap(FS2ProducerInstruments.fromMeter[F](_, namespace))
+          mp.get(ProducerMetrics.instrumentationScope)
+            .flatMap(FS2ProducerMetrics.fromMeter[F](_, namespace))
         )
       )
-      finalConfig = config.copy(instruments = fs2Instruments)
+      finalConfig = config.copy(metrics = fs2Metrics)
       underlyingBuilder0 = KinesisProducer.Builder
         .default[F](finalConfig.producerConfig.streamNameOrArn)
         .withConfig(finalConfig.producerConfig)
@@ -154,7 +154,7 @@ object FS2KinesisProducer {
       KinesisProducer.LogEncoders.show,
       Slf4jLogger.getLogger,
       None,
-      ProducerInstruments.defaultNamespace
+      ProducerMetrics.defaultNamespace
     )
 
     @annotation.unused

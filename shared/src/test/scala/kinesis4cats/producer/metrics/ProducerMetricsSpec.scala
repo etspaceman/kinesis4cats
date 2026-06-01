@@ -30,11 +30,11 @@ class ProducerMetricsSpec extends munit.CatsEffectSuite {
     MetricsTestkit.inMemory[IO]().use { tk =>
       for {
         meter <- tk.meterProvider.get(namespace)
-        instruments <- ProducerInstruments.fromMeter[IO](meter, namespace)
+        metrics <- ProducerMetrics.fromMeter[IO](meter, namespace)
         _ <- MockProducer(
           aggregate = false,
           raiseOnFailures = true,
-          instruments = instruments
+          metrics = metrics
         ).use { producer =>
           producer
             .put(

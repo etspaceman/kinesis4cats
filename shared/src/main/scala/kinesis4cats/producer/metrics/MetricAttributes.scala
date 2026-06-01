@@ -23,7 +23,7 @@ import kinesis4cats.models.ShardId
 import kinesis4cats.models.StreamNameOrArn
 
 /** Single source of truth for producer metric attribute keys, shared by all
-  * instrument bundles in this package.
+  * metric bundles in this package.
   */
 private[metrics] object MetricAttributes {
 

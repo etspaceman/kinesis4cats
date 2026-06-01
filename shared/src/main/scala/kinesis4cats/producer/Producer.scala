@@ -34,7 +34,7 @@ import kinesis4cats.compat.retry._
 import kinesis4cats.logging.{LogContext, LogEncoder}
 import kinesis4cats.models.StreamNameOrArn
 import kinesis4cats.producer.batching.Batcher
-import kinesis4cats.producer.metrics.ProducerInstruments
+import kinesis4cats.producer.metrics.ProducerMetrics
 
 /** An interface that gives users the ability to efficiently batch and produce
   * records. A producer has a ShardMapCache, and uses it to predict the shard
@@ -118,7 +118,7 @@ abstract class Producer[F[_], PutReq, PutRes] private[kinesis4cats] (
       _ <-
         if (retrying) F.unit
         else
-          config.instruments.recordReceived(
+          config.metrics.recordReceived(
             records.length.toLong,
             records.toList.map(_.payloadSize.toLong).sum,
             config.streamNameOrArn
@@ -157,7 +157,7 @@ abstract class Producer[F[_], PutReq, PutRes] private[kinesis4cats] (
                       .fold(
                         Producer.Result.success(resp)
                       )(e => Producer.Result.success(resp) |+| e)
-                    config.instruments
+                    config.metrics
                       .recordShardPut(
                         shardBatch.count.toLong,
                         shardBatch.batchSize.toLong,
@@ -174,7 +174,7 @@ abstract class Producer[F[_], PutReq, PutRes] private[kinesis4cats] (
               Producer.Result.invalidRecords[PutRes](batched.invalid)
             ) { case (x, y) => x |+| y }
           )
-      _ <- config.instruments.recordErrors(
+      _ <- config.metrics.recordErrors(
         Producer.errorCounts(res),
         config.streamNameOrArn
       )
@@ -209,7 +209,7 @@ abstract class Producer[F[_], PutReq, PutRes] private[kinesis4cats] (
                 "Failed records empty, this should never happen"
               )
             )
-            _ <- config.instruments.recordRetries(
+            _ <- config.metrics.recordRetries(
               details.retriesSoFar.toLong,
               config.streamNameOrArn
             )
@@ -424,7 +424,7 @@ object Producer {
       batcherConfig: Batcher.Config,
       streamNameOrArn: StreamNameOrArn,
       retryPolicy: RetryPolicy[F],
-      instruments: ProducerInstruments[F]
+      metrics: ProducerMetrics[F]
   )
 
   object Config {
@@ -448,7 +448,7 @@ object Producer {
       batcherConfig = Batcher.Config.default,
       streamNameOrArn = streamNameOrArn,
       retryPolicy = RetryPolicies.alwaysGiveUp[F],
-      instruments = ProducerInstruments.noop[F]
+      metrics = ProducerMetrics.noop[F]
     )
   }
 

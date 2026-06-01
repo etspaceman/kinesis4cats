@@ -29,10 +29,10 @@ import org.typelevel.otel4s.metrics.Meter
 import kinesis4cats.models.ShardId
 import kinesis4cats.models.StreamNameOrArn
 
-/** Instruments a [[kinesis4cats.producer.Producer Producer]] with metrics via
-  * [[https://opentelemetry.io/ OpenTelemetry]].
+/** Records metrics for a [[kinesis4cats.producer.Producer Producer]] with
+  * metrics via [[https://opentelemetry.io/ OpenTelemetry]].
   */
-private[kinesis4cats] final class ProducerInstruments[F[_]] private (
+private[kinesis4cats] final class ProducerMetrics[F[_]] private (
     userRecordsReceived: Counter[F, Long],
     userRecordsBytes: Counter[F, Long],
     kinesisRecordsPut: Counter[F, Long],
@@ -84,7 +84,7 @@ private[kinesis4cats] final class ProducerInstruments[F[_]] private (
     }
 }
 
-private[kinesis4cats] object ProducerInstruments {
+private[kinesis4cats] object ProducerMetrics {
 
   /** OTel instrumentation scope name — identifies kinesis4cats as the emitting
     * library, independent of the user-configurable metric name prefix.
@@ -94,13 +94,12 @@ private[kinesis4cats] object ProducerInstruments {
   /** Default prefix for metric names; overridable per producer. */
   private[kinesis4cats] val defaultNamespace = "kinesis4cats.producer"
 
-  /** Builds the instruments from a
-    * [[org.typelevel.otel4s.metrics.Meter Meter]].
+  /** Builds the metrics from a [[org.typelevel.otel4s.metrics.Meter Meter]].
     */
   def fromMeter[F[_]: Monad](
       meter: Meter[F],
       namespace: String
-  ): F[ProducerInstruments[F]] =
+  ): F[ProducerMetrics[F]] =
     for {
       userRecordsReceived <- meter
         .counter[Long](s"$namespace.user_records.received")
@@ -137,7 +136,7 @@ private[kinesis4cats] object ProducerInstruments {
         .withUnit("{error}")
         .withDescription("Failed and invalid records, keyed by error.code")
         .create
-    } yield new ProducerInstruments[F](
+    } yield new ProducerMetrics[F](
       userRecordsReceived,
       userRecordsBytes,
       kinesisRecordsPut,
@@ -147,9 +146,9 @@ private[kinesis4cats] object ProducerInstruments {
       errors
     )
 
-  /** No-op instruments; records nothing. */
-  def noop[F[_]: Applicative]: ProducerInstruments[F] =
-    new ProducerInstruments[F](
+  /** No-op metrics; records nothing. */
+  def noop[F[_]: Applicative]: ProducerMetrics[F] =
+    new ProducerMetrics[F](
       Counter.noop[F, Long],
       Counter.noop[F, Long],
       Counter.noop[F, Long],

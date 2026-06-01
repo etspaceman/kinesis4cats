@@ -30,7 +30,7 @@ import org.typelevel.log4cats.StructuredLogger
 
 import kinesis4cats.logging.LogContext
 import kinesis4cats.models.StreamNameOrArn
-import kinesis4cats.producer.metrics.FS2ProducerInstruments
+import kinesis4cats.producer.metrics.FS2ProducerMetrics
 
 /** An interface that runs a [[kinesis4cats.producer.Producer Producer's]] put
   * method in the background against a stream of records, offered by the user.
@@ -58,7 +58,7 @@ abstract class FS2Producer[F[_], PutReq, PutRes](implicit
   protected def underlying: Producer[F, PutReq, PutRes]
 
   private def stream: StreamNameOrArn = config.producerConfig.streamNameOrArn
-  private def instruments: FS2ProducerInstruments[F] = config.instruments
+  private def metrics: FS2ProducerMetrics[F] = config.metrics
 
   /** Put a record into the producer's buffer, to be batched and produced at a
     * defined interval
@@ -84,14 +84,14 @@ abstract class FS2Producer[F[_], PutReq, PutRes](implicit
           _ =>
             logger.warn(ctx.context)(
               "Producer has been shut down and will not accept further requests"
-            ) *> instruments.recordDropped(
+            ) *> metrics.recordDropped(
               stream,
-              FS2ProducerInstruments.shutdownReason
+              FS2ProducerMetrics.shutdownReason
             ),
           _ =>
             logger.debug(ctx.context)(
               "Successfully put record into processing queue"
-            ) *> instruments.recordEnqueued(stream)
+            ) *> metrics.recordEnqueued(stream)
         )
     } yield deferred.get.flatten
 
@@ -119,24 +119,24 @@ abstract class FS2Producer[F[_], PutReq, PutRes](implicit
           (logger
             .warn(ctx.context)(
               "Producer has been shut down and will not accept further requests"
-            ) *> instruments.recordDropped(
+            ) *> metrics.recordDropped(
             stream,
-            FS2ProducerInstruments.shutdownReason
+            FS2ProducerMetrics.shutdownReason
           )).as(none[F[Producer.Result[PutRes]]]),
         wasEnqueued =>
           if (wasEnqueued)
             (logger
               .debug(ctx.context)(
                 "Successfully put record into processing queue"
-              ) *> instruments.recordEnqueued(stream))
+              ) *> metrics.recordEnqueued(stream))
               .as(deferred.get.flatten.some)
           else
             (logger
               .warn(ctx.context)(
                 "Producer queue is full"
-              ) *> instruments.recordDropped(
+              ) *> metrics.recordDropped(
               stream,
-              FS2ProducerInstruments.queueFullReason
+              FS2ProducerMetrics.queueFullReason
             )).as(none[F[Producer.Result[PutRes]]])
       )
     } yield res
@@ -167,7 +167,7 @@ abstract class FS2Producer[F[_], PutReq, PutRes](implicit
               for {
                 now <- F.monotonic
                 _ <- buffered.traverse_(b =>
-                  instruments.recordDequeued(now - b.enqueuedAt, stream)
+                  metrics.recordDequeued(now - b.enqueuedAt, stream)
                 )
                 records = buffered.map(_.record)
                 deferreds = buffered.map(_.sink)
@@ -231,8 +231,8 @@ object FS2Producer {
     *   Max time to wait before running a put request
     * @param producerConfig
     *   [[kinesis4cats.producer.Producer.Config Producer.Config]]
-    * @param instruments
-    *   [[kinesis4cats.producer.metrics.FS2ProducerInstruments FS2ProducerInstruments]]
+    * @param metrics
+    *   [[kinesis4cats.producer.metrics.FS2ProducerMetrics FS2ProducerMetrics]]
     *   for the buffering path; defaults to no-op.
     */
   final case class Config[F[_]](
@@ -241,7 +241,7 @@ object FS2Producer {
       putMaxWait: FiniteDuration,
       producerConfig: Producer.Config[F],
       gracefulShutdownWait: FiniteDuration,
-      instruments: FS2ProducerInstruments[F]
+      metrics: FS2ProducerMetrics[F]
   )
 
   object Config {
@@ -253,7 +253,7 @@ object FS2Producer {
       100.millis,
       Producer.Config.default[F](streamNameOrArn),
       30.seconds,
-      FS2ProducerInstruments.noop[F]
+      FS2ProducerMetrics.noop[F]
     )
   }
 

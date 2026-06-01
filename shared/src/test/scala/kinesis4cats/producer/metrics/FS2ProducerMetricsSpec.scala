@@ -45,7 +45,7 @@ class FS2ProducerMetricsSpec extends munit.CatsEffectSuite {
 
   private def mkConfig(
       queueSize: Int,
-      instruments: FS2ProducerInstruments[IO]
+      metrics: FS2ProducerMetrics[IO]
   ): FS2Producer.Config[IO] =
     FS2Producer.Config
       .default[IO](StreamNameOrArn.Name("foo"))
@@ -54,7 +54,7 @@ class FS2ProducerMetricsSpec extends munit.CatsEffectSuite {
         putMaxChunk = 10,
         putMaxWait = 20.millis,
         gracefulShutdownWait = 2.seconds,
-        instruments = instruments
+        metrics = metrics
       )
 
   private def mkProducer(
@@ -77,7 +77,7 @@ class FS2ProducerMetricsSpec extends munit.CatsEffectSuite {
     resources.use { case (tk, underlying) =>
       for {
         meter <- tk.meterProvider.get(ns)
-        instr <- FS2ProducerInstruments.fromMeter[IO](meter, ns)
+        instr <- FS2ProducerMetrics.fromMeter[IO](meter, ns)
         producer <- mkProducer(mkConfig(10, instr), underlying)
         _ <- producer.resource.use { _ =>
           for {
@@ -118,7 +118,7 @@ class FS2ProducerMetricsSpec extends munit.CatsEffectSuite {
     resources.use { case (tk, underlying) =>
       for {
         meter <- tk.meterProvider.get(ns)
-        instr <- FS2ProducerInstruments.fromMeter[IO](meter, ns)
+        instr <- FS2ProducerMetrics.fromMeter[IO](meter, ns)
         // queueSize 1, never started → second tryPut sees a full queue
         producer <- mkProducer(mkConfig(1, instr), underlying)
         _ <- producer.tryPut(rec("1"))

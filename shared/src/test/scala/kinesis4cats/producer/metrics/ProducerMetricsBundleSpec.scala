@@ -28,16 +28,16 @@ import org.typelevel.otel4s.sdk.testkit.metrics.MetricsTestkit
 import kinesis4cats.models.ShardId
 import kinesis4cats.models.StreamNameOrArn
 
-class ProducerInstrumentsSpec extends munit.CatsEffectSuite {
+class ProducerMetricsBundleSpec extends munit.CatsEffectSuite {
   val stream = StreamNameOrArn.Name("foo")
 
-  test("fromMeter records the expected instruments, values and attributes") {
+  test("fromMeter records the expected metrics, values and attributes") {
     val namespace = "test"
 
     MetricsTestkit.inMemory[IO]().use { tk =>
       for {
         meter <- tk.meterProvider.get(namespace)
-        instr <- ProducerInstruments.fromMeter[IO](meter, namespace)
+        instr <- ProducerMetrics.fromMeter[IO](meter, namespace)
         _ <- instr.recordReceived(5L, 250L, stream)
         _ <- instr.recordShardPut(
           3L,
@@ -91,18 +91,18 @@ class ProducerInstrumentsSpec extends munit.CatsEffectSuite {
     }
   }
 
-  test("defaultNamespace prefixes instruments with kinesis4cats.producer") {
+  test("defaultNamespace prefixes metrics with kinesis4cats.producer") {
     MetricsTestkit.inMemory[IO]().use { tk =>
       for {
-        meter <- tk.meterProvider.get(ProducerInstruments.instrumentationScope)
-        instr <- ProducerInstruments
-          .fromMeter[IO](meter, ProducerInstruments.defaultNamespace)
+        meter <- tk.meterProvider.get(ProducerMetrics.instrumentationScope)
+        instr <- ProducerMetrics
+          .fromMeter[IO](meter, ProducerMetrics.defaultNamespace)
         _ <- instr.recordReceived(1L, 1L, stream)
         metrics <- tk.collectMetrics
       } yield {
-        assertEquals(ProducerInstruments.instrumentationScope, "kinesis4cats")
+        assertEquals(ProducerMetrics.instrumentationScope, "kinesis4cats")
         assertEquals(
-          ProducerInstruments.defaultNamespace,
+          ProducerMetrics.defaultNamespace,
           "kinesis4cats.producer"
         )
         assert(
@@ -117,7 +117,7 @@ class ProducerInstrumentsSpec extends munit.CatsEffectSuite {
 
   test("noop records nothing") {
     MetricsTestkit.inMemory[IO]().use { tk =>
-      val instr = ProducerInstruments.noop[IO]
+      val instr = ProducerMetrics.noop[IO]
       for {
         _ <- instr.recordReceived(5L, 250L, stream)
         _ <- instr.recordShardPut(

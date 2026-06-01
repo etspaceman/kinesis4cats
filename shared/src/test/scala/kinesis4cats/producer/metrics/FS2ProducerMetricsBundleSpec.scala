@@ -27,20 +27,20 @@ import org.typelevel.otel4s.sdk.testkit.metrics.MetricsTestkit
 
 import kinesis4cats.models.StreamNameOrArn
 
-class FS2ProducerInstrumentsSpec extends munit.CatsEffectSuite {
+class FS2ProducerMetricsBundleSpec extends munit.CatsEffectSuite {
   val stream = StreamNameOrArn.Name("foo")
 
-  test("fromMeter records buffer instruments, values and attributes") {
+  test("fromMeter records buffer metrics, values and attributes") {
     val namespace = "test"
 
     MetricsTestkit.inMemory[IO]().use { tk =>
       for {
         meter <- tk.meterProvider.get(namespace)
-        instr <- FS2ProducerInstruments.fromMeter[IO](meter, namespace)
+        instr <- FS2ProducerMetrics.fromMeter[IO](meter, namespace)
         _ <- instr.recordEnqueued(stream)
         _ <- instr.recordEnqueued(stream)
         _ <- instr.recordDequeued(20.millis, stream)
-        _ <- instr.recordDropped(stream, FS2ProducerInstruments.queueFullReason)
+        _ <- instr.recordDropped(stream, FS2ProducerMetrics.queueFullReason)
         metrics <- tk.collectMetrics
       } yield {
         val names = metrics.map(_.name).toSet
@@ -76,11 +76,11 @@ class FS2ProducerInstrumentsSpec extends munit.CatsEffectSuite {
 
   test("noop records nothing") {
     MetricsTestkit.inMemory[IO]().use { tk =>
-      val instr = FS2ProducerInstruments.noop[IO]
+      val instr = FS2ProducerMetrics.noop[IO]
       for {
         _ <- instr.recordEnqueued(stream)
         _ <- instr.recordDequeued(20.millis, stream)
-        _ <- instr.recordDropped(stream, FS2ProducerInstruments.shutdownReason)
+        _ <- instr.recordDropped(stream, FS2ProducerMetrics.shutdownReason)
         metrics <- tk.collectMetrics
       } yield assertEquals(metrics, Nil)
     }

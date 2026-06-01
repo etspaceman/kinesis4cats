@@ -32,7 +32,7 @@ import software.amazon.awssdk.services.kinesis.KinesisAsyncClient
 import software.amazon.awssdk.services.kinesis.model._
 
 import kinesis4cats.models
-import kinesis4cats.producer.metrics.ProducerInstruments
+import kinesis4cats.producer.metrics.ProducerMetrics
 import kinesis4cats.producer.{Record => Rec, _}
 import kinesis4cats.syntax.id._
 
@@ -112,7 +112,7 @@ object KinesisProducer {
       clientResource: Resource[F, KinesisClient[F]],
       encoders: LogEncoders,
       logger: StructuredLogger[F],
-      instrumentsResource: Resource[F, ProducerInstruments[F]]
+      metricsResource: Resource[F, ProducerMetrics[F]]
   )(implicit F: Async[F]) {
     def withConfig(config: Producer.Config[F]): Builder[F] = copy(
       config = config
@@ -138,20 +138,20 @@ object KinesisProducer {
     /** Emit OpenTelemetry producer metrics via the given `MeterProvider`. */
     def withMeterProvider(
         meterProvider: MeterProvider[F],
-        namespace: String = ProducerInstruments.defaultNamespace
+        namespace: String = ProducerMetrics.defaultNamespace
     ): Builder[F] =
-      copy(instrumentsResource =
+      copy(metricsResource =
         Resource.eval(
           meterProvider
-            .get(ProducerInstruments.instrumentationScope)
-            .flatMap(ProducerInstruments.fromMeter[F](_, namespace))
+            .get(ProducerMetrics.instrumentationScope)
+            .flatMap(ProducerMetrics.fromMeter[F](_, namespace))
         )
       )
 
     def build: Resource[F, KinesisProducer[F]] = for {
       client <- clientResource
-      instruments <- instrumentsResource
-      finalConfig = config.copy(instruments = instruments)
+      metrics <- metricsResource
+      finalConfig = config.copy(metrics = metrics)
       shardMapCache <- ShardMapCache.Builder
         .default(getShardMap(client, finalConfig.streamNameOrArn), logger)
         .withLogEncoders(encoders.producerLogEncoders.shardMapLogEncoders)
@@ -173,7 +173,7 @@ object KinesisProducer {
       KinesisClient.Builder.default.build,
       LogEncoders.show,
       Slf4jLogger.getLogger,
-      Resource.pure(ProducerInstruments.noop[F])
+      Resource.pure(ProducerMetrics.noop[F])
     )
 
     @annotation.unused

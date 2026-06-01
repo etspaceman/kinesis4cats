@@ -29,11 +29,11 @@ import org.typelevel.otel4s.metrics.UpDownCounter
 
 import kinesis4cats.models.StreamNameOrArn
 
-/** Instruments the FS2 buffering path of a
+/** Records metrics for the FS2 buffering path of a
   * [[kinesis4cats.producer.fs2.FS2Producer FS2Producer]] with metrics via
   * [[https://opentelemetry.io/ OpenTelemetry]].
   */
-private[kinesis4cats] final class FS2ProducerInstruments[F[_]] private (
+private[kinesis4cats] final class FS2ProducerMetrics[F[_]] private (
     bufferPending: UpDownCounter[F, Long],
     bufferTime: Histogram[F, Double],
     bufferDropped: Counter[F, Long]
@@ -60,7 +60,7 @@ private[kinesis4cats] final class FS2ProducerInstruments[F[_]] private (
     bufferDropped.add(1L, droppedAttrs(stream, reason))
 }
 
-private[kinesis4cats] object FS2ProducerInstruments {
+private[kinesis4cats] object FS2ProducerMetrics {
 
   /** `reason` attribute value for a record dropped because the queue was full.
     */
@@ -69,13 +69,12 @@ private[kinesis4cats] object FS2ProducerInstruments {
   /** `reason` attribute value for a record dropped after shutdown. */
   val shutdownReason = "shutdown"
 
-  /** Builds the instruments from a
-    * [[org.typelevel.otel4s.metrics.Meter Meter]].
+  /** Builds the metrics from a [[org.typelevel.otel4s.metrics.Meter Meter]].
     */
   def fromMeter[F[_]: Monad](
       meter: Meter[F],
       namespace: String
-  ): F[FS2ProducerInstruments[F]] =
+  ): F[FS2ProducerMetrics[F]] =
     for {
       bufferPending <- meter
         .upDownCounter[Long](s"$namespace.buffer.records.pending")
@@ -92,15 +91,15 @@ private[kinesis4cats] object FS2ProducerInstruments {
         .withUnit("{record}")
         .withDescription("Records rejected by the buffer, keyed by reason")
         .create
-    } yield new FS2ProducerInstruments[F](
+    } yield new FS2ProducerMetrics[F](
       bufferPending,
       bufferTime,
       bufferDropped
     )
 
-  /** No-op instruments; records nothing. */
-  def noop[F[_]: Applicative]: FS2ProducerInstruments[F] =
-    new FS2ProducerInstruments[F](
+  /** No-op metrics; records nothing. */
+  def noop[F[_]: Applicative]: FS2ProducerMetrics[F] =
+    new FS2ProducerMetrics[F](
       UpDownCounter.noop[F, Long],
       Histogram.noop[F, Double],
       Counter.noop[F, Long]
