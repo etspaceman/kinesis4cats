@@ -22,7 +22,6 @@ import scala.concurrent.duration._
 import cats.Applicative
 import cats.Monad
 import cats.syntax.all._
-import org.typelevel.otel4s.Attribute
 import org.typelevel.otel4s.metrics.Counter
 import org.typelevel.otel4s.metrics.Histogram
 import org.typelevel.otel4s.metrics.Meter
@@ -42,7 +41,7 @@ private[kinesis4cats] final class ProducerInstruments[F[_]] private (
     retries: Histogram[F, Long],
     errors: Counter[F, Long]
 )(implicit F: Applicative[F]) {
-  import ProducerInstruments._
+  import MetricAttributes._
 
   /** Records what the caller submitted; emit once per `put`, not on retries. */
   def recordReceived(
@@ -94,32 +93,6 @@ private[kinesis4cats] object ProducerInstruments {
 
   /** Default prefix for metric names; overridable per producer. */
   private[kinesis4cats] val defaultNamespace = "kinesis4cats.producer"
-
-  private def streamValue(stream: StreamNameOrArn): String =
-    stream.streamName
-      .orElse(stream.streamArn.map(_.streamArn))
-      .getOrElse("")
-
-  private def streamAttrs(stream: StreamNameOrArn): List[Attribute[_]] =
-    List(Attribute("stream.name", streamValue(stream)))
-
-  private def shardAttrs(
-      stream: StreamNameOrArn,
-      shard: ShardId
-  ): List[Attribute[_]] =
-    List(
-      Attribute("stream.name", streamValue(stream)),
-      Attribute("shard.id", shard.shardId)
-    )
-
-  private def errorAttrs(
-      stream: StreamNameOrArn,
-      code: String
-  ): List[Attribute[_]] =
-    List(
-      Attribute("stream.name", streamValue(stream)),
-      Attribute("error.code", code)
-    )
 
   /** Builds the instruments from a
     * [[org.typelevel.otel4s.metrics.Meter Meter]].
