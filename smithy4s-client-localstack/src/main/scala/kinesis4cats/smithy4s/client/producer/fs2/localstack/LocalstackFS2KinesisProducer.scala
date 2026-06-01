@@ -23,7 +23,6 @@ import _root_.fs2.compression.Compression
 import _root_.fs2.concurrent.Channel
 import _root_.fs2.io.file.Files
 import cats.effect._
-import cats.effect.kernel.DeferredSink
 import cats.effect.syntax.all._
 import cats.syntax.all._
 import com.amazonaws.kinesis.PutRecordsOutput
@@ -35,8 +34,6 @@ import smithy4s.aws.kernel.AwsRegion
 import kinesis4cats.localstack.LocalstackConfig
 import kinesis4cats.localstack.TestStreamConfig
 import kinesis4cats.models.StreamNameOrArn
-import kinesis4cats.producer.Producer
-import kinesis4cats.producer.Record
 import kinesis4cats.producer.ShardMap
 import kinesis4cats.producer.ShardMapCache
 import kinesis4cats.producer.fs2.FS2Producer
@@ -106,10 +103,9 @@ object LocalstackFS2KinesisProducer {
         .withShardMapF(shardMapF)
         .build
       channel <- Channel
-        .bounded[
-          F,
-          (Record, DeferredSink[F, F[Producer.Result[PutRecordsOutput]]])
-        ](config.queueSize)
+        .bounded[F, FS2Producer.Buffered[F, PutRecordsOutput]](
+          config.queueSize
+        )
         .toResource
       producer = new FS2KinesisProducer[F](
         logger,

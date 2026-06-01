@@ -22,7 +22,6 @@ import _root_.fs2.compression.Compression
 import _root_.fs2.concurrent.Channel
 import _root_.fs2.io.file.Files
 import cats.effect._
-import cats.effect.kernel.DeferredSink
 import cats.effect.syntax.all._
 import com.amazonaws.kinesis.PutRecordsInput
 import com.amazonaws.kinesis.PutRecordsOutput
@@ -59,7 +58,7 @@ final class FS2KinesisProducer[F[_]] private[kinesis4cats] (
     override val config: FS2Producer.Config[F],
     override protected val channel: Channel[
       F,
-      (Record, DeferredSink[F, F[Producer.Result[PutRecordsOutput]]])
+      FS2Producer.Buffered[F, PutRecordsOutput]
     ],
     override protected val underlying: KinesisProducer[F]
 )(implicit
@@ -117,10 +116,9 @@ object FS2KinesisProducer {
         .withLogRequestsResponses(logRequestsResponses)
         .build
       channel <- Channel
-        .bounded[
-          F,
-          (Record, DeferredSink[F, F[Producer.Result[PutRecordsOutput]]])
-        ](config.queueSize)
+        .bounded[F, FS2Producer.Buffered[F, PutRecordsOutput]](
+          config.queueSize
+        )
         .toResource
       producer = new FS2KinesisProducer[F](logger, config, channel, underlying)
       _ <- producer.resource

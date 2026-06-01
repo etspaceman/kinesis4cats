@@ -30,6 +30,7 @@ import org.typelevel.log4cats.StructuredLogger
 
 import kinesis4cats.logging.LogContext
 import kinesis4cats.models.StreamNameOrArn
+import kinesis4cats.producer.metrics.FS2ProducerInstruments
 
 /** An interface that runs a [[kinesis4cats.producer.Producer Producer's]] put
   * method in the background against a stream of records, offered by the user.
@@ -52,10 +53,12 @@ abstract class FS2Producer[F[_], PutReq, PutRes](implicit
 
   /** The underlying queue of records to process
     */
-  protected def channel
-      : Channel[F, (Record, DeferredSink[F, F[Producer.Result[PutRes]]])]
+  protected def channel: Channel[F, FS2Producer.Buffered[F, PutRes]]
 
   protected def underlying: Producer[F, PutReq, PutRes]
+
+  private def stream: StreamNameOrArn = config.producerConfig.streamNameOrArn
+  private def instruments: FS2ProducerInstruments[F] = config.instruments
 
   /** Put a record into the producer's buffer, to be batched and produced at a
     * defined interval
@@ -71,18 +74,24 @@ abstract class FS2Producer[F[_], PutReq, PutRes](implicit
       ctx <- LogContext.safe[F]
       _ <- logger.debug(ctx.context)("Received record to put")
       deferred <- Deferred[F, F[Producer.Result[PutRes]]]
-      res <- channel.send(record -> deferred).race(channel.closed)
+      enqueuedAt <- F.monotonic
+      res <- channel
+        .send(FS2Producer.Buffered(record, enqueuedAt, deferred))
+        .race(channel.closed)
       _ <- res
         .bifoldMap(identity, _ => Channel.Closed.asLeft)
         .bitraverse(
           _ =>
             logger.warn(ctx.context)(
               "Producer has been shut down and will not accept further requests"
+            ) *> instruments.recordDropped(
+              stream,
+              FS2ProducerInstruments.shutdownReason
             ),
           _ =>
             logger.debug(ctx.context)(
               "Successfully put record into processing queue"
-            )
+            ) *> instruments.recordEnqueued(stream)
         )
     } yield deferred.get.flatten
 
@@ -101,27 +110,34 @@ abstract class FS2Producer[F[_], PutReq, PutRes](implicit
       ctx <- LogContext.safe[F]
       _ <- logger.debug(ctx.context)("Received record to put")
       deferred <- Deferred[F, F[Producer.Result[PutRes]]]
-      sendRes <- channel.trySend(record -> deferred)
+      enqueuedAt <- F.monotonic
+      sendRes <- channel.trySend(
+        FS2Producer.Buffered(record, enqueuedAt, deferred)
+      )
       res <- sendRes.fold(
         _ =>
-          logger
+          (logger
             .warn(ctx.context)(
               "Producer has been shut down and will not accept further requests"
-            )
-            .as(none[F[Producer.Result[PutRes]]]),
+            ) *> instruments.recordDropped(
+            stream,
+            FS2ProducerInstruments.shutdownReason
+          )).as(none[F[Producer.Result[PutRes]]]),
         wasEnqueued =>
           if (wasEnqueued)
-            logger
+            (logger
               .debug(ctx.context)(
                 "Successfully put record into processing queue"
-              )
+              ) *> instruments.recordEnqueued(stream))
               .as(deferred.get.flatten.some)
           else
-            logger
+            (logger
               .warn(ctx.context)(
                 "Producer queue is full"
-              )
-              .as(none[F[Producer.Result[PutRes]]])
+              ) *> instruments.recordDropped(
+              stream,
+              FS2ProducerInstruments.queueFullReason
+            )).as(none[F[Producer.Result[PutRes]]])
       )
     } yield res
 
@@ -147,30 +163,38 @@ abstract class FS2Producer[F[_], PutReq, PutRes](implicit
         .evalMap { x =>
           val c = ctx.addEncoded("batchSize", x.size)
           x.toNel
-            .traverse_ { x =>
-              val (records, deferreds) = x.unzip
-              val action =
-                for {
+            .traverse_ { buffered =>
+              for {
+                now <- F.monotonic
+                _ <- buffered.traverse_(b =>
+                  instruments.recordDequeued(now - b.enqueuedAt, stream)
+                )
+                records = buffered.map(_.record)
+                deferreds = buffered.map(_.sink)
+                action = for {
                   _ <- logger.debug(c.context)("Received batch to process")
                   result <- underlying.put(records)
                   _ <- logger.debug(c.context)("Finished processing batch")
                 } yield result
-              def complete(f: F[Producer.Result[PutRes]]) =
-                deferreds.traverse_(_.complete(f))
-              action.attempt.guaranteeCase {
-                case Succeeded(x) =>
-                  x.flatMap {
-                    case Left(e)  => complete(F.raiseError(e))
-                    case Right(v) => complete(v.pure[F])
+                _ <- {
+                  def complete(f: F[Producer.Result[PutRes]]) =
+                    deferreds.traverse_(_.complete(f))
+                  action.attempt.guaranteeCase {
+                    case Succeeded(res) =>
+                      res.flatMap {
+                        case Left(e)  => complete(F.raiseError(e))
+                        case Right(v) => complete(v.pure[F])
+                      }
+                    case Canceled() =>
+                      complete(
+                        F.canceled >> F.raiseError(
+                          new RuntimeException("Put request was cancelled")
+                        )
+                      )
+                    case Errored(e) => complete(F.raiseError(e))
                   }
-                case Canceled() =>
-                  complete(
-                    F.canceled >> F.raiseError(
-                      new RuntimeException("Put request was cancelled")
-                    )
-                  )
-                case Errored(e) => complete(F.raiseError(e))
-              }
+                }
+              } yield ()
             }
         }
         .compile
@@ -186,6 +210,15 @@ abstract class FS2Producer[F[_], PutReq, PutRes](implicit
 
 object FS2Producer {
 
+  /** A buffered record carrying the monotonic time it was enqueued, so the
+    * buffering duration can be measured on dequeue.
+    */
+  private[kinesis4cats] final case class Buffered[F[_], PutRes](
+      record: Record,
+      enqueuedAt: FiniteDuration,
+      sink: DeferredSink[F, F[Producer.Result[PutRes]]]
+  )
+
   /** Configuration for the
     * [[kinesis4cats.producer.fs2.FS2Producer FS2Producer]]
     *
@@ -197,13 +230,17 @@ object FS2Producer {
     *   Max time to wait before running a put request
     * @param producerConfig
     *   [[kinesis4cats.producer.Producer.Config Producer.Config]]
+    * @param instruments
+    *   [[kinesis4cats.producer.metrics.FS2ProducerInstruments FS2ProducerInstruments]]
+    *   for the buffering path; defaults to no-op.
     */
   final case class Config[F[_]](
       queueSize: Int,
       putMaxChunk: Int,
       putMaxWait: FiniteDuration,
       producerConfig: Producer.Config[F],
-      gracefulShutdownWait: FiniteDuration
+      gracefulShutdownWait: FiniteDuration,
+      instruments: FS2ProducerInstruments[F]
   )
 
   object Config {
@@ -214,7 +251,8 @@ object FS2Producer {
       500,
       100.millis,
       Producer.Config.default[F](streamNameOrArn),
-      30.seconds
+      30.seconds,
+      FS2ProducerInstruments.noop[F]
     )
   }
 
