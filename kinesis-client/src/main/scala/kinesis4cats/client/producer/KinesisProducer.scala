@@ -143,7 +143,7 @@ object KinesisProducer {
       copy(instrumentsResource =
         Resource.eval(
           meterProvider
-            .get(namespace)
+            .get(ProducerInstruments.instrumentationScope)
             .flatMap(ProducerInstruments.fromMeter[F](_, namespace))
         )
       )

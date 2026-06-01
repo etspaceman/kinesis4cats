@@ -86,6 +86,13 @@ private[kinesis4cats] final class ProducerInstruments[F[_]] private (
 }
 
 private[kinesis4cats] object ProducerInstruments {
+
+  /** OTel instrumentation scope name — identifies kinesis4cats as the emitting
+    * library, independent of the user-configurable metric name prefix.
+    */
+  private[kinesis4cats] val instrumentationScope = "kinesis4cats"
+
+  /** Default prefix for metric names; overridable per producer. */
   private[kinesis4cats] val defaultNamespace = "kinesis4cats.producer"
 
   private def streamValue(stream: StreamNameOrArn): String =
