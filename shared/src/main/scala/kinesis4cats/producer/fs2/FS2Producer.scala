@@ -171,11 +171,12 @@ abstract class FS2Producer[F[_], PutReq, PutRes](implicit
                 )
                 records = buffered.map(_.record)
                 deferreds = buffered.map(_.sink)
-                action = for {
-                  _ <- logger.debug(c.context)("Received batch to process")
-                  result <- underlying.put(records)
-                  _ <- logger.debug(c.context)("Finished processing batch")
-                } yield result
+                action =
+                  for {
+                    _ <- logger.debug(c.context)("Received batch to process")
+                    result <- underlying.put(records)
+                    _ <- logger.debug(c.context)("Finished processing batch")
+                  } yield result
                 _ <- {
                   def complete(f: F[Producer.Result[PutRes]]) =
                     deferreds.traverse_(_.complete(f))

@@ -33,7 +33,7 @@ import kinesis4cats.producer.fs2.FS2Producer
 
 class FS2ProducerMetricsSpec extends munit.CatsEffectSuite {
 
-  final class MockFS2Producer(
+  private final class MockFS2Producer(
       override val logger: StructuredLogger[IO],
       override val config: FS2Producer.Config[IO],
       override protected val channel: Channel[
@@ -43,7 +43,7 @@ class FS2ProducerMetricsSpec extends munit.CatsEffectSuite {
       override protected val underlying: MockProducer
   ) extends FS2Producer[IO, MockPutRequest, MockPutResponse]
 
-  def mkConfig(
+  private def mkConfig(
       queueSize: Int,
       instruments: FS2ProducerInstruments[IO]
   ): FS2Producer.Config[IO] =
@@ -57,7 +57,7 @@ class FS2ProducerMetricsSpec extends munit.CatsEffectSuite {
         instruments = instruments
       )
 
-  def mkProducer(
+  private def mkProducer(
       config: FS2Producer.Config[IO],
       underlying: MockProducer
   ): IO[MockFS2Producer] =

@@ -62,7 +62,8 @@ private[kinesis4cats] final class FS2ProducerInstruments[F[_]] private (
 
 private[kinesis4cats] object FS2ProducerInstruments {
 
-  /** `reason` attribute value for a record dropped because the queue was full. */
+  /** `reason` attribute value for a record dropped because the queue was full.
+    */
   val queueFullReason = "queue_full"
 
   /** `reason` attribute value for a record dropped after shutdown. */
