@@ -101,7 +101,7 @@ object FS2KinesisProducer {
     /** Emit OpenTelemetry producer metrics (buffer + put-path) via the given
       * `MeterProvider`.
       */
-    def withMeterProvider(
+    def withMetrics(
         meterProvider: MeterProvider[F],
         namespace: String = ProducerMetrics.defaultNamespace
     ): Builder[F] =
@@ -127,7 +127,7 @@ object FS2KinesisProducer {
         .withLogger(logger)
         .withClient(client)
       underlyingBuilder = meterProvider.fold(underlyingBuilder0)(mp =>
-        underlyingBuilder0.withMeterProvider(mp, namespace)
+        underlyingBuilder0.withMetrics(mp, namespace)
       )
       underlying <- underlyingBuilder.build
       channel <- Channel

@@ -136,7 +136,7 @@ object KinesisProducer {
       copy(logger = logger)
 
     /** Emit OpenTelemetry producer metrics via the given `MeterProvider`. */
-    def withMeterProvider(
+    def withMetrics(
         meterProvider: MeterProvider[F],
         namespace: String = ProducerMetrics.defaultNamespace
     ): Builder[F] =
