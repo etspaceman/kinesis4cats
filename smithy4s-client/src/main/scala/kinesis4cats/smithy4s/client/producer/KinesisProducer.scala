@@ -28,12 +28,14 @@ import com.amazonaws.kinesis._
 import org.http4s.client.Client
 import org.typelevel.log4cats.StructuredLogger
 import org.typelevel.log4cats.noop.NoOpLogger
+import org.typelevel.otel4s.metrics.MeterProvider
 import smithy4s.Blob
 import smithy4s.aws.AwsCredentialsProvider
 import smithy4s.aws.kernel.AwsCredentials
 import smithy4s.aws.kernel.AwsRegion
 
 import kinesis4cats.models
+import kinesis4cats.producer.metrics.ProducerMetrics
 import kinesis4cats.producer.{Record => Rec, _}
 
 /** A [[kinesis4cats.producer.Producer Producer]] implementation that leverages
@@ -112,7 +114,8 @@ object KinesisProducer {
         AwsCredentials
       ]],
       encoders: LogEncoders[F],
-      logRequestsResponses: Boolean
+      logRequestsResponses: Boolean,
+      metricsResource: Resource[F, ProducerMetrics[F]]
   )(implicit F: Async[F]) {
     def withConfig(config: Producer.Config[F]): Builder[F] =
       copy(config = config)
@@ -133,10 +136,23 @@ object KinesisProducer {
       copy(encoders = encoders)
     def withLogRequestsResponses(logRequestsResponses: Boolean): Builder[F] =
       copy(logRequestsResponses = logRequestsResponses)
+    def withMetrics(
+        meterProvider: MeterProvider[F],
+        namespace: String = ProducerMetrics.defaultNamespace
+    ): Builder[F] =
+      copy(metricsResource =
+        Resource.eval(
+          meterProvider
+            .get(ProducerMetrics.instrumentationScope)
+            .flatMap(ProducerMetrics.fromMeter[F](_, namespace))
+        )
+      )
     def enableLogging: Builder[F] = withLogRequestsResponses(true)
     def disableLogging: Builder[F] = withLogRequestsResponses(false)
 
     def build: Resource[F, KinesisProducer[F]] = for {
+      metrics <- metricsResource
+      finalConfig = config.copy(metrics = metrics)
       client <- KinesisClient.Builder
         .default[F](client, region)
         .withLogger(logger)
@@ -145,13 +161,13 @@ object KinesisProducer {
         .withLogRequestsResponses(logRequestsResponses)
         .build
       shardMapCache <- ShardMapCache.Builder
-        .default(getShardMap(client, config.streamNameOrArn), logger)
+        .default(getShardMap(client, finalConfig.streamNameOrArn), logger)
         .withLogEncoders(encoders.producerLogEncoders.shardMapLogEncoders)
         .build
     } yield new KinesisProducer[F](
       logger,
       shardMapCache,
-      config,
+      finalConfig,
       client,
       encoders.producerLogEncoders
     )
@@ -169,7 +185,8 @@ object KinesisProducer {
       NoOpLogger[F],
       backend => AwsCredentialsProvider.default(backend),
       LogEncoders.show[F],
-      logRequestsResponses = true
+      logRequestsResponses = true,
+      metricsResource = Resource.pure(ProducerMetrics.noop[F])
     )
 
     @annotation.unused
