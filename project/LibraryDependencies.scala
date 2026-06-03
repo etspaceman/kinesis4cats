@@ -101,6 +101,6 @@ object LibraryDependencies {
     def build(version: String) =
       "software.amazon.smithy" % "smithy-build" % version
     // https://github.com/aws/api-models-aws
-    val kinesis = "software.amazon.api.models" % "kinesis" % "1.0.7"
+    val kinesis = "software.amazon.api.models" % "kinesis" % "1.0.8"
   }
 }
