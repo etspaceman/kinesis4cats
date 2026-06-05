@@ -421,7 +421,6 @@ lazy val `smithy4s-client` =
       Compile / smithy4sAllDependenciesAsJars +=
         (`smithy4s-client-transformers` / Compile / packageBin).value,
       Compile / smithy4sSmithyLibrary := false,
-      scalacOptions -= "-deprecation",
       tlJdkRelease := Some(11),
       removeSmithy4sDependenciesFromManifest
     )
