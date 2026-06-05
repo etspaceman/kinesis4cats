@@ -74,9 +74,9 @@ KCL (consumers, JVM only):
 
 KPL (producers, JVM only): `kpl`, `kpl-ciris`, `kpl-logging-circe`, `kpl-localstack` — parallel structure to KCL.
 
-Java Kinesis client (AWS SDK v2, JVM only): `kinesis-client`, `kinesis-client-logging-circe`, `kinesis-client-localstack`.
+Java Kinesis client (AWS SDK v2, JVM only): `kinesis-client`, `kinesis-client-logging-circe`, `kinesis-client-localstack`, `kinesis-client-opentelemetry` (CloudWatch OTLP default metrics export via the OTel Java SDK + `otel4s-oteljava`; go here to change the SigV4-signed CloudWatch exporter or the `buildWithCloudWatch` producer-builder extensions).
 
-smithy4s client (pure-Scala client; JVM/JS/Native): `smithy4s-client`, `smithy4s-client-logging-circe`, `smithy4s-client-localstack`, plus `smithy4s-client-transformers` (Scala-3-only build-time model transformer, NoPublish).
+smithy4s client (pure-Scala client; JVM/JS/Native): `smithy4s-client`, `smithy4s-client-logging-circe`, `smithy4s-client-localstack`, `smithy4s-client-opentelemetry` (CloudWatch OTLP default metrics export via the pure-Scala otel4s-sdk + smithy4s-aws signing; the cross-platform counterpart to `kinesis-client-opentelemetry`), plus `smithy4s-client-transformers` (Scala-3-only build-time model transformer, NoPublish).
 
 > **Two distinct producer families — don't conflate them.** (1) `kpl` wraps the *real* AWS KPL
 > daemon (`software.amazon.kinesis.producer.KinesisProducer`), inheriting its CloudWatch metrics /

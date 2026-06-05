@@ -18,6 +18,7 @@ package kinesis4cats.smithy4s.client.producer.opentelemetry
 
 import cats.effect.IO
 import cats.effect.Ref
+import fs2.io.compression._
 import munit.CatsEffectSuite
 import org.http4s.HttpApp
 import org.http4s.Request

@@ -18,6 +18,7 @@ package kinesis4cats.smithy4s.client.producer.opentelemetry.syntax
 
 import cats.effect.IO
 import cats.effect.Resource
+import fs2.io.compression._
 import munit.FunSuite
 import org.http4s.HttpApp
 import org.http4s.Response
@@ -37,11 +38,11 @@ class CloudWatchSyntaxSpec extends FunSuite {
     val client = Client.fromHttpApp[IO](
       HttpApp[IO](_ => IO.pure(Response[IO](Status.Ok)))
     )
-    val _ : Resource[IO, KinesisProducer[IO]] =
+    val _: Resource[IO, KinesisProducer[IO]] =
       KinesisProducer.Builder
         .default[IO](stream, client, AwsRegion.US_EAST_1)
         .buildWithCloudWatch()
-    val _ : Resource[IO, FS2KinesisProducer[IO]] =
+    val _: Resource[IO, FS2KinesisProducer[IO]] =
       FS2KinesisProducer.Builder
         .default[IO](stream, client, AwsRegion.US_EAST_1)
         .buildWithCloudWatch()

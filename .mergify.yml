@@ -227,6 +227,22 @@ pull_request_rules:
       add:
       - kinesis-client-logging-circeJVM
       remove: []
+- name: Label kinesis-client-opentelemetry PRs
+  conditions:
+  - files~=^kinesis-client-opentelemetry/
+  actions:
+    label:
+      add:
+      - kinesis-client-opentelemetry
+      remove: []
+- name: Label kinesis-client-opentelemetryJVM PRs
+  conditions:
+  - files~=^kinesis-client-opentelemetry/
+  actions:
+    label:
+      add:
+      - kinesis-client-opentelemetryJVM
+      remove: []
 - name: Label kinesis-clientJVM PRs
   conditions:
   - files~=^kinesis-client/
@@ -538,6 +554,38 @@ pull_request_rules:
     label:
       add:
       - smithy4s-client-logging-circeNative
+      remove: []
+- name: Label smithy4s-client-opentelemetry PRs
+  conditions:
+  - files~=^smithy4s-client-opentelemetry/
+  actions:
+    label:
+      add:
+      - smithy4s-client-opentelemetry
+      remove: []
+- name: Label smithy4s-client-opentelemetryJS PRs
+  conditions:
+  - files~=^smithy4s-client-opentelemetry/
+  actions:
+    label:
+      add:
+      - smithy4s-client-opentelemetryJS
+      remove: []
+- name: Label smithy4s-client-opentelemetryJVM PRs
+  conditions:
+  - files~=^smithy4s-client-opentelemetry/
+  actions:
+    label:
+      add:
+      - smithy4s-client-opentelemetryJVM
+      remove: []
+- name: Label smithy4s-client-opentelemetryNative PRs
+  conditions:
+  - files~=^smithy4s-client-opentelemetry/
+  actions:
+    label:
+      add:
+      - smithy4s-client-opentelemetryNative
       remove: []
 - name: Label smithy4s-client-transformers PRs
   conditions:

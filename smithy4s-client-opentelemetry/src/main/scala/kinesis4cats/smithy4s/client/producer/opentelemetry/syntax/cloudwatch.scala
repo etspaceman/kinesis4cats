@@ -33,7 +33,8 @@ import kinesis4cats.smithy4s.client.producer.fs2.FS2KinesisProducer
 /** Terminal `buildWithCloudWatch` extension methods that bundle a
   * CloudWatch-exporting [[CloudWatchMeterProvider]] with a producer's
   * `Resource`. `region` and `httpClient` default to the builder's own fields.
-  * Import `kinesis4cats.smithy4s.client.producer.opentelemetry.syntax.cloudwatch._`.
+  * Import
+  * `kinesis4cats.smithy4s.client.producer.opentelemetry.syntax.cloudwatch._`.
   */
 object cloudwatch extends CloudWatchSyntax
 
