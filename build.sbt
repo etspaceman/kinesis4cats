@@ -362,6 +362,7 @@ lazy val `kinesis-client-localstack` = crossProject(JVMPlatform)
   .dependsOn(
     `aws-v2-localstack`,
     `kinesis-client`,
+    `kinesis-client-opentelemetry` % Test,
     `shared-testkit` % Test
   )
 
@@ -474,7 +475,8 @@ lazy val `smithy4s-client-localstack` =
       `shared-localstack`,
       `smithy4s-client`,
       `shared-testkit` % Test,
-      `smithy4s-client-logging-circe` % Test
+      `smithy4s-client-logging-circe` % Test,
+      `smithy4s-client-opentelemetry` % Test
     )
     .jvmConfigure(_.dependsOn(`kcl-localstack`.jvm % Test))
 

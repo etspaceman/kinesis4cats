@@ -16,15 +16,15 @@
 
 package kinesis4cats.client.producer.opentelemetry
 
-import java.util.concurrent.CompletableFuture
-
 import scala.jdk.CollectionConverters._
+
+import java.util.concurrent.CompletableFuture
 
 import io.opentelemetry.sdk.common.CompletableResultCode
 import io.opentelemetry.sdk.metrics.InstrumentType
+import io.opentelemetry.sdk.metrics.`export`.MetricExporter
 import io.opentelemetry.sdk.metrics.data.AggregationTemporality
 import io.opentelemetry.sdk.metrics.data.MetricData
-import io.opentelemetry.sdk.metrics.`export`.MetricExporter
 import software.amazon.awssdk.services.cloudwatch.CloudWatchAsyncClient
 import software.amazon.awssdk.services.cloudwatch.model.PutMetricDataResponse
 

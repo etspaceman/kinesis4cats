@@ -16,6 +16,7 @@
 
 package kinesis4cats.client.producer.opentelemetry
 
+import java.net.URI
 import java.time.Duration
 
 import cats.effect.Async
@@ -38,6 +39,10 @@ import kinesis4cats.producer.metrics.cloudwatch.CloudWatchConventions
   * exports producer metrics to CloudWatch via the GA `PutMetricData` API. Works
   * in all regions. Region and credentials default to the AWS SDK provider
   * chains.
+  *
+  * `endpointOverride` points the underlying `CloudWatchAsyncClient` at a
+  * non-default endpoint (Localstack, a VPC/FIPS endpoint, etc.); leave it
+  * `None` to use the standard regional endpoint.
   */
 object PutMetricDataMeterProvider {
 
@@ -48,7 +53,8 @@ object PutMetricDataMeterProvider {
       cloudWatchNamespace: String =
         CloudWatchConventions.defaultCloudWatchNamespace,
       credentials: AwsCredentialsProvider =
-        DefaultCredentialsProvider.builder().build()
+        DefaultCredentialsProvider.builder().build(),
+      endpointOverride: Option[URI] = None
   )(implicit
       F: Async[F],
       L: LocalContextProvider[F]
@@ -62,13 +68,14 @@ object PutMetricDataMeterProvider {
         )(F.pure)
       )
       client <- Resource.fromAutoCloseable(
-        F.delay(
-          CloudWatchAsyncClient
+        F.delay {
+          val builder = CloudWatchAsyncClient
             .builder()
             .region(resolvedRegion)
             .credentialsProvider(credentials)
-            .build()
-        )
+          endpointOverride.foreach(builder.endpointOverride)
+          builder.build()
+        }
       )
       // OtelJava.resource closes the OpenTelemetrySdk on release, which shuts
       // down (and flushes) the SdkMeterProvider/exporter.
