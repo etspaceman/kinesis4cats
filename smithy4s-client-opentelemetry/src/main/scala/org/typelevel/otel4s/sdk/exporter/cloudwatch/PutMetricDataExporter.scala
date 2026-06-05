@@ -25,18 +25,19 @@ import org.typelevel.otel4s.sdk.metrics.exporter.AggregationTemporalitySelector
 import org.typelevel.otel4s.sdk.metrics.exporter.CardinalityLimitSelector
 import org.typelevel.otel4s.sdk.metrics.exporter.MetricExporter
 
-/** A custom push [[org.typelevel.otel4s.sdk.metrics.exporter.MetricExporter
-  * MetricExporter]] for the otel4s pure-Scala SDK.
+/** A custom push
+  * [[org.typelevel.otel4s.sdk.metrics.exporter.MetricExporter MetricExporter]]
+  * for the otel4s pure-Scala SDK.
   *
   * `MetricExporter.Push` is a sealed trait whose only extension point
-  * (`Push.Unsealed`) is `private[sdk]`; the built-in OTLP exporter extends it the
-  * same way, by living under the `org.typelevel.otel4s.sdk` package. This class
-  * therefore lives here rather than in the kinesis4cats namespace.
+  * (`Push.Unsealed`) is `private[sdk]`; the built-in OTLP exporter extends it
+  * the same way, by living under the `org.typelevel.otel4s.sdk` package. This
+  * class therefore lives here rather than in the kinesis4cats namespace.
   *
   * It is deliberately generic: it knows nothing about CloudWatch. The caller
   * supplies `exportFn`, which translates and ships a batch of aggregated
-  * `MetricData` (kinesis4cats keeps the CloudWatch translation + transport in its
-  * own package). Cumulative temporality.
+  * `MetricData` (kinesis4cats keeps the CloudWatch translation + transport in
+  * its own package). Cumulative temporality.
   */
 final class PutMetricDataExporter[F[_]: Applicative](
     exportFn: List[MetricData] => F[Unit]

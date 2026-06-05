@@ -26,13 +26,13 @@ import fs2.compression.Compression
 import org.http4s.client.Client
 
 import kinesis4cats.producer.metrics.cloudwatch.CloudWatchConventions
-import kinesis4cats.producer.metrics.cloudwatch.{CloudWatchDatum => Datum}
 import kinesis4cats.producer.metrics.cloudwatch.PutMetricDataSink
+import kinesis4cats.producer.metrics.cloudwatch.{CloudWatchDatum => Datum}
 
-/** Builds a [[kinesis4cats.producer.metrics.cloudwatch.PutMetricDataSink
-  * PutMetricDataSink]] backed by the smithy4s-codegen CloudWatch client (AwsQuery
-  * protocol, signed by the smithy4s-aws middleware). Cross-platform
-  * (JVM/JS/Native).
+/** Builds a
+  * [[kinesis4cats.producer.metrics.cloudwatch.PutMetricDataSink PutMetricDataSink]]
+  * backed by the smithy4s-codegen CloudWatch client (AwsQuery protocol, signed
+  * by the smithy4s-aws middleware). Cross-platform (JVM/JS/Native).
   */
 object CloudWatchClient {
 
@@ -77,7 +77,7 @@ object CloudWatchClient {
       unit = Some(StandardUnit.fromStringOrUnknown(d.unit))
     )
     d.value match {
-      case Left(v) => base.copy(value = Some(DatapointValue(v)))
+      case Left(v)  => base.copy(value = Some(DatapointValue(v)))
       case Right(s) =>
         base.copy(statisticValues =
           Some(

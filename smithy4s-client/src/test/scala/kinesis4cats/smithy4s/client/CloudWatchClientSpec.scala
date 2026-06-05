@@ -40,11 +40,13 @@ class CloudWatchClientSpec extends CatsEffectSuite {
   private def recordingClient(ref: Ref[IO, List[Request[IO]]]): Client[IO] =
     Client.fromHttpApp[IO](
       HttpApp[IO](req =>
-        ref.update(_ :+ req).as(
-          Response[IO](Status.Ok).withEntity(
-            "<PutMetricDataResponse xmlns=\"http://monitoring.amazonaws.com/doc/2010-08-01/\"></PutMetricDataResponse>"
+        ref
+          .update(_ :+ req)
+          .as(
+            Response[IO](Status.Ok).withEntity(
+              "<PutMetricDataResponse xmlns=\"http://monitoring.amazonaws.com/doc/2010-08-01/\"></PutMetricDataResponse>"
+            )
           )
-        )
       )
     )
 
@@ -61,7 +63,11 @@ class CloudWatchClientSpec extends CatsEffectSuite {
       ref <- Ref.of[IO, List[Request[IO]]](Nil)
       client = recordingClient(ref)
       _ <- CloudWatchClient
-        .resource[IO](client, AwsRegion.US_EAST_1, _ => Resource.pure(testCreds))
+        .resource[IO](
+          client,
+          AwsRegion.US_EAST_1,
+          _ => Resource.pure(testCreds)
+        )
         .use(_.putMetricData("KinesisProducerLibrary", List(datum)))
       reqs <- ref.get
     } yield {

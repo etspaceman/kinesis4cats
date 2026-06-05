@@ -39,8 +39,8 @@ import kinesis4cats.smithy4s.client.middleware.LocalstackProxy
 import kinesis4cats.testkit.IntegrationSuite
 
 /** Exercises the full PutMetricData export pipeline (otel4s-sdk `MeterProvider`
-  * -> custom exporter -> smithy4s AwsQuery CloudWatch client) against Localstack
-  * CloudWatch.
+  * -> custom exporter -> smithy4s AwsQuery CloudWatch client) against
+  * Localstack CloudWatch.
   */
 class PutMetricDataCloudWatchSpec extends IntegrationSuite {
 
@@ -92,7 +92,9 @@ class PutMetricDataCloudWatchSpec extends IntegrationSuite {
     } yield cwClient
 
     resources.use { cwClient =>
-      (IO.sleep(1.second) *> listMetricNames(cwClient).map(_.contains(metricName)))
+      (IO.sleep(1.second) *> listMetricNames(cwClient).map(
+        _.contains(metricName)
+      ))
         .iterateUntil(identity)
         .timeout(30.seconds)
         .map(found => assert(found, s"$metricName not found in CloudWatch"))

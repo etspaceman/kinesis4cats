@@ -20,7 +20,9 @@ import munit.FunSuite
 
 class CloudWatchConventionsSpec extends FunSuite {
 
-  test("cloudWatchUnit maps known otel units to CloudWatch StandardUnit strings") {
+  test(
+    "cloudWatchUnit maps known otel units to CloudWatch StandardUnit strings"
+  ) {
     assertEquals(CloudWatchConventions.cloudWatchUnit("By"), "Bytes")
     assertEquals(CloudWatchConventions.cloudWatchUnit("s"), "Seconds")
     assertEquals(CloudWatchConventions.cloudWatchUnit("{record}"), "Count")

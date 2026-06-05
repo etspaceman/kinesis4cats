@@ -35,11 +35,16 @@ import kinesis4cats.producer.metrics.cloudwatch.CloudWatchDatum
 
 class SdkMetricTranslationSpec extends FunSuite {
 
-  private val scope = InstrumentationScope("kinesis4cats", None, None, Attributes.empty)
+  private val scope =
+    InstrumentationScope("kinesis4cats", None, None, Attributes.empty)
   private val attrs = Attributes(Attribute("stream.name", "test-stream"))
   private val window = TimeWindow(0.nanos, 2.millis)
 
-  private def metric(name: String, unit: String, data: MetricPoints): MetricData =
+  private def metric(
+      name: String,
+      unit: String,
+      data: MetricPoints
+  ): MetricData =
     MetricData(TelemetryResource.empty, scope, name, None, Some(unit), data)
 
   private val sumMetric: MetricData =
@@ -65,7 +70,10 @@ class SdkMetricTranslationSpec extends FunSuite {
             window,
             attrs,
             Vector.empty,
-            Some(PointData.Histogram.Stats(sum = 6.0d, min = 1.0d, max = 5.0d, count = 2L)),
+            Some(
+              PointData.Histogram
+                .Stats(sum = 6.0d, min = 1.0d, max = 5.0d, count = 2L)
+            ),
             BucketBoundaries(Vector.empty),
             Vector(2L)
           )
@@ -95,7 +103,12 @@ class SdkMetricTranslationSpec extends FunSuite {
     assertEquals(
       d.value,
       Right(
-        CloudWatchDatum.StatisticSet(min = 1.0d, max = 5.0d, sum = 6.0d, count = 2.0d)
+        CloudWatchDatum.StatisticSet(
+          min = 1.0d,
+          max = 5.0d,
+          sum = 6.0d,
+          count = 2.0d
+        )
       ): Either[Double, CloudWatchDatum.StatisticSet]
     )
   }

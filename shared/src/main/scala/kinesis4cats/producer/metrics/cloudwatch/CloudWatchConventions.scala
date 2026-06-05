@@ -16,10 +16,10 @@
 
 package kinesis4cats.producer.metrics.cloudwatch
 
-/** Shared conventions for translating otel4s producer metrics to CloudWatch: the
-  * default CloudWatch namespace, otel-unit -> StandardUnit mapping, the
-  * dimension-key names (matching `MetricAttributes`), and the PutMetricData batch
-  * limit. Pure constants/helpers -- no otel or AWS dependency.
+/** Shared conventions for translating otel4s producer metrics to CloudWatch:
+  * the default CloudWatch namespace, otel-unit -> StandardUnit mapping, the
+  * dimension-key names (matching `MetricAttributes`), and the PutMetricData
+  * batch limit. Pure constants/helpers -- no otel or AWS dependency.
   */
 private[kinesis4cats] object CloudWatchConventions {
 

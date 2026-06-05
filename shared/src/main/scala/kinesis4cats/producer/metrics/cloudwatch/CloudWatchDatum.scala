@@ -16,8 +16,8 @@
 
 package kinesis4cats.producer.metrics.cloudwatch
 
-/** A backend-neutral CloudWatch metric datum. Both the JVM (OTel-Java) and cross
-  * (otel4s-sdk) metric translations produce this shape; each backend then
+/** A backend-neutral CloudWatch metric datum. Both the JVM (OTel-Java) and
+  * cross (otel4s-sdk) metric translations produce this shape; each backend then
   * converts it to its own CloudWatch request type (AWS SDK v2 `MetricDatum` on
   * the JVM, the smithy4s-codegen `MetricDatum` on the cross path).
   *

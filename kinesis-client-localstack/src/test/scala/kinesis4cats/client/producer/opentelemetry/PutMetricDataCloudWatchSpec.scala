@@ -88,7 +88,9 @@ class PutMetricDataCloudWatchSpec extends IntegrationSuite {
 
     resources.use { cwClient =>
       // Localstack CloudWatch is eventually consistent; poll briefly.
-      (IO.sleep(1.second) *> listMetricNames(cwClient).map(_.contains(metricName)))
+      (IO.sleep(1.second) *> listMetricNames(cwClient).map(
+        _.contains(metricName)
+      ))
         .iterateUntil(identity)
         .timeout(30.seconds)
         .map(found => assert(found, s"$metricName not found in CloudWatch"))
