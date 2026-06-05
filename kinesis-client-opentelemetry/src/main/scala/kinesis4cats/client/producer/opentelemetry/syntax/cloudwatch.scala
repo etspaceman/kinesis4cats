@@ -31,10 +31,12 @@ import kinesis4cats.producer.metrics.ProducerMetrics
 import kinesis4cats.producer.metrics.cloudwatch.CloudWatchBackend
 import kinesis4cats.producer.metrics.cloudwatch.CloudWatchConventions
 
-/** Terminal `buildWithCloudWatch` extension methods that bundle a
-  * CloudWatch-exporting `MeterProvider` with a producer's `Resource`. The
-  * default backend is the GA `PutMetricData` API; `CloudWatchBackend.Otlp`
-  * selects the public-preview native OTLP endpoint. Import
+/** `withCloudWatchMetrics` builder extension methods that attach a
+  * CloudWatch-exporting `MeterProvider` to a producer builder. The default
+  * backend is the GA `PutMetricData` API; `CloudWatchBackend.Otlp` selects the
+  * public-preview native OTLP endpoint. The returned builder is built as usual
+  * with `.build`; the exporter's lifecycle is managed by the resulting
+  * `Resource`. Import
   * `kinesis4cats.client.producer.opentelemetry.syntax.cloudwatch._`.
   */
 object cloudwatch extends CloudWatchSyntax
@@ -73,7 +75,7 @@ object CloudWatchSyntax {
   final class ProducerBuilderOps[F[_]](
       private val builder: KinesisProducer.Builder[F]
   ) extends AnyVal {
-    def buildWithCloudWatch(
+    def withCloudWatchMetrics(
         region: Option[Region] = None,
         namespace: String = ProducerMetrics.defaultNamespace,
         cloudWatchNamespace: String =
@@ -84,16 +86,18 @@ object CloudWatchSyntax {
     )(implicit
         F: Async[F],
         L: LocalContextProvider[F]
-    ): Resource[F, KinesisProducer[F]] =
-      CloudWatchSyntax
-        .meterProvider[F](backend, region, cloudWatchNamespace, credentials)
-        .flatMap(mp => builder.withMetrics(mp, namespace).build)
+    ): KinesisProducer.Builder[F] =
+      builder.withMetricsResource(
+        CloudWatchSyntax
+          .meterProvider[F](backend, region, cloudWatchNamespace, credentials),
+        namespace
+      )
   }
 
   final class FS2ProducerBuilderOps[F[_]](
       private val builder: FS2KinesisProducer.Builder[F]
   ) extends AnyVal {
-    def buildWithCloudWatch(
+    def withCloudWatchMetrics(
         region: Option[Region] = None,
         namespace: String = ProducerMetrics.defaultNamespace,
         cloudWatchNamespace: String =
@@ -104,9 +108,11 @@ object CloudWatchSyntax {
     )(implicit
         F: Async[F],
         L: LocalContextProvider[F]
-    ): Resource[F, FS2KinesisProducer[F]] =
-      CloudWatchSyntax
-        .meterProvider[F](backend, region, cloudWatchNamespace, credentials)
-        .flatMap(mp => builder.withMetrics(mp, namespace).build)
+    ): FS2KinesisProducer.Builder[F] =
+      builder.withMetricsResource(
+        CloudWatchSyntax
+          .meterProvider[F](backend, region, cloudWatchNamespace, credentials),
+        namespace
+      )
   }
 }

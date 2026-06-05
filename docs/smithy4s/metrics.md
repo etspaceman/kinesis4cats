@@ -38,7 +38,7 @@ The `smithy4s-client-opentelemetry` module bundles a CloudWatch-exporting `Meter
 libraryDependencies += "io.github.etspaceman" %% "kinesis4cats-smithy4s-client-opentelemetry" % "@VERSION@"
 ```
 
-Import the syntax and replace `build` with `buildWithCloudWatch`. By default it reuses the builder's own http4s client and region:
+Import the syntax and add `withCloudWatchMetrics()` to the builder before `build`. By default it reuses the builder's own http4s client and region:
 
 ```scala mdoc:compile-only
 import cats.effect._
@@ -52,7 +52,8 @@ import kinesis4cats.models.StreamNameOrArn
 BlazeClientBuilder[IO].resource.flatMap(client =>
   KinesisProducer.Builder
     .default[IO](StreamNameOrArn.Name("my-stream"), client, AwsRegion.US_EAST_1)
-    .buildWithCloudWatch()
+    .withCloudWatchMetrics()
+    .build
 )
 ```
 
@@ -70,13 +71,14 @@ import kinesis4cats.models.StreamNameOrArn
 BlazeClientBuilder[IO].resource.flatMap(client =>
   FS2KinesisProducer.Builder
     .default[IO](StreamNameOrArn.Name("my-stream"), client, AwsRegion.US_EAST_1)
-    .buildWithCloudWatch()
+    .withCloudWatchMetrics()
+    .build
 )
 ```
 
 ### Backends
 
-`buildWithCloudWatch` supports two transports, selected via the `backend` parameter:
+`withCloudWatchMetrics` supports two transports, selected via the `backend` parameter:
 
 - `CloudWatchBackend.PutMetricData` *(default)* — the GA [`PutMetricData`](https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_PutMetricData.html) API. Works in all regions and requires no extra infrastructure.
 - `CloudWatchBackend.Otlp` *(public preview)* — CloudWatch's native OTLP endpoint. Availability varies by region.
@@ -94,13 +96,14 @@ import kinesis4cats.producer.metrics.cloudwatch.CloudWatchBackend
 BlazeClientBuilder[IO].resource.flatMap(client =>
   KinesisProducer.Builder
     .default[IO](StreamNameOrArn.Name("my-stream"), client, AwsRegion.US_EAST_1)
-    .buildWithCloudWatch(backend = CloudWatchBackend.Otlp)
+    .withCloudWatchMetrics(backend = CloudWatchBackend.Otlp)
+    .build
 )
 ```
 
 ### Configuration
 
-`buildWithCloudWatch` accepts the following parameters, all with sensible defaults:
+`withCloudWatchMetrics` accepts the following parameters, all with sensible defaults:
 
 | Parameter | Default | Description |
 | --- | --- | --- |

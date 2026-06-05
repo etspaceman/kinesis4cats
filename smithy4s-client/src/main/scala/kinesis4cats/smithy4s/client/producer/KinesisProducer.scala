@@ -147,6 +147,25 @@ object KinesisProducer {
             .flatMap(ProducerMetrics.fromMeter[F](_, namespace))
         )
       )
+
+    /** Emit OpenTelemetry producer metrics via a `MeterProvider` whose
+      * lifecycle is managed by the given `Resource` (e.g. an exporter that must
+      * be flushed on shutdown). The `Resource` is acquired by [[build]] and
+      * released after the producer. Plumbing for builder extensions such as
+      * `withCloudWatchMetrics`.
+      */
+    private[kinesis4cats] def withMetricsResource(
+        meterProvider: Resource[F, MeterProvider[F]],
+        namespace: String = ProducerMetrics.defaultNamespace
+    ): Builder[F] =
+      copy(metricsResource =
+        meterProvider.flatMap(mp =>
+          Resource.eval(
+            mp.get(ProducerMetrics.instrumentationScope)
+              .flatMap(ProducerMetrics.fromMeter[F](_, namespace))
+          )
+        )
+      )
     def enableLogging: Builder[F] = withLogRequestsResponses(true)
     def disableLogging: Builder[F] = withLogRequestsResponses(false)
 

@@ -68,7 +68,7 @@ object FS2KinesisProducer {
       clientResource: Resource[F, KinesisClient[F]],
       encoders: KinesisProducer.LogEncoders,
       logger: StructuredLogger[F],
-      meterProvider: Option[MeterProvider[F]],
+      meterProviderResource: Option[Resource[F, MeterProvider[F]]],
       namespace: String
   )(implicit F: Async[F]) {
     def withConfig(config: FS2Producer.Config[F]): Builder[F] = copy(
@@ -105,10 +105,28 @@ object FS2KinesisProducer {
         meterProvider: MeterProvider[F],
         namespace: String = ProducerMetrics.defaultNamespace
     ): Builder[F] =
-      copy(meterProvider = Some(meterProvider), namespace = namespace)
+      copy(
+        meterProviderResource = Some(Resource.pure(meterProvider)),
+        namespace = namespace
+      )
+
+    /** Emit OpenTelemetry producer metrics via a `MeterProvider` whose
+      * lifecycle is managed by the given `Resource` (e.g. an exporter that must
+      * be flushed on shutdown). The `Resource` is acquired by [[build]] and
+      * released after the producer. Plumbing for builder extensions such as
+      * `withCloudWatchMetrics`.
+      */
+    private[kinesis4cats] def withMetricsResource(
+        meterProvider: Resource[F, MeterProvider[F]],
+        namespace: String = ProducerMetrics.defaultNamespace
+    ): Builder[F] =
+      copy(meterProviderResource = Some(meterProvider), namespace = namespace)
 
     def build: Resource[F, FS2KinesisProducer[F]] = for {
       client <- clientResource
+      meterProvider <- meterProviderResource.fold(
+        Resource.pure[F, Option[MeterProvider[F]]](None)
+      )(_.map(Some(_)))
       fs2Metrics <- meterProvider.fold(
         Resource.pure[F, FS2ProducerMetrics[F]](
           FS2ProducerMetrics.noop[F]

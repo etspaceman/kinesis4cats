@@ -58,7 +58,7 @@ The `kinesis-client-opentelemetry` module bundles a CloudWatch-exporting `MeterP
 libraryDependencies += "io.github.etspaceman" %% "kinesis4cats-kinesis-client-opentelemetry" % "@VERSION@"
 ```
 
-Import the syntax and replace `build` with `buildWithCloudWatch`:
+Import the syntax and add `withCloudWatchMetrics()` to the builder before `build`:
 
 ```scala mdoc:compile-only
 import cats.effect._
@@ -69,7 +69,8 @@ import kinesis4cats.models.StreamNameOrArn
 
 KinesisProducer.Builder
   .default[IO](StreamNameOrArn.Name("my-stream"))
-  .buildWithCloudWatch()
+  .withCloudWatchMetrics()
+  .build
 ```
 
 The same syntax is available on the `FS2KinesisProducer` builder:
@@ -83,12 +84,13 @@ import kinesis4cats.models.StreamNameOrArn
 
 FS2KinesisProducer.Builder
   .default[IO](StreamNameOrArn.Name("my-stream"))
-  .buildWithCloudWatch()
+  .withCloudWatchMetrics()
+  .build
 ```
 
 ### Backends
 
-`buildWithCloudWatch` supports two transports, selected via the `backend` parameter:
+`withCloudWatchMetrics` supports two transports, selected via the `backend` parameter:
 
 - `CloudWatchBackend.PutMetricData` *(default)* — the GA [`PutMetricData`](https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_PutMetricData.html) API. Works in all regions and requires no extra infrastructure.
 - `CloudWatchBackend.Otlp` *(public preview)* — CloudWatch's native OTLP endpoint. Availability varies by region.
@@ -103,12 +105,13 @@ import kinesis4cats.producer.metrics.cloudwatch.CloudWatchBackend
 
 KinesisProducer.Builder
   .default[IO](StreamNameOrArn.Name("my-stream"))
-  .buildWithCloudWatch(backend = CloudWatchBackend.Otlp)
+  .withCloudWatchMetrics(backend = CloudWatchBackend.Otlp)
+  .build
 ```
 
 ### Configuration
 
-`buildWithCloudWatch` accepts the following parameters, all with sensible defaults:
+`withCloudWatchMetrics` accepts the following parameters, all with sensible defaults:
 
 | Parameter | Default | Description |
 | --- | --- | --- |
