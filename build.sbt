@@ -409,12 +409,14 @@ lazy val `smithy4s-client` =
         "com.disneystreaming.smithy4s" %%% "smithy4s-aws-http4s" % smithy4sVersion.value,
         Log4Cats.noop.value,
         Smithy.rulesEngine(smithy4s.codegen.BuildInfo.smithyVersion) % Smithy4s,
-        Smithy.kinesis % Smithy4s
+        Smithy.kinesis % Smithy4s,
+        Smithy.cloudwatch % Smithy4s
       ),
       Compile / smithy4sInputDirs := Seq(
         baseDirectory.value.getParentFile / "src" / "main" / "smithy"
       ),
       Compile / smithy4sModelTransformers += "KinesisSpecTransformer",
+      Compile / smithy4sModelTransformers += "CloudWatchSpecTransformer",
       Compile / smithy4sAllDependenciesAsJars +=
         (`smithy4s-client-transformers` / Compile / packageBin).value,
       Compile / smithy4sSmithyLibrary := false,
