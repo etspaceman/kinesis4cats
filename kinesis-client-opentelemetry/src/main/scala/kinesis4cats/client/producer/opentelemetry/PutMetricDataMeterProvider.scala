@@ -16,7 +16,6 @@
 
 package kinesis4cats.client.producer.opentelemetry
 
-import java.net.URI
 import java.time.Duration
 
 import cats.effect.Async
@@ -40,9 +39,8 @@ import kinesis4cats.producer.metrics.cloudwatch.CloudWatchConventions
   * in all regions. Region and credentials default to the AWS SDK provider
   * chains.
   *
-  * `endpointOverride` points the underlying `CloudWatchAsyncClient` at a
-  * non-default endpoint (Localstack, a VPC/FIPS endpoint, etc.); leave it
-  * `None` to use the standard regional endpoint.
+  * For non-standard endpoints (Localstack, VPC/FIPS, a custom TLS trust store)
+  * build your own `CloudWatchAsyncClient` and use [[fromClientResource]].
   */
 object PutMetricDataMeterProvider {
 
@@ -53,30 +51,48 @@ object PutMetricDataMeterProvider {
       cloudWatchNamespace: String =
         CloudWatchConventions.defaultCloudWatchNamespace,
       credentials: AwsCredentialsProvider =
-        DefaultCredentialsProvider.builder().build(),
-      endpointOverride: Option[URI] = None
+        DefaultCredentialsProvider.builder().build()
+  )(implicit
+      F: Async[F],
+      L: LocalContextProvider[F]
+  ): Resource[F, MeterProvider[F]] =
+    fromClientResource(
+      cloudWatchNamespace,
+      Resource
+        .eval(
+          region.fold(
+            F.blocking(
+              DefaultAwsRegionProviderChain.builder().build().getRegion()
+            )
+          )(F.pure)
+        )
+        .flatMap { resolvedRegion =>
+          Resource.fromAutoCloseable(
+            F.delay(
+              CloudWatchAsyncClient
+                .builder()
+                .region(resolvedRegion)
+                .credentialsProvider(credentials)
+                .build()
+            )
+          )
+        }
+    )
+
+  /** Builds a `MeterProvider` over a caller-supplied `CloudWatchAsyncClient`
+    * resource. Use this for Localstack, VPC/FIPS endpoints, or any custom
+    * client (HTTP client, TLS, endpoint override). The client's lifecycle is
+    * owned by the supplied `Resource`.
+    */
+  def fromClientResource[F[_]](
+      cloudWatchNamespace: String,
+      clientResource: Resource[F, CloudWatchAsyncClient]
   )(implicit
       F: Async[F],
       L: LocalContextProvider[F]
   ): Resource[F, MeterProvider[F]] =
     for {
-      resolvedRegion <- Resource.eval(
-        region.fold(
-          F.blocking(
-            DefaultAwsRegionProviderChain.builder().build().getRegion()
-          )
-        )(F.pure)
-      )
-      client <- Resource.fromAutoCloseable(
-        F.delay {
-          val builder = CloudWatchAsyncClient
-            .builder()
-            .region(resolvedRegion)
-            .credentialsProvider(credentials)
-          endpointOverride.foreach(builder.endpointOverride)
-          builder.build()
-        }
-      )
+      client <- clientResource
       // OtelJava.resource closes the OpenTelemetrySdk on release, which shuts
       // down (and flushes) the SdkMeterProvider/exporter.
       otelJava <- OtelJava.resource[F](

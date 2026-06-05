@@ -20,11 +20,7 @@ import scala.concurrent.duration._
 import scala.jdk.CollectionConverters._
 
 import cats.effect.IO
-import cats.effect.Resource
 import org.typelevel.otel4s.Attribute
-import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
-import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
-import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.cloudwatch.CloudWatchAsyncClient
 import software.amazon.awssdk.services.cloudwatch.model.ListMetricsRequest
 
@@ -38,10 +34,6 @@ import kinesis4cats.testkit.IntegrationSuite
   * custom exporter -> SDK-v2 CloudWatch client) against Localstack CloudWatch.
   */
 class PutMetricDataCloudWatchSpec extends IntegrationSuite {
-
-  private val creds = StaticCredentialsProvider.create(
-    AwsBasicCredentials.create("mock-key", "mock-secret")
-  )
 
   private val streamName =
     s"pmd-otel-spec-${Utils.randomUUIDString}"
@@ -63,37 +55,36 @@ class PutMetricDataCloudWatchSpec extends IntegrationSuite {
     ).map(_.metrics().asScala.toList.map(_.metricName()))
 
   test("PutMetricData export reaches Localstack CloudWatch") {
-    val resources: Resource[IO, CloudWatchAsyncClient] = for {
-      config <- Resource.eval(LocalstackConfig.load[IO]())
-      cwClient <- AwsClients.cloudwatchClientResource[IO](config)
-      // Record one observation, then release the MeterProvider to force a
-      // final flush/export to Localstack CloudWatch.
-      _ <- PutMetricDataMeterProvider
-        .resource[IO](
-          region = Some(Region.US_EAST_1),
-          credentials = creds,
-          endpointOverride = Some(config.cloudwatchEndpointUri)
-        )
-        .evalMap { mp =>
-          for {
-            meter <- mp.get("kinesis4cats")
-            counter <- meter
-              .counter[Long](metricName)
-              .withUnit("{record}")
-              .create
-            _ <- counter.add(3L, Attribute("stream.name", streamName))
-          } yield ()
-        }
-    } yield cwClient
+    LocalstackConfig.load[IO]().flatMap { config =>
+      AwsClients.cloudwatchClientResource[IO](config).use { cwClient =>
+        // Record one observation, then RELEASE the MeterProvider (the nested
+        // `use` completes here) to force a final flush/export to Localstack
+        // CloudWatch before we poll.
+        val recordAndFlush = PutMetricDataMeterProvider
+          .fromClientResource[IO](
+            CloudWatchConventions.defaultCloudWatchNamespace,
+            AwsClients.cloudwatchClientResource[IO](config)
+          )
+          .use { mp =>
+            for {
+              meter <- mp.get("kinesis4cats")
+              counter <- meter
+                .counter[Long](metricName)
+                .withUnit("{record}")
+                .create
+              _ <- counter.add(3L, Attribute("stream.name", streamName))
+            } yield ()
+          }
 
-    resources.use { cwClient =>
-      // Localstack CloudWatch is eventually consistent; poll briefly.
-      (IO.sleep(1.second) *> listMetricNames(cwClient).map(
-        _.contains(metricName)
-      ))
-        .iterateUntil(identity)
-        .timeout(30.seconds)
-        .map(found => assert(found, s"$metricName not found in CloudWatch"))
+        recordAndFlush *>
+          // Localstack CloudWatch is eventually consistent; poll briefly.
+          (IO.sleep(1.second) *> listMetricNames(cwClient).map(
+            _.contains(metricName)
+          ))
+            .iterateUntil(identity)
+            .timeout(30.seconds)
+            .map(found => assert(found, s"$metricName not found in CloudWatch"))
+      }
     }
   }
 }

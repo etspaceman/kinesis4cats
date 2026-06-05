@@ -21,6 +21,7 @@ import scala.jdk.CollectionConverters._
 
 import cats.effect.IO
 import cats.effect.Resource
+import cats.syntax.all._
 import fs2.io.compression._
 import org.http4s.blaze.client.BlazeClientBuilder
 import org.typelevel.log4cats.slf4j.Slf4jLogger
@@ -67,37 +68,41 @@ class PutMetricDataCloudWatchSpec extends IntegrationSuite {
     ).map(_.metrics().asScala.toList.map(_.metricName()))
 
   test("PutMetricData export reaches Localstack CloudWatch (smithy4s)") {
-    val resources: Resource[IO, CloudWatchAsyncClient] = for {
-      config <- Resource.eval(LocalstackConfig.load[IO]())
-      cwClient <- AwsClients.cloudwatchClientResource[IO](config)
-      baseClient <- BlazeClientBuilder[IO].withSslContext(SSL.context).resource
-      proxiedClient = LocalstackProxy[IO](Slf4jLogger.getLogger[IO])(baseClient)
-      _ <- PutMetricDataMeterProvider
-        .resource[IO](
-          AwsRegion.US_EAST_1,
-          proxiedClient,
-          CloudWatchConventions.defaultCloudWatchNamespace,
-          _ => Resource.pure(mockCreds)
-        )
-        .evalMap { mp =>
-          for {
-            meter <- mp.get("kinesis4cats")
-            counter <- meter
-              .counter[Long](metricName)
-              .withUnit("{record}")
-              .create
-            _ <- counter.add(3L, Attribute("stream.name", streamName))
-          } yield ()
-        }
-    } yield cwClient
+    LocalstackConfig.load[IO]().flatMap { config =>
+      (
+        AwsClients.cloudwatchClientResource[IO](config),
+        BlazeClientBuilder[IO].withSslContext(SSL.context).resource
+      ).tupled.use { case (cwClient, baseClient) =>
+        val proxiedClient =
+          LocalstackProxy[IO](Slf4jLogger.getLogger[IO])(baseClient)
+        // Record one observation, then RELEASE the MeterProvider (the nested
+        // `use` completes here) to force a final flush/export before polling.
+        val recordAndFlush = PutMetricDataMeterProvider
+          .resource[IO](
+            AwsRegion.US_EAST_1,
+            proxiedClient,
+            CloudWatchConventions.defaultCloudWatchNamespace,
+            _ => Resource.pure(mockCreds)
+          )
+          .use { mp =>
+            for {
+              meter <- mp.get("kinesis4cats")
+              counter <- meter
+                .counter[Long](metricName)
+                .withUnit("{record}")
+                .create
+              _ <- counter.add(3L, Attribute("stream.name", streamName))
+            } yield ()
+          }
 
-    resources.use { cwClient =>
-      (IO.sleep(1.second) *> listMetricNames(cwClient).map(
-        _.contains(metricName)
-      ))
-        .iterateUntil(identity)
-        .timeout(30.seconds)
-        .map(found => assert(found, s"$metricName not found in CloudWatch"))
+        recordAndFlush *>
+          (IO.sleep(1.second) *> listMetricNames(cwClient).map(
+            _.contains(metricName)
+          ))
+            .iterateUntil(identity)
+            .timeout(30.seconds)
+            .map(found => assert(found, s"$metricName not found in CloudWatch"))
+      }
     }
   }
 }
