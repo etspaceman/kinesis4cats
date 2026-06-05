@@ -20,6 +20,7 @@ package syntax
 import _root_.fs2.compression.Compression
 import _root_.fs2.io.file.Files
 import cats.effect.Async
+import cats.effect.LiftIO
 import cats.effect.Resource
 import org.http4s.client.Client
 import org.typelevel.otel4s.metrics.MeterProvider
@@ -45,13 +46,15 @@ import kinesis4cats.smithy4s.client.producer.fs2.FS2KinesisProducer
 object cloudwatch extends CloudWatchSyntax
 
 trait CloudWatchSyntax {
-  implicit def toCloudWatchProducerBuilderOps[F[_]: Async: Compression: Files](
+  implicit def toCloudWatchProducerBuilderOps[
+      F[_]: Async: Compression: Files: LiftIO
+  ](
       builder: KinesisProducer.Builder[F]
   ): CloudWatchSyntax.ProducerBuilderOps[F] =
     new CloudWatchSyntax.ProducerBuilderOps(builder)
 
   implicit def toCloudWatchFS2ProducerBuilderOps[
-      F[_]: Async: Compression: Files
+      F[_]: Async: Compression: Files: LiftIO
   ](
       builder: FS2KinesisProducer.Builder[F]
   ): CloudWatchSyntax.FS2ProducerBuilderOps[F] =
@@ -64,7 +67,7 @@ object CloudWatchSyntax {
       : Client[F] => Resource[F, F[AwsCredentials]] =
     backend => AwsCredentialsProvider.default(backend)
 
-  private def meterProvider[F[_]: Async: Compression](
+  private def meterProvider[F[_]: Async: Compression: LiftIO](
       backend: CloudWatchBackend,
       region: AwsRegion,
       httpClient: Client[F],
@@ -79,7 +82,7 @@ object CloudWatchSyntax {
         CloudWatchMeterProvider.resource[F](region, httpClient, credentials)
     }
 
-  final class ProducerBuilderOps[F[_]: Async: Compression: Files](
+  final class ProducerBuilderOps[F[_]: Async: Compression: Files: LiftIO](
       private val builder: KinesisProducer.Builder[F]
   ) {
     def withCloudWatchMetrics(
@@ -105,7 +108,7 @@ object CloudWatchSyntax {
       )
   }
 
-  final class FS2ProducerBuilderOps[F[_]: Async: Compression: Files](
+  final class FS2ProducerBuilderOps[F[_]: Async: Compression: Files: LiftIO](
       private val builder: FS2KinesisProducer.Builder[F]
   ) {
     def withCloudWatchMetrics(

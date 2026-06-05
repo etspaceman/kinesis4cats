@@ -20,6 +20,7 @@ import scala.collection.immutable.SortedMap
 import scala.concurrent.duration._
 
 import cats.effect.Async
+import cats.effect.LiftIO
 import cats.effect.Resource
 import cats.effect.std.Console
 import cats.effect.std.Random
@@ -165,11 +166,13 @@ object CloudWatchMeterProvider {
       credentials: Client[F] => Resource[F, F[AwsCredentials]]
   )(implicit
       F: Async[F],
-      C: Compression[F]
+      C: Compression[F],
+      L: LiftIO[F]
   ): Resource[F, MeterProvider[F]] = {
     implicit val askContext: Ask[F, Context] = Ask.const(Context.root)
     implicit val console: Console[F] = Console.make[F]
-    implicit val network: Network[F] = Network.forAsync[F]
+    // forLiftIO (not forAsync) so the network layer works on Native too.
+    implicit val network: Network[F] = Network.forLiftIO[F]
     for {
       credsF <- credentials(httpClient)
       signed = signedClient(httpClient, region, credsF)
