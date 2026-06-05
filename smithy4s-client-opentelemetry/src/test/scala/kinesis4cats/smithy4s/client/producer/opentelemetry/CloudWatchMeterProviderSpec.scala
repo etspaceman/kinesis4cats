@@ -60,7 +60,10 @@ class CloudWatchMeterProviderSpec extends CatsEffectSuite {
       // Allocation + release force-flushes at least one export.
       reqs <- ref.get
     } yield {
-      assert(reqs.nonEmpty, "expected the exporter to flush at least one request")
+      assert(
+        reqs.nonEmpty,
+        "expected the exporter to flush at least one request"
+      )
       val req = reqs.head
       assertEquals(req.uri.path.renderString, "/v1/metrics")
       val auth = req.headers

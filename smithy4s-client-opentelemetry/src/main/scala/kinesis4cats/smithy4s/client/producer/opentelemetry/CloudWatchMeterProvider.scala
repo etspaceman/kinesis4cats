@@ -109,7 +109,10 @@ object CloudWatchMeterProvider {
 
     val signingKey = {
       val kDate =
-        hmacSha256(dateStamp, binaryFromString("AWS4" + credentials.secretAccessKey))
+        hmacSha256(
+          dateStamp,
+          binaryFromString("AWS4" + credentials.secretAccessKey)
+        )
       val kRegion = hmacSha256(regionStr, kDate)
       val kService = hmacSha256(serviceName, kRegion)
       hmacSha256("aws4_request", kService)
@@ -143,7 +146,12 @@ object CloudWatchMeterProvider {
       Resource
         .eval(
           (F.realTime, credentials).mapN { (now, creds) =>
-            signRequest(request, region, creds, Timestamp.fromEpochMilli(now.toMillis))
+            signRequest(
+              request,
+              region,
+              creds,
+              Timestamp.fromEpochMilli(now.toMillis)
+            )
           }
         )
         .flatMap(httpClient.run)
