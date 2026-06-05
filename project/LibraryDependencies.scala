@@ -2,7 +2,7 @@ import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport._
 import sbt._
 
 object LibraryDependencies {
-  val Logback = "ch.qos.logback" % "logback-classic" % "1.5.33"
+  val Logback = "ch.qos.logback" % "logback-classic" % "1.5.34"
   val JavaXMLBind = "javax.xml.bind" % "jaxb-api" % "2.3.1"
   val Scalacheck = Def.setting("org.scalacheck" %%% "scalacheck" % "1.19.0")
 
@@ -28,10 +28,9 @@ object LibraryDependencies {
   }
 
   object Munit {
-    val munitVersion = "1.3.0"
-    val core = Def.setting("org.scalameta" %%% "munit" % munitVersion)
+    val core = Def.setting("org.scalameta" %%% "munit" % "1.3.2")
     val scalacheck =
-      Def.setting("org.scalameta" %%% "munit-scalacheck" % munitVersion)
+      Def.setting("org.scalameta" %%% "munit-scalacheck" % "1.3.0")
     val catsEffect =
       Def.setting("org.typelevel" %%% "munit-cats-effect" % "2.2.0")
     val scalacheckEffect =
@@ -102,7 +101,7 @@ object LibraryDependencies {
     def build(version: String) =
       "software.amazon.smithy" % "smithy-build" % version
     // https://github.com/aws/api-models-aws
-    val kinesis = "software.amazon.api.models" % "kinesis" % "1.0.7"
+    val kinesis = "software.amazon.api.models" % "kinesis" % "1.0.8"
   }
 
   object Otel4s {
