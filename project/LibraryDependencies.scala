@@ -46,6 +46,7 @@ object LibraryDependencies {
       val kinesis = "software.amazon.awssdk" % "kinesis" % awssdkVersion
       val dynamo = "software.amazon.awssdk" % "dynamodb" % awssdkVersion
       val cloudwatch = "software.amazon.awssdk" % "cloudwatch" % awssdkVersion
+      val auth = "software.amazon.awssdk" % "auth" % awssdkVersion
     }
 
     object Aggregation {
@@ -106,12 +107,36 @@ object LibraryDependencies {
 
   object Otel4s {
     val otel4sVersion = "1.0.0"
-    val otel4sSdkMetricsTestkitVersion = "0.19.0"
+    val otel4sSdkVersion = "0.19.0"
     val coreMetrics =
       Def.setting("org.typelevel" %%% "otel4s-core-metrics" % otel4sVersion)
     val sdkMetricsTestkit =
       Def.setting(
-        "org.typelevel" %%% "otel4s-sdk-metrics-testkit" % otel4sSdkMetricsTestkitVersion
+        "org.typelevel" %%% "otel4s-sdk-metrics-testkit" % otel4sSdkVersion
       )
+    // JVM-only OTel Java bridge (kinesis-client-opentelemetry)
+    val otelJava =
+      "org.typelevel" %% "otel4s-oteljava" % otel4sVersion
+    // Pure-Scala otel4s SDK (smithy4s-client-opentelemetry)
+    val sdkMetrics =
+      Def.setting("org.typelevel" %%% "otel4s-sdk-metrics" % otel4sSdkVersion)
+    val sdkExporterMetrics =
+      Def.setting(
+        "org.typelevel" %%% "otel4s-sdk-exporter-metrics" % otel4sSdkVersion
+      )
+  }
+
+  object OtelJavaSdk {
+    // OTLP/HTTP exporter for the OTel Java SDK. Pulls opentelemetry-sdk-metrics
+    // and the OkHttp sender transitively. Pin to the version otel4s-oteljava
+    // 1.0.0 resolves (verify with `sbt evicted`; bump to match if newer).
+    val otlpExporterVersion = "1.62.0"
+    val otlpExporter =
+      "io.opentelemetry" % "opentelemetry-exporter-otlp" % otlpExporterVersion
+  }
+
+  object OkHttp {
+    val mockWebServer =
+      "com.squareup.okhttp3" % "mockwebserver" % "4.12.0" % "test"
   }
 }

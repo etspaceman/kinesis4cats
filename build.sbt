@@ -476,6 +476,37 @@ lazy val `smithy4s-client-localstack` =
     )
     .jvmConfigure(_.dependsOn(`kcl-localstack`.jvm % Test))
 
+lazy val `kinesis-client-opentelemetry` = crossProject(JVMPlatform)
+  .crossType(CrossType.Pure)
+  .in(file("kinesis-client-opentelemetry"))
+  .settings(
+    description := "CloudWatch OTLP default metrics export for the Java Kinesis Client producer",
+    crossScalaVersions := allScalaVersions,
+    libraryDependencies ++= Seq(
+      Otel4s.otelJava,
+      OtelJavaSdk.otlpExporter,
+      Aws.V2.auth,
+      OkHttp.mockWebServer
+    )
+  )
+  .dependsOn(`kinesis-client`)
+
+lazy val `smithy4s-client-opentelemetry` =
+  crossProject(JVMPlatform, JSPlatform, NativePlatform)
+    .crossType(CrossType.Pure)
+    .in(file("smithy4s-client-opentelemetry"))
+    .settings(
+      description := "CloudWatch OTLP default metrics export for the Smithy4s Kinesis Client producer",
+      crossScalaVersions := allScalaVersions,
+      libraryDependencies ++= Seq(
+        Otel4s.sdkMetrics.value,
+        Otel4s.sdkExporterMetrics.value
+      ),
+      tlJdkRelease := Some(11)
+    )
+    .nativeSettings(scalaVersion := Scala3, crossScalaVersions := Seq(Scala3))
+    .dependsOn(`smithy4s-client`)
+
 lazy val feral = crossProject(JVMPlatform, JSPlatform)
   .crossType(CrossType.Pure)
   .in(file("feral"))
@@ -602,6 +633,8 @@ lazy val unidocs = project
       `smithy4s-client`.jvm,
       `smithy4s-client-logging-circe`.jvm,
       `smithy4s-client-localstack`.jvm,
+      `kinesis-client-opentelemetry`.jvm,
+      `smithy4s-client-opentelemetry`.jvm,
       feral.jvm
     )
   )
@@ -629,6 +662,8 @@ lazy val allCrossProjects: Seq[sbtcrossproject.CrossProject] = Seq(
   `smithy4s-client`,
   `smithy4s-client-logging-circe`,
   `smithy4s-client-localstack`,
+  `kinesis-client-opentelemetry`,
+  `smithy4s-client-opentelemetry`,
   feral
 )
 
