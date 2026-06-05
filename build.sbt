@@ -620,6 +620,8 @@ lazy val docs = project
     `smithy4s-client`.jvm,
     `smithy4s-client-logging-circe`.jvm,
     `smithy4s-client-localstack`.jvm,
+    `kinesis-client-opentelemetry`.jvm,
+    `smithy4s-client-opentelemetry`.jvm,
     feral.jvm
   )
 
