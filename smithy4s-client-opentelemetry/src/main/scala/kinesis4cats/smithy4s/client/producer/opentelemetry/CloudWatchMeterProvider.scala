@@ -53,10 +53,12 @@ import smithy4s.aws.kernel.Timestamp
   * JVM, JS, and Native. Requests are signed over the literal `UNSIGNED-PAYLOAD`
   * content hash, which the CloudWatch preview endpoint accepts.
   *
-  * '''Preview caveat:''' the CloudWatch OTLP endpoint is in public preview in
-  * `us-east-1`, `us-west-2`, `ap-southeast-2`, `ap-southeast-1`, and
-  * `eu-west-1` only. Requests from other regions fail at runtime (logged by the
-  * exporter, never propagated to the produce path).
+  * '''Preview caveat:''' the CloudWatch OTLP endpoint is in public preview and
+  * available only in a subset of AWS regions. Be aware of the currently active
+  * regions for the feature before enabling it — see
+  * [[https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch-OTLPEndpoint.html the CloudWatch OTLP endpoint documentation]].
+  * Requests from unsupported regions fail at runtime (logged by the exporter,
+  * never propagated to the produce path).
   */
 object CloudWatchMeterProvider {
 

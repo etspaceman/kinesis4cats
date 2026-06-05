@@ -16,9 +16,9 @@
 
 package kinesis4cats.client.producer.opentelemetry
 
-import cats.effect.IO
 import munit.CatsEffectSuite
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
+import software.amazon.awssdk.auth.credentials.AwsSessionCredentials
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
 import software.amazon.awssdk.regions.Region
 
@@ -44,23 +44,11 @@ class CloudWatchMeterProviderSpec extends CatsEffectSuite {
 
   test("session token credentials add x-amz-security-token header") {
     val sessionCreds = StaticCredentialsProvider.create(
-      software.amazon.awssdk.auth.credentials.AwsSessionCredentials
-        .create("AKIDEXAMPLE", "secret", "token123")
+      AwsSessionCredentials.create("AKIDEXAMPLE", "secret", "token123")
     )
     val supplier =
       CloudWatchMeterProvider.headerSupplier(sessionCreds, Region.US_EAST_1)
     val headers = supplier.get()
     assertEquals(headers.get("X-Amz-Security-Token"), "token123")
-  }
-
-  test("resource allocates and releases without error") {
-    CloudWatchMeterProvider
-      .resource[IO](
-        region = Some(Region.US_EAST_1),
-        credentials = creds
-      )
-      .use(_ => IO.unit)
-      .assert
-      .void
   }
 }

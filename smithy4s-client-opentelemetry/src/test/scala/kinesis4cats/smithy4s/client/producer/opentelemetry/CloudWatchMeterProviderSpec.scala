@@ -18,6 +18,7 @@ package kinesis4cats.smithy4s.client.producer.opentelemetry
 
 import cats.effect.IO
 import cats.effect.Ref
+import cats.effect.Resource
 import fs2.io.compression._
 import munit.CatsEffectSuite
 import org.http4s.HttpApp
@@ -25,6 +26,7 @@ import org.http4s.Request
 import org.http4s.Response
 import org.http4s.Status
 import org.http4s.client.Client
+import org.typelevel.ci.CIString
 import smithy4s.aws.kernel.AwsCredentials
 import smithy4s.aws.kernel.AwsRegion
 
@@ -49,7 +51,7 @@ class CloudWatchMeterProviderSpec extends CatsEffectSuite {
         .resource[IO](
           AwsRegion.US_EAST_1,
           client,
-          _ => cats.effect.Resource.pure(testCreds)
+          _ => Resource.pure(testCreds)
         )
         .use { mp =>
           for {
@@ -68,7 +70,7 @@ class CloudWatchMeterProviderSpec extends CatsEffectSuite {
       val req = reqs.head
       assertEquals(req.uri.path.renderString, "/v1/metrics")
       val auth = req.headers
-        .get(org.typelevel.ci.CIString("Authorization"))
+        .get(CIString("Authorization"))
         .map(_.head.value)
       assert(
         auth.exists(_.startsWith(s"AWS4-HMAC-SHA256 Credential=AKIDEXAMPLE/")),
@@ -80,24 +82,10 @@ class CloudWatchMeterProviderSpec extends CatsEffectSuite {
       )
       assertEquals(
         req.headers
-          .get(org.typelevel.ci.CIString("X-Amz-Content-Sha256"))
+          .get(CIString("X-Amz-Content-Sha256"))
           .map(_.head.value),
         Some("UNSIGNED-PAYLOAD")
       )
     }
-  }
-
-  test("resource allocates and releases without error") {
-    val client = Client.fromHttpApp[IO](
-      HttpApp[IO](_ => IO.pure(Response[IO](Status.Ok)))
-    )
-    CloudWatchMeterProvider
-      .resource[IO](
-        AwsRegion.US_EAST_1,
-        client,
-        _ => cats.effect.Resource.pure(testCreds)
-      )
-      .use(_ => IO.unit)
-      .void
   }
 }

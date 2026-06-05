@@ -18,6 +18,7 @@ package kinesis4cats.client.producer.opentelemetry
 
 import scala.jdk.CollectionConverters._
 
+import java.net.URI
 import java.time.Duration
 import java.util.function.{Supplier => JSupplier}
 import java.util.{Map => JMap}
@@ -49,10 +50,12 @@ import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain
   *
   * Region and credentials default to the AWS SDK provider chains.
   *
-  * '''Preview caveat:''' the CloudWatch OTLP endpoint is in public preview in
-  * `us-east-1`, `us-west-2`, `ap-southeast-2`, `ap-southeast-1`, and
-  * `eu-west-1` only. Requests from other regions fail at runtime (logged by the
-  * exporter, never propagated to the produce path).
+  * '''Preview caveat:''' the CloudWatch OTLP endpoint is in public preview and
+  * available only in a subset of AWS regions. Be aware of the currently active
+  * regions for the feature before enabling it — see
+  * [[https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch-OTLPEndpoint.html the CloudWatch OTLP endpoint documentation]].
+  * Requests from unsupported regions fail at runtime (logged by the exporter,
+  * never propagated to the produce path).
   */
 object CloudWatchMeterProvider {
 
@@ -78,7 +81,7 @@ object CloudWatchMeterProvider {
         val unsigned = SdkHttpRequest
           .builder()
           .method(SdkHttpMethod.POST)
-          .uri(java.net.URI.create(endpoint(region)))
+          .uri(URI.create(endpoint(region)))
           .build()
         val signRequest = SignRequest
           .builder(credentials.resolveCredentials())
