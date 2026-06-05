@@ -522,7 +522,16 @@ lazy val `smithy4s-client-opentelemetry` =
         ModuleKind.CommonJSModule
       ))
     )
-    .nativeSettings(scalaVersion := Scala3, crossScalaVersions := Seq(Scala3))
+    // The OTLP exporter uses fs2-io networking, which on Native links against
+    // s2n-tls; enable the brewed config plugin so CI installs it and the linker
+    // search paths are set (mirrors smithy4s-client).
+    .nativeEnablePlugins(ScalaNativeBrewedConfigPlugin)
+    .nativeSettings(
+      scalaVersion := Scala3,
+      crossScalaVersions := Seq(Scala3),
+      nativeBrewFormulas ++= Set("s2n", "openssl"),
+      Test / envVars ++= Map("S2N_DONT_MLOCK" -> "1")
+    )
     .dependsOn(`smithy4s-client`)
 
 lazy val feral = crossProject(JVMPlatform, JSPlatform)
