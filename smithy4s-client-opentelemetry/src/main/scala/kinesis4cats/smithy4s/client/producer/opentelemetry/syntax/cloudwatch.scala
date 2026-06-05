@@ -22,18 +22,22 @@ import _root_.fs2.io.file.Files
 import cats.effect.Async
 import cats.effect.Resource
 import org.http4s.client.Client
+import org.typelevel.otel4s.metrics.MeterProvider
 import smithy4s.aws.AwsCredentialsProvider
 import smithy4s.aws.kernel.AwsCredentials
 import smithy4s.aws.kernel.AwsRegion
 
 import kinesis4cats.producer.metrics.ProducerMetrics
+import kinesis4cats.producer.metrics.cloudwatch.CloudWatchBackend
+import kinesis4cats.producer.metrics.cloudwatch.CloudWatchConventions
 import kinesis4cats.smithy4s.client.producer.KinesisProducer
 import kinesis4cats.smithy4s.client.producer.fs2.FS2KinesisProducer
 
 /** Terminal `buildWithCloudWatch` extension methods that bundle a
-  * CloudWatch-exporting [[CloudWatchMeterProvider]] with a producer's
-  * `Resource`. `region` and `httpClient` default to the builder's own fields.
-  * Import
+  * CloudWatch-exporting `MeterProvider` with a producer's `Resource`. The
+  * default backend is the GA `PutMetricData` API; `CloudWatchBackend.Otlp`
+  * selects the public-preview native OTLP endpoint. `region` and `httpClient`
+  * default to the builder's own fields. Import
   * `kinesis4cats.smithy4s.client.producer.opentelemetry.syntax.cloudwatch._`.
   */
 object cloudwatch extends CloudWatchSyntax
@@ -58,6 +62,21 @@ object CloudWatchSyntax {
       : Client[F] => Resource[F, F[AwsCredentials]] =
     backend => AwsCredentialsProvider.default(backend)
 
+  private def meterProvider[F[_]: Async: Compression](
+      backend: CloudWatchBackend,
+      region: AwsRegion,
+      httpClient: Client[F],
+      cloudWatchNamespace: String,
+      credentials: Client[F] => Resource[F, F[AwsCredentials]]
+  ): Resource[F, MeterProvider[F]] =
+    backend match {
+      case CloudWatchBackend.PutMetricData =>
+        PutMetricDataMeterProvider
+          .resource[F](region, httpClient, cloudWatchNamespace, credentials)
+      case CloudWatchBackend.Otlp =>
+        CloudWatchMeterProvider.resource[F](region, httpClient, credentials)
+    }
+
   final class ProducerBuilderOps[F[_]: Async: Compression: Files](
       private val builder: KinesisProducer.Builder[F]
   ) {
@@ -65,11 +84,20 @@ object CloudWatchSyntax {
         region: AwsRegion = builder.region,
         httpClient: Client[F] = builder.client,
         namespace: String = ProducerMetrics.defaultNamespace,
+        cloudWatchNamespace: String =
+          CloudWatchConventions.defaultCloudWatchNamespace,
         credentials: Client[F] => Resource[F, F[AwsCredentials]] =
-          defaultCreds[F]
+          defaultCreds[F],
+        backend: CloudWatchBackend = CloudWatchBackend.PutMetricData
     ): Resource[F, KinesisProducer[F]] =
-      CloudWatchMeterProvider
-        .resource[F](region, httpClient, credentials)
+      CloudWatchSyntax
+        .meterProvider[F](
+          backend,
+          region,
+          httpClient,
+          cloudWatchNamespace,
+          credentials
+        )
         .flatMap(mp => builder.withMetrics(mp, namespace).build)
   }
 
@@ -80,11 +108,20 @@ object CloudWatchSyntax {
         region: AwsRegion = builder.region,
         httpClient: Client[F] = builder.client,
         namespace: String = ProducerMetrics.defaultNamespace,
+        cloudWatchNamespace: String =
+          CloudWatchConventions.defaultCloudWatchNamespace,
         credentials: Client[F] => Resource[F, F[AwsCredentials]] =
-          defaultCreds[F]
+          defaultCreds[F],
+        backend: CloudWatchBackend = CloudWatchBackend.PutMetricData
     ): Resource[F, FS2KinesisProducer[F]] =
-      CloudWatchMeterProvider
-        .resource[F](region, httpClient, credentials)
+      CloudWatchSyntax
+        .meterProvider[F](
+          backend,
+          region,
+          httpClient,
+          cloudWatchNamespace,
+          credentials
+        )
         .flatMap(mp => builder.withMetrics(mp, namespace).build)
   }
 }
