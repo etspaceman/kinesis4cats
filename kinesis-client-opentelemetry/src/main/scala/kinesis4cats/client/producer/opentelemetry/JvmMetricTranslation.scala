@@ -108,7 +108,7 @@ private[opentelemetry] object JvmMetricTranslation {
         }.asJava
       )
     d.value match {
-      case Left(v) => base.value(v).build()
+      case Left(v)  => base.value(v).build()
       case Right(s) =>
         base
           .statisticValues(

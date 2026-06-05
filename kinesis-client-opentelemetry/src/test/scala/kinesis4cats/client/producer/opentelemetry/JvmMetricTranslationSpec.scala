@@ -107,7 +107,12 @@ class JvmMetricTranslationSpec extends FunSuite {
     assertEquals(
       d.value,
       Right(
-        CloudWatchDatum.StatisticSet(min = 1.0d, max = 5.0d, sum = 6.0d, count = 2.0d)
+        CloudWatchDatum.StatisticSet(
+          min = 1.0d,
+          max = 5.0d,
+          sum = 6.0d,
+          count = 2.0d
+        )
       ): Either[Double, CloudWatchDatum.StatisticSet]
     )
   }
