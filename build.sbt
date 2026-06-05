@@ -428,7 +428,9 @@ lazy val `smithy4s-client` =
     // smithy4s-aws SigV4 signing pulls Node's `crypto` module on JS; tests that
     // exercise signing only link with module support enabled.
     .jsSettings(
-      Test / scalaJSLinkerConfig ~= (_.withModuleKind(ModuleKind.CommonJSModule))
+      Test / scalaJSLinkerConfig ~= (_.withModuleKind(
+        ModuleKind.CommonJSModule
+      ))
     )
     .nativeSettings(scalaVersion := Scala3, crossScalaVersions := Seq(Scala3))
     .dependsOn(shared)
@@ -517,7 +519,9 @@ lazy val `smithy4s-client-opentelemetry` =
     // smithy4s-aws SigV4 signing pulls Node's `crypto` module on JS; tests that
     // exercise signing only link with module support enabled.
     .jsSettings(
-      Test / scalaJSLinkerConfig ~= (_.withModuleKind(ModuleKind.CommonJSModule))
+      Test / scalaJSLinkerConfig ~= (_.withModuleKind(
+        ModuleKind.CommonJSModule
+      ))
     )
     .nativeSettings(scalaVersion := Scala3, crossScalaVersions := Seq(Scala3))
     .dependsOn(`smithy4s-client`)
