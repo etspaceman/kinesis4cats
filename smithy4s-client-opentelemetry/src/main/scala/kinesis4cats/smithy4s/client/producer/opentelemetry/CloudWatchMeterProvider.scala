@@ -48,10 +48,10 @@ import smithy4s.aws.kernel.Timestamp
   * wrapping the supplied http4s [[org.http4s.client.Client Client]].
   *
   * Signing is a small Signature-Version-4 implementation built on the
-  * cross-platform [[smithy4s.aws.kernel.AwsCrypto AwsCrypto]] primitives (the
-  * same HMAC/SHA-256 routines smithy4s-aws uses internally), so it works on
-  * JVM, JS, and Native. Requests are signed over the literal `UNSIGNED-PAYLOAD`
-  * content hash, which the CloudWatch preview endpoint accepts.
+  * cross-platform `AwsCrypto` primitives (the same HMAC/SHA-256 routines
+  * smithy4s-aws uses internally), so it works on JVM, JS, and Native. Requests
+  * are signed over the literal `UNSIGNED-PAYLOAD` content hash, which the
+  * CloudWatch preview endpoint accepts.
   *
   * '''Preview caveat:''' the CloudWatch OTLP endpoint is in public preview and
   * available only in a subset of AWS regions. Be aware of the currently active

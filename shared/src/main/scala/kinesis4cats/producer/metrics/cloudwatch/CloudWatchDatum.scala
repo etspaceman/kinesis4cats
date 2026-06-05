@@ -26,7 +26,7 @@ package kinesis4cats.producer.metrics.cloudwatch
   *   histogram summarised as a CloudWatch StatisticSet.
   * @param unit
   *   a CloudWatch StandardUnit string (see
-  *   [[CloudWatchConventions.cloudWatchUnit]]).
+  *   `CloudWatchConventions.cloudWatchUnit`).
   * @param timestampMs
   *   epoch milliseconds; a `Long` to avoid `java.time` on JS/Native.
   */

@@ -45,8 +45,7 @@ import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain
 /** Builds a [[org.typelevel.otel4s.metrics.MeterProvider MeterProvider]] that
   * exports producer metrics to the CloudWatch native OTLP endpoint
   * (`https://monitoring.{region}.amazonaws.com/v1/metrics`), SigV4-signed via
-  * the AWS SDK v2
-  * [[software.amazon.awssdk.http.auth.aws.signer.AwsV4HttpSigner AwsV4HttpSigner]].
+  * the AWS SDK v2 `AwsV4HttpSigner`.
   *
   * Region and credentials default to the AWS SDK provider chains.
   *

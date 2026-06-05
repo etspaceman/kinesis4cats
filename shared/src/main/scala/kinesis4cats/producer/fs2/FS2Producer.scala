@@ -232,8 +232,7 @@ object FS2Producer {
     * @param producerConfig
     *   [[kinesis4cats.producer.Producer.Config Producer.Config]]
     * @param metrics
-    *   [[kinesis4cats.producer.metrics.FS2ProducerMetrics FS2ProducerMetrics]]
-    *   for the buffering path; defaults to no-op.
+    *   `FS2ProducerMetrics` for the buffering path; defaults to no-op.
     */
   final case class Config[F[_]](
       queueSize: Int,
