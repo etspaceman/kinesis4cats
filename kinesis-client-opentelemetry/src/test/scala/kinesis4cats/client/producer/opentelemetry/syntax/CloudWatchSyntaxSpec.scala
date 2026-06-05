@@ -29,9 +29,9 @@ class CloudWatchSyntaxSpec extends FunSuite {
 
   test("buildWithCloudWatch is available on KinesisProducer.Builder") {
     val stream = StreamNameOrArn.Name("test-stream")
-    val _ : Resource[IO, KinesisProducer[IO]] =
+    val _: Resource[IO, KinesisProducer[IO]] =
       KinesisProducer.Builder.default[IO](stream).buildWithCloudWatch()
-    val _ : Resource[IO, FS2KinesisProducer[IO]] =
+    val _: Resource[IO, FS2KinesisProducer[IO]] =
       FS2KinesisProducer.Builder.default[IO](stream).buildWithCloudWatch()
     assert(true)
   }

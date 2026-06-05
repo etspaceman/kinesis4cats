@@ -30,7 +30,8 @@ import kinesis4cats.producer.metrics.ProducerMetrics
 
 /** Terminal `buildWithCloudWatch` extension methods that bundle a
   * CloudWatch-exporting [[CloudWatchMeterProvider]] with a producer's
-  * `Resource`. Import `kinesis4cats.client.producer.opentelemetry.syntax.cloudwatch._`.
+  * `Resource`. Import
+  * `kinesis4cats.client.producer.opentelemetry.syntax.cloudwatch._`.
   */
 object cloudwatch extends CloudWatchSyntax
 

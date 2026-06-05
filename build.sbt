@@ -486,6 +486,7 @@ lazy val `kinesis-client-opentelemetry` = crossProject(JVMPlatform)
       Otel4s.otelJava,
       OtelJavaSdk.otlpExporter,
       Aws.V2.auth,
+      Aws.V2.httpAuthAws,
       OkHttp.mockWebServer
     )
   )

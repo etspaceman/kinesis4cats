@@ -16,9 +16,11 @@
 
 package kinesis4cats.client.producer.opentelemetry
 
+import scala.jdk.CollectionConverters._
+
 import java.time.Duration
 import java.util.function.{Supplier => JSupplier}
-import java.util.{HashMap => JHashMap, Map => JMap}
+import java.util.{Map => JMap}
 
 import cats.effect.Async
 import cats.effect.Resource
@@ -31,17 +33,19 @@ import org.typelevel.otel4s.oteljava.OtelJava
 import org.typelevel.otel4s.oteljava.context.LocalContextProvider
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider
-import software.amazon.awssdk.auth.signer.Aws4Signer
-import software.amazon.awssdk.auth.signer.params.Aws4SignerParams
-import software.amazon.awssdk.http.SdkHttpFullRequest
 import software.amazon.awssdk.http.SdkHttpMethod
+import software.amazon.awssdk.http.SdkHttpRequest
+import software.amazon.awssdk.http.auth.aws.signer.AwsV4FamilyHttpSigner
+import software.amazon.awssdk.http.auth.aws.signer.AwsV4HttpSigner
+import software.amazon.awssdk.http.auth.spi.signer.SignRequest
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain
 
 /** Builds a [[org.typelevel.otel4s.metrics.MeterProvider MeterProvider]] that
   * exports producer metrics to the CloudWatch native OTLP endpoint
   * (`https://monitoring.{region}.amazonaws.com/v1/metrics`), SigV4-signed via
-  * the AWS SDK v2 [[software.amazon.awssdk.auth.signer.Aws4Signer Aws4Signer]].
+  * the AWS SDK v2
+  * [[software.amazon.awssdk.http.auth.aws.signer.AwsV4HttpSigner AwsV4HttpSigner]].
   *
   * Region and credentials default to the AWS SDK provider chains.
   *
@@ -54,40 +58,48 @@ object CloudWatchMeterProvider {
 
   private val serviceName = "monitoring"
   private val exportInterval = Duration.ofSeconds(60)
+  private val signer = AwsV4HttpSigner.create()
 
   private def endpoint(region: Region): String =
     s"https://monitoring.${region.id()}.amazonaws.com/v1/metrics"
 
   /** SigV4-signs a synthetic request to the CloudWatch OTLP endpoint and
     * returns the resulting auth headers. Invoked by the OTLP exporter before
-    * each export. Signs over the literal `UNSIGNED-PAYLOAD` content hash; the
-    * CloudWatch preview endpoint accepts unsigned payloads.
+    * each export. Payload signing is disabled, so the request is signed over
+    * the literal `UNSIGNED-PAYLOAD` content hash, which the CloudWatch preview
+    * endpoint accepts (the body is not available at header-supplier time).
     */
   private[opentelemetry] def headerSupplier(
       credentials: AwsCredentialsProvider,
       region: Region
   ): JSupplier[JMap[String, String]] =
     new JSupplier[JMap[String, String]] {
-      private val signer = Aws4Signer.create()
       def get(): JMap[String, String] = {
-        val unsigned = SdkHttpFullRequest
+        val unsigned = SdkHttpRequest
           .builder()
           .method(SdkHttpMethod.POST)
           .uri(java.net.URI.create(endpoint(region)))
-          .putHeader("x-amz-content-sha256", "UNSIGNED-PAYLOAD")
           .build()
-        val params = Aws4SignerParams
-          .builder()
-          .awsCredentials(credentials.resolveCredentials())
-          .signingName(serviceName)
-          .signingRegion(region)
+        val signRequest = SignRequest
+          .builder(credentials.resolveCredentials())
+          .request(unsigned)
+          .putProperty(AwsV4HttpSigner.REGION_NAME, region.id())
+          .putProperty(AwsV4FamilyHttpSigner.SERVICE_SIGNING_NAME, serviceName)
+          .putProperty(
+            AwsV4FamilyHttpSigner.PAYLOAD_SIGNING_ENABLED,
+            java.lang.Boolean.FALSE
+          )
           .build()
-        val signed = signer.sign(unsigned, params)
-        val out = new JHashMap[String, String]()
-        signed.headers().forEach { (k, v) =>
-          if (!v.isEmpty) out.put(k, v.get(0)): Unit
-        }
-        out
+        val signed = signer.sign(signRequest)
+        signed
+          .request()
+          .headers()
+          .asScala
+          .collect {
+            case (k, v) if !v.isEmpty => k -> v.get(0)
+          }
+          .toMap
+          .asJava
       }
     }
 

@@ -47,6 +47,8 @@ object LibraryDependencies {
       val dynamo = "software.amazon.awssdk" % "dynamodb" % awssdkVersion
       val cloudwatch = "software.amazon.awssdk" % "cloudwatch" % awssdkVersion
       val auth = "software.amazon.awssdk" % "auth" % awssdkVersion
+      val httpAuthAws =
+        "software.amazon.awssdk" % "http-auth-aws" % awssdkVersion
     }
 
     object Aggregation {
