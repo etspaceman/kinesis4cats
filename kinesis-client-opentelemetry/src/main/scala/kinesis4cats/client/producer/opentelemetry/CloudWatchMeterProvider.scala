@@ -46,9 +46,9 @@ import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain
   * Region and credentials default to the AWS SDK provider chains.
   *
   * '''Preview caveat:''' the CloudWatch OTLP endpoint is in public preview in
-  * `us-east-1`, `us-west-2`, `ap-southeast-2`, `ap-southeast-1`, and `eu-west-1`
-  * only. Requests from other regions fail at runtime (logged by the exporter,
-  * never propagated to the produce path).
+  * `us-east-1`, `us-west-2`, `ap-southeast-2`, `ap-southeast-1`, and
+  * `eu-west-1` only. Requests from other regions fail at runtime (logged by the
+  * exporter, never propagated to the produce path).
   */
 object CloudWatchMeterProvider {
 
@@ -85,7 +85,7 @@ object CloudWatchMeterProvider {
         val signed = signer.sign(unsigned, params)
         val out = new JHashMap[String, String]()
         signed.headers().forEach { (k, v) =>
-          if (!v.isEmpty) (out.put(k, v.get(0)): Unit)
+          if (!v.isEmpty) out.put(k, v.get(0)): Unit
         }
         out
       }
