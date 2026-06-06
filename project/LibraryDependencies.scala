@@ -133,7 +133,7 @@ object LibraryDependencies {
     // OTLP/HTTP exporter for the OTel Java SDK. Pulls opentelemetry-sdk-metrics
     // and the OkHttp sender transitively. Pin to the version otel4s-oteljava
     // 1.0.0 resolves (verify with `sbt evicted`; bump to match if newer).
-    val otlpExporterVersion = "1.62.0"
+    val otlpExporterVersion = "1.63.0"
     val otlpExporter =
       "io.opentelemetry" % "opentelemetry-exporter-otlp" % otlpExporterVersion
   }
