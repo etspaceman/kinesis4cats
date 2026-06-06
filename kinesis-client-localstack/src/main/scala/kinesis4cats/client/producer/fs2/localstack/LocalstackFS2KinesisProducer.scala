@@ -20,11 +20,11 @@ package localstack
 
 import _root_.fs2.concurrent.Channel
 import cats.effect._
-import cats.effect.kernel.DeferredSink
 import cats.effect.syntax.all._
 import cats.syntax.all._
 import org.typelevel.log4cats.StructuredLogger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
+import org.typelevel.otel4s.metrics.MeterProvider
 import software.amazon.awssdk.services.kinesis.KinesisAsyncClient
 import software.amazon.awssdk.services.kinesis.model.PutRecordsResponse
 
@@ -35,10 +35,11 @@ import kinesis4cats.localstack.LocalstackConfig
 import kinesis4cats.localstack.TestStreamConfig
 import kinesis4cats.models.StreamNameOrArn
 import kinesis4cats.producer.Producer
-import kinesis4cats.producer.Record
 import kinesis4cats.producer.ShardMap
 import kinesis4cats.producer.ShardMapCache
 import kinesis4cats.producer.fs2.FS2Producer
+import kinesis4cats.producer.metrics.FS2ProducerMetrics
+import kinesis4cats.producer.metrics.ProducerMetrics
 
 object LocalstackFS2KinesisProducer {
 
@@ -53,7 +54,9 @@ object LocalstackFS2KinesisProducer {
           KinesisClient[F],
           StreamNameOrArn
       ) => F[Either[ShardMapCache.Error, ShardMap]],
-      callback: Producer.Result[PutRecordsResponse] => F[Unit]
+      callback: Producer.Result[PutRecordsResponse] => F[Unit],
+      meterProvider: Option[MeterProvider[F]],
+      namespace: String
   )(implicit F: Async[F]) {
 
     def withLocalstackConfig(localstackConfig: LocalstackConfig): Builder[F] =
@@ -85,30 +88,54 @@ object LocalstackFS2KinesisProducer {
     ): Builder[F] = copy(
       shardMapF = shardMapF
     )
+    def withMetrics(
+        meterProvider: MeterProvider[F],
+        namespace: String = ProducerMetrics.defaultNamespace
+    ): Builder[F] =
+      copy(meterProvider = Some(meterProvider), namespace = namespace)
 
     def build: Resource[F, FS2KinesisProducer[F]] = for {
       client <- clientResource
+      fs2Metrics <- meterProvider.fold(
+        Resource.pure[F, FS2ProducerMetrics[F]](FS2ProducerMetrics.noop[F])
+      )(mp =>
+        Resource.eval(
+          mp.get(ProducerMetrics.instrumentationScope)
+            .flatMap(FS2ProducerMetrics.fromMeter[F](_, namespace))
+        )
+      )
+      putMetrics <- meterProvider.fold(
+        Resource.pure[F, ProducerMetrics[F]](ProducerMetrics.noop[F])
+      )(mp =>
+        Resource.eval(
+          mp.get(ProducerMetrics.instrumentationScope)
+            .flatMap(ProducerMetrics.fromMeter[F](_, namespace))
+        )
+      )
+      finalConfig = config.copy(
+        metrics = fs2Metrics,
+        producerConfig = config.producerConfig.copy(metrics = putMetrics)
+      )
       underlying <- LocalstackKinesisProducer.Builder
         .default[F](
-          config.producerConfig.streamNameOrArn,
+          finalConfig.producerConfig.streamNameOrArn,
           localstackConfig
         )
         .withClient(client)
-        .withConfig(config.producerConfig)
+        .withConfig(finalConfig.producerConfig)
         .withLogEncoders(encoders)
         .withLogger(logger)
         .withStreamsToCreate(streamsToCreate)
         .withShardMapF(shardMapF)
         .build
       channel <- Channel
-        .bounded[
-          F,
-          (Record, DeferredSink[F, F[Producer.Result[PutRecordsResponse]]])
-        ](config.queueSize)
+        .bounded[F, FS2Producer.Buffered[F, PutRecordsResponse]](
+          finalConfig.queueSize
+        )
         .toResource
       producer = new FS2KinesisProducer[F](
         logger,
-        config,
+        finalConfig,
         channel,
         underlying
       )
@@ -141,7 +168,9 @@ object LocalstackFS2KinesisProducer {
         Nil,
         (client: KinesisClient[F], snoa: StreamNameOrArn) =>
           KinesisProducer.getShardMap(client, snoa),
-        (_: Producer.Result[PutRecordsResponse]) => F.unit
+        (_: Producer.Result[PutRecordsResponse]) => F.unit,
+        meterProvider = None,
+        namespace = ProducerMetrics.defaultNamespace
       )
 
     @annotation.unused

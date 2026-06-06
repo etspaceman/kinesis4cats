@@ -5,7 +5,7 @@ This module intends to be an enriched wrapper for the [KinesisAsyncClient](https
 ## Installation
 
 ```scala
-libraryDependencies += "io.github.etspaceman" %% "kinesis4cats-client" % "@VERSION@"
+libraryDependencies += "io.github.etspaceman" %% "kinesis4cats-kinesis-client" % "@VERSION@"
 ```
 
 ## Usage

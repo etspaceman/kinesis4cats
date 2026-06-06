@@ -32,7 +32,9 @@ lazy val shared = crossProject(JVMPlatform, JSPlatform, NativePlatform)
     libraryDependencies ++= testDependencies.value.map(_ % Test) ++ Seq(
       "com.thesamet.scalapb" %%% "scalapb-runtime" % scalapb.compiler.Version.scalapbVersion,
       ScalaJS.javaTime.value,
-      Log4Cats.noop.value % Test
+      Otel4s.coreMetrics.value,
+      Log4Cats.noop.value % Test,
+      Otel4s.sdkMetricsTestkit.value % Test
     ),
     Compile / PB.protoSources := Seq(
       baseDirectory.value.getParentFile / "src" / "main" / "protobuf"
@@ -360,6 +362,7 @@ lazy val `kinesis-client-localstack` = crossProject(JVMPlatform)
   .dependsOn(
     `aws-v2-localstack`,
     `kinesis-client`,
+    `kinesis-client-opentelemetry` % Test,
     `shared-testkit` % Test
   )
 
@@ -407,18 +410,26 @@ lazy val `smithy4s-client` =
         "com.disneystreaming.smithy4s" %%% "smithy4s-aws-http4s" % smithy4sVersion.value,
         Log4Cats.noop.value,
         Smithy.rulesEngine(smithy4s.codegen.BuildInfo.smithyVersion) % Smithy4s,
-        Smithy.kinesis % Smithy4s
+        Smithy.kinesis % Smithy4s,
+        Smithy.cloudwatch % Smithy4s
       ),
       Compile / smithy4sInputDirs := Seq(
         baseDirectory.value.getParentFile / "src" / "main" / "smithy"
       ),
       Compile / smithy4sModelTransformers += "KinesisSpecTransformer",
+      Compile / smithy4sModelTransformers += "CloudWatchSpecTransformer",
       Compile / smithy4sAllDependenciesAsJars +=
         (`smithy4s-client-transformers` / Compile / packageBin).value,
       Compile / smithy4sSmithyLibrary := false,
-      scalacOptions -= "-deprecation",
       tlJdkRelease := Some(11),
       removeSmithy4sDependenciesFromManifest
+    )
+    // smithy4s-aws SigV4 signing pulls Node's `crypto` module on JS; tests that
+    // exercise signing only link with module support enabled.
+    .jsSettings(
+      Test / scalaJSLinkerConfig ~= (_.withModuleKind(
+        ModuleKind.CommonJSModule
+      ))
     )
     .nativeSettings(scalaVersion := Scala3, crossScalaVersions := Seq(Scala3))
     .dependsOn(shared)
@@ -470,9 +481,58 @@ lazy val `smithy4s-client-localstack` =
       `shared-localstack`,
       `smithy4s-client`,
       `shared-testkit` % Test,
-      `smithy4s-client-logging-circe` % Test
+      `smithy4s-client-logging-circe` % Test,
+      `smithy4s-client-opentelemetry` % Test
     )
     .jvmConfigure(_.dependsOn(`kcl-localstack`.jvm % Test))
+
+lazy val `kinesis-client-opentelemetry` = crossProject(JVMPlatform)
+  .crossType(CrossType.Pure)
+  .in(file("kinesis-client-opentelemetry"))
+  .settings(
+    description := "CloudWatch OTLP default metrics export for the Java Kinesis Client producer",
+    crossScalaVersions := allScalaVersions,
+    libraryDependencies ++= Seq(
+      Otel4s.otelJava,
+      OtelJavaSdk.otlpExporter,
+      Aws.V2.auth,
+      Aws.V2.httpAuthAws,
+      OkHttp.mockWebServer
+    )
+  )
+  .dependsOn(`kinesis-client`)
+
+lazy val `smithy4s-client-opentelemetry` =
+  crossProject(JVMPlatform, JSPlatform, NativePlatform)
+    .crossType(CrossType.Pure)
+    .in(file("smithy4s-client-opentelemetry"))
+    .settings(
+      description := "CloudWatch OTLP default metrics export for the Smithy4s Kinesis Client producer",
+      crossScalaVersions := allScalaVersions,
+      libraryDependencies ++= Seq(
+        Otel4s.sdkMetrics.value,
+        Otel4s.sdkExporterMetrics.value
+      ),
+      tlJdkRelease := Some(11)
+    )
+    // smithy4s-aws SigV4 signing pulls Node's `crypto` module on JS; tests that
+    // exercise signing only link with module support enabled.
+    .jsSettings(
+      Test / scalaJSLinkerConfig ~= (_.withModuleKind(
+        ModuleKind.CommonJSModule
+      ))
+    )
+    // The OTLP exporter uses fs2-io networking, which on Native links against
+    // s2n-tls; enable the brewed config plugin so CI installs it and the linker
+    // search paths are set (mirrors smithy4s-client).
+    .nativeEnablePlugins(ScalaNativeBrewedConfigPlugin)
+    .nativeSettings(
+      scalaVersion := Scala3,
+      crossScalaVersions := Seq(Scala3),
+      nativeBrewFormulas ++= Set("s2n", "openssl"),
+      Test / envVars ++= Map("S2N_DONT_MLOCK" -> "1")
+    )
+    .dependsOn(`smithy4s-client`)
 
 lazy val feral = crossProject(JVMPlatform, JSPlatform)
   .crossType(CrossType.Pure)
@@ -568,6 +628,8 @@ lazy val docs = project
     `smithy4s-client`.jvm,
     `smithy4s-client-logging-circe`.jvm,
     `smithy4s-client-localstack`.jvm,
+    `kinesis-client-opentelemetry`.jvm,
+    `smithy4s-client-opentelemetry`.jvm,
     feral.jvm
   )
 
@@ -600,6 +662,8 @@ lazy val unidocs = project
       `smithy4s-client`.jvm,
       `smithy4s-client-logging-circe`.jvm,
       `smithy4s-client-localstack`.jvm,
+      `kinesis-client-opentelemetry`.jvm,
+      `smithy4s-client-opentelemetry`.jvm,
       feral.jvm
     )
   )
@@ -627,6 +691,8 @@ lazy val allCrossProjects: Seq[sbtcrossproject.CrossProject] = Seq(
   `smithy4s-client`,
   `smithy4s-client-logging-circe`,
   `smithy4s-client-localstack`,
+  `kinesis-client-opentelemetry`,
+  `smithy4s-client-opentelemetry`,
   feral
 )
 

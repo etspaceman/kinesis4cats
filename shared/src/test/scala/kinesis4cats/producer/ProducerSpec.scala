@@ -31,6 +31,7 @@ import kinesis4cats.compat.retry._
 import kinesis4cats.models.HashKeyRange
 import kinesis4cats.models.ShardId
 import kinesis4cats.models.StreamNameOrArn
+import kinesis4cats.producer.metrics.ProducerMetrics
 
 class ProducerSpec extends munit.CatsEffectSuite {
   def fixture(
@@ -241,7 +242,8 @@ class MockProducer(
 object MockProducer {
   def apply(
       aggregate: Boolean,
-      raiseOnFailures: Boolean
+      raiseOnFailures: Boolean,
+      metrics: ProducerMetrics[IO] = ProducerMetrics.noop[IO]
   ): Resource[IO, MockProducer] = for {
     logger <- Resource.pure(NoOpLogger[IO])
     shardMapCache <- ShardMapCache.Builder
@@ -266,7 +268,8 @@ object MockProducer {
       .default[IO](StreamNameOrArn.Name("foo"))
       .copy(
         retryPolicy = RetryPolicies.limitRetries[IO](5),
-        raiseOnFailures = raiseOnFailures
+        raiseOnFailures = raiseOnFailures,
+        metrics = metrics
       )
   } yield new MockProducer(
     logger,

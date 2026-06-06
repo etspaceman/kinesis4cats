@@ -5,7 +5,7 @@ Circe instances for the KinesisClient LogEncoders. Offers a richer experience wi
 ## Installation
 
 ```scala
-libraryDependencies += "io.github.etspaceman" %% "kinesis4cats-client-logging-circe" % "@VERSION@"
+libraryDependencies += "io.github.etspaceman" %% "kinesis4cats-kinesis-client-logging-circe" % "@VERSION@"
 ```
 
 ## Usage

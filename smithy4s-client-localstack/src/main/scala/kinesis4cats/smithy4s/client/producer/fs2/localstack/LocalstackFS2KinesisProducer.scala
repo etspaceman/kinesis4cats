@@ -23,23 +23,23 @@ import _root_.fs2.compression.Compression
 import _root_.fs2.concurrent.Channel
 import _root_.fs2.io.file.Files
 import cats.effect._
-import cats.effect.kernel.DeferredSink
 import cats.effect.syntax.all._
 import cats.syntax.all._
 import com.amazonaws.kinesis.PutRecordsOutput
 import org.http4s.client.Client
 import org.typelevel.log4cats.StructuredLogger
 import org.typelevel.log4cats.noop.NoOpLogger
+import org.typelevel.otel4s.metrics.MeterProvider
 import smithy4s.aws.kernel.AwsRegion
 
 import kinesis4cats.localstack.LocalstackConfig
 import kinesis4cats.localstack.TestStreamConfig
 import kinesis4cats.models.StreamNameOrArn
-import kinesis4cats.producer.Producer
-import kinesis4cats.producer.Record
 import kinesis4cats.producer.ShardMap
 import kinesis4cats.producer.ShardMapCache
 import kinesis4cats.producer.fs2.FS2Producer
+import kinesis4cats.producer.metrics.FS2ProducerMetrics
+import kinesis4cats.producer.metrics.ProducerMetrics
 import kinesis4cats.smithy4s.client.producer.localstack.LocalstackKinesisProducer
 
 /** Like KinesisProducer, but also includes the
@@ -59,7 +59,9 @@ object LocalstackFS2KinesisProducer {
       shardMapF: (
           KinesisClient[F],
           StreamNameOrArn
-      ) => F[Either[ShardMapCache.Error, ShardMap]]
+      ) => F[Either[ShardMapCache.Error, ShardMap]],
+      meterProvider: Option[MeterProvider[F]],
+      namespace: String
   )(implicit F: Async[F]) {
 
     def withLocalstackConfig(localstackConfig: LocalstackConfig): Builder[F] =
@@ -89,16 +91,41 @@ object LocalstackFS2KinesisProducer {
     ): Builder[F] = copy(
       shardMapF = shardMapF
     )
+    def withMetrics(
+        meterProvider: MeterProvider[F],
+        namespace: String = ProducerMetrics.defaultNamespace
+    ): Builder[F] =
+      copy(meterProvider = Some(meterProvider), namespace = namespace)
 
     def build: Resource[F, FS2KinesisProducer[F]] = for {
+      fs2Metrics <- meterProvider.fold(
+        Resource.pure[F, FS2ProducerMetrics[F]](FS2ProducerMetrics.noop[F])
+      )(mp =>
+        Resource.eval(
+          mp.get(ProducerMetrics.instrumentationScope)
+            .flatMap(FS2ProducerMetrics.fromMeter[F](_, namespace))
+        )
+      )
+      putMetrics <- meterProvider.fold(
+        Resource.pure[F, ProducerMetrics[F]](ProducerMetrics.noop[F])
+      )(mp =>
+        Resource.eval(
+          mp.get(ProducerMetrics.instrumentationScope)
+            .flatMap(ProducerMetrics.fromMeter[F](_, namespace))
+        )
+      )
+      finalConfig = config.copy(
+        metrics = fs2Metrics,
+        producerConfig = config.producerConfig.copy(metrics = putMetrics)
+      )
       underlying <- LocalstackKinesisProducer.Builder
         .default[F](
           client,
           region,
-          config.producerConfig.streamNameOrArn,
+          finalConfig.producerConfig.streamNameOrArn,
           localstackConfig
         )
-        .withConfig(config.producerConfig)
+        .withConfig(finalConfig.producerConfig)
         .withLogEncoders(encoders)
         .withLogger(logger)
         .withLogRequestsResponses(logRequestsResponses)
@@ -106,14 +133,13 @@ object LocalstackFS2KinesisProducer {
         .withShardMapF(shardMapF)
         .build
       channel <- Channel
-        .bounded[
-          F,
-          (Record, DeferredSink[F, F[Producer.Result[PutRecordsOutput]]])
-        ](config.queueSize)
+        .bounded[F, FS2Producer.Buffered[F, PutRecordsOutput]](
+          finalConfig.queueSize
+        )
         .toResource
       producer = new FS2KinesisProducer[F](
         logger,
-        config,
+        finalConfig,
         channel,
         underlying
       )
@@ -147,7 +173,9 @@ object LocalstackFS2KinesisProducer {
         logRequestsResponses = true,
         Nil,
         (client: KinesisClient[F], snoa: StreamNameOrArn) =>
-          KinesisProducer.getShardMap(client, snoa)
+          KinesisProducer.getShardMap(client, snoa),
+        meterProvider = None,
+        namespace = ProducerMetrics.defaultNamespace
       )
 
     @annotation.unused

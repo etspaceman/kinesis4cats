@@ -21,16 +21,19 @@ package fs2
 
 import _root_.fs2.concurrent.Channel
 import cats.effect._
-import cats.effect.kernel.DeferredSink
 import cats.effect.syntax.all._
+import cats.syntax.all._
 import org.typelevel.log4cats.StructuredLogger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
+import org.typelevel.otel4s.metrics.MeterProvider
 import software.amazon.awssdk.services.kinesis.KinesisAsyncClient
 import software.amazon.awssdk.services.kinesis.model.PutRecordsRequest
 import software.amazon.awssdk.services.kinesis.model.PutRecordsResponse
 
 import kinesis4cats.producer._
 import kinesis4cats.producer.fs2.FS2Producer
+import kinesis4cats.producer.metrics.FS2ProducerMetrics
+import kinesis4cats.producer.metrics.ProducerMetrics
 
 /** A buffered Kinesis producer which will produce batches of data at a
   * configurable rate.
@@ -52,7 +55,7 @@ final class FS2KinesisProducer[F[_]] private[kinesis4cats] (
     override val config: FS2Producer.Config[F],
     override protected val channel: Channel[
       F,
-      (Record, DeferredSink[F, F[Producer.Result[PutRecordsResponse]]])
+      FS2Producer.Buffered[F, PutRecordsResponse]
     ],
     override protected val underlying: KinesisProducer[F]
 )(implicit
@@ -64,7 +67,9 @@ object FS2KinesisProducer {
       config: FS2Producer.Config[F],
       clientResource: Resource[F, KinesisClient[F]],
       encoders: KinesisProducer.LogEncoders,
-      logger: StructuredLogger[F]
+      logger: StructuredLogger[F],
+      meterProviderResource: Option[Resource[F, MeterProvider[F]]],
+      namespace: String
   )(implicit F: Async[F]) {
     def withConfig(config: FS2Producer.Config[F]): Builder[F] = copy(
       config = config
@@ -92,22 +97,68 @@ object FS2KinesisProducer {
       copy(config = config.copy(producerConfig = underlyingConfig))
     def transformUnderlyingConfig(f: Producer.Config[F] => Producer.Config[F]) =
       copy(config = config.copy(producerConfig = f(config.producerConfig)))
+
+    /** Emit OpenTelemetry producer metrics (buffer + put-path) via the given
+      * `MeterProvider`.
+      */
+    def withMetrics(
+        meterProvider: MeterProvider[F],
+        namespace: String = ProducerMetrics.defaultNamespace
+    ): Builder[F] =
+      copy(
+        meterProviderResource = Some(Resource.pure(meterProvider)),
+        namespace = namespace
+      )
+
+    /** Emit OpenTelemetry producer metrics via a `MeterProvider` whose
+      * lifecycle is managed by the given `Resource` (e.g. an exporter that must
+      * be flushed on shutdown). The `Resource` is acquired by [[build]] and
+      * released after the producer. Plumbing for builder extensions such as
+      * `withCloudWatchMetrics`.
+      */
+    private[kinesis4cats] def withMetricsResource(
+        meterProvider: Resource[F, MeterProvider[F]],
+        namespace: String = ProducerMetrics.defaultNamespace
+    ): Builder[F] =
+      copy(meterProviderResource = Some(meterProvider), namespace = namespace)
+
     def build: Resource[F, FS2KinesisProducer[F]] = for {
       client <- clientResource
-      underlying <- KinesisProducer.Builder
-        .default[F](config.producerConfig.streamNameOrArn)
-        .withConfig(config.producerConfig)
+      meterProvider <- meterProviderResource.fold(
+        Resource.pure[F, Option[MeterProvider[F]]](None)
+      )(_.map(Some(_)))
+      fs2Metrics <- meterProvider.fold(
+        Resource.pure[F, FS2ProducerMetrics[F]](
+          FS2ProducerMetrics.noop[F]
+        )
+      )(mp =>
+        Resource.eval(
+          mp.get(ProducerMetrics.instrumentationScope)
+            .flatMap(FS2ProducerMetrics.fromMeter[F](_, namespace))
+        )
+      )
+      finalConfig = config.copy(metrics = fs2Metrics)
+      underlyingBuilder0 = KinesisProducer.Builder
+        .default[F](finalConfig.producerConfig.streamNameOrArn)
+        .withConfig(finalConfig.producerConfig)
         .withLogEncoders(encoders)
         .withLogger(logger)
         .withClient(client)
-        .build
+      underlyingBuilder = meterProvider.fold(underlyingBuilder0)(mp =>
+        underlyingBuilder0.withMetrics(mp, namespace)
+      )
+      underlying <- underlyingBuilder.build
       channel <- Channel
-        .bounded[
-          F,
-          (Record, DeferredSink[F, F[Producer.Result[PutRecordsResponse]]])
-        ](config.queueSize)
+        .bounded[F, FS2Producer.Buffered[F, PutRecordsResponse]](
+          finalConfig.queueSize
+        )
         .toResource
-      producer = new FS2KinesisProducer[F](logger, config, channel, underlying)
+      producer = new FS2KinesisProducer[F](
+        logger,
+        finalConfig,
+        channel,
+        underlying
+      )
       _ <- producer.resource
     } yield producer
   }
@@ -119,7 +170,9 @@ object FS2KinesisProducer {
       FS2Producer.Config.default(streamNameOrArn),
       KinesisClient.Builder.default.build,
       KinesisProducer.LogEncoders.show,
-      Slf4jLogger.getLogger
+      Slf4jLogger.getLogger,
+      None,
+      ProducerMetrics.defaultNamespace
     )
 
     @annotation.unused

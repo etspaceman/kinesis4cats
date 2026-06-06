@@ -26,11 +26,13 @@ import cats.effect._
 import cats.syntax.all._
 import org.typelevel.log4cats.StructuredLogger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
+import org.typelevel.otel4s.metrics.MeterProvider
 import software.amazon.awssdk.core.SdkBytes
 import software.amazon.awssdk.services.kinesis.KinesisAsyncClient
 import software.amazon.awssdk.services.kinesis.model._
 
 import kinesis4cats.models
+import kinesis4cats.producer.metrics.ProducerMetrics
 import kinesis4cats.producer.{Record => Rec, _}
 import kinesis4cats.syntax.id._
 
@@ -109,7 +111,8 @@ object KinesisProducer {
       config: Producer.Config[F],
       clientResource: Resource[F, KinesisClient[F]],
       encoders: LogEncoders,
-      logger: StructuredLogger[F]
+      logger: StructuredLogger[F],
+      metricsResource: Resource[F, ProducerMetrics[F]]
   )(implicit F: Async[F]) {
     def withConfig(config: Producer.Config[F]): Builder[F] = copy(
       config = config
@@ -132,16 +135,50 @@ object KinesisProducer {
     def withLogger(logger: StructuredLogger[F]): Builder[F] =
       copy(logger = logger)
 
+    /** Emit OpenTelemetry producer metrics via the given `MeterProvider`. */
+    def withMetrics(
+        meterProvider: MeterProvider[F],
+        namespace: String = ProducerMetrics.defaultNamespace
+    ): Builder[F] =
+      copy(metricsResource =
+        Resource.eval(
+          meterProvider
+            .get(ProducerMetrics.instrumentationScope)
+            .flatMap(ProducerMetrics.fromMeter[F](_, namespace))
+        )
+      )
+
+    /** Emit OpenTelemetry producer metrics via a `MeterProvider` whose
+      * lifecycle is managed by the given `Resource` (e.g. an exporter that must
+      * be flushed on shutdown). The `Resource` is acquired by [[build]] and
+      * released after the producer. Plumbing for builder extensions such as
+      * `withCloudWatchMetrics`.
+      */
+    private[kinesis4cats] def withMetricsResource(
+        meterProvider: Resource[F, MeterProvider[F]],
+        namespace: String = ProducerMetrics.defaultNamespace
+    ): Builder[F] =
+      copy(metricsResource =
+        meterProvider.flatMap(mp =>
+          Resource.eval(
+            mp.get(ProducerMetrics.instrumentationScope)
+              .flatMap(ProducerMetrics.fromMeter[F](_, namespace))
+          )
+        )
+      )
+
     def build: Resource[F, KinesisProducer[F]] = for {
       client <- clientResource
+      metrics <- metricsResource
+      finalConfig = config.copy(metrics = metrics)
       shardMapCache <- ShardMapCache.Builder
-        .default(getShardMap(client, config.streamNameOrArn), logger)
+        .default(getShardMap(client, finalConfig.streamNameOrArn), logger)
         .withLogEncoders(encoders.producerLogEncoders.shardMapLogEncoders)
         .build
     } yield new KinesisProducer[F](
       logger,
       shardMapCache,
-      config,
+      finalConfig,
       client,
       encoders.producerLogEncoders
     )
@@ -154,7 +191,8 @@ object KinesisProducer {
       Producer.Config.default(streamNameOrArn),
       KinesisClient.Builder.default.build,
       LogEncoders.show,
-      Slf4jLogger.getLogger
+      Slf4jLogger.getLogger,
+      Resource.pure(ProducerMetrics.noop[F])
     )
 
     @annotation.unused

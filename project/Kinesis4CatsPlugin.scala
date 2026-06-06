@@ -135,7 +135,9 @@ object Kinesis4CatsPlugin extends AutoPlugin {
     ),
     scalacOptions ++= {
       val base = Seq("-language:implicitConversions")
-      if (tlIsScala3.value) base
+      // Silence warnings (e.g. deprecations) in smithy4s-generated sources under
+      // src_managed; they're not ours to fix and otherwise fail -Werror.
+      if (tlIsScala3.value) base :+ "-Wconf:src=.*src_managed.*:s"
       else base :+ "-Wconf:src=src_managed/.*:silent"
     },
     scalacOptions := scalacOptions.value.distinct,

@@ -1,1 +1,2 @@
 kinesis4cats.smithy4s.client.KinesisSpecTransformer
+kinesis4cats.smithy4s.client.CloudWatchSpecTransformer
