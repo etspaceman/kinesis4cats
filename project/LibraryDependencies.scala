@@ -140,6 +140,6 @@ object LibraryDependencies {
 
   object OkHttp {
     val mockWebServer =
-      "com.squareup.okhttp3" % "mockwebserver" % "4.12.0" % "test"
+      "com.squareup.okhttp3" % "mockwebserver" % "5.3.2" % "test"
   }
 }
