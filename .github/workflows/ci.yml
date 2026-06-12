@@ -91,7 +91,7 @@ jobs:
         run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' doc
 
       - name: Compile (JVM plain projects)
-        if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-24.04' && endsWith(matrix.project, 'JVM') && matrix.scala == '3.3.7'
+        if: matrix.java == 'temurin@17' && matrix.os == 'ubuntu-24.04' && endsWith(matrix.project, 'JVM') && matrix.scala == '3.3.8'
         run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' rootJVMPlain3/Test/compile
 
       - name: Docker Compose Up
