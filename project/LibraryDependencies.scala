@@ -42,7 +42,7 @@ object LibraryDependencies {
 
     object V2 {
       val awssdkVersion =
-        "2.46.10" // Should be the same as the latest version in the KCL or KPL
+        "2.46.11" // Should be the same as the latest version in the KCL or KPL
       val kinesis = "software.amazon.awssdk" % "kinesis" % awssdkVersion
       val dynamo = "software.amazon.awssdk" % "dynamodb" % awssdkVersion
       val cloudwatch = "software.amazon.awssdk" % "cloudwatch" % awssdkVersion
