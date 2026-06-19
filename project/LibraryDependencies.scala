@@ -109,7 +109,7 @@ object LibraryDependencies {
   }
 
   object Otel4s {
-    val otel4sVersion = "1.0.0"
+    val otel4sVersion = "1.0.1"
     val otel4sSdkVersion = "0.19.0"
     val coreMetrics =
       Def.setting("org.typelevel" %%% "otel4s-core-metrics" % otel4sVersion)
