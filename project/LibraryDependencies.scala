@@ -105,7 +105,7 @@ object LibraryDependencies {
       "software.amazon.smithy" % "smithy-build" % version
     // https://github.com/aws/api-models-aws
     val kinesis = "software.amazon.api.models" % "kinesis" % "1.0.8"
-    val cloudwatch = "software.amazon.api.models" % "cloudwatch" % "1.0.13"
+    val cloudwatch = "software.amazon.api.models" % "cloudwatch" % "1.0.14"
   }
 
   object Otel4s {
