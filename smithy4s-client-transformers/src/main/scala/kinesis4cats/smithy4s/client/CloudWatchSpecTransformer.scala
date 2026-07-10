@@ -26,12 +26,13 @@ import software.amazon.smithy.model.traits._
 /** Pins the CloudWatch service to the `aws.protocols#awsQuery` protocol by
   * stripping the other protocol traits the upstream AWS model declares:
   *
-  *   - `smithy.protocols#rpcv2Cbor` — its generated `smithy.protocols.Rpcv2Cbor`
-  *     Hint references a namespace we do not generate code for (we only pull the
-  *     `aws.protocols` traits via smithy4s-aws), so it fails to compile.
+  *   - `smithy.protocols#rpcv2Cbor` — its generated
+  *     `smithy.protocols.Rpcv2Cbor` Hint references a namespace we do not
+  *     generate code for (we only pull the `aws.protocols` traits via
+  *     smithy4s-aws), so it fails to compile.
   *   - `aws.protocols#awsJson1_0` — smithy4s-aws would otherwise prefer this
-  *     (higher priority than awsQuery), serialising requests as JSON. We want the
-  *     XML query protocol smithy4s-aws supports for CloudWatch.
+  *     (higher priority than awsQuery), serialising requests as JSON. We want
+  *     the XML query protocol smithy4s-aws supports for CloudWatch.
   *   - `aws.protocols#awsQueryCompatible` — only meaningful alongside a JSON
   *     protocol; removed for cleanliness once awsJson is gone.
   *
