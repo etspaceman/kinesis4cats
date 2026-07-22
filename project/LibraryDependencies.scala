@@ -8,7 +8,7 @@ object LibraryDependencies {
 
   object ScalaJS {
     val javaTime =
-      Def.setting("io.github.cquiroz" %%% "scala-java-time" % "2.6.0")
+      Def.setting("io.github.cquiroz" %%% "scala-java-time" % "2.7.0")
   }
 
   object FS2 {
