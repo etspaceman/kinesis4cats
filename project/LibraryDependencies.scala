@@ -71,7 +71,7 @@ object LibraryDependencies {
   }
 
   object Circe {
-    val circeVersion = "0.14.15"
+    val circeVersion = "0.14.16"
     val core = Def.setting("io.circe" %%% "circe-core" % circeVersion)
     val parser = Def.setting("io.circe" %%% "circe-parser" % circeVersion)
     val scodec = Def.setting("io.circe" %%% "circe-scodec" % circeVersion)
