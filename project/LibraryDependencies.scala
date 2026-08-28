@@ -4,7 +4,7 @@ import sbt._
 object LibraryDependencies {
   val Logback = "ch.qos.logback" % "logback-classic" % "1.5.38"
   val JavaXMLBind = "javax.xml.bind" % "jaxb-api" % "2.3.1"
-  val Scalacheck = Def.setting("org.scalacheck" %%% "scalacheck" % "1.19.0")
+  val Scalacheck = Def.setting("org.scalacheck" %%% "scalacheck" % "1.20.0")
 
   object ScalaJS {
     val javaTime =
