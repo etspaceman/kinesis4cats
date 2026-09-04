@@ -215,7 +215,7 @@ object Kinesis4CatsPlugin extends AutoPlugin {
 
 object Kinesis4CatsPluginKeys {
   val Scala213 = "2.13.18"
-  val Scala3 = "3.3.8"
+  val Scala3 = "3.9.0"
 
   val allScalaVersions = List(Scala213, Scala3)
 
